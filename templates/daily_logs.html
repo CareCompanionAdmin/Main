@@ -775,6 +775,19 @@ function logout() {
     document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/login';
 }
+
+// Auto-open modal if 'open' query parameter is present
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const openType = urlParams.get('open');
+    if (openType && formTemplates[openType]) {
+        openModal(openType);
+        // Clean up URL without reload
+        const url = new URL(window.location);
+        url.searchParams.delete('open');
+        window.history.replaceState({}, '', url);
+    }
+});
 </script>
 </body>
 </html>
