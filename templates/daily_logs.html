@@ -205,7 +205,15 @@
         {{if or .Logs.BehaviorLogs .Logs.DietLogs .Logs.MedicationLogs .Logs.BowelLogs .Logs.SleepLogs .Logs.SpeechLogs .Logs.WeightLogs}}
         <div class="space-y-3">
             {{range .Logs.BehaviorLogs}}
-            <div class="flex items-start space-x-3 p-3 bg-red-50 rounded-lg">
+            <div onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Behavior"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-meltdowns="{{.Meltdowns}}"
+                data-entry-stimming="{{.StimmingEpisodes}}"
+                data-entry-aggression="{{.AggressionIncidents}}"
+                data-entry-selfinjury="{{.SelfInjuryIncidents}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -222,11 +230,22 @@
                     </p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
             </div>
             {{end}}
 
             {{range .Logs.DietLogs}}
-            <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+            <div onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Meal"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-mealtype="{{if .MealType.Valid}}{{.MealType.String}}{{end}}"
+                data-entry-foods="{{if .FoodsEaten}}{{range $i, $f := .FoodsEaten}}{{if $i}}, {{end}}{{$f}}{{end}}{{end}}"
+                data-entry-appetitelevel="{{if .AppetiteLevel.Valid}}{{.AppetiteLevel.String}}{{end}}"
+                data-entry-fluidoz="{{if .WaterIntakeOz}}{{.WaterIntakeOz}}{{else}}0{{end}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
@@ -237,11 +256,23 @@
                     <p class="text-sm text-gray-600">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
             </div>
             {{end}}
 
             {{range .Logs.SleepLogs}}
-            <div class="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
+            <div onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Sleep"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-quality="{{if .SleepQuality.Valid}}{{.SleepQuality.String}}{{end}}"
+                data-entry-totalminutes="{{if .TotalSleepMinutes}}{{.TotalSleepMinutes}}{{else}}0{{end}}"
+                data-entry-nightwakings="{{.NightWakings}}"
+                data-entry-bedtime="{{if .Bedtime.Valid}}{{.Bedtime.String}}{{end}}"
+                data-entry-waketime="{{if .WakeTime.Valid}}{{.WakeTime.String}}{{end}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
@@ -252,11 +283,20 @@
                     <p class="text-sm text-gray-600">{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{if .TotalSleepMinutes}} - {{.TotalSleepMinutes}} min{{end}}</p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
             </div>
             {{end}}
 
             {{range .Logs.BowelLogs}}
-            <div class="flex items-start space-x-3 p-3 bg-amber-50 rounded-lg">
+            <div onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Bowel Movement"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-bristolscale="{{if .BristolScale}}{{.BristolScale}}{{else}}0{{end}}"
+                data-entry-hadaccident="{{.HadAccident}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -267,11 +307,19 @@
                     <p class="text-sm text-gray-600">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
             </div>
             {{end}}
 
             {{range .Logs.MedicationLogs}}
-            <div class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+            <div onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Medication"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-status="{{.Status}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
@@ -282,11 +330,19 @@
                     <p class="text-sm text-gray-600">Status: {{.Status}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
             </div>
             {{end}}
 
             {{range .Logs.SpeechLogs}}
-            <div class="flex items-start space-x-3 p-3 bg-teal-50 rounded-lg">
+            <div onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 rounded-lg cursor-pointer hover:bg-teal-100 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Speech"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-verballevel="{{if .VerbalOutputLevel.Valid}}{{.VerbalOutputLevel.Int64}}{{else}}0{{end}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
@@ -294,14 +350,23 @@
                 </div>
                 <div class="flex-1">
                     <p class="font-medium text-gray-900">Speech</p>
-                    <p class="text-sm text-gray-600">{{if .Notes.Valid}}{{.Notes.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600">{{if .VerbalOutputLevel.Valid}}Verbal Level: {{.VerbalOutputLevel.Int64}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
             </div>
             {{end}}
 
             {{range .Logs.WeightLogs}}
-            <div class="flex items-start space-x-3 p-3 bg-pink-50 rounded-lg">
+            <div onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 rounded-lg cursor-pointer hover:bg-pink-100 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Weight"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-weightlbs="{{if .WeightLbs}}{{.WeightLbs}}{{else}}0{{end}}"
+                data-entry-heightinches="{{if .HeightInches.Valid}}{{.HeightInches.Float64}}{{else}}0{{end}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
@@ -312,6 +377,9 @@
                     <p class="text-sm text-gray-600">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
             </div>
             {{end}}
         </div>
@@ -766,6 +834,123 @@ async function logMedication(scheduleId) {
     } catch (error) {
         alert('Failed to log medication');
     }
+}
+
+function showDetails(type, element) {
+    // Read from individual data attributes instead of parsing JSON
+    const ds = element.dataset;
+    const entryType = ds.entryType || type;
+    const time = ds.entryTime || '';
+    const notes = ds.entryNotes || '';
+    let content = '';
+
+    switch(type) {
+        case 'behavior':
+            const meltdowns = parseInt(ds.entryMeltdowns) || 0;
+            const stimming = parseInt(ds.entryStimming) || 0;
+            const aggression = parseInt(ds.entryAggression) || 0;
+            const selfInjury = parseInt(ds.entrySelfinjury) || 0;
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    ${meltdowns > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Meltdowns:</span><span class="font-medium">${meltdowns}</span></div>` : ''}
+                    ${stimming > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Stimming Episodes:</span><span class="font-medium">${stimming}</span></div>` : ''}
+                    ${aggression > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Aggression Incidents:</span><span class="font-medium">${aggression}</span></div>` : ''}
+                    ${selfInjury > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Self-injury Incidents:</span><span class="font-medium">${selfInjury}</span></div>` : ''}
+                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                </div>
+            `;
+            break;
+        case 'diet':
+            const mealType = ds.entryMealtype || '';
+            const foods = ds.entryFoods || '';
+            const appetiteLevel = ds.entryAppetitelevel || '';
+            const fluidOz = parseInt(ds.entryFluidoz) || 0;
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    ${mealType ? `<div class="flex justify-between"><span class="text-gray-500">Meal Type:</span><span class="font-medium capitalize">${mealType}</span></div>` : ''}
+                    ${foods ? `<div class="flex justify-between"><span class="text-gray-500">Foods:</span><span class="font-medium">${foods}</span></div>` : ''}
+                    ${appetiteLevel ? `<div class="flex justify-between"><span class="text-gray-500">Appetite Level:</span><span class="font-medium capitalize">${appetiteLevel}</span></div>` : ''}
+                    ${fluidOz > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Fluid Intake:</span><span class="font-medium">${fluidOz} oz</span></div>` : ''}
+                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                </div>
+            `;
+            break;
+        case 'sleep':
+            const quality = ds.entryQuality || '';
+            const totalMinutes = parseInt(ds.entryTotalminutes) || 0;
+            const nightWakings = parseInt(ds.entryNightwakings) || 0;
+            const bedTime = ds.entryBedtime || '';
+            const wakeTime = ds.entryWaketime || '';
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    ${quality ? `<div class="flex justify-between"><span class="text-gray-500">Quality:</span><span class="font-medium capitalize">${quality}</span></div>` : ''}
+                    ${totalMinutes > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Total Sleep:</span><span class="font-medium">${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m</span></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Night Wakings:</span><span class="font-medium">${nightWakings}</span></div>
+                    ${bedTime ? `<div class="flex justify-between"><span class="text-gray-500">Bed Time:</span><span class="font-medium">${bedTime}</span></div>` : ''}
+                    ${wakeTime ? `<div class="flex justify-between"><span class="text-gray-500">Wake Time:</span><span class="font-medium">${wakeTime}</span></div>` : ''}
+                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                </div>
+            `;
+            break;
+        case 'bowel':
+            const bristolScale = parseInt(ds.entryBristolscale) || 0;
+            const hadAccident = ds.entryHadaccident === 'true';
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    ${bristolScale > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Bristol Scale:</span><span class="font-medium">${bristolScale}</span></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Had Accident:</span><span class="font-medium">${hadAccident ? 'Yes' : 'No'}</span></div>
+                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                </div>
+            `;
+            break;
+        case 'medication':
+            const status = ds.entryStatus || '';
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Status:</span><span class="font-medium capitalize">${status}</span></div>
+                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                </div>
+            `;
+            break;
+        case 'speech':
+            const verbalLevel = parseInt(ds.entryVerballevel) || 0;
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    ${verbalLevel > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Verbal Output Level:</span><span class="font-medium">${verbalLevel}/10</span></div>` : ''}
+                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                </div>
+            `;
+            break;
+        case 'weight':
+            const weightLbs = parseFloat(ds.entryWeightlbs) || 0;
+            const heightInches = parseFloat(ds.entryHeightinches) || 0;
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    ${weightLbs > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Weight:</span><span class="font-medium">${weightLbs} lbs</span></div>` : ''}
+                    ${heightInches > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Height:</span><span class="font-medium">${heightInches} inches</span></div>` : ''}
+                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                </div>
+            `;
+            break;
+        default:
+            content = `<p class="text-gray-500">Details not available for this entry type.</p>`;
+    }
+
+    document.getElementById('modal-title').textContent = entryType + ' Details';
+    document.getElementById('modal-content').innerHTML = `
+        ${content}
+        <div class="mt-4 pt-4 border-t">
+            <button onclick="closeModal()" class="w-full py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
+        </div>
+    `;
+    document.getElementById('modal-overlay').classList.remove('hidden');
 }
 
 function logout() {
