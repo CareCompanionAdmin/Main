@@ -64,6 +64,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify({ email, password })
         });
 
@@ -75,11 +76,10 @@ document.getElementById('login-form').addEventListener('submit', async function(
             return;
         }
 
+        // Store in localStorage for JavaScript access (API calls)
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
-        // Set cookie for server-side auth
-        document.cookie = 'access_token=' + data.access_token + '; path=/; max-age=' + (60*60);
-        document.cookie = 'refresh_token=' + data.refresh_token + '; path=/; max-age=' + (7*24*60*60);
+        // Server already sets HttpOnly cookies via Set-Cookie headers
         window.location.href = '/dashboard';
     } catch (error) {
         errorDiv.textContent = 'An error occurred. Please try again.';

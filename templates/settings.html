@@ -196,12 +196,14 @@ async function switchFamily(familyId) {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
             },
+            credentials: 'same-origin',
             body: JSON.stringify({ family_id: familyId })
         });
         if (response.ok) {
             const data = await response.json();
+            // Update localStorage for JS API calls
             localStorage.setItem('access_token', data.access_token);
-            document.cookie = 'access_token=' + data.access_token + '; path=/; max-age=' + (60*60);
+            // Server already sets HttpOnly cookies via Set-Cookie headers
             window.location.href = '/dashboard';
         }
     } catch (error) {

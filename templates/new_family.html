@@ -86,13 +86,15 @@ document.getElementById('family-form').addEventListener('submit', async function
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
             },
+            credentials: 'same-origin',
             body: JSON.stringify({ family_id: data.id })
         });
 
         if (switchResponse.ok) {
             const switchData = await switchResponse.json();
+            // Update localStorage for JS API calls
             localStorage.setItem('access_token', switchData.access_token);
-            document.cookie = 'access_token=' + switchData.access_token + '; path=/; max-age=' + (60*60);
+            // Server already sets HttpOnly cookies via Set-Cookie headers
         }
 
         window.location.href = '/dashboard';
