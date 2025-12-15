@@ -22,9 +22,13 @@ func NewLogService(logRepo repository.LogRepository) *LogService {
 
 // Behavior Logs
 func (s *LogService) CreateBehaviorLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateBehaviorLogRequest) (*models.BehaviorLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
 	log := &models.BehaviorLog{
 		ChildID:             childID,
-		LogDate:             req.LogDate,
+		LogDate:             logDate,
 		MoodLevel:           req.MoodLevel,
 		EnergyLevel:         req.EnergyLevel,
 		AnxietyLevel:        req.AnxietyLevel,
@@ -65,9 +69,13 @@ func (s *LogService) DeleteBehaviorLog(ctx context.Context, id uuid.UUID) error 
 
 // Bowel Logs
 func (s *LogService) CreateBowelLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateBowelLogRequest) (*models.BowelLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
 	log := &models.BowelLog{
 		ChildID:      childID,
-		LogDate:      req.LogDate,
+		LogDate:      logDate,
 		BristolScale: req.BristolScale,
 		HadAccident:  req.HadAccident,
 		PainLevel:    req.PainLevel,
@@ -99,9 +107,13 @@ func (s *LogService) DeleteBowelLog(ctx context.Context, id uuid.UUID) error {
 
 // Speech Logs
 func (s *LogService) CreateSpeechLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSpeechLogRequest) (*models.SpeechLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
 	log := &models.SpeechLog{
 		ChildID:                  childID,
-		LogDate:                  req.LogDate,
+		LogDate:                  logDate,
 		VerbalOutputLevel:        req.VerbalOutputLevel,
 		ClarityLevel:             req.ClarityLevel,
 		NewWords:                 models.StringArray(req.NewWords),
@@ -134,9 +146,13 @@ func (s *LogService) DeleteSpeechLog(ctx context.Context, id uuid.UUID) error {
 
 // Diet Logs
 func (s *LogService) CreateDietLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateDietLogRequest) (*models.DietLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
 	log := &models.DietLog{
 		ChildID:          childID,
-		LogDate:          req.LogDate,
+		LogDate:          logDate,
 		FoodsEaten:       models.StringArray(req.FoodsEaten),
 		FoodsRefused:     models.StringArray(req.FoodsRefused),
 		WaterIntakeOz:    req.WaterIntakeOz,
@@ -177,9 +193,13 @@ func (s *LogService) DeleteDietLog(ctx context.Context, id uuid.UUID) error {
 
 // Weight Logs
 func (s *LogService) CreateWeightLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateWeightLogRequest) (*models.WeightLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
 	log := &models.WeightLog{
 		ChildID:      childID,
-		LogDate:      req.LogDate,
+		LogDate:      logDate,
 		WeightLbs:    req.WeightLbs,
 		HeightInches: req.HeightInches,
 		LoggedBy:     loggedBy,
@@ -207,9 +227,13 @@ func (s *LogService) DeleteWeightLog(ctx context.Context, id uuid.UUID) error {
 
 // Sleep Logs
 func (s *LogService) CreateSleepLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSleepLogRequest) (*models.SleepLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
 	log := &models.SleepLog{
 		ChildID:           childID,
-		LogDate:           req.LogDate,
+		LogDate:           logDate,
 		TotalSleepMinutes: req.TotalSleepMinutes,
 		NightWakings:      req.NightWakings,
 		TookSleepAid:      req.TookSleepAid,
