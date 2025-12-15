@@ -60,11 +60,12 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-medium text-gray-900">{{.Description}}</h3>
-                    <p class="text-gray-600 mt-1">{{.Details}}</p>
+                    <h3 class="text-lg font-medium text-gray-900">{{if .Description.Valid}}{{.Description.String}}{{else}}{{.PatternType}}: {{.InputFactor}} → {{.OutputFactor}}{{end}}</h3>
+                    <p class="text-gray-600 mt-1">Correlation strength: {{printf "%.2f" .CorrelationStrength}}{{if gt .LagHours 0}} ({{.LagHours}} hour lag){{end}}</p>
                     <div class="flex items-center mt-3 space-x-4">
-                        <span class="text-sm text-gray-500">Confidence: {{.Confidence}}%</span>
-                        <span class="text-sm text-gray-500">Occurrences: {{.Occurrences}}</span>
+                        <span class="text-sm text-gray-500">Confidence: {{.ConfidencePercent}}%</span>
+                        <span class="text-sm text-gray-500">Confirmed: {{.TimesConfirmed}} times</span>
+                        <span class="text-sm text-gray-500">Sample size: {{.SampleSize}}</span>
                     </div>
                 </div>
             </div>

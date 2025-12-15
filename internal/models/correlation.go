@@ -53,6 +53,11 @@ type FamilyPattern struct {
 	UpdatedAt           time.Time  `json:"updated_at"`
 }
 
+// ConfidencePercent returns the confidence score as a percentage (0-100)
+func (p FamilyPattern) ConfidencePercent() int {
+	return int(p.ConfidenceScore * 100)
+}
+
 type ClinicalValidation struct {
 	ID                   uuid.UUID  `json:"id"`
 	PatternID            NullUUID   `json:"pattern_id,omitempty"`
