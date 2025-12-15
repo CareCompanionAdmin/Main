@@ -1,0 +1,928 @@
+package repository
+
+import (
+	"context"
+	"database/sql"
+	"time"
+
+	"github.com/google/uuid"
+
+	"carecompanion/internal/models"
+)
+
+type logRepo struct {
+	db *sql.DB
+}
+
+func NewLogRepo(db *sql.DB) LogRepository {
+	return &logRepo{db: db}
+}
+
+// Behavior Logs
+func (r *logRepo) CreateBehaviorLog(ctx context.Context, log *models.BehaviorLog) error {
+	query := `
+		INSERT INTO behavior_logs (id, child_id, log_date, log_time, mood_level, energy_level, anxiety_level, meltdowns, stimming_episodes, aggression_incidents, self_injury_incidents, triggers, positive_behaviors, notes, logged_by, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+	log.UpdatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate, log.LogTime,
+		log.MoodLevel, log.EnergyLevel, log.AnxietyLevel, log.Meltdowns,
+		log.StimmingEpisodes, log.AggressionIncidents, log.SelfInjuryIncidents,
+		log.Triggers, log.PositiveBehaviors, log.Notes, log.LoggedBy,
+		log.CreatedAt, log.UpdatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetBehaviorLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.BehaviorLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, mood_level, energy_level, anxiety_level, meltdowns, stimming_episodes, aggression_incidents, self_injury_incidents, triggers, positive_behaviors, notes, logged_by, created_at, updated_at
+		FROM behavior_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.BehaviorLog
+	for rows.Next() {
+		var log models.BehaviorLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+			&log.MoodLevel, &log.EnergyLevel, &log.AnxietyLevel, &log.Meltdowns,
+			&log.StimmingEpisodes, &log.AggressionIncidents, &log.SelfInjuryIncidents,
+			&log.Triggers, &log.PositiveBehaviors, &log.Notes, &log.LoggedBy,
+			&log.CreatedAt, &log.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetBehaviorLogByID(ctx context.Context, id uuid.UUID) (*models.BehaviorLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, mood_level, energy_level, anxiety_level, meltdowns, stimming_episodes, aggression_incidents, self_injury_incidents, triggers, positive_behaviors, notes, logged_by, created_at, updated_at
+		FROM behavior_logs
+		WHERE id = $1
+	`
+	log := &models.BehaviorLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+		&log.MoodLevel, &log.EnergyLevel, &log.AnxietyLevel, &log.Meltdowns,
+		&log.StimmingEpisodes, &log.AggressionIncidents, &log.SelfInjuryIncidents,
+		&log.Triggers, &log.PositiveBehaviors, &log.Notes, &log.LoggedBy,
+		&log.CreatedAt, &log.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) UpdateBehaviorLog(ctx context.Context, log *models.BehaviorLog) error {
+	query := `
+		UPDATE behavior_logs
+		SET mood_level = $2, energy_level = $3, anxiety_level = $4, meltdowns = $5, stimming_episodes = $6, aggression_incidents = $7, self_injury_incidents = $8, triggers = $9, positive_behaviors = $10, notes = $11, updated_at = $12
+		WHERE id = $1
+	`
+	log.UpdatedAt = time.Now()
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.MoodLevel, log.EnergyLevel, log.AnxietyLevel, log.Meltdowns,
+		log.StimmingEpisodes, log.AggressionIncidents, log.SelfInjuryIncidents,
+		log.Triggers, log.PositiveBehaviors, log.Notes, log.UpdatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) DeleteBehaviorLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM behavior_logs WHERE id = $1`, id)
+	return err
+}
+
+// Bowel Logs
+func (r *logRepo) CreateBowelLog(ctx context.Context, log *models.BowelLog) error {
+	query := `
+		INSERT INTO bowel_logs (id, child_id, log_date, log_time, bristol_scale, had_accident, pain_level, blood_present, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate, log.LogTime,
+		log.BristolScale, log.HadAccident, log.PainLevel, log.BloodPresent,
+		log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetBowelLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.BowelLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, bristol_scale, had_accident, pain_level, blood_present, notes, logged_by, created_at
+		FROM bowel_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.BowelLog
+	for rows.Next() {
+		var log models.BowelLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+			&log.BristolScale, &log.HadAccident, &log.PainLevel, &log.BloodPresent,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetBowelLogByID(ctx context.Context, id uuid.UUID) (*models.BowelLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, bristol_scale, had_accident, pain_level, blood_present, notes, logged_by, created_at
+		FROM bowel_logs
+		WHERE id = $1
+	`
+	log := &models.BowelLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+		&log.BristolScale, &log.HadAccident, &log.PainLevel, &log.BloodPresent,
+		&log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteBowelLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM bowel_logs WHERE id = $1`, id)
+	return err
+}
+
+// Speech Logs
+func (r *logRepo) CreateSpeechLog(ctx context.Context, log *models.SpeechLog) error {
+	query := `
+		INSERT INTO speech_logs (id, child_id, log_date, verbal_output_level, clarity_level, new_words, lost_words, echolalia_level, communication_attempts, successful_communications, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate,
+		log.VerbalOutputLevel, log.ClarityLevel, log.NewWords, log.LostWords,
+		log.EcholaliaLevel, log.CommunicationAttempts, log.SuccessfulCommunications,
+		log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetSpeechLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SpeechLog, error) {
+	query := `
+		SELECT id, child_id, log_date, verbal_output_level, clarity_level, new_words, lost_words, echolalia_level, communication_attempts, successful_communications, notes, logged_by, created_at
+		FROM speech_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.SpeechLog
+	for rows.Next() {
+		var log models.SpeechLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate,
+			&log.VerbalOutputLevel, &log.ClarityLevel, &log.NewWords, &log.LostWords,
+			&log.EcholaliaLevel, &log.CommunicationAttempts, &log.SuccessfulCommunications,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetSpeechLogByID(ctx context.Context, id uuid.UUID) (*models.SpeechLog, error) {
+	query := `
+		SELECT id, child_id, log_date, verbal_output_level, clarity_level, new_words, lost_words, echolalia_level, communication_attempts, successful_communications, notes, logged_by, created_at
+		FROM speech_logs
+		WHERE id = $1
+	`
+	log := &models.SpeechLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate,
+		&log.VerbalOutputLevel, &log.ClarityLevel, &log.NewWords, &log.LostWords,
+		&log.EcholaliaLevel, &log.CommunicationAttempts, &log.SuccessfulCommunications,
+		&log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteSpeechLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM speech_logs WHERE id = $1`, id)
+	return err
+}
+
+// Diet Logs
+func (r *logRepo) CreateDietLog(ctx context.Context, log *models.DietLog) error {
+	query := `
+		INSERT INTO diet_logs (id, child_id, log_date, meal_type, meal_time, foods_eaten, foods_refused, appetite_level, water_intake_oz, supplements_taken, new_food_tried, allergic_reaction, reaction_details, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate, log.MealType, log.MealTime,
+		log.FoodsEaten, log.FoodsRefused, log.AppetiteLevel, log.WaterIntakeOz,
+		log.SupplementsTaken, log.NewFoodTried, log.AllergicReaction, log.ReactionDetails,
+		log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetDietLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.DietLog, error) {
+	query := `
+		SELECT id, child_id, log_date, meal_type, meal_time, foods_eaten, foods_refused, appetite_level, water_intake_oz, supplements_taken, new_food_tried, allergic_reaction, reaction_details, notes, logged_by, created_at
+		FROM diet_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.DietLog
+	for rows.Next() {
+		var log models.DietLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate, &log.MealType, &log.MealTime,
+			&log.FoodsEaten, &log.FoodsRefused, &log.AppetiteLevel, &log.WaterIntakeOz,
+			&log.SupplementsTaken, &log.NewFoodTried, &log.AllergicReaction, &log.ReactionDetails,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetDietLogByID(ctx context.Context, id uuid.UUID) (*models.DietLog, error) {
+	query := `
+		SELECT id, child_id, log_date, meal_type, meal_time, foods_eaten, foods_refused, appetite_level, water_intake_oz, supplements_taken, new_food_tried, allergic_reaction, reaction_details, notes, logged_by, created_at
+		FROM diet_logs
+		WHERE id = $1
+	`
+	log := &models.DietLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate, &log.MealType, &log.MealTime,
+		&log.FoodsEaten, &log.FoodsRefused, &log.AppetiteLevel, &log.WaterIntakeOz,
+		&log.SupplementsTaken, &log.NewFoodTried, &log.AllergicReaction, &log.ReactionDetails,
+		&log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteDietLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM diet_logs WHERE id = $1`, id)
+	return err
+}
+
+// Weight Logs
+func (r *logRepo) CreateWeightLog(ctx context.Context, log *models.WeightLog) error {
+	query := `
+		INSERT INTO weight_logs (id, child_id, log_date, weight_lbs, height_inches, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate,
+		log.WeightLbs, log.HeightInches, log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetWeightLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.WeightLog, error) {
+	query := `
+		SELECT id, child_id, log_date, weight_lbs, height_inches, notes, logged_by, created_at
+		FROM weight_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.WeightLog
+	for rows.Next() {
+		var log models.WeightLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate,
+			&log.WeightLbs, &log.HeightInches, &log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetWeightLogByID(ctx context.Context, id uuid.UUID) (*models.WeightLog, error) {
+	query := `
+		SELECT id, child_id, log_date, weight_lbs, height_inches, notes, logged_by, created_at
+		FROM weight_logs
+		WHERE id = $1
+	`
+	log := &models.WeightLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate,
+		&log.WeightLbs, &log.HeightInches, &log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteWeightLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM weight_logs WHERE id = $1`, id)
+	return err
+}
+
+// Sleep Logs
+func (r *logRepo) CreateSleepLog(ctx context.Context, log *models.SleepLog) error {
+	query := `
+		INSERT INTO sleep_logs (id, child_id, log_date, bedtime, wake_time, total_sleep_minutes, night_wakings, sleep_quality, took_sleep_aid, sleep_aid_name, nightmares, bed_wetting, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate, log.Bedtime, log.WakeTime,
+		log.TotalSleepMinutes, log.NightWakings, log.SleepQuality,
+		log.TookSleepAid, log.SleepAidName, log.Nightmares, log.BedWetting,
+		log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetSleepLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SleepLog, error) {
+	query := `
+		SELECT id, child_id, log_date, bedtime, wake_time, total_sleep_minutes, night_wakings, sleep_quality, took_sleep_aid, sleep_aid_name, nightmares, bed_wetting, notes, logged_by, created_at
+		FROM sleep_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.SleepLog
+	for rows.Next() {
+		var log models.SleepLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate, &log.Bedtime, &log.WakeTime,
+			&log.TotalSleepMinutes, &log.NightWakings, &log.SleepQuality,
+			&log.TookSleepAid, &log.SleepAidName, &log.Nightmares, &log.BedWetting,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetSleepLogByID(ctx context.Context, id uuid.UUID) (*models.SleepLog, error) {
+	query := `
+		SELECT id, child_id, log_date, bedtime, wake_time, total_sleep_minutes, night_wakings, sleep_quality, took_sleep_aid, sleep_aid_name, nightmares, bed_wetting, notes, logged_by, created_at
+		FROM sleep_logs
+		WHERE id = $1
+	`
+	log := &models.SleepLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate, &log.Bedtime, &log.WakeTime,
+		&log.TotalSleepMinutes, &log.NightWakings, &log.SleepQuality,
+		&log.TookSleepAid, &log.SleepAidName, &log.Nightmares, &log.BedWetting,
+		&log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteSleepLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM sleep_logs WHERE id = $1`, id)
+	return err
+}
+
+// Sensory Logs
+func (r *logRepo) CreateSensoryLog(ctx context.Context, log *models.SensoryLog) error {
+	query := `
+		INSERT INTO sensory_logs (id, child_id, log_date, log_time, sensory_seeking_behaviors, sensory_avoiding_behaviors, overload_triggers, calming_strategies_used, overload_episodes, overall_regulation, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate, log.LogTime,
+		log.SensorySeekingBehaviors, log.SensoryAvoidingBehaviors,
+		log.OverloadTriggers, log.CalmingStrategiesUsed,
+		log.OverloadEpisodes, log.OverallRegulation,
+		log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetSensoryLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SensoryLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, sensory_seeking_behaviors, sensory_avoiding_behaviors, overload_triggers, calming_strategies_used, overload_episodes, overall_regulation, notes, logged_by, created_at
+		FROM sensory_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.SensoryLog
+	for rows.Next() {
+		var log models.SensoryLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+			&log.SensorySeekingBehaviors, &log.SensoryAvoidingBehaviors,
+			&log.OverloadTriggers, &log.CalmingStrategiesUsed,
+			&log.OverloadEpisodes, &log.OverallRegulation,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetSensoryLogByID(ctx context.Context, id uuid.UUID) (*models.SensoryLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, sensory_seeking_behaviors, sensory_avoiding_behaviors, overload_triggers, calming_strategies_used, overload_episodes, overall_regulation, notes, logged_by, created_at
+		FROM sensory_logs
+		WHERE id = $1
+	`
+	log := &models.SensoryLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+		&log.SensorySeekingBehaviors, &log.SensoryAvoidingBehaviors,
+		&log.OverloadTriggers, &log.CalmingStrategiesUsed,
+		&log.OverloadEpisodes, &log.OverallRegulation,
+		&log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteSensoryLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM sensory_logs WHERE id = $1`, id)
+	return err
+}
+
+// Social Logs
+func (r *logRepo) CreateSocialLog(ctx context.Context, log *models.SocialLog) error {
+	query := `
+		INSERT INTO social_logs (id, child_id, log_date, eye_contact_level, social_engagement_level, peer_interactions, positive_interactions, conflicts, parallel_play_minutes, cooperative_play_minutes, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate,
+		log.EyeContactLevel, log.SocialEngagementLevel,
+		log.PeerInteractions, log.PositiveInteractions, log.Conflicts,
+		log.ParallelPlayMinutes, log.CooperativePlayMinutes,
+		log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetSocialLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SocialLog, error) {
+	query := `
+		SELECT id, child_id, log_date, eye_contact_level, social_engagement_level, peer_interactions, positive_interactions, conflicts, parallel_play_minutes, cooperative_play_minutes, notes, logged_by, created_at
+		FROM social_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.SocialLog
+	for rows.Next() {
+		var log models.SocialLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate,
+			&log.EyeContactLevel, &log.SocialEngagementLevel,
+			&log.PeerInteractions, &log.PositiveInteractions, &log.Conflicts,
+			&log.ParallelPlayMinutes, &log.CooperativePlayMinutes,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetSocialLogByID(ctx context.Context, id uuid.UUID) (*models.SocialLog, error) {
+	query := `
+		SELECT id, child_id, log_date, eye_contact_level, social_engagement_level, peer_interactions, positive_interactions, conflicts, parallel_play_minutes, cooperative_play_minutes, notes, logged_by, created_at
+		FROM social_logs
+		WHERE id = $1
+	`
+	log := &models.SocialLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate,
+		&log.EyeContactLevel, &log.SocialEngagementLevel,
+		&log.PeerInteractions, &log.PositiveInteractions, &log.Conflicts,
+		&log.ParallelPlayMinutes, &log.CooperativePlayMinutes,
+		&log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteSocialLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM social_logs WHERE id = $1`, id)
+	return err
+}
+
+// Therapy Logs
+func (r *logRepo) CreateTherapyLog(ctx context.Context, log *models.TherapyLog) error {
+	query := `
+		INSERT INTO therapy_logs (id, child_id, log_date, therapy_type, therapist_name, duration_minutes, goals_worked_on, progress_notes, homework_assigned, parent_notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate,
+		log.TherapyType, log.TherapistName, log.DurationMinutes,
+		log.GoalsWorkedOn, log.ProgressNotes, log.HomeworkAssigned,
+		log.ParentNotes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetTherapyLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.TherapyLog, error) {
+	query := `
+		SELECT id, child_id, log_date, therapy_type, therapist_name, duration_minutes, goals_worked_on, progress_notes, homework_assigned, parent_notes, logged_by, created_at
+		FROM therapy_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.TherapyLog
+	for rows.Next() {
+		var log models.TherapyLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate,
+			&log.TherapyType, &log.TherapistName, &log.DurationMinutes,
+			&log.GoalsWorkedOn, &log.ProgressNotes, &log.HomeworkAssigned,
+			&log.ParentNotes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetTherapyLogByID(ctx context.Context, id uuid.UUID) (*models.TherapyLog, error) {
+	query := `
+		SELECT id, child_id, log_date, therapy_type, therapist_name, duration_minutes, goals_worked_on, progress_notes, homework_assigned, parent_notes, logged_by, created_at
+		FROM therapy_logs
+		WHERE id = $1
+	`
+	log := &models.TherapyLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate,
+		&log.TherapyType, &log.TherapistName, &log.DurationMinutes,
+		&log.GoalsWorkedOn, &log.ProgressNotes, &log.HomeworkAssigned,
+		&log.ParentNotes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteTherapyLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM therapy_logs WHERE id = $1`, id)
+	return err
+}
+
+// Seizure Logs
+func (r *logRepo) CreateSeizureLog(ctx context.Context, log *models.SeizureLog) error {
+	query := `
+		INSERT INTO seizure_logs (id, child_id, log_date, log_time, seizure_type, duration_seconds, triggers, warning_signs, post_ictal_symptoms, rescue_medication_given, rescue_medication_name, called_911, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate, log.LogTime,
+		log.SeizureType, log.DurationSeconds, log.Triggers, log.WarningSigns,
+		log.PostIctalSymptoms, log.RescueMedicationGiven, log.RescueMedicationName,
+		log.Called911, log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetSeizureLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SeizureLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, seizure_type, duration_seconds, triggers, warning_signs, post_ictal_symptoms, rescue_medication_given, rescue_medication_name, called_911, notes, logged_by, created_at
+		FROM seizure_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.SeizureLog
+	for rows.Next() {
+		var log models.SeizureLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+			&log.SeizureType, &log.DurationSeconds, &log.Triggers, &log.WarningSigns,
+			&log.PostIctalSymptoms, &log.RescueMedicationGiven, &log.RescueMedicationName,
+			&log.Called911, &log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetSeizureLogByID(ctx context.Context, id uuid.UUID) (*models.SeizureLog, error) {
+	query := `
+		SELECT id, child_id, log_date, log_time, seizure_type, duration_seconds, triggers, warning_signs, post_ictal_symptoms, rescue_medication_given, rescue_medication_name, called_911, notes, logged_by, created_at
+		FROM seizure_logs
+		WHERE id = $1
+	`
+	log := &models.SeizureLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate, &log.LogTime,
+		&log.SeizureType, &log.DurationSeconds, &log.Triggers, &log.WarningSigns,
+		&log.PostIctalSymptoms, &log.RescueMedicationGiven, &log.RescueMedicationName,
+		&log.Called911, &log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteSeizureLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM seizure_logs WHERE id = $1`, id)
+	return err
+}
+
+// Health Event Logs
+func (r *logRepo) CreateHealthEventLog(ctx context.Context, log *models.HealthEventLog) error {
+	query := `
+		INSERT INTO health_event_logs (id, child_id, log_date, event_type, description, symptoms, temperature_f, provider_name, diagnosis, treatment, follow_up_date, notes, logged_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+	`
+	log.ID = uuid.New()
+	log.CreatedAt = time.Now()
+
+	_, err := r.db.ExecContext(ctx, query,
+		log.ID, log.ChildID, log.LogDate, log.EventType, log.Description,
+		log.Symptoms, log.TemperatureF, log.ProviderName, log.Diagnosis,
+		log.Treatment, log.FollowUpDate, log.Notes, log.LoggedBy, log.CreatedAt,
+	)
+	return err
+}
+
+func (r *logRepo) GetHealthEventLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.HealthEventLog, error) {
+	query := `
+		SELECT id, child_id, log_date, event_type, description, symptoms, temperature_f, provider_name, diagnosis, treatment, follow_up_date, notes, logged_by, created_at
+		FROM health_event_logs
+		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.HealthEventLog
+	for rows.Next() {
+		var log models.HealthEventLog
+		err := rows.Scan(
+			&log.ID, &log.ChildID, &log.LogDate, &log.EventType, &log.Description,
+			&log.Symptoms, &log.TemperatureF, &log.ProviderName, &log.Diagnosis,
+			&log.Treatment, &log.FollowUpDate, &log.Notes, &log.LoggedBy, &log.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
+func (r *logRepo) GetHealthEventLogByID(ctx context.Context, id uuid.UUID) (*models.HealthEventLog, error) {
+	query := `
+		SELECT id, child_id, log_date, event_type, description, symptoms, temperature_f, provider_name, diagnosis, treatment, follow_up_date, notes, logged_by, created_at
+		FROM health_event_logs
+		WHERE id = $1
+	`
+	log := &models.HealthEventLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ChildID, &log.LogDate, &log.EventType, &log.Description,
+		&log.Symptoms, &log.TemperatureF, &log.ProviderName, &log.Diagnosis,
+		&log.Treatment, &log.FollowUpDate, &log.Notes, &log.LoggedBy, &log.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return log, err
+}
+
+func (r *logRepo) DeleteHealthEventLog(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM health_event_logs WHERE id = $1`, id)
+	return err
+}
+
+// Daily Logs Page
+func (r *logRepo) GetDailyLogs(ctx context.Context, childID uuid.UUID, date time.Time) (*models.DailyLogPage, error) {
+	// Get child first
+	childQuery := `
+		SELECT id, family_id, first_name, last_name, date_of_birth, gender, photo_url, notes, settings, is_active, created_at, updated_at
+		FROM children
+		WHERE id = $1
+	`
+	child := models.Child{}
+	err := r.db.QueryRowContext(ctx, childQuery, childID).Scan(
+		&child.ID, &child.FamilyID, &child.FirstName, &child.LastName,
+		&child.DateOfBirth, &child.Gender, &child.PhotoURL, &child.Notes,
+		&child.Settings, &child.IsActive, &child.CreatedAt, &child.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	page := &models.DailyLogPage{
+		Child: child,
+		Date:  date,
+	}
+
+	// Get medication logs
+	medLogs, err := r.getMedicationLogsForDate(ctx, childID, date)
+	if err != nil {
+		return nil, err
+	}
+	page.MedicationLogs = medLogs
+
+	// Get behavior logs
+	behaviorLogs, err := r.GetBehaviorLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.BehaviorLogs = behaviorLogs
+
+	// Get bowel logs
+	bowelLogs, err := r.GetBowelLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.BowelLogs = bowelLogs
+
+	// Get speech logs
+	speechLogs, err := r.GetSpeechLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.SpeechLogs = speechLogs
+
+	// Get diet logs
+	dietLogs, err := r.GetDietLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.DietLogs = dietLogs
+
+	// Get weight logs
+	weightLogs, err := r.GetWeightLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.WeightLogs = weightLogs
+
+	// Get sleep logs
+	sleepLogs, err := r.GetSleepLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.SleepLogs = sleepLogs
+
+	return page, nil
+}
+
+func (r *logRepo) getMedicationLogsForDate(ctx context.Context, childID uuid.UUID, date time.Time) ([]models.MedicationLog, error) {
+	query := `
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at
+		FROM medication_logs
+		WHERE child_id = $1 AND log_date = $2
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.MedicationLog
+	for rows.Next() {
+		var log models.MedicationLog
+		err := rows.Scan(
+			&log.ID, &log.MedicationID, &log.ChildID, &log.ScheduleID, &log.LogDate,
+			&log.ScheduledTime, &log.ActualTime, &log.Status, &log.DosageGiven,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt, &log.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}

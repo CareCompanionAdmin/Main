@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Family - CareCompanion</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Navigation -->
+<nav class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white rounded-xl shadow-sm border p-8">
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Create a Family</h1>
+        <p class="text-gray-500 mb-6">A family allows you to add children and invite other caregivers.</p>
+
+        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6"></div>
+
+        <form id="family-form" class="space-y-6">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">Family Name *</label>
+                <input id="name" name="name" type="text" required
+                    class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g., The Smith Family">
+            </div>
+
+            <div class="flex space-x-4">
+                <button type="submit"
+                    class="flex-1 py-3 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors">
+                    Create Family
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+document.getElementById('family-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('name').value;
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.classList.add('hidden');
+
+    try {
+        const token = localStorage.getItem('access_token');
+        const response = await fetch('/api/families', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ name })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            errorDiv.textContent = data.message || 'Failed to create family';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+
+        // Switch to new family context
+        const switchResponse = await fetch('/api/auth/switch-family', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ family_id: data.id })
+        });
+
+        if (switchResponse.ok) {
+            const switchData = await switchResponse.json();
+            localStorage.setItem('access_token', switchData.access_token);
+            document.cookie = 'access_token=' + switchData.access_token + '; path=/; max-age=' + (60*60);
+        }
+
+        window.location.href = '/dashboard';
+    } catch (error) {
+        errorDiv.textContent = 'An error occurred. Please try again.';
+        errorDiv.classList.remove('hidden');
+    }
+});
+
+function logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    window.location.href = '/login';
+}
+</script>
+</body>
+</html>
