@@ -296,3 +296,195 @@ func (s *LogService) GetThisWeekRange() (time.Time, time.Time) {
 	startOfWeek := now.AddDate(0, 0, -weekday)
 	return startOfWeek, now
 }
+
+// Sensory Logs
+func (s *LogService) CreateSensoryLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSensoryLogRequest) (*models.SensoryLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
+	log := &models.SensoryLog{
+		ChildID:                  childID,
+		LogDate:                  logDate,
+		SensorySeekingBehaviors:  models.StringArray(req.SensorySeekingBehaviors),
+		SensoryAvoidingBehaviors: models.StringArray(req.SensoryAvoidingBehaviors),
+		OverloadTriggers:         models.StringArray(req.OverloadTriggers),
+		CalmingStrategiesUsed:    models.StringArray(req.CalmingStrategiesUsed),
+		OverloadEpisodes:         req.OverloadEpisodes,
+		OverallRegulation:        req.OverallRegulation,
+		LoggedBy:                 loggedBy,
+	}
+	log.LogTime.String = req.LogTime
+	log.LogTime.Valid = req.LogTime != ""
+	log.Notes.String = req.Notes
+	log.Notes.Valid = req.Notes != ""
+
+	if err := s.logRepo.CreateSensoryLog(ctx, log); err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
+func (s *LogService) GetSensoryLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SensoryLog, error) {
+	return s.logRepo.GetSensoryLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) DeleteSensoryLog(ctx context.Context, id uuid.UUID) error {
+	return s.logRepo.DeleteSensoryLog(ctx, id)
+}
+
+// Social Logs
+func (s *LogService) CreateSocialLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSocialLogRequest) (*models.SocialLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
+	log := &models.SocialLog{
+		ChildID:                childID,
+		LogDate:                logDate,
+		EyeContactLevel:        req.EyeContactLevel,
+		SocialEngagementLevel:  req.SocialEngagementLevel,
+		PeerInteractions:       req.PeerInteractions,
+		PositiveInteractions:   req.PositiveInteractions,
+		Conflicts:              req.Conflicts,
+		ParallelPlayMinutes:    req.ParallelPlayMinutes,
+		CooperativePlayMinutes: req.CooperativePlayMinutes,
+		LoggedBy:               loggedBy,
+	}
+	log.Notes.String = req.Notes
+	log.Notes.Valid = req.Notes != ""
+
+	if err := s.logRepo.CreateSocialLog(ctx, log); err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
+func (s *LogService) GetSocialLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SocialLog, error) {
+	return s.logRepo.GetSocialLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) DeleteSocialLog(ctx context.Context, id uuid.UUID) error {
+	return s.logRepo.DeleteSocialLog(ctx, id)
+}
+
+// Therapy Logs
+func (s *LogService) CreateTherapyLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateTherapyLogRequest) (*models.TherapyLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
+	log := &models.TherapyLog{
+		ChildID:         childID,
+		LogDate:         logDate,
+		DurationMinutes: req.DurationMinutes,
+		GoalsWorkedOn:   models.StringArray(req.GoalsWorkedOn),
+		LoggedBy:        loggedBy,
+	}
+	log.TherapyType.String = req.TherapyType
+	log.TherapyType.Valid = req.TherapyType != ""
+	log.TherapistName.String = req.TherapistName
+	log.TherapistName.Valid = req.TherapistName != ""
+	log.ProgressNotes.String = req.ProgressNotes
+	log.ProgressNotes.Valid = req.ProgressNotes != ""
+	log.HomeworkAssigned.String = req.HomeworkAssigned
+	log.HomeworkAssigned.Valid = req.HomeworkAssigned != ""
+	log.ParentNotes.String = req.ParentNotes
+	log.ParentNotes.Valid = req.ParentNotes != ""
+
+	if err := s.logRepo.CreateTherapyLog(ctx, log); err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
+func (s *LogService) GetTherapyLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.TherapyLog, error) {
+	return s.logRepo.GetTherapyLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) DeleteTherapyLog(ctx context.Context, id uuid.UUID) error {
+	return s.logRepo.DeleteTherapyLog(ctx, id)
+}
+
+// Seizure Logs
+func (s *LogService) CreateSeizureLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSeizureLogRequest) (*models.SeizureLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
+	log := &models.SeizureLog{
+		ChildID:               childID,
+		LogDate:               logDate,
+		LogTime:               req.LogTime,
+		DurationSeconds:       req.DurationSeconds,
+		Triggers:              models.StringArray(req.Triggers),
+		WarningSigns:          models.StringArray(req.WarningSigns),
+		PostIctalSymptoms:     models.StringArray(req.PostIctalSymptoms),
+		RescueMedicationGiven: req.RescueMedicationGiven,
+		Called911:             req.Called911,
+		LoggedBy:              loggedBy,
+	}
+	log.SeizureType.String = req.SeizureType
+	log.SeizureType.Valid = req.SeizureType != ""
+	log.RescueMedicationName.String = req.RescueMedicationName
+	log.RescueMedicationName.Valid = req.RescueMedicationName != ""
+	log.Notes.String = req.Notes
+	log.Notes.Valid = req.Notes != ""
+
+	if err := s.logRepo.CreateSeizureLog(ctx, log); err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
+func (s *LogService) GetSeizureLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SeizureLog, error) {
+	return s.logRepo.GetSeizureLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) DeleteSeizureLog(ctx context.Context, id uuid.UUID) error {
+	return s.logRepo.DeleteSeizureLog(ctx, id)
+}
+
+// Health Event Logs
+func (s *LogService) CreateHealthEventLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateHealthEventLogRequest) (*models.HealthEventLog, error) {
+	logDate := req.LogDate
+	if logDate.IsZero() {
+		logDate = time.Now()
+	}
+	log := &models.HealthEventLog{
+		ChildID:      childID,
+		LogDate:      logDate,
+		Symptoms:     models.StringArray(req.Symptoms),
+		TemperatureF: req.TemperatureF,
+		LoggedBy:     loggedBy,
+	}
+	log.EventType.String = req.EventType
+	log.EventType.Valid = req.EventType != ""
+	log.Description.String = req.Description
+	log.Description.Valid = req.Description != ""
+	log.ProviderName.String = req.ProviderName
+	log.ProviderName.Valid = req.ProviderName != ""
+	log.Diagnosis.String = req.Diagnosis
+	log.Diagnosis.Valid = req.Diagnosis != ""
+	log.Treatment.String = req.Treatment
+	log.Treatment.Valid = req.Treatment != ""
+	log.Notes.String = req.Notes
+	log.Notes.Valid = req.Notes != ""
+	if req.FollowUpDate != nil {
+		log.FollowUpDate.Time = *req.FollowUpDate
+		log.FollowUpDate.Valid = true
+	}
+
+	if err := s.logRepo.CreateHealthEventLog(ctx, log); err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
+func (s *LogService) GetHealthEventLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.HealthEventLog, error) {
+	return s.logRepo.GetHealthEventLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) DeleteHealthEventLog(ctx context.Context, id uuid.UUID) error {
+	return s.logRepo.DeleteHealthEventLog(ctx, id)
+}

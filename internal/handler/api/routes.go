@@ -111,6 +111,26 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				// Sleep logs
 				r.Get("/sleep", handlers.Log.GetSleepLogs)
 				r.Post("/sleep", handlers.Log.CreateSleepLog)
+
+				// Sensory logs
+				r.Get("/sensory", handlers.Log.GetSensoryLogs)
+				r.Post("/sensory", handlers.Log.CreateSensoryLog)
+
+				// Social logs
+				r.Get("/social", handlers.Log.GetSocialLogs)
+				r.Post("/social", handlers.Log.CreateSocialLog)
+
+				// Therapy logs
+				r.Get("/therapy", handlers.Log.GetTherapyLogs)
+				r.Post("/therapy", handlers.Log.CreateTherapyLog)
+
+				// Seizure logs
+				r.Get("/seizure", handlers.Log.GetSeizureLogs)
+				r.Post("/seizure", handlers.Log.CreateSeizureLog)
+
+				// Health event logs
+				r.Get("/health", handlers.Log.GetHealthEventLogs)
+				r.Post("/health", handlers.Log.CreateHealthEventLog)
 			})
 
 			// Alerts

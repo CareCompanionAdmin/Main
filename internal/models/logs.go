@@ -284,3 +284,65 @@ type CreateSleepLogRequest struct {
 	BedWetting        bool      `json:"bed_wetting"`
 	Notes             string    `json:"notes,omitempty"`
 }
+
+type CreateSensoryLogRequest struct {
+	LogDate                  time.Time `json:"log_date"`
+	LogTime                  string    `json:"log_time,omitempty"`
+	SensorySeekingBehaviors  []string  `json:"sensory_seeking_behaviors,omitempty"`
+	SensoryAvoidingBehaviors []string  `json:"sensory_avoiding_behaviors,omitempty"`
+	OverloadTriggers         []string  `json:"overload_triggers,omitempty"`
+	CalmingStrategiesUsed    []string  `json:"calming_strategies_used,omitempty"`
+	OverloadEpisodes         int       `json:"overload_episodes"`
+	OverallRegulation        *int      `json:"overall_regulation,omitempty"`
+	Notes                    string    `json:"notes,omitempty"`
+}
+
+type CreateSocialLogRequest struct {
+	LogDate                time.Time `json:"log_date"`
+	EyeContactLevel        *int      `json:"eye_contact_level,omitempty"`
+	SocialEngagementLevel  *int      `json:"social_engagement_level,omitempty"`
+	PeerInteractions       int       `json:"peer_interactions"`
+	PositiveInteractions   int       `json:"positive_interactions"`
+	Conflicts              int       `json:"conflicts"`
+	ParallelPlayMinutes    *int      `json:"parallel_play_minutes,omitempty"`
+	CooperativePlayMinutes *int      `json:"cooperative_play_minutes,omitempty"`
+	Notes                  string    `json:"notes,omitempty"`
+}
+
+type CreateTherapyLogRequest struct {
+	LogDate          time.Time `json:"log_date"`
+	TherapyType      string    `json:"therapy_type,omitempty"`
+	TherapistName    string    `json:"therapist_name,omitempty"`
+	DurationMinutes  *int      `json:"duration_minutes,omitempty"`
+	GoalsWorkedOn    []string  `json:"goals_worked_on,omitempty"`
+	ProgressNotes    string    `json:"progress_notes,omitempty"`
+	HomeworkAssigned string    `json:"homework_assigned,omitempty"`
+	ParentNotes      string    `json:"parent_notes,omitempty"`
+}
+
+type CreateSeizureLogRequest struct {
+	LogDate               time.Time `json:"log_date"`
+	LogTime               string    `json:"log_time"`
+	SeizureType           string    `json:"seizure_type,omitempty"`
+	DurationSeconds       *int      `json:"duration_seconds,omitempty"`
+	Triggers              []string  `json:"triggers,omitempty"`
+	WarningSigns          []string  `json:"warning_signs,omitempty"`
+	PostIctalSymptoms     []string  `json:"post_ictal_symptoms,omitempty"`
+	RescueMedicationGiven bool      `json:"rescue_medication_given"`
+	RescueMedicationName  string    `json:"rescue_medication_name,omitempty"`
+	Called911             bool      `json:"called_911"`
+	Notes                 string    `json:"notes,omitempty"`
+}
+
+type CreateHealthEventLogRequest struct {
+	LogDate      time.Time  `json:"log_date"`
+	EventType    string     `json:"event_type,omitempty"`
+	Description  string     `json:"description,omitempty"`
+	Symptoms     []string   `json:"symptoms,omitempty"`
+	TemperatureF *float64   `json:"temperature_f,omitempty"`
+	ProviderName string     `json:"provider_name,omitempty"`
+	Diagnosis    string     `json:"diagnosis,omitempty"`
+	Treatment    string     `json:"treatment,omitempty"`
+	FollowUpDate *time.Time `json:"follow_up_date,omitempty"`
+	Notes        string     `json:"notes,omitempty"`
+}

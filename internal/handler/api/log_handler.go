@@ -419,3 +419,283 @@ func (h *LogHandler) GetSleepLogs(w http.ResponseWriter, r *http.Request) {
 
 	respondOK(w, logs)
 }
+
+// Sensory logs
+func (h *LogHandler) CreateSensoryLog(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	var req models.CreateSensoryLogRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	log, err := h.logService.CreateSensoryLog(r.Context(), childID, userID, &req)
+	if err != nil {
+		respondInternalError(w, "Failed to create sensory log")
+		return
+	}
+
+	respondCreated(w, log)
+}
+
+func (h *LogHandler) GetSensoryLogs(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, 0, -7)
+	startDate = getDateFromQuery(r, "start_date", startDate)
+	endDate = getDateFromQuery(r, "end_date", endDate)
+
+	logs, err := h.logService.GetSensoryLogs(r.Context(), childID, startDate, endDate)
+	if err != nil {
+		respondInternalError(w, "Failed to get sensory logs")
+		return
+	}
+
+	respondOK(w, logs)
+}
+
+// Social logs
+func (h *LogHandler) CreateSocialLog(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	var req models.CreateSocialLogRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	log, err := h.logService.CreateSocialLog(r.Context(), childID, userID, &req)
+	if err != nil {
+		respondInternalError(w, "Failed to create social log")
+		return
+	}
+
+	respondCreated(w, log)
+}
+
+func (h *LogHandler) GetSocialLogs(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, 0, -7)
+	startDate = getDateFromQuery(r, "start_date", startDate)
+	endDate = getDateFromQuery(r, "end_date", endDate)
+
+	logs, err := h.logService.GetSocialLogs(r.Context(), childID, startDate, endDate)
+	if err != nil {
+		respondInternalError(w, "Failed to get social logs")
+		return
+	}
+
+	respondOK(w, logs)
+}
+
+// Therapy logs
+func (h *LogHandler) CreateTherapyLog(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	var req models.CreateTherapyLogRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	log, err := h.logService.CreateTherapyLog(r.Context(), childID, userID, &req)
+	if err != nil {
+		respondInternalError(w, "Failed to create therapy log")
+		return
+	}
+
+	respondCreated(w, log)
+}
+
+func (h *LogHandler) GetTherapyLogs(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, -1, 0) // Last month for therapy
+	startDate = getDateFromQuery(r, "start_date", startDate)
+	endDate = getDateFromQuery(r, "end_date", endDate)
+
+	logs, err := h.logService.GetTherapyLogs(r.Context(), childID, startDate, endDate)
+	if err != nil {
+		respondInternalError(w, "Failed to get therapy logs")
+		return
+	}
+
+	respondOK(w, logs)
+}
+
+// Seizure logs
+func (h *LogHandler) CreateSeizureLog(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	var req models.CreateSeizureLogRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	log, err := h.logService.CreateSeizureLog(r.Context(), childID, userID, &req)
+	if err != nil {
+		respondInternalError(w, "Failed to create seizure log")
+		return
+	}
+
+	respondCreated(w, log)
+}
+
+func (h *LogHandler) GetSeizureLogs(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, -1, 0) // Last month for seizures
+	startDate = getDateFromQuery(r, "start_date", startDate)
+	endDate = getDateFromQuery(r, "end_date", endDate)
+
+	logs, err := h.logService.GetSeizureLogs(r.Context(), childID, startDate, endDate)
+	if err != nil {
+		respondInternalError(w, "Failed to get seizure logs")
+		return
+	}
+
+	respondOK(w, logs)
+}
+
+// Health event logs
+func (h *LogHandler) CreateHealthEventLog(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	var req models.CreateHealthEventLogRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	log, err := h.logService.CreateHealthEventLog(r.Context(), childID, userID, &req)
+	if err != nil {
+		respondInternalError(w, "Failed to create health event log")
+		return
+	}
+
+	respondCreated(w, log)
+}
+
+func (h *LogHandler) GetHealthEventLogs(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	endDate := time.Now()
+	startDate := endDate.AddDate(0, -3, 0) // Last 3 months for health events
+	startDate = getDateFromQuery(r, "start_date", startDate)
+	endDate = getDateFromQuery(r, "end_date", endDate)
+
+	logs, err := h.logService.GetHealthEventLogs(r.Context(), childID, startDate, endDate)
+	if err != nil {
+		respondInternalError(w, "Failed to get health event logs")
+		return
+	}
+
+	respondOK(w, logs)
+}
