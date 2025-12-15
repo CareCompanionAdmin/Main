@@ -11,6 +11,7 @@ import (
 type Handlers struct {
 	Auth        *AuthHandler
 	Child       *ChildHandler
+	Family      *FamilyHandler
 	Medication  *MedicationHandler
 	Log         *LogHandler
 	Alert       *AlertHandler
@@ -22,6 +23,7 @@ func NewHandlers(services *service.Services) *Handlers {
 	return &Handlers{
 		Auth:        NewAuthHandler(services.Auth),
 		Child:       NewChildHandler(services.Child),
+		Family:      NewFamilyHandler(services.Family, services.User),
 		Medication:  NewMedicationHandler(services.Medication, services.Child),
 		Log:         NewLogHandler(services.Log, services.Child),
 		Alert:       NewAlertHandler(services.Alert, services.Child),
@@ -46,6 +48,18 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Post("/auth/logout", handlers.Auth.Logout)
 		r.Get("/auth/me", handlers.Auth.Me)
 		r.Post("/auth/switch-family", handlers.Auth.SwitchFamily)
+
+		// Family routes - require family context
+		r.Route("/family", func(r chi.Router) {
+			r.Use(middleware.RequireFamilyContext())
+			r.Get("/info", handlers.Family.GetInfo)
+			r.Get("/members", handlers.Family.ListMembers)
+			r.Post("/members", handlers.Family.AddMember)
+			r.Post("/members/lookup", handlers.Family.LookupUser)
+			r.Get("/members/{memberID}", handlers.Family.GetMember)
+			r.Patch("/members/{memberID}", handlers.Family.UpdateMemberRole)
+			r.Delete("/members/{memberID}", handlers.Family.RemoveMember)
+		})
 
 		// Child routes - require family context
 		r.Route("/children", func(r chi.Router) {

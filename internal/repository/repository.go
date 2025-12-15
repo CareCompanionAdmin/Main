@@ -32,6 +32,7 @@ type FamilyRepository interface {
 	AddMember(ctx context.Context, membership *models.FamilyMembership) error
 	RemoveMember(ctx context.Context, familyID, userID uuid.UUID) error
 	GetMembers(ctx context.Context, familyID uuid.UUID) ([]models.FamilyMembership, error)
+	GetMemberByID(ctx context.Context, memberID uuid.UUID) (*models.FamilyMembership, error)
 	GetMembership(ctx context.Context, familyID, userID uuid.UUID) (*models.FamilyMembership, error)
 	GetUserFamilies(ctx context.Context, userID uuid.UUID) ([]models.FamilyMembership, error)
 	UpdateMemberRole(ctx context.Context, familyID, userID uuid.UUID, role models.FamilyRole) error

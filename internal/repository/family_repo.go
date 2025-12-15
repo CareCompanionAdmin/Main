@@ -214,3 +214,26 @@ func (r *familyRepo) UpdateMemberRole(ctx context.Context, familyID, userID uuid
 	_, err := r.db.ExecContext(ctx, query, familyID, userID, role)
 	return err
 }
+
+func (r *familyRepo) GetMemberByID(ctx context.Context, memberID uuid.UUID) (*models.FamilyMembership, error) {
+	query := `
+		SELECT fm.id, fm.family_id, fm.user_id, fm.role, fm.is_active, fm.created_at,
+		       u.id, u.email, u.first_name, u.last_name
+		FROM family_memberships fm
+		JOIN users u ON u.id = fm.user_id
+		WHERE fm.id = $1
+	`
+	m := &models.FamilyMembership{}
+	m.User = &models.User{}
+	err := r.db.QueryRowContext(ctx, query, memberID).Scan(
+		&m.ID, &m.FamilyID, &m.UserID, &m.Role, &m.IsActive, &m.CreatedAt,
+		&m.User.ID, &m.User.Email, &m.User.FirstName, &m.User.LastName,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}

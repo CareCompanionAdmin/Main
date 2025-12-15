@@ -51,7 +51,33 @@
                     <span class="text-2xl font-bold text-indigo-600">{{slice .Child.FirstName 0 1}}</span>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">{{.Child.FullName}}</h1>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-2xl font-bold text-gray-900">{{.Child.FullName}}</h1>
+                        {{if gt (len .AllChildren) 1}}
+                        <div class="relative" id="switchChildContainer">
+                            <button onclick="toggleChildDropdown()" class="inline-flex items-center px-2 py-1 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition-colors">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                </svg>
+                                Switch
+                            </button>
+                            <div id="childDropdown" class="hidden absolute left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border z-50">
+                                <div class="py-1">
+                                    {{range .AllChildren}}
+                                    <a href="/child/{{.ID}}" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between {{if eq $.Child.ID .ID}}bg-indigo-50 text-indigo-700{{else}}text-gray-700{{end}}">
+                                        <span>{{.FullName}}</span>
+                                        {{if eq $.Child.ID .ID}}
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        {{end}}
+                                    </a>
+                                    {{end}}
+                                </div>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
                     <p class="text-gray-500">Born: {{.Child.DateOfBirth.Format "January 2, 2006"}}</p>
                 </div>
             </div>
@@ -730,6 +756,22 @@ function logout() {
     document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/login';
 }
+
+function toggleChildDropdown() {
+    const dropdown = document.getElementById('childDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('switchChildContainer');
+    const dropdown = document.getElementById('childDropdown');
+    if (container && dropdown && !container.contains(event.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
 </script>
 </body>
 </html>

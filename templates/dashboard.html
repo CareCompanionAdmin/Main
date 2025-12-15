@@ -38,7 +38,33 @@
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Family Dashboard</h1>
-            <p class="text-gray-500">{{.Dashboard.Family.Name}}</p>
+            <div class="flex items-center space-x-2">
+                <p class="text-gray-500">{{.Dashboard.Family.Name}}</p>
+                {{if gt (len .Families) 1}}
+                <div class="relative" id="switchFamilyContainer">
+                    <button onclick="toggleFamilyDropdown()" class="inline-flex items-center px-2 py-1 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition-colors">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                        Switch Family
+                    </button>
+                    <div id="familyDropdown" class="hidden absolute left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border z-50">
+                        <div class="py-1">
+                            {{range .Families}}
+                            <button onclick="switchFamily('{{.FamilyID}}')" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between {{if eq $.FamilyID .FamilyID}}bg-indigo-50 text-indigo-700{{else}}text-gray-700{{end}}">
+                                <span>{{.FamilyName}}</span>
+                                {{if eq $.FamilyID .FamilyID}}
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                {{end}}
+                            </button>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            </div>
         </div>
         <a href="/child/new" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,6 +160,44 @@ function logout() {
     document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/login';
+}
+
+function toggleFamilyDropdown() {
+    const dropdown = document.getElementById('familyDropdown');
+    dropdown.classList.toggle('hidden');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('switchFamilyContainer');
+    const dropdown = document.getElementById('familyDropdown');
+    if (container && dropdown && !container.contains(event.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+
+async function switchFamily(familyID) {
+    try {
+        const response = await fetch('/api/auth/switch-family', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ family_id: familyID }),
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            // Reload the page to show the new family's dashboard
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to switch family');
+        }
+    } catch (error) {
+        console.error('Error switching family:', error);
+        alert('Failed to switch family');
+    }
 }
 </script>
 </body>

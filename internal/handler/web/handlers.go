@@ -60,11 +60,18 @@ func (h *WebHandlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user's families for switch family dropdown
+	families, err := h.services.User.GetUserFamilies(r.Context(), userID)
+	if err != nil {
+		families = nil
+	}
+
 	data := map[string]interface{}{
 		"UserID":    userID,
 		"FamilyID":  familyID,
 		"Dashboard": dashboard,
 		"FirstName": middleware.GetFirstName(r.Context()),
+		"Families":  families,
 	}
 
 	renderTemplate(w, "dashboard", data)
@@ -91,9 +98,16 @@ func (h *WebHandlers) ChildDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get all children in the family for switch child dropdown
+	allChildren, err := h.services.Child.GetByFamilyID(r.Context(), child.FamilyID)
+	if err != nil {
+		allChildren = nil
+	}
+
 	data := map[string]interface{}{
-		"Child":     child,
-		"Dashboard": dashboard,
+		"Child":       child,
+		"Dashboard":   dashboard,
+		"AllChildren": allChildren,
 	}
 
 	renderTemplate(w, "child_dashboard", data)

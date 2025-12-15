@@ -11,9 +11,13 @@ import (
 )
 
 var (
-	ErrFamilyNotFound   = errors.New("family not found")
-	ErrNotFamilyMember  = errors.New("not a member of this family")
-	ErrInsufficientRole = errors.New("insufficient role for this action")
+	ErrFamilyNotFound        = errors.New("family not found")
+	ErrNotFamilyMember       = errors.New("not a member of this family")
+	ErrInsufficientRole      = errors.New("insufficient role for this action")
+	ErrCannotRemoveCreator   = errors.New("cannot remove family creator")
+	ErrCannotChangeCreator   = errors.New("cannot change family creator's role")
+	ErrMemberNotFound        = errors.New("member not found")
+	ErrAlreadyMember         = errors.New("user is already a member of this family")
 )
 
 type FamilyService struct {
@@ -163,4 +167,82 @@ func (s *FamilyService) GetDashboard(ctx context.Context, familyID uuid.UUID) (*
 		Members:  members,
 		Children: children,
 	}, nil
+}
+
+// GetMemberByID retrieves a single membership with user details
+func (s *FamilyService) GetMemberByID(ctx context.Context, memberID uuid.UUID) (*models.FamilyMembership, error) {
+	member, err := s.familyRepo.GetMemberByID(ctx, memberID)
+	if err != nil {
+		return nil, err
+	}
+	if member == nil {
+		return nil, ErrMemberNotFound
+	}
+	return member, nil
+}
+
+// IsCreator checks if a user is the creator of a family
+func (s *FamilyService) IsCreator(ctx context.Context, familyID, userID uuid.UUID) (bool, error) {
+	family, err := s.familyRepo.GetByID(ctx, familyID)
+	if err != nil {
+		return false, err
+	}
+	if family == nil {
+		return false, ErrFamilyNotFound
+	}
+	return family.CreatedBy == userID, nil
+}
+
+// RemoveMemberSafe removes a member with creator protection
+func (s *FamilyService) RemoveMemberSafe(ctx context.Context, familyID, memberID uuid.UUID) error {
+	member, err := s.familyRepo.GetMemberByID(ctx, memberID)
+	if err != nil {
+		return err
+	}
+	if member == nil {
+		return ErrMemberNotFound
+	}
+
+	// Verify member belongs to this family
+	if member.FamilyID != familyID {
+		return ErrNotFamilyMember
+	}
+
+	// Check if member is the creator
+	isCreator, err := s.IsCreator(ctx, familyID, member.UserID)
+	if err != nil {
+		return err
+	}
+	if isCreator {
+		return ErrCannotRemoveCreator
+	}
+
+	return s.familyRepo.RemoveMember(ctx, familyID, member.UserID)
+}
+
+// UpdateMemberRoleSafe updates a member's role with creator protection
+func (s *FamilyService) UpdateMemberRoleSafe(ctx context.Context, familyID, memberID uuid.UUID, role models.FamilyRole) error {
+	member, err := s.familyRepo.GetMemberByID(ctx, memberID)
+	if err != nil {
+		return err
+	}
+	if member == nil {
+		return ErrMemberNotFound
+	}
+
+	// Verify member belongs to this family
+	if member.FamilyID != familyID {
+		return ErrNotFamilyMember
+	}
+
+	// Check if member is the creator
+	isCreator, err := s.IsCreator(ctx, familyID, member.UserID)
+	if err != nil {
+		return err
+	}
+	if isCreator {
+		return ErrCannotChangeCreator
+	}
+
+	return s.familyRepo.UpdateMemberRole(ctx, familyID, member.UserID, role)
 }
