@@ -34,6 +34,13 @@
 </nav>
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Active Alerts Banner (loaded via JS) -->
+    <div id="alerts-container" class="hidden mb-6">
+        <div id="alerts-list" class="space-y-3">
+            <!-- Alerts will be injected here -->
+        </div>
+    </div>
+
     <div class="mb-6">
         <a href="/dashboard" class="text-indigo-600 hover:text-indigo-500 flex items-center">
             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -771,6 +778,108 @@ document.addEventListener('click', function(event) {
     if (container && dropdown && !container.contains(event.target)) {
         dropdown.classList.add('hidden');
     }
+});
+
+// Load active alerts
+async function loadActiveAlerts() {
+    try {
+        const response = await fetch(`/api/children/${childId}/alerts?status=active`, {
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const alerts = await response.json();
+            if (alerts && alerts.length > 0) {
+                renderAlerts(alerts);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load alerts:', error);
+    }
+}
+
+function renderAlerts(alerts) {
+    const container = document.getElementById('alerts-container');
+    const list = document.getElementById('alerts-list');
+
+    const alertsHtml = alerts.map(alert => {
+        let bgColor, borderColor, iconColor, textColor, icon;
+
+        switch (alert.severity) {
+            case 'critical':
+                bgColor = 'bg-red-50';
+                borderColor = 'border-red-400';
+                iconColor = 'text-red-600';
+                textColor = 'text-red-800';
+                icon = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>`;
+                break;
+            case 'warning':
+                bgColor = 'bg-amber-50';
+                borderColor = 'border-amber-400';
+                iconColor = 'text-amber-600';
+                textColor = 'text-amber-800';
+                icon = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>`;
+                break;
+            default: // info
+                bgColor = 'bg-blue-50';
+                borderColor = 'border-blue-400';
+                iconColor = 'text-blue-600';
+                textColor = 'text-blue-800';
+                icon = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>`;
+        }
+
+        return `
+            <div class="${bgColor} ${borderColor} border-l-4 rounded-lg p-4 shadow-sm">
+                <div class="flex items-start">
+                    <div class="${iconColor} flex-shrink-0">
+                        ${icon}
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="text-sm font-semibold ${textColor}">${alert.title}</h3>
+                        <p class="text-sm ${textColor} opacity-90 mt-1">${alert.description}</p>
+                        ${alert.confidence_score ? `<p class="text-xs ${textColor} opacity-70 mt-1">Confidence: ${Math.round(alert.confidence_score * 100)}%</p>` : ''}
+                    </div>
+                    <button onclick="acknowledgeAlert('${alert.id}')" class="ml-4 text-gray-400 hover:text-gray-600" title="Dismiss">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    list.innerHTML = alertsHtml;
+    container.classList.remove('hidden');
+}
+
+async function acknowledgeAlert(alertId) {
+    try {
+        const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            loadActiveAlerts();
+        }
+    } catch (error) {
+        console.error('Failed to acknowledge alert:', error);
+    }
+}
+
+// Load alerts on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadActiveAlerts();
 });
 </script>
 </body>

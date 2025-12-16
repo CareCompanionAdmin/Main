@@ -926,3 +926,57 @@ func (r *logRepo) getMedicationLogsForDate(ctx context.Context, childID uuid.UUI
 	}
 	return logs, rows.Err()
 }
+
+// GetDatesWithLogs returns dates that have log entries for a child
+func (r *logRepo) GetDatesWithLogs(ctx context.Context, childID uuid.UUID, limit int) ([]models.DateWithEntryCount, error) {
+	// Query to get dates with entry counts across all log tables
+	query := `
+		WITH all_logs AS (
+			SELECT log_date AS date FROM behavior_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM bowel_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM speech_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM diet_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM weight_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM sleep_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM sensory_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM social_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM therapy_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM seizure_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM health_event_logs WHERE child_id = $1
+			UNION ALL
+			SELECT log_date AS date FROM medication_logs WHERE child_id = $1
+		)
+		SELECT date, COUNT(*) as entry_count
+		FROM all_logs
+		GROUP BY date
+		ORDER BY date DESC
+		LIMIT $2
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, childID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dates []models.DateWithEntryCount
+	for rows.Next() {
+		var d models.DateWithEntryCount
+		err := rows.Scan(&d.Date, &d.EntryCount)
+		if err != nil {
+			return nil, err
+		}
+		dates = append(dates, d)
+	}
+	return dates, rows.Err()
+}

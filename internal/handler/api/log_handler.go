@@ -54,6 +54,31 @@ func (h *LogHandler) GetDailyLogs(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, logs)
 }
 
+// GetDatesWithLogs returns dates that have log entries
+func (h *LogHandler) GetDatesWithLogs(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	// Default to 30 days
+	limit := 30
+	dates, err := h.logService.GetDatesWithLogs(r.Context(), childID, limit)
+	if err != nil {
+		respondInternalError(w, "Failed to get dates with logs")
+		return
+	}
+
+	respondOK(w, dates)
+}
+
 // Behavior logs
 func (h *LogHandler) CreateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)

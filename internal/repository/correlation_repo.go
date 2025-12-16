@@ -486,7 +486,7 @@ func (r *correlationRepo) GetCorrelationData(ctx context.Context, childID uuid.U
 
 	// Get bowel data (bristol scale, count per day)
 	bowelQuery := `
-		SELECT log_date, COALESCE(AVG(bristol_scale), 0), COUNT(*)
+		SELECT log_date, COALESCE(AVG(bristol_scale::text::integer), 0), COUNT(*)
 		FROM bowel_logs
 		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
 		GROUP BY log_date

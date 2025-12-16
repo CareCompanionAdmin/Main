@@ -488,3 +488,8 @@ func (s *LogService) GetHealthEventLogs(ctx context.Context, childID uuid.UUID, 
 func (s *LogService) DeleteHealthEventLog(ctx context.Context, id uuid.UUID) error {
 	return s.logRepo.DeleteHealthEventLog(ctx, id)
 }
+
+// GetDatesWithLogs returns dates that have log entries for a child
+func (s *LogService) GetDatesWithLogs(ctx context.Context, childID uuid.UUID, limit int) ([]models.DateWithEntryCount, error) {
+	return s.logRepo.GetDatesWithLogs(ctx, childID, limit)
+}

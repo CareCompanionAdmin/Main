@@ -99,6 +99,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			// Logs
 			r.Route("/logs", func(r chi.Router) {
 				r.Get("/daily", handlers.Log.GetDailyLogs)
+				r.Get("/dates", handlers.Log.GetDatesWithLogs)
 
 				// Behavior logs
 				r.Get("/behavior", handlers.Log.GetBehaviorLogs)

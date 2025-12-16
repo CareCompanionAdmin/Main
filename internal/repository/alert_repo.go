@@ -39,15 +39,16 @@ func (r *alertRepo) Create(ctx context.Context, alert *models.Alert) error {
 
 func (r *alertRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Alert, error) {
 	query := `
-		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
+		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, COALESCE(source_type::text, '') as source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
 		FROM alerts
 		WHERE id = $1
 	`
 	alert := &models.Alert{}
+	var confidenceScore sql.NullFloat64
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&alert.ID, &alert.ChildID, &alert.FamilyID, &alert.AlertType, &alert.Severity,
 		&alert.Status, &alert.Title, &alert.Description, &alert.Data, &alert.CorrelationID,
-		&alert.SourceType, &alert.ConfidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
+		&alert.SourceType, &confidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
 		&alert.AcknowledgedBy, &alert.AcknowledgedAt, &alert.ResolvedBy, &alert.ResolvedAt,
 		&alert.CreatedAt, &alert.UpdatedAt,
 	)
@@ -57,12 +58,15 @@ func (r *alertRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Alert, e
 	if err != nil {
 		return nil, err
 	}
+	if confidenceScore.Valid {
+		alert.ConfidenceScore = &confidenceScore.Float64
+	}
 	return alert, nil
 }
 
 func (r *alertRepo) GetByChildID(ctx context.Context, childID uuid.UUID, status *models.AlertStatus) ([]models.Alert, error) {
 	query := `
-		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
+		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, COALESCE(source_type::text, '') as source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
 		FROM alerts
 		WHERE child_id = $1
 	`
@@ -82,15 +86,19 @@ func (r *alertRepo) GetByChildID(ctx context.Context, childID uuid.UUID, status 
 	var alerts []models.Alert
 	for rows.Next() {
 		var alert models.Alert
+		var confidenceScore sql.NullFloat64
 		err := rows.Scan(
 			&alert.ID, &alert.ChildID, &alert.FamilyID, &alert.AlertType, &alert.Severity,
 			&alert.Status, &alert.Title, &alert.Description, &alert.Data, &alert.CorrelationID,
-			&alert.SourceType, &alert.ConfidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
+			&alert.SourceType, &confidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
 			&alert.AcknowledgedBy, &alert.AcknowledgedAt, &alert.ResolvedBy, &alert.ResolvedAt,
 			&alert.CreatedAt, &alert.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
+		}
+		if confidenceScore.Valid {
+			alert.ConfidenceScore = &confidenceScore.Float64
 		}
 		alerts = append(alerts, alert)
 	}
@@ -99,7 +107,7 @@ func (r *alertRepo) GetByChildID(ctx context.Context, childID uuid.UUID, status 
 
 func (r *alertRepo) GetByFamilyID(ctx context.Context, familyID uuid.UUID, status *models.AlertStatus) ([]models.Alert, error) {
 	query := `
-		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
+		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, COALESCE(source_type::text, '') as source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
 		FROM alerts
 		WHERE family_id = $1
 	`
@@ -119,15 +127,19 @@ func (r *alertRepo) GetByFamilyID(ctx context.Context, familyID uuid.UUID, statu
 	var alerts []models.Alert
 	for rows.Next() {
 		var alert models.Alert
+		var confidenceScore sql.NullFloat64
 		err := rows.Scan(
 			&alert.ID, &alert.ChildID, &alert.FamilyID, &alert.AlertType, &alert.Severity,
 			&alert.Status, &alert.Title, &alert.Description, &alert.Data, &alert.CorrelationID,
-			&alert.SourceType, &alert.ConfidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
+			&alert.SourceType, &confidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
 			&alert.AcknowledgedBy, &alert.AcknowledgedAt, &alert.ResolvedBy, &alert.ResolvedAt,
 			&alert.CreatedAt, &alert.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
+		}
+		if confidenceScore.Valid {
+			alert.ConfidenceScore = &confidenceScore.Float64
 		}
 		alerts = append(alerts, alert)
 	}
@@ -283,7 +295,7 @@ func (r *alertRepo) GetAlertsPage(ctx context.Context, childID uuid.UUID) (*mode
 
 	// Get recent alerts (last 30 days, excluding active)
 	recentQuery := `
-		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
+		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, COALESCE(source_type::text, '') as source_type, confidence_score, date_range_start, date_range_end, acknowledged_by, acknowledged_at, resolved_by, resolved_at, created_at, updated_at
 		FROM alerts
 		WHERE child_id = $1 AND status != 'active' AND created_at >= $2
 		ORDER BY created_at DESC
@@ -298,15 +310,19 @@ func (r *alertRepo) GetAlertsPage(ctx context.Context, childID uuid.UUID) (*mode
 
 	for rows.Next() {
 		var alert models.Alert
+		var confidenceScore sql.NullFloat64
 		err := rows.Scan(
 			&alert.ID, &alert.ChildID, &alert.FamilyID, &alert.AlertType, &alert.Severity,
 			&alert.Status, &alert.Title, &alert.Description, &alert.Data, &alert.CorrelationID,
-			&alert.SourceType, &alert.ConfidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
+			&alert.SourceType, &confidenceScore, &alert.DateRangeStart, &alert.DateRangeEnd,
 			&alert.AcknowledgedBy, &alert.AcknowledgedAt, &alert.ResolvedBy, &alert.ResolvedAt,
 			&alert.CreatedAt, &alert.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
+		}
+		if confidenceScore.Valid {
+			alert.ConfidenceScore = &confidenceScore.Float64
 		}
 		page.RecentAlerts = append(page.RecentAlerts, alert)
 	}

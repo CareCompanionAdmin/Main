@@ -211,6 +211,12 @@ type DailyLogPage struct {
 	SleepLogs      []SleepLog      `json:"sleep_logs"`
 }
 
+// DateWithEntryCount represents a date that has log entries
+type DateWithEntryCount struct {
+	Date       time.Time `json:"date"`
+	EntryCount int       `json:"entry_count"`
+}
+
 // Request types for creating logs
 type CreateBehaviorLogRequest struct {
 	LogDate             time.Time `json:"log_date"`
