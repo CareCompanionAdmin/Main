@@ -181,6 +181,48 @@ func parseStringArray(s string) []string {
 	return result
 }
 
+// UUIDArray for PostgreSQL UUID[] columns
+type UUIDArray []uuid.UUID
+
+func (a UUIDArray) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+	strs := make([]string, len(a))
+	for i, u := range a {
+		strs[i] = u.String()
+	}
+	return "{" + stringArrayToString(strs) + "}", nil
+}
+
+func (a *UUIDArray) Scan(value interface{}) error {
+	if value == nil {
+		*a = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return nil
+	}
+	str := string(bytes)
+	if str == "{}" {
+		*a = []uuid.UUID{}
+		return nil
+	}
+	str = str[1 : len(str)-1]
+	strs := parseStringArray(str)
+	result := make([]uuid.UUID, len(strs))
+	for i, s := range strs {
+		u, err := uuid.Parse(s)
+		if err != nil {
+			return err
+		}
+		result[i] = u
+	}
+	*a = result
+	return nil
+}
+
 // Enums
 type UserStatus string
 

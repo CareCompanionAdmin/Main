@@ -62,6 +62,7 @@ type ClinicalValidation struct {
 	ID                   uuid.UUID  `json:"id"`
 	PatternID            NullUUID   `json:"pattern_id,omitempty"`
 	AlertID              NullUUID   `json:"alert_id,omitempty"`
+	InsightID            NullUUID   `json:"insight_id,omitempty"`
 	ChildID              uuid.UUID  `json:"child_id"`
 	ProviderUserID       NullUUID   `json:"provider_user_id,omitempty"`
 	ValidationType       NullString `json:"validation_type,omitempty"`
@@ -72,6 +73,31 @@ type ClinicalValidation struct {
 	ValidationStrength   *float64   `json:"validation_strength,omitempty"`
 	ExpiresAt            NullTime   `json:"expires_at,omitempty"`
 	CreatedAt            time.Time  `json:"created_at"`
+}
+
+// ValidationStats tracks validation statistics for insights
+type ValidationStats struct {
+	TotalInsights          int     `json:"total_insights"`
+	ValidatedInsights      int     `json:"validated_insights"`
+	ParentConfirmedHelpful int     `json:"parent_confirmed_helpful"`
+	ProviderValidated      int     `json:"provider_validated"`
+	ImplicitValidations    int     `json:"implicit_validations"`
+	ValidationRate         float64 `json:"validation_rate"`
+}
+
+// MedicationChange represents a change in medication
+type MedicationChange struct {
+	MedicationName string   `json:"medication_name"`
+	ChangeType     string   `json:"change_type"` // added, removed, dosage_changed
+	Description    string   `json:"description"`
+	RelatedFactors []string `json:"related_factors,omitempty"`
+}
+
+// ProviderValidationInput is input for provider validation
+type ProviderValidationInput struct {
+	TreatmentChanged     bool   `json:"treatment_changed"`
+	TreatmentDescription string `json:"treatment_description"`
+	Notes                string `json:"notes,omitempty"`
 }
 
 // Insights page data

@@ -264,6 +264,61 @@ func (r *alertRepo) GetStats(ctx context.Context, childID uuid.UUID) (*models.Al
 	return stats, nil
 }
 
+func (r *alertRepo) GetStatsByType(ctx context.Context, childID uuid.UUID, alertType string) (*models.AlertTypeStats, error) {
+	stats := &models.AlertTypeStats{}
+
+	query := `
+		SELECT
+			COUNT(*) as total,
+			COUNT(*) FILTER (WHERE status = 'acknowledged') as acknowledged,
+			COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
+			COUNT(*) FILTER (WHERE status = 'dismissed') as dismissed,
+			(SELECT COUNT(*) FROM alert_feedback af
+			 JOIN alerts a ON a.id = af.alert_id
+			 WHERE a.child_id = $1 AND a.alert_type = $2 AND af.was_helpful = true) as helpful_feedback
+		FROM alerts
+		WHERE child_id = $1 AND alert_type = $2
+	`
+	err := r.db.QueryRowContext(ctx, query, childID, alertType).Scan(
+		&stats.Total, &stats.Acknowledged, &stats.Resolved, &stats.Dismissed, &stats.HelpfulFeedback,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
+func (r *alertRepo) GetByChildIDAndTypeSince(ctx context.Context, childID uuid.UUID, alertType string, since time.Time) ([]models.Alert, error) {
+	query := `
+		SELECT id, child_id, family_id, alert_type, severity, status, title, description, data, correlation_id, acknowledged_at, acknowledged_by, resolved_at, resolved_by, confidence_score, created_at, updated_at
+		FROM alerts
+		WHERE child_id = $1 AND alert_type = $2 AND created_at >= $3
+		ORDER BY created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, alertType, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var alerts []models.Alert
+	for rows.Next() {
+		var a models.Alert
+		err := rows.Scan(
+			&a.ID, &a.ChildID, &a.FamilyID, &a.AlertType, &a.Severity,
+			&a.Status, &a.Title, &a.Description, &a.Data, &a.CorrelationID,
+			&a.AcknowledgedAt, &a.AcknowledgedBy, &a.ResolvedAt, &a.ResolvedBy,
+			&a.ConfidenceScore, &a.CreatedAt, &a.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, a)
+	}
+	return alerts, rows.Err()
+}
+
 func (r *alertRepo) GetAlertsPage(ctx context.Context, childID uuid.UUID) (*models.AlertsPage, error) {
 	// Get child
 	childQuery := `

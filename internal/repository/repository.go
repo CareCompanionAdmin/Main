@@ -75,6 +75,7 @@ type MedicationRepository interface {
 	CreateLog(ctx context.Context, log *models.MedicationLog) error
 	GetLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.MedicationLog, error)
 	GetLogsByMedication(ctx context.Context, medicationID uuid.UUID, startDate, endDate time.Time) ([]models.MedicationLog, error)
+	GetLogsByMedicationSince(ctx context.Context, medicationID uuid.UUID, since time.Time) ([]models.MedicationLog, error)
 	UpdateLog(ctx context.Context, log *models.MedicationLog) error
 
 	// Due medications
@@ -178,9 +179,40 @@ type AlertRepository interface {
 
 	// Stats
 	GetStats(ctx context.Context, childID uuid.UUID) (*models.AlertStats, error)
+	GetStatsByType(ctx context.Context, childID uuid.UUID, alertType string) (*models.AlertTypeStats, error)
+
+	// Alert intelligence
+	GetByChildIDAndTypeSince(ctx context.Context, childID uuid.UUID, alertType string, since time.Time) ([]models.Alert, error)
 
 	// Alerts page data
 	GetAlertsPage(ctx context.Context, childID uuid.UUID) (*models.AlertsPage, error)
+}
+
+// InsightRepository handles insight operations (Three-Tier Learning System)
+type InsightRepository interface {
+	// CRUD operations
+	Create(ctx context.Context, insight *models.Insight) error
+	GetByID(ctx context.Context, id uuid.UUID) (*models.Insight, error)
+	Update(ctx context.Context, insight *models.Insight) error
+	Delete(ctx context.Context, id uuid.UUID) error
+
+	// Query operations
+	GetByChildID(ctx context.Context, childID uuid.UUID, tier *models.InsightTier, activeOnly bool) ([]models.Insight, error)
+	GetByChildIDSince(ctx context.Context, childID uuid.UUID, since time.Time) ([]models.Insight, error)
+	GetGlobalInsights(ctx context.Context, category string) ([]models.Insight, error)
+	GetByPatternID(ctx context.Context, patternID uuid.UUID) (*models.Insight, error)
+
+	// Validation
+	IncrementValidation(ctx context.Context, id uuid.UUID) error
+	SetClinicallyValidated(ctx context.Context, id uuid.UUID) error
+
+	// Sources
+	CreateSource(ctx context.Context, source *models.InsightSource) error
+	GetSource(ctx context.Context, id uuid.UUID) (*models.InsightSource, error)
+	GetSourcesByInsight(ctx context.Context, insightID uuid.UUID) ([]models.InsightSource, error)
+
+	// Upsert for correlation engine
+	Upsert(ctx context.Context, insight *models.Insight) error
 }
 
 // CorrelationRepository handles correlation and pattern operations
@@ -203,17 +235,71 @@ type CorrelationRepository interface {
 	GetPatterns(ctx context.Context, childID uuid.UUID, activeOnly bool) ([]models.FamilyPattern, error)
 	UpdatePattern(ctx context.Context, pattern *models.FamilyPattern) error
 	DeletePattern(ctx context.Context, id uuid.UUID) error
+	IncrementPatternValidation(ctx context.Context, id uuid.UUID) error
 
 	// Clinical validations
 	CreateValidation(ctx context.Context, validation *models.ClinicalValidation) error
 	GetValidations(ctx context.Context, childID uuid.UUID) ([]models.ClinicalValidation, error)
 	GetValidation(ctx context.Context, id uuid.UUID) (*models.ClinicalValidation, error)
+	GetValidationStats(ctx context.Context, childID uuid.UUID) (*models.ValidationStats, error)
 
 	// Insights page
 	GetInsightsPage(ctx context.Context, childID uuid.UUID) (*models.InsightsPage, error)
 
 	// Data for correlation engine
 	GetCorrelationData(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) (map[string][]models.DataPoint, error)
+}
+
+// ChatRepository handles chat operations
+type ChatRepository interface {
+	// Thread operations
+	CreateThread(ctx context.Context, thread *models.ChatThread) error
+	GetThread(ctx context.Context, id uuid.UUID) (*models.ChatThread, error)
+	GetThreadsByFamily(ctx context.Context, familyID uuid.UUID) ([]models.ChatThread, error)
+	GetThreadsByChild(ctx context.Context, childID uuid.UUID) ([]models.ChatThread, error)
+	UpdateThread(ctx context.Context, thread *models.ChatThread) error
+	DeleteThread(ctx context.Context, id uuid.UUID) error
+
+	// Participant operations
+	AddParticipant(ctx context.Context, threadID, userID uuid.UUID, role models.FamilyRole) error
+	RemoveParticipant(ctx context.Context, threadID, userID uuid.UUID) error
+	GetParticipants(ctx context.Context, threadID uuid.UUID) ([]models.ChatParticipant, error)
+	IsParticipant(ctx context.Context, threadID, userID uuid.UUID) (bool, error)
+	UpdateLastRead(ctx context.Context, threadID, userID uuid.UUID) error
+
+	// Message operations
+	CreateMessage(ctx context.Context, message *models.ChatMessage) error
+	GetMessages(ctx context.Context, threadID uuid.UUID, limit, offset int) ([]models.ChatMessage, error)
+	GetMessage(ctx context.Context, id uuid.UUID) (*models.ChatMessage, error)
+	UpdateMessage(ctx context.Context, message *models.ChatMessage) error
+	DeleteMessage(ctx context.Context, id uuid.UUID) error
+
+	// Unread counts
+	GetUnreadCount(ctx context.Context, threadID, userID uuid.UUID) (int, error)
+	GetTotalUnreadCount(ctx context.Context, familyID, userID uuid.UUID) (int, error)
+}
+
+// CohortRepository handles cohort operations for Tier 2 insights
+type CohortRepository interface {
+	// Cohort definitions
+	CreateCohort(ctx context.Context, cohort *models.CohortDefinition) error
+	GetCohort(ctx context.Context, id uuid.UUID) (*models.CohortDefinition, error)
+	GetAllCohorts(ctx context.Context) ([]models.CohortDefinition, error)
+	UpdateCohort(ctx context.Context, cohort *models.CohortDefinition) error
+	DeleteCohort(ctx context.Context, id uuid.UUID) error
+
+	// Membership operations
+	AddMember(ctx context.Context, cohortID uuid.UUID, childHash string, matchScore float64) error
+	RemoveMember(ctx context.Context, cohortID uuid.UUID, childHash string) error
+	GetMemberCount(ctx context.Context, cohortID uuid.UUID) (int, error)
+	IsMember(ctx context.Context, cohortID uuid.UUID, childHash string) (bool, error)
+
+	// Pattern operations
+	CreatePattern(ctx context.Context, pattern *models.CohortPattern) error
+	GetCohortPatterns(ctx context.Context, cohortID uuid.UUID) ([]models.CohortPattern, error)
+	GetActivePatterns(ctx context.Context, cohortID uuid.UUID) ([]models.CohortPattern, error)
+	UpdatePattern(ctx context.Context, pattern *models.CohortPattern) error
+	DeletePattern(ctx context.Context, id uuid.UUID) error
 }
 
 // Repositories aggregates all repository interfaces
@@ -224,7 +310,10 @@ type Repositories struct {
 	Medication  MedicationRepository
 	Log         LogRepository
 	Alert       AlertRepository
+	Insight     InsightRepository
 	Correlation CorrelationRepository
+	Cohort      CohortRepository
+	Chat        ChatRepository
 }
 
 // NewRepositories creates all repository implementations
@@ -236,6 +325,9 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Medication:  NewMedicationRepo(db),
 		Log:         NewLogRepo(db),
 		Alert:       NewAlertRepo(db),
+		Insight:     NewInsightRepo(db),
 		Correlation: NewCorrelationRepo(db),
+		Cohort:      NewCohortRepo(db),
+		Chat:        NewChatRepo(db),
 	}
 }

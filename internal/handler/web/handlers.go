@@ -273,3 +273,44 @@ func (h *WebHandlers) Settings(w http.ResponseWriter, r *http.Request) {
 
 	renderTemplate(w, "settings", data)
 }
+
+// Chat renders the family chat page
+func (h *WebHandlers) Chat(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	familyID := middleware.GetFamilyID(r.Context())
+	firstName := middleware.GetFirstName(r.Context())
+
+	if familyID.String() == "00000000-0000-0000-0000-000000000000" {
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	// Get threads for this user
+	threads, err := h.services.Chat.GetThreads(r.Context(), familyID, userID)
+	if err != nil {
+		threads = nil
+	}
+
+	// Get family members for starting new threads
+	members, err := h.services.Family.GetMembers(r.Context(), familyID)
+	if err != nil {
+		members = nil
+	}
+
+	// Get children for child-specific threads
+	children, err := h.services.Child.GetByFamilyID(r.Context(), familyID)
+	if err != nil {
+		children = nil
+	}
+
+	data := map[string]interface{}{
+		"UserID":    userID,
+		"FamilyID":  familyID,
+		"FirstName": firstName,
+		"Threads":   threads,
+		"Members":   members,
+		"Children":  children,
+	}
+
+	renderTemplate(w, "chat", data)
+}

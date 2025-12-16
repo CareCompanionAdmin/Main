@@ -1,6 +1,7 @@
 package api
 
 import (
+	"io"
 	"net/http"
 	"time"
 
@@ -12,14 +13,18 @@ import (
 )
 
 type MedicationHandler struct {
-	medService   *service.MedicationService
-	childService *service.ChildService
+	medService      *service.MedicationService
+	childService    *service.ChildService
+	drugDBService   *service.DrugDatabaseService
+	insightService  *service.InsightService
 }
 
-func NewMedicationHandler(medService *service.MedicationService, childService *service.ChildService) *MedicationHandler {
+func NewMedicationHandler(medService *service.MedicationService, childService *service.ChildService, drugDBService *service.DrugDatabaseService, insightService *service.InsightService) *MedicationHandler {
 	return &MedicationHandler{
-		medService:   medService,
-		childService: childService,
+		medService:     medService,
+		childService:   childService,
+		drugDBService:  drugDBService,
+		insightService: insightService,
 	}
 }
 
@@ -303,4 +308,171 @@ func (h *MedicationHandler) SearchReferences(w http.ResponseWriter, r *http.Requ
 	}
 
 	respondOK(w, refs)
+}
+
+// ValidateDrug validates a medication name against the FDA database
+func (h *MedicationHandler) ValidateDrug(w http.ResponseWriter, r *http.Request) {
+	drugName := r.URL.Query().Get("name")
+	if drugName == "" {
+		respondBadRequest(w, "Drug name required")
+		return
+	}
+
+	result, err := h.drugDBService.ValidateMedication(r.Context(), drugName)
+	if err != nil {
+		respondInternalError(w, "Failed to validate medication")
+		return
+	}
+
+	respondOK(w, result)
+}
+
+// GetDrugInfo gets detailed drug information from the FDA database
+func (h *MedicationHandler) GetDrugInfo(w http.ResponseWriter, r *http.Request) {
+	drugName := r.URL.Query().Get("name")
+	if drugName == "" {
+		respondBadRequest(w, "Drug name required")
+		return
+	}
+
+	dosage := r.URL.Query().Get("dosage")
+
+	info, err := h.drugDBService.LookupDrugWithDosage(r.Context(), drugName, dosage)
+	if err != nil {
+		respondInternalError(w, "Failed to get drug information")
+		return
+	}
+
+	// DailyMed images are from a government API and don't need proxying
+	// The image URL is passed through directly
+
+	respondOK(w, info)
+}
+
+// ProxyDrugImage proxies drug images to avoid hotlink blocking
+func (h *MedicationHandler) ProxyDrugImage(w http.ResponseWriter, r *http.Request) {
+	imageURL := r.URL.Query().Get("url")
+	if imageURL == "" {
+		http.Error(w, "URL required", http.StatusBadRequest)
+		return
+	}
+
+	// Create request to fetch the image
+	req, err := http.NewRequestWithContext(r.Context(), "GET", imageURL, nil)
+	if err != nil {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	// Set headers to appear as a browser request
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "image/webp,image/apng,image/*,*/*;q=0.8")
+	req.Header.Set("Referer", "https://www.drugs.com/")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Failed to fetch image", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "Image not found", http.StatusNotFound)
+		return
+	}
+
+	// Copy content type and image data
+	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+	w.Header().Set("Cache-Control", "public, max-age=86400") // Cache for 24 hours
+	io.Copy(w, resp.Body)
+}
+
+// CheckInteractions checks for drug interactions among a child's medications
+func (h *MedicationHandler) CheckInteractions(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	// Get active medications for child
+	medications, err := h.medService.GetByChildID(r.Context(), childID, true)
+	if err != nil {
+		respondInternalError(w, "Failed to get medications")
+		return
+	}
+
+	// Extract medication names
+	var drugNames []string
+	for _, med := range medications {
+		drugNames = append(drugNames, med.Name)
+	}
+
+	// Check interactions
+	warnings, err := h.drugDBService.CheckInteractions(r.Context(), drugNames)
+	if err != nil {
+		respondInternalError(w, "Failed to check interactions")
+		return
+	}
+
+	respondOK(w, map[string]interface{}{
+		"medication_count":    len(drugNames),
+		"medications":         drugNames,
+		"interactions":        warnings,
+		"interaction_count":   len(warnings),
+		"has_major_warnings":  hasMajorWarnings(warnings),
+	})
+}
+
+// GetMedicalInsights gets Tier 1 medical insights for a child's medications
+func (h *MedicationHandler) GetMedicalInsights(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	// Get active medications for child
+	medications, err := h.medService.GetByChildID(r.Context(), childID, true)
+	if err != nil {
+		respondInternalError(w, "Failed to get medications")
+		return
+	}
+
+	var allInsights []models.Insight
+	for _, med := range medications {
+		insights, err := h.drugDBService.GetTier1Insights(r.Context(), med.Name)
+		if err != nil {
+			continue // Skip failed lookups
+		}
+		allInsights = append(allInsights, insights...)
+	}
+
+	respondOK(w, map[string]interface{}{
+		"medication_count": len(medications),
+		"insights":         allInsights,
+		"insight_count":    len(allInsights),
+	})
+}
+
+func hasMajorWarnings(warnings []service.InteractionWarning) bool {
+	for _, w := range warnings {
+		if w.Severity == "major" {
+			return true
+		}
+	}
+	return false
 }

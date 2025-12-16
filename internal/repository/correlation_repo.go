@@ -286,17 +286,23 @@ func (r *correlationRepo) DeletePattern(ctx context.Context, id uuid.UUID) error
 	return err
 }
 
+func (r *correlationRepo) IncrementPatternValidation(ctx context.Context, id uuid.UUID) error {
+	query := `UPDATE family_patterns SET validation_count = COALESCE(validation_count, 0) + 1, updated_at = $2 WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id, time.Now())
+	return err
+}
+
 // Clinical Validations
 func (r *correlationRepo) CreateValidation(ctx context.Context, validation *models.ClinicalValidation) error {
 	query := `
-		INSERT INTO clinical_validations (id, pattern_id, alert_id, child_id, provider_user_id, validation_type, treatment_changed, treatment_description, parent_confirmed, parent_confirmed_at, validation_strength, expires_at, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		INSERT INTO clinical_validations (id, pattern_id, alert_id, insight_id, child_id, provider_user_id, validation_type, treatment_changed, treatment_description, parent_confirmed, parent_confirmed_at, validation_strength, expires_at, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 	`
 	validation.ID = uuid.New()
 	validation.CreatedAt = time.Now()
 
 	_, err := r.db.ExecContext(ctx, query,
-		validation.ID, validation.PatternID, validation.AlertID,
+		validation.ID, validation.PatternID, validation.AlertID, validation.InsightID,
 		validation.ChildID, validation.ProviderUserID, validation.ValidationType,
 		validation.TreatmentChanged, validation.TreatmentDescription,
 		validation.ParentConfirmed, validation.ParentConfirmedAt,
@@ -307,7 +313,7 @@ func (r *correlationRepo) CreateValidation(ctx context.Context, validation *mode
 
 func (r *correlationRepo) GetValidations(ctx context.Context, childID uuid.UUID) ([]models.ClinicalValidation, error) {
 	query := `
-		SELECT id, pattern_id, alert_id, child_id, provider_user_id, validation_type, treatment_changed, treatment_description, parent_confirmed, parent_confirmed_at, validation_strength, expires_at, created_at
+		SELECT id, pattern_id, alert_id, insight_id, child_id, provider_user_id, validation_type, treatment_changed, treatment_description, parent_confirmed, parent_confirmed_at, validation_strength, expires_at, created_at
 		FROM clinical_validations
 		WHERE child_id = $1 AND (expires_at IS NULL OR expires_at > NOW())
 		ORDER BY created_at DESC
@@ -322,7 +328,7 @@ func (r *correlationRepo) GetValidations(ctx context.Context, childID uuid.UUID)
 	for rows.Next() {
 		var v models.ClinicalValidation
 		err := rows.Scan(
-			&v.ID, &v.PatternID, &v.AlertID,
+			&v.ID, &v.PatternID, &v.AlertID, &v.InsightID,
 			&v.ChildID, &v.ProviderUserID, &v.ValidationType,
 			&v.TreatmentChanged, &v.TreatmentDescription,
 			&v.ParentConfirmed, &v.ParentConfirmedAt,
@@ -338,13 +344,13 @@ func (r *correlationRepo) GetValidations(ctx context.Context, childID uuid.UUID)
 
 func (r *correlationRepo) GetValidation(ctx context.Context, id uuid.UUID) (*models.ClinicalValidation, error) {
 	query := `
-		SELECT id, pattern_id, alert_id, child_id, provider_user_id, validation_type, treatment_changed, treatment_description, parent_confirmed, parent_confirmed_at, validation_strength, expires_at, created_at
+		SELECT id, pattern_id, alert_id, insight_id, child_id, provider_user_id, validation_type, treatment_changed, treatment_description, parent_confirmed, parent_confirmed_at, validation_strength, expires_at, created_at
 		FROM clinical_validations
 		WHERE id = $1
 	`
 	v := &models.ClinicalValidation{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&v.ID, &v.PatternID, &v.AlertID,
+		&v.ID, &v.PatternID, &v.AlertID, &v.InsightID,
 		&v.ChildID, &v.ProviderUserID, &v.ValidationType,
 		&v.TreatmentChanged, &v.TreatmentDescription,
 		&v.ParentConfirmed, &v.ParentConfirmedAt,
@@ -354,6 +360,50 @@ func (r *correlationRepo) GetValidation(ctx context.Context, id uuid.UUID) (*mod
 		return nil, nil
 	}
 	return v, err
+}
+
+// GetValidationStats returns validation statistics for a child
+func (r *correlationRepo) GetValidationStats(ctx context.Context, childID uuid.UUID) (*models.ValidationStats, error) {
+	query := `
+		WITH stats AS (
+			SELECT
+				COUNT(*) as total_validations,
+				COUNT(*) FILTER (WHERE parent_confirmed = true) as parent_helpful,
+				COUNT(*) FILTER (WHERE provider_user_id IS NOT NULL) as provider_validated,
+				COUNT(*) FILTER (WHERE validation_type = 'implicit_treatment_change') as implicit_validations
+			FROM clinical_validations
+			WHERE child_id = $1
+		),
+		insight_count AS (
+			SELECT COUNT(*) as total FROM insights WHERE child_id = $1
+		)
+		SELECT
+			COALESCE(ic.total, 0),
+			COALESCE(s.total_validations, 0),
+			COALESCE(s.parent_helpful, 0),
+			COALESCE(s.provider_validated, 0),
+			COALESCE(s.implicit_validations, 0)
+		FROM stats s, insight_count ic
+	`
+	var stats models.ValidationStats
+	var totalIns, validatedIns int
+	err := r.db.QueryRowContext(ctx, query, childID).Scan(
+		&totalIns, &validatedIns,
+		&stats.ParentConfirmedHelpful,
+		&stats.ProviderValidated,
+		&stats.ImplicitValidations,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	stats.TotalInsights = totalIns
+	stats.ValidatedInsights = validatedIns
+	if totalIns > 0 {
+		stats.ValidationRate = float64(validatedIns) / float64(totalIns)
+	}
+
+	return &stats, nil
 }
 
 // Insights Page

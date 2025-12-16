@@ -275,6 +275,35 @@ func (r *medicationRepo) GetLogsByMedication(ctx context.Context, medicationID u
 	return logs, rows.Err()
 }
 
+func (r *medicationRepo) GetLogsByMedicationSince(ctx context.Context, medicationID uuid.UUID, since time.Time) ([]models.MedicationLog, error) {
+	query := `
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at
+		FROM medication_logs
+		WHERE medication_id = $1 AND log_date >= $2
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, medicationID, since)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.MedicationLog
+	for rows.Next() {
+		var log models.MedicationLog
+		err := rows.Scan(
+			&log.ID, &log.MedicationID, &log.ChildID, &log.ScheduleID, &log.LogDate,
+			&log.ScheduledTime, &log.ActualTime, &log.Status, &log.DosageGiven,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt, &log.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
+}
+
 func (r *medicationRepo) UpdateLog(ctx context.Context, log *models.MedicationLog) error {
 	query := `
 		UPDATE medication_logs

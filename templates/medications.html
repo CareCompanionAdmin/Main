@@ -17,13 +17,18 @@
                 <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="/settings" class="text-gray-500 hover:text-gray-700">
+                <a href="/chat" class="text-gray-500 hover:text-gray-700" title="Family Chat">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </a>
+                <a href="/settings" class="text-gray-500 hover:text-gray-700" title="Settings">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </a>
-                <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                <button onclick="logout()" class="text-gray-500 hover:text-gray-700" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -94,22 +99,28 @@
 </main>
 
 <!-- Add Medication Modal -->
-<div id="add-medication-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Add Medication</h2>
+<div id="add-medication-modal" class="hidden fixed inset-0 z-50">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideAddMedication()"></div>
+    <!-- Modal Container - this scrolls -->
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
+            <div id="modal-content" class="bg-white rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Add Medication</h2>
         <form id="medication-form" class="space-y-4">
+            <!-- Name, Dosage, Unit - required for lookup -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name *</label>
-                <input type="text" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="text" name="name" id="med-name-input" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Vyvanse">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Dosage *</label>
-                    <input type="text" name="dosage" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 10">
+                    <input type="text" name="dosage" id="med-dosage-input" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 30">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                    <select name="dosage_unit" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
+                    <select name="dosage_unit" id="med-unit-input" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="mg">mg</option>
                         <option value="ml">ml</option>
                         <option value="IU">IU</option>
@@ -119,6 +130,160 @@
                     </select>
                 </div>
             </div>
+            <div>
+                <button type="button" onclick="lookupDrugInfo()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                    Look Up Drug Information
+                </button>
+                <p class="text-xs text-gray-500 mt-1 text-center">Enter name and dosage, then click to get FDA drug information and pill identification</p>
+            </div>
+
+            <!-- Drug Info Section (hidden until lookup) -->
+            <div id="drug-info-section" class="hidden">
+                <div id="drug-loading" class="hidden text-center py-4">
+                    <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                    <p class="text-gray-500 mt-2">Looking up drug information...</p>
+                </div>
+
+                <!-- Black Box Warning -->
+                <div id="black-box-warning" class="hidden mb-4 p-4 bg-red-50 border-2 border-red-500 rounded-lg">
+                    <div class="flex items-start">
+                        <svg class="w-6 h-6 text-red-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-red-800">BLACK BOX WARNING</h4>
+                                <div class="flex items-center gap-2">
+                                    <a id="blackbox-source" href="#" target="_blank" class="text-red-600 hover:text-red-800" title="View source"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>
+                                    <button type="button" onclick="toggleExpand('blackbox')" class="text-xs text-red-600 hover:text-red-800 underline expand-btn" data-section="blackbox">Show full</button>
+                                </div>
+                            </div>
+                            <p id="black-box-text" class="text-red-700 text-sm mt-1"></p>
+                            <p id="black-box-text-full" class="hidden text-red-700 text-sm mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pediatric Warnings -->
+                <div id="pediatric-warnings" class="hidden mb-4 p-4 bg-amber-50 border border-amber-300 rounded-lg">
+                    <h4 class="font-semibold text-amber-800 flex items-center justify-between">
+                        <span class="flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                            </svg>
+                            Pediatric Information
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <a id="pediatric-source" href="#" target="_blank" class="text-amber-600 hover:text-amber-800" title="View source"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>
+                            <button type="button" onclick="toggleExpand('pediatric')" class="text-xs text-amber-600 hover:text-amber-800 underline expand-btn" data-section="pediatric">Show full</button>
+                        </div>
+                    </h4>
+                    <p id="pediatric-text" class="text-amber-700 text-sm mt-2"></p>
+                    <p id="pediatric-text-full" class="hidden text-amber-700 text-sm mt-2"></p>
+                </div>
+
+                <!-- Side Effects -->
+                <div id="side-effects-section" class="hidden mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center justify-between">
+                        <span>Common Side Effects</span>
+                        <a id="sideeffects-source" href="#" target="_blank" class="text-gray-600 hover:text-gray-800" title="View source"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>
+                    </h4>
+                    <div id="side-effects-list" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Drug Interactions -->
+                <div id="interactions-section" class="hidden mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <h4 class="font-semibold text-orange-800 mb-2 flex items-center justify-between">
+                        <span>Known Drug Interactions</span>
+                        <a id="interactions-source" href="#" target="_blank" class="text-orange-600 hover:text-orange-800" title="View source"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>
+                    </h4>
+                    <div id="interactions-list" class="space-y-2"></div>
+                </div>
+
+                <!-- Generic Info -->
+                <div id="generic-info" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p class="text-blue-800 text-sm"><span class="font-medium">Generic Name:</span> <span id="generic-name"></span></p>
+                    <p class="text-blue-800 text-sm mt-1"><span class="font-medium">Drug Class:</span> <span id="drug-class"></span></p>
+                    <p id="brand-names-line" class="hidden text-blue-800 text-sm mt-1"><span class="font-medium">Brand Names:</span> <span id="brand-names"></span></p>
+                </div>
+
+                <!-- Indications/Uses -->
+                <div id="indications-section" class="hidden mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h4 class="font-semibold text-green-800 mb-2 flex items-center justify-between">
+                        <span>Approved Uses</span>
+                        <div class="flex items-center gap-2">
+                            <a id="indications-source" href="#" target="_blank" class="text-green-600 hover:text-green-800" title="View source"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>
+                            <button type="button" onclick="toggleExpand('indications')" class="text-xs text-green-600 hover:text-green-800 underline expand-btn" data-section="indications">Show full</button>
+                        </div>
+                    </h4>
+                    <p id="indications-text" class="text-green-700 text-sm"></p>
+                    <p id="indications-text-full" class="hidden text-green-700 text-sm"></p>
+                </div>
+
+                <!-- Physical Description / Pill ID (CRITICAL for safety) -->
+                <div id="physical-section" class="hidden mb-4 p-4 bg-purple-50 border-2 border-purple-300 rounded-lg">
+                    <h4 class="font-semibold text-purple-800 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        Pill Identification - VERIFY YOUR MEDICATION
+                    </h4>
+
+                    <!-- Physical characteristics for pill identification -->
+                    <div id="physical-details" class="mb-4">
+                        <div class="bg-white rounded-lg p-4 border-2 border-purple-200">
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div id="pill-color-box" class="hidden">
+                                    <p class="text-xs text-purple-600 uppercase font-semibold">Color</p>
+                                    <p id="pill-color" class="text-lg font-bold text-purple-900"></p>
+                                </div>
+                                <div id="pill-shape-box" class="hidden">
+                                    <p class="text-xs text-purple-600 uppercase font-semibold">Shape</p>
+                                    <p id="pill-shape" class="text-lg font-bold text-purple-900"></p>
+                                </div>
+                                <div id="pill-imprint-box" class="hidden">
+                                    <p class="text-xs text-purple-600 uppercase font-semibold">Imprint</p>
+                                    <p id="pill-imprint" class="text-lg font-bold text-purple-900 font-mono"></p>
+                                </div>
+                                <div id="pill-scoring-box" class="hidden">
+                                    <p class="text-xs text-purple-600 uppercase font-semibold">Scoring</p>
+                                    <p id="pill-scoring" class="text-lg font-bold text-purple-900"></p>
+                                </div>
+                            </div>
+                            <p id="pill-description" class="text-sm text-purple-700 hidden mb-4"></p>
+
+                            <!-- View Pill Photos button -->
+                            <a id="pill-photos-link" href="#" target="_blank"
+                               class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                View Pill Photos on Drugs.com
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                            </a>
+                            <p class="text-purple-700 text-xs mt-2 text-center">
+                                Click above to see actual photos showing size, color, and imprint markings
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Source Link -->
+                <div id="source-link-section" class="hidden mb-4">
+                    <a id="source-link" href="#" target="_blank" class="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                        View Complete Drug Information on DailyMed (FDA)
+                    </a>
+                </div>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Frequency *</label>
                 <select name="frequency" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
@@ -142,21 +307,300 @@
                     Cancel
                 </button>
             </div>
-        </form>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
 const childId = '{{.Child.ID}}';
-const token = localStorage.getItem('access_token');
 
 function showAddMedication() {
-    document.getElementById('add-medication-modal').classList.remove('hidden');
+    const modal = document.getElementById('add-medication-modal');
+    modal.classList.remove('hidden');
+    // Reset drug info section
+    document.getElementById('drug-info-section').classList.add('hidden');
+    // Scroll modal to top
+    const scrollContainer = modal.querySelector('.overflow-y-auto');
+    if (scrollContainer) scrollContainer.scrollTop = 0;
+    // Add ESC key listener
+    document.addEventListener('keydown', handleEscKey);
+    // Prevent body scroll while modal is open
+    document.body.style.overflow = 'hidden';
+}
+
+function handleEscKey(event) {
+    if (event.key === 'Escape') {
+        hideAddMedication();
+    }
 }
 
 function hideAddMedication() {
     document.getElementById('add-medication-modal').classList.add('hidden');
+    // Reset form and drug info
+    document.getElementById('medication-form').reset();
+    document.getElementById('drug-info-section').classList.add('hidden');
+    // Remove ESC key listener
+    document.removeEventListener('keydown', handleEscKey);
+    // Restore body scroll
+    document.body.style.overflow = '';
 }
+
+
+async function lookupDrugInfo() {
+    const drugName = document.getElementById('med-name-input').value.trim();
+    const dosageValue = document.getElementById('med-dosage-input').value.trim();
+    const unit = document.getElementById('med-unit-input').value;
+
+    if (!drugName) {
+        alert('Please enter a medication name');
+        return;
+    }
+    if (!dosageValue) {
+        alert('Please enter the dosage amount');
+        return;
+    }
+
+    // Combine dosage and unit for the lookup (e.g., "30mg")
+    const dosage = dosageValue + unit;
+
+    const section = document.getElementById('drug-info-section');
+    const loading = document.getElementById('drug-loading');
+
+    // Show section and loading
+    section.classList.remove('hidden');
+    loading.classList.remove('hidden');
+
+    // Hide all info panels and reset expand states
+    document.getElementById('black-box-warning').classList.add('hidden');
+    document.getElementById('pediatric-warnings').classList.add('hidden');
+    document.getElementById('side-effects-section').classList.add('hidden');
+    document.getElementById('interactions-section').classList.add('hidden');
+    document.getElementById('generic-info').classList.add('hidden');
+    document.getElementById('indications-section').classList.add('hidden');
+    document.getElementById('physical-section').classList.add('hidden');
+    document.getElementById('source-link-section').classList.add('hidden');
+
+    // Reset physical description fields (hide the container boxes)
+    ['pill-color-box', 'pill-shape-box', 'pill-imprint-box', 'pill-scoring-box'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    // Reset pill description text
+    const pillDesc = document.getElementById('pill-description');
+    if (pillDesc) {
+        pillDesc.classList.add('hidden');
+        pillDesc.textContent = '';
+    }
+
+    // Reset expand buttons
+    document.querySelectorAll('.expand-btn').forEach(btn => {
+        btn.textContent = 'Show full';
+    });
+    ['black-box', 'pediatric', 'indications'].forEach(section => {
+        const textEl = document.getElementById(section + '-text');
+        const fullEl = document.getElementById(section + '-text-full');
+        if (textEl) textEl.classList.remove('hidden');
+        if (fullEl) fullEl.classList.add('hidden');
+    });
+
+    try {
+        const response = await fetch(`/api/drugs/info?name=${encodeURIComponent(drugName)}&dosage=${encodeURIComponent(dosage)}`, {
+            credentials: 'include'  // Send cookies for authentication
+        });
+
+        loading.classList.add('hidden');
+
+        if (!response.ok) {
+            section.innerHTML = '<p class="text-gray-500 text-center py-4">Drug information not found in FDA database</p>';
+            return;
+        }
+
+        const data = await response.json();
+        displayDrugInfo(data);
+    } catch (error) {
+        loading.classList.add('hidden');
+        section.innerHTML = '<p class="text-red-500 text-center py-4">Failed to lookup drug information</p>';
+    }
+}
+
+// Store full text for expansion
+let drugDataCache = {};
+
+function displayDrugInfo(data) {
+    console.log('Drug info data:', data); // Debug logging
+    drugDataCache = data; // Cache for expansion
+
+    // Black Box Warning
+    if (data.black_box_warning) {
+        const el = document.getElementById('black-box-warning');
+        const truncated = data.black_box_warning.substring(0, 500) + (data.black_box_warning.length > 500 ? '...' : '');
+        document.getElementById('black-box-text').textContent = truncated;
+        document.getElementById('black-box-text-full').textContent = data.black_box_full || data.black_box_warning;
+        el.classList.remove('hidden');
+    }
+
+    // Pediatric Warnings
+    if (data.pediatric_warnings && data.pediatric_warnings.length > 0) {
+        const el = document.getElementById('pediatric-warnings');
+        const text = data.pediatric_warnings[0];
+        document.getElementById('pediatric-text').textContent = text.substring(0, 400) + (text.length > 400 ? '...' : '');
+        const fullText = (data.pediatric_full && data.pediatric_full.length > 0) ? data.pediatric_full[0] : text;
+        document.getElementById('pediatric-text-full').textContent = fullText;
+        el.classList.remove('hidden');
+    }
+
+    // Side Effects
+    if (data.side_effects && data.side_effects.length > 0) {
+        const el = document.getElementById('side-effects-section');
+        const list = document.getElementById('side-effects-list');
+        list.innerHTML = data.side_effects.slice(0, 12).map(se => {
+            const colorClass = se.severity === 'severe' ? 'bg-red-100 text-red-700' :
+                              se.severity === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700';
+            return `<span class="px-2 py-1 ${colorClass} rounded text-xs">${se.effect}${se.frequency ? ' (' + se.frequency + ')' : ''}</span>`;
+        }).join('');
+        el.classList.remove('hidden');
+    }
+
+    // Drug Interactions - show all with better formatting
+    if (data.interactions && data.interactions.length > 0) {
+        const el = document.getElementById('interactions-section');
+        const list = document.getElementById('interactions-list');
+        list.innerHTML = data.interactions.map(int => {
+            const bgClass = int.severity === 'major' ? 'bg-red-100 border-red-300' :
+                           int.severity === 'moderate' ? 'bg-orange-100 border-orange-300' : 'bg-gray-100 border-gray-300';
+            const textClass = int.severity === 'major' ? 'text-red-800' :
+                             int.severity === 'moderate' ? 'text-orange-800' : 'text-gray-800';
+            const severityLabel = int.severity ? `<span class="uppercase text-xs font-bold ${textClass}">${int.severity}</span>` : '';
+            return `<div class="p-2 ${bgClass} border rounded">
+                <div class="flex justify-between items-start">
+                    <strong class="${textClass}">${int.drug}</strong>
+                    ${severityLabel}
+                </div>
+                <p class="${textClass} text-sm mt-1">${int.description}</p>
+            </div>`;
+        }).join('');
+        el.classList.remove('hidden');
+    }
+
+    // Generic Info with brand names
+    if (data.generic_name || data.drug_class || data.brand_names) {
+        const el = document.getElementById('generic-info');
+        if (data.generic_name) document.getElementById('generic-name').textContent = data.generic_name;
+        if (data.drug_class) document.getElementById('drug-class').textContent = data.drug_class || 'Not specified';
+        if (data.brand_names && data.brand_names.length > 0) {
+            document.getElementById('brand-names').textContent = data.brand_names.slice(0, 5).join(', ');
+            document.getElementById('brand-names-line').classList.remove('hidden');
+        }
+        el.classList.remove('hidden');
+    }
+
+    // Indications/Uses
+    if (data.indications && data.indications.length > 0) {
+        const el = document.getElementById('indications-section');
+        const text = data.indications[0];
+        document.getElementById('indications-text').textContent = text.substring(0, 300) + (text.length > 300 ? '...' : '');
+        const fullText = (data.indications_full && data.indications_full.length > 0) ? data.indications_full[0] : text;
+        document.getElementById('indications-text-full').textContent = fullText;
+        el.classList.remove('hidden');
+    }
+
+    // Set source links for each card
+    const fdaUrl = data.source_url || '';
+    const drugsComUrl = data.drugs_com_url || '';
+
+    // Set source links on all cards (FDA DailyMed)
+    if (fdaUrl) {
+        document.getElementById('blackbox-source').href = fdaUrl;
+        document.getElementById('pediatric-source').href = fdaUrl;
+        document.getElementById('sideeffects-source').href = fdaUrl;
+        document.getElementById('interactions-source').href = drugsComUrl || fdaUrl;
+        document.getElementById('indications-source').href = fdaUrl;
+    }
+
+    // Physical characteristics for pill identification
+    const pd = data.physical_description || {};
+
+    // Color
+    if (pd.color && pd.color.length > 0) {
+        document.getElementById('pill-color').textContent = Array.isArray(pd.color) ? pd.color.join(', ') : pd.color;
+        document.getElementById('pill-color-box').classList.remove('hidden');
+    }
+
+    // Shape
+    if (pd.shape) {
+        document.getElementById('pill-shape').textContent = pd.shape;
+        document.getElementById('pill-shape-box').classList.remove('hidden');
+    }
+
+    // Imprint
+    if (pd.imprint) {
+        document.getElementById('pill-imprint').textContent = pd.imprint;
+        document.getElementById('pill-imprint-box').classList.remove('hidden');
+    }
+
+    // Scoring
+    if (pd.scoring) {
+        document.getElementById('pill-scoring').textContent = pd.scoring;
+        document.getElementById('pill-scoring-box').classList.remove('hidden');
+    }
+
+    // Set the pill photos link
+    if (data.pill_identifier_url) {
+        document.getElementById('pill-photos-link').href = data.pill_identifier_url;
+    } else {
+        // Fallback to drugs.com search
+        const drugName = document.querySelector('input[name="name"]').value;
+        document.getElementById('pill-photos-link').href = 'https://www.drugs.com/pill_identification.html?drugname=' + encodeURIComponent(drugName);
+    }
+
+    // Always show the physical section
+    document.getElementById('physical-section').classList.remove('hidden');
+
+    // Main source link to DailyMed
+    if (fdaUrl) {
+        const el = document.getElementById('source-link-section');
+        document.getElementById('source-link').href = fdaUrl;
+        el.classList.remove('hidden');
+    }
+
+    // Add drugs.com link if available
+    if (drugsComUrl) {
+        const sourceSection = document.getElementById('source-link-section');
+        if (!document.getElementById('drugs-com-link')) {
+            const drugsLink = document.createElement('a');
+            drugsLink.id = 'drugs-com-link';
+            drugsLink.href = drugsComUrl;
+            drugsLink.target = '_blank';
+            drugsLink.className = 'inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium ml-4';
+            drugsLink.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>View on Drugs.com';
+            sourceSection.appendChild(drugsLink);
+        } else {
+            document.getElementById('drugs-com-link').href = drugsComUrl;
+        }
+        sourceSection.classList.remove('hidden');
+    }
+}
+
+// Toggle expand/collapse for text sections
+function toggleExpand(section) {
+    const textEl = document.getElementById(`${section === 'blackbox' ? 'black-box' : section}-text`);
+    const fullEl = document.getElementById(`${section === 'blackbox' ? 'black-box' : section}-text-full`);
+    const btn = document.querySelector(`[data-section="${section}"]`);
+
+    if (fullEl.classList.contains('hidden')) {
+        textEl.classList.add('hidden');
+        fullEl.classList.remove('hidden');
+        btn.textContent = 'Show less';
+    } else {
+        textEl.classList.remove('hidden');
+        fullEl.classList.add('hidden');
+        btn.textContent = 'Show full';
+    }
+}
+
 
 document.getElementById('medication-form').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -173,9 +617,9 @@ document.getElementById('medication-form').addEventListener('submit', async func
         const response = await fetch(`/api/children/${childId}/medications`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Content-Type': 'application/json'
             },
+            credentials: 'include',  // Send cookies for authentication
             body: JSON.stringify(data)
         });
         if (response.ok) {

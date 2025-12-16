@@ -17,13 +17,18 @@
                 <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="/settings" class="text-gray-500 hover:text-gray-700">
+                <a href="/chat" class="text-gray-500 hover:text-gray-700" title="Family Chat">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </a>
+                <a href="/settings" class="text-gray-500 hover:text-gray-700" title="Settings">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </a>
-                <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                <button onclick="logout()" class="text-gray-500 hover:text-gray-700" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -389,7 +394,7 @@
                 data-entry-id="{{.ID}}"
                 data-entry-type="Speech"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
-                data-entry-verballevel="{{if .VerbalOutputLevel.Valid}}{{.VerbalOutputLevel.Int64}}{{else}}0{{end}}"
+                data-entry-verballevel="{{if .VerbalOutputLevel}}{{.VerbalOutputLevel}}{{else}}0{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,7 +403,7 @@
                 </div>
                 <div class="flex-1">
                     <p class="font-medium text-gray-900">Speech</p>
-                    <p class="text-sm text-gray-600">{{if .VerbalOutputLevel.Valid}}Verbal Level: {{.VerbalOutputLevel.Int64}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
                     <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -413,7 +418,7 @@
                 data-entry-type="Weight"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-weightlbs="{{if .WeightLbs}}{{.WeightLbs}}{{else}}0{{end}}"
-                data-entry-heightinches="{{if .HeightInches.Valid}}{{.HeightInches.Float64}}{{else}}0{{end}}"
+                data-entry-heightinches="{{if .HeightInches}}{{.HeightInches}}{{else}}0{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -523,16 +528,47 @@ const token = localStorage.getItem('access_token');
 const formTemplates = {
     behavior: `
         <form id="entry-form" class="space-y-4">
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10)</label>
+                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Energy (1-10)</label>
+                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Anxiety (1-10)</label>
+                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
+                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming Episodes</label>
+                    <input type="number" name="stimming_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Aggression Incidents</label>
+                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Self-Injury Incidents</label>
+                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Behavior Type</label>
-                <select name="behavior_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">Select...</option>
-                    <option value="meltdown">Meltdown</option>
-                    <option value="stimming">Stimming</option>
-                    <option value="aggression">Aggression</option>
-                    <option value="self_injury">Self-injury</option>
-                    <option value="positive">Positive Behavior</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
+                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Positive Behaviors</label>
+                <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
@@ -543,50 +579,116 @@ const formTemplates = {
     `,
     diet: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
-                <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">Select...</option>
-                    <option value="breakfast">Breakfast</option>
-                    <option value="lunch">Lunch</option>
-                    <option value="dinner">Dinner</option>
-                    <option value="snack">Snack</option>
-                </select>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
+                    <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                        <option value="snack">Snack</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Appetite Level</label>
+                    <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="high">High</option>
+                        <option value="normal">Normal</option>
+                        <option value="low">Low</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Foods</label>
-                <input type="text" name="foods" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., eggs, toast">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Foods Eaten</label>
+                <input type="text" name="foods_eaten" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., eggs, toast, apple)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Appetite Level</label>
-                <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="high">High</option>
-                    <option value="normal">Normal</option>
-                    <option value="low">Low</option>
-                    <option value="none">None</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Foods Refused</label>
+                <input type="text" name="foods_refused" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Water Intake (oz)</label>
+                    <input type="number" name="water_intake_oz" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="oz">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Food Tried</label>
+                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Supplements Taken</label>
+                <input type="text" name="supplements_taken" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="allergic_reaction" id="allergic_reaction" class="mr-2" onchange="document.getElementById('reaction-details').classList.toggle('hidden', !this.checked)">
+                    <label for="allergic_reaction" class="text-sm text-gray-700">Allergic Reaction</label>
+                </div>
+            </div>
+            <div id="reaction-details" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Reaction Details</label>
+                <textarea name="reaction_details" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Describe the reaction..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save</button>
         </form>
     `,
     sleep: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Quality</label>
-                <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="excellent">Excellent</option>
-                    <option value="good">Good</option>
-                    <option value="fair">Fair</option>
-                    <option value="poor">Poor</option>
-                </select>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bedtime</label>
+                    <input type="time" name="bedtime" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Wake Time</label>
+                    <input type="time" name="wake_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Total Sleep (minutes)</label>
-                <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 480">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Quality</label>
+                    <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="excellent">Excellent</option>
+                        <option value="good">Good</option>
+                        <option value="fair">Fair</option>
+                        <option value="poor">Poor</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Sleep (minutes)</label>
+                    <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 480">
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Night Wakings</label>
-                <input type="number" name="night_wakings" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div class="flex flex-wrap gap-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="nightmares" id="nightmares" class="mr-2">
+                    <label for="nightmares" class="text-sm text-gray-700">Nightmares</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="bed_wetting" id="bed_wetting" class="mr-2">
+                    <label for="bed_wetting" class="text-sm text-gray-700">Bed Wetting</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="took_sleep_aid" id="took_sleep_aid" class="mr-2" onchange="document.getElementById('sleep-aid-name').classList.toggle('hidden', !this.checked)">
+                    <label for="took_sleep_aid" class="text-sm text-gray-700">Took Sleep Aid</label>
+                </div>
+            </div>
+            <div id="sleep-aid-name" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Aid Name</label>
+                <input type="text" name="sleep_aid_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Melatonin">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
@@ -597,13 +699,26 @@ const formTemplates = {
     `,
     bowel: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Bristol Scale (1-7)</label>
-                <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bristol Scale (1-7)</label>
+                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <p class="text-xs text-gray-500 mt-1">1=hard lumps, 4=smooth, 7=liquid</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pain Level (1-10)</label>
+                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                </div>
             </div>
-            <div class="flex items-center">
-                <input type="checkbox" name="had_accident" id="had_accident" class="mr-2">
-                <label for="had_accident" class="text-sm text-gray-700">Had Accident</label>
+            <div class="flex flex-wrap gap-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="had_accident" id="had_accident" class="mr-2">
+                    <label for="had_accident" class="text-sm text-gray-700">Had Accident</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="blood_present" id="blood_present" class="mr-2">
+                    <label for="blood_present" class="text-sm text-red-600 font-medium">Blood Present</label>
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
@@ -632,13 +747,39 @@ const formTemplates = {
     `,
     speech: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Verbal Output Level (1-10)</label>
-                <input type="number" name="verbal_output_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Verbal Output (1-10)</label>
+                    <input type="number" name="verbal_output_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Clarity (1-10)</label>
+                    <input type="number" name="clarity_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Words</label>
+                    <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lost Words</label>
+                    <input type="text" name="lost_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">New Words</label>
-                <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Echolalia Level (1-10)</label>
+                <input type="number" name="echolalia_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0 = none, 10 = constant">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Communication Attempts</label>
+                    <input type="number" name="communication_attempts" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Successful Communications</label>
+                    <input type="number" name="successful_communications" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>

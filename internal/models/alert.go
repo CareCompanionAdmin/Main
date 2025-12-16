@@ -70,3 +70,34 @@ type AlertFeedbackRequest struct {
 	FeedbackText string `json:"feedback_text,omitempty"`
 	ActionTaken  string `json:"action_taken,omitempty"`
 }
+
+// AlertTypeStats tracks statistics for a specific alert type
+type AlertTypeStats struct {
+	Total           int `json:"total"`
+	Acknowledged    int `json:"acknowledged"`
+	Resolved        int `json:"resolved"`
+	Dismissed       int `json:"dismissed"`
+	HelpfulFeedback int `json:"helpful_feedback"`
+}
+
+// AlertEffectiveness tracks how well alerts perform
+type AlertEffectiveness struct {
+	AlertType          string  `json:"alert_type"`
+	TotalGenerated     int     `json:"total_generated"`
+	Acknowledged       int     `json:"acknowledged"`
+	HelpfulCount       int     `json:"helpful_count"`
+	DismissedCount     int     `json:"dismissed_count"`
+	EffectivenessScore float64 `json:"effectiveness_score"`
+}
+
+// AlertGenerationData contains data for smart alert generation
+type AlertGenerationData struct {
+	Type          string
+	Severity      AlertSeverity
+	Title         string
+	Description   string
+	Data          JSONB
+	Confidence    float64
+	FamilyID      uuid.UUID
+	CorrelationID *uuid.UUID
+}

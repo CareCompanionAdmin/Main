@@ -16,6 +16,8 @@ type Handlers struct {
 	Log         *LogHandler
 	Alert       *AlertHandler
 	Correlation *CorrelationHandler
+	Insight     *InsightHandler
+	Chat        *ChatHandler
 }
 
 // NewHandlers creates all API handlers
@@ -24,10 +26,12 @@ func NewHandlers(services *service.Services) *Handlers {
 		Auth:        NewAuthHandler(services.Auth),
 		Child:       NewChildHandler(services.Child),
 		Family:      NewFamilyHandler(services.Family, services.User),
-		Medication:  NewMedicationHandler(services.Medication, services.Child),
+		Medication:  NewMedicationHandler(services.Medication, services.Child, services.DrugDatabase, services.Insight),
 		Log:         NewLogHandler(services.Log, services.Child),
 		Alert:       NewAlertHandler(services.Alert, services.Child),
 		Correlation: NewCorrelationHandler(services.Correlation, services.Child),
+		Insight:     NewInsightHandler(services.Insight, services.Child),
+		Chat:        NewChatHandler(services.Chat, services.Family),
 	}
 }
 
@@ -88,6 +92,8 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				r.Get("/adherence", handlers.Medication.GetAdherence)
 				r.Post("/log", handlers.Medication.Log)
 				r.Get("/logs", handlers.Medication.GetLogs)
+				r.Get("/interactions", handlers.Medication.CheckInteractions)
+				r.Get("/medical-insights", handlers.Medication.GetMedicalInsights)
 			})
 
 			r.Route("/medications/{medID}", func(r chi.Router) {
@@ -166,12 +172,18 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			// Correlations & Insights
 			r.Route("/insights", func(r chi.Router) {
 				r.Get("/", handlers.Correlation.GetInsights)
+				r.Get("/tiered", handlers.Insight.GetInsightsByTier) // Three-Tier Learning System
+				r.Get("/top", handlers.Insight.GetTopInsights)       // Top insights across tiers
 				r.Get("/patterns", handlers.Correlation.GetPatterns)
 				r.Get("/patterns/top", handlers.Correlation.GetTopPatterns)
 				r.Get("/baselines", handlers.Correlation.GetBaselines)
 				r.Post("/baselines/recalculate", handlers.Correlation.RecalculateBaselines)
 				r.Get("/validations", handlers.Correlation.GetValidations)
 				r.Post("/validations", handlers.Correlation.CreateValidation)
+			})
+
+			r.Route("/insights/{insightID}", func(r chi.Router) {
+				r.Post("/validate", handlers.Insight.ValidateInsight)
 			})
 
 			r.Route("/correlations", func(r chi.Router) {
@@ -191,5 +203,27 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 
 		// Medication reference search
 		r.Get("/medication-references", handlers.Medication.SearchReferences)
+
+		// Drug database routes (FDA validation)
+		r.Route("/drugs", func(r chi.Router) {
+			r.Get("/validate", handlers.Medication.ValidateDrug)
+			r.Get("/info", handlers.Medication.GetDrugInfo)
+			r.Get("/image-proxy", handlers.Medication.ProxyDrugImage)
+		})
+
+		// Chat routes - require family context
+		r.Route("/chat", func(r chi.Router) {
+			r.Use(middleware.RequireFamilyContext())
+			r.Get("/threads", handlers.Chat.ListThreads)
+			r.Post("/threads", handlers.Chat.CreateThread)
+			r.Get("/unread", handlers.Chat.GetUnreadCount)
+
+			r.Route("/threads/{threadID}", func(r chi.Router) {
+				r.Get("/", handlers.Chat.GetThread)
+				r.Get("/messages", handlers.Chat.GetMessages)
+				r.Post("/messages", handlers.Chat.SendMessage)
+				r.Post("/participants", handlers.Chat.AddParticipant)
+			})
+		})
 	})
 }

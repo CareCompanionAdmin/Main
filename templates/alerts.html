@@ -17,13 +17,18 @@
                 <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="/settings" class="text-gray-500 hover:text-gray-700">
+                <a href="/chat" class="text-gray-500 hover:text-gray-700" title="Family Chat">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </a>
+                <a href="/settings" class="text-gray-500 hover:text-gray-700" title="Settings">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </a>
-                <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                <button onclick="logout()" class="text-gray-500 hover:text-gray-700" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -48,33 +53,138 @@
         <p class="text-gray-500">Pattern-based insights and notifications</p>
     </div>
 
+    <!-- Alert Stats -->
+    <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border p-4 text-center">
+            <p class="text-3xl font-bold text-gray-900">{{.AlertsPage.AlertStats.TotalActive}}</p>
+            <p class="text-sm text-gray-500">Active Alerts</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border p-4 text-center">
+            <p class="text-3xl font-bold text-gray-900">{{.AlertsPage.AlertStats.TotalThisWeek}}</p>
+            <p class="text-sm text-gray-500">This Week</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border p-4 text-center">
+            <div class="flex justify-center gap-4">
+                {{if gt .AlertsPage.AlertStats.CriticalCount 0}}
+                <span class="text-red-600 font-medium">{{.AlertsPage.AlertStats.CriticalCount}} critical</span>
+                {{end}}
+                {{if gt .AlertsPage.AlertStats.WarningCount 0}}
+                <span class="text-yellow-600 font-medium">{{.AlertsPage.AlertStats.WarningCount}} warning</span>
+                {{end}}
+                {{if gt .AlertsPage.AlertStats.InfoCount 0}}
+                <span class="text-blue-600 font-medium">{{.AlertsPage.AlertStats.InfoCount}} info</span>
+                {{end}}
+            </div>
+            <p class="text-sm text-gray-500 mt-1">By Severity</p>
+        </div>
+    </div>
+
     {{if .AlertsPage.ActiveAlerts}}
     <div class="space-y-4">
         {{range .AlertsPage.ActiveAlerts}}
-        <div class="bg-white rounded-xl shadow-sm border p-6 {{if eq .Severity "critical"}}border-l-4 border-l-red-500{{else if eq .Severity "warning"}}border-l-4 border-l-yellow-500{{else}}border-l-4 border-l-blue-500{{end}}">
-            <div class="flex justify-between items-start">
-                <div class="flex-1">
-                    <div class="flex items-center space-x-2 mb-2">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full {{if eq .Severity "critical"}}bg-red-100 text-red-700{{else if eq .Severity "warning"}}bg-yellow-100 text-yellow-700{{else}}bg-blue-100 text-blue-700{{end}}">
-                            {{.Severity}}
-                        </span>
-                        <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">{{.AlertType}}</span>
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden {{if eq .Severity "critical"}}border-l-4 border-l-red-500{{else if eq .Severity "warning"}}border-l-4 border-l-yellow-500{{else}}border-l-4 border-l-blue-500{{end}}">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full {{if eq .Severity "critical"}}bg-red-100 text-red-700{{else if eq .Severity "warning"}}bg-yellow-100 text-yellow-700{{else}}bg-blue-100 text-blue-700{{end}}">
+                                {{.Severity}}
+                            </span>
+                            <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">{{.AlertType}}</span>
+                            {{if .ConfidenceScore}}
+                            <span class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+                                {{printf "%.0f%%" .ConfidenceScore}} confidence
+                            </span>
+                            {{end}}
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">{{.Title}}</h3>
+                        <p class="text-gray-600 mt-1">{{.Description}}</p>
+                        <p class="text-sm text-gray-400 mt-2">{{.CreatedAt.Format "Jan 2, 2006 3:04 PM"}}</p>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">{{.Title}}</h3>
-                    <p class="text-gray-600 mt-1">{{.Description}}</p>
-                    <p class="text-sm text-gray-400 mt-2">{{.CreatedAt.Format "Jan 2, 2006 3:04 PM"}}</p>
+                    <button onclick="toggleAlertDetails('{{.ID}}')" class="text-indigo-600 hover:text-indigo-700 text-sm">
+                        View Details
+                    </button>
                 </div>
-                {{if not .AcknowledgedAt.Valid}}
-                <button onclick="acknowledgeAlert('{{.ID}}')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
-                    Acknowledge
-                </button>
-                {{else}}
-                <span class="text-green-600 text-sm">Acknowledged</span>
-                {{end}}
+            </div>
+
+            <!-- Alert Details (hidden by default) -->
+            <div id="alert-details-{{.ID}}" class="hidden border-t bg-gray-50 p-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <!-- Related Pattern Info -->
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Pattern Information</h4>
+                        {{if .CorrelationID.Valid}}
+                        <p class="text-sm text-gray-600">This alert is based on a detected pattern (ID: {{.CorrelationID.UUID}})</p>
+                        {{else}}
+                        <p class="text-sm text-gray-500">No specific pattern correlation</p>
+                        {{end}}
+                        {{if .DateRangeStart.Valid}}
+                        <p class="text-sm text-gray-600 mt-1">Date Range: {{.DateRangeStart.Time.Format "Jan 2"}} - {{if .DateRangeEnd.Valid}}{{.DateRangeEnd.Time.Format "Jan 2"}}{{else}}Present{{end}}</p>
+                        {{end}}
+                    </div>
+
+                    <!-- Actions -->
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Actions</h4>
+                        <div class="space-y-2">
+                            {{if not .AcknowledgedAt.Valid}}
+                            <button onclick="acknowledgeAlert('{{.ID}}')" class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                                Acknowledge
+                            </button>
+                            {{else}}
+                            <p class="text-green-600 text-sm">Acknowledged {{.AcknowledgedAt.Time.Format "Jan 2, 3:04 PM"}}</p>
+                            {{end}}
+                            {{if not .ResolvedAt.Valid}}
+                            <button onclick="resolveAlert('{{.ID}}')" class="w-full px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm">
+                                Mark as Resolved
+                            </button>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feedback Section -->
+                <div class="mt-4 pt-4 border-t">
+                    <h4 class="font-medium text-gray-900 mb-2">Was this alert helpful?</h4>
+                    <div class="flex gap-4">
+                        <button onclick="submitFeedback('{{.ID}}', true)" class="flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
+                            </svg>
+                            Yes, helpful
+                        </button>
+                        <button onclick="submitFeedback('{{.ID}}', false)" class="flex items-center px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"></path>
+                            </svg>
+                            Not helpful
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         {{end}}
     </div>
+
+    <!-- Recent Alerts Section -->
+    {{if .AlertsPage.RecentAlerts}}
+    <div class="mt-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Alerts (Last 30 Days)</h2>
+        <div class="space-y-2">
+            {{range .AlertsPage.RecentAlerts}}
+            <div class="bg-white rounded-lg shadow-sm border p-4 opacity-75">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-sm font-medium text-gray-900">{{.Title}}</span>
+                        <span class="ml-2 px-2 py-0.5 text-xs rounded-full {{if eq .Status "resolved"}}bg-green-100 text-green-700{{else if eq .Status "acknowledged"}}bg-blue-100 text-blue-700{{else}}bg-gray-100 text-gray-600{{end}}">{{.Status}}</span>
+                    </div>
+                    <span class="text-xs text-gray-400">{{.CreatedAt.Format "Jan 2"}}</span>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
     {{else}}
     <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -92,19 +202,67 @@
 const childId = '{{.Child.ID}}';
 const token = localStorage.getItem('access_token');
 
+function toggleAlertDetails(alertId) {
+    const details = document.getElementById(`alert-details-${alertId}`);
+    if (details) {
+        details.classList.toggle('hidden');
+    }
+}
+
 async function acknowledgeAlert(alertId) {
     try {
         const response = await fetch(`/api/children/${childId}/alerts/${alertId}/acknowledge`, {
             method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
+            credentials: 'include'
         });
         if (response.ok) {
             location.reload();
+        } else {
+            alert('Failed to acknowledge alert');
         }
     } catch (error) {
         alert('Failed to acknowledge alert');
+    }
+}
+
+async function resolveAlert(alertId) {
+    try {
+        const response = await fetch(`/api/children/${childId}/alerts/${alertId}/resolve`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Failed to resolve alert');
+        }
+    } catch (error) {
+        alert('Failed to resolve alert');
+    }
+}
+
+async function submitFeedback(alertId, helpful) {
+    try {
+        const response = await fetch(`/api/children/${childId}/alerts/${alertId}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ was_helpful: helpful })
+        });
+        if (response.ok) {
+            const buttons = document.querySelectorAll(`[onclick*="submitFeedback('${alertId}'"]`);
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+            });
+            alert('Thank you for your feedback!');
+        } else {
+            alert('Failed to submit feedback');
+        }
+    } catch (error) {
+        alert('Failed to submit feedback');
     }
 }
 
