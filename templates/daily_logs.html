@@ -954,27 +954,46 @@ async function handleSubmit(e) {
 
     switch (currentLogType) {
         case 'behavior':
-            const behaviorType = formData.get('behavior_type');
-            data = { notes: formData.get('notes') };
-            if (behaviorType === 'meltdown') data.meltdowns = 1;
-            else if (behaviorType === 'stimming') data.stimming_episodes = 1;
-            else if (behaviorType === 'aggression') data.aggression_incidents = 1;
-            else if (behaviorType === 'self_injury') data.self_injury_incidents = 1;
+            data = {
+                mood_level: formData.get('mood_level') ? parseInt(formData.get('mood_level')) : null,
+                energy_level: formData.get('energy_level') ? parseInt(formData.get('energy_level')) : null,
+                anxiety_level: formData.get('anxiety_level') ? parseInt(formData.get('anxiety_level')) : null,
+                meltdowns: parseInt(formData.get('meltdowns') || 0),
+                stimming_episodes: parseInt(formData.get('stimming_episodes') || 0),
+                aggression_incidents: parseInt(formData.get('aggression_incidents') || 0),
+                self_injury_incidents: parseInt(formData.get('self_injury_incidents') || 0),
+                triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
+                positive_behaviors: formData.get('positive_behaviors') ? formData.get('positive_behaviors').split(',').map(b => b.trim()).filter(b => b) : [],
+                notes: formData.get('notes')
+            };
             endpoint = 'behavior';
             break;
         case 'diet':
             data = {
                 meal_type: formData.get('meal_type'),
-                foods_eaten: formData.get('foods') ? formData.get('foods').split(',').map(f => f.trim()).filter(f => f) : [],
-                appetite_level: formData.get('appetite_level')
+                appetite_level: formData.get('appetite_level'),
+                foods_eaten: formData.get('foods_eaten') ? formData.get('foods_eaten').split(',').map(f => f.trim()).filter(f => f) : [],
+                foods_refused: formData.get('foods_refused') ? formData.get('foods_refused').split(',').map(f => f.trim()).filter(f => f) : [],
+                water_intake_oz: formData.get('water_intake_oz') ? parseInt(formData.get('water_intake_oz')) : null,
+                new_food_tried: formData.get('new_food_tried') || null,
+                supplements_taken: formData.get('supplements_taken') ? formData.get('supplements_taken').split(',').map(s => s.trim()).filter(s => s) : [],
+                allergic_reaction: formData.get('allergic_reaction') === 'on',
+                reaction_details: formData.get('reaction_details') || null,
+                notes: formData.get('notes')
             };
             endpoint = 'diet';
             break;
         case 'sleep':
             data = {
+                bedtime: formData.get('bedtime') || null,
+                wake_time: formData.get('wake_time') || null,
                 sleep_quality: formData.get('sleep_quality'),
                 total_sleep_minutes: formData.get('total_sleep_minutes') ? parseInt(formData.get('total_sleep_minutes')) : null,
                 night_wakings: parseInt(formData.get('night_wakings') || 0),
+                nightmares: formData.get('nightmares') === 'on',
+                bed_wetting: formData.get('bed_wetting') === 'on',
+                took_sleep_aid: formData.get('took_sleep_aid') === 'on',
+                sleep_aid_name: formData.get('sleep_aid_name') || null,
                 notes: formData.get('notes')
             };
             endpoint = 'sleep';
@@ -982,7 +1001,9 @@ async function handleSubmit(e) {
         case 'bowel':
             data = {
                 bristol_scale: formData.get('bristol_scale') ? parseInt(formData.get('bristol_scale')) : null,
+                pain_level: formData.get('pain_level') ? parseInt(formData.get('pain_level')) : null,
                 had_accident: formData.get('had_accident') === 'on',
+                blood_present: formData.get('blood_present') === 'on',
                 notes: formData.get('notes')
             };
             endpoint = 'bowel';
@@ -990,7 +1011,12 @@ async function handleSubmit(e) {
         case 'speech':
             data = {
                 verbal_output_level: formData.get('verbal_output_level') ? parseInt(formData.get('verbal_output_level')) : null,
+                clarity_level: formData.get('clarity_level') ? parseInt(formData.get('clarity_level')) : null,
                 new_words: formData.get('new_words') ? formData.get('new_words').split(',').map(w => w.trim()).filter(w => w) : [],
+                lost_words: formData.get('lost_words') ? formData.get('lost_words').split(',').map(w => w.trim()).filter(w => w) : [],
+                echolalia_level: formData.get('echolalia_level') ? parseInt(formData.get('echolalia_level')) : null,
+                communication_attempts: formData.get('communication_attempts') ? parseInt(formData.get('communication_attempts')) : null,
+                successful_communications: formData.get('successful_communications') ? parseInt(formData.get('successful_communications')) : null,
                 notes: formData.get('notes')
             };
             endpoint = 'speech';

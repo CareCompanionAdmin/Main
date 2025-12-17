@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,12 +17,14 @@ var (
 )
 
 type MedicationService struct {
-	medRepo repository.MedicationRepository
+	medRepo          repository.MedicationRepository
+	transparencyRepo *repository.TransparencyRepository
 }
 
-func NewMedicationService(medRepo repository.MedicationRepository) *MedicationService {
+func NewMedicationService(medRepo repository.MedicationRepository, transparencyRepo *repository.TransparencyRepository) *MedicationService {
 	return &MedicationService{
-		medRepo: medRepo,
+		medRepo:          medRepo,
+		transparencyRepo: transparencyRepo,
 	}
 }
 
@@ -92,17 +95,102 @@ func (s *MedicationService) Update(ctx context.Context, med *models.Medication) 
 	return s.medRepo.Update(ctx, med)
 }
 
+// UpdateWithTracking updates a medication and creates treatment change records for significant changes
+func (s *MedicationService) UpdateWithTracking(ctx context.Context, oldMed *models.Medication, newMed *models.Medication, userID uuid.UUID) error {
+	// Check for dosage changes
+	if oldMed.Dosage != newMed.Dosage || oldMed.DosageUnit != newMed.DosageUnit {
+		if s.transparencyRepo != nil {
+			tc := &models.TreatmentChange{
+				ChildID:         newMed.ChildID.String(),
+				ChangeType:      models.ChangeTypeMedicationDoseChanged,
+				SourceTable:     "medications",
+				SourceID:        newMed.ID.String(),
+				PreviousValue: models.JSONMap{
+					"dosage":      oldMed.Dosage,
+					"dosage_unit": oldMed.DosageUnit,
+				},
+				NewValue: models.JSONMap{
+					"dosage":      newMed.Dosage,
+					"dosage_unit": newMed.DosageUnit,
+				},
+				ChangeSummary:   fmt.Sprintf("Changed %s dosage from %s %s to %s %s", newMed.Name, oldMed.Dosage, oldMed.DosageUnit, newMed.Dosage, newMed.DosageUnit),
+				ChangedByUserID: userID.String(),
+			}
+			if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
+				// Log but don't fail the update
+				fmt.Printf("Warning: Failed to create treatment change record: %v\n", err)
+			}
+		}
+	}
+
+	// Check for frequency changes
+	if oldMed.Frequency != newMed.Frequency {
+		if s.transparencyRepo != nil {
+			tc := &models.TreatmentChange{
+				ChildID:     newMed.ChildID.String(),
+				ChangeType:  models.ChangeTypeMedicationScheduleChanged,
+				SourceTable: "medications",
+				SourceID:    newMed.ID.String(),
+				PreviousValue: models.JSONMap{
+					"frequency": oldMed.Frequency,
+				},
+				NewValue: models.JSONMap{
+					"frequency": newMed.Frequency,
+				},
+				ChangeSummary:   fmt.Sprintf("Changed %s frequency from %s to %s", newMed.Name, oldMed.Frequency, newMed.Frequency),
+				ChangedByUserID: userID.String(),
+			}
+			if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
+				fmt.Printf("Warning: Failed to create treatment change record: %v\n", err)
+			}
+		}
+	}
+
+	return s.medRepo.Update(ctx, newMed)
+}
+
 func (s *MedicationService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.medRepo.Delete(ctx, id)
 }
 
 func (s *MedicationService) Discontinue(ctx context.Context, id uuid.UUID) error {
+	return s.DiscontinueWithTracking(ctx, id, uuid.Nil)
+}
+
+// DiscontinueWithTracking discontinues a medication and creates a treatment change record
+func (s *MedicationService) DiscontinueWithTracking(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
 	med, err := s.medRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
 	if med == nil {
 		return ErrMedicationNotFound
+	}
+
+	// Create treatment change record before discontinuing
+	if s.transparencyRepo != nil && userID != uuid.Nil {
+		tc := &models.TreatmentChange{
+			ChildID:     med.ChildID.String(),
+			ChangeType:  models.ChangeTypeMedicationDiscontinued,
+			SourceTable: "medications",
+			SourceID:    med.ID.String(),
+			PreviousValue: models.JSONMap{
+				"is_active":   true,
+				"name":        med.Name,
+				"dosage":      med.Dosage,
+				"dosage_unit": med.DosageUnit,
+				"frequency":   med.Frequency,
+			},
+			NewValue: models.JSONMap{
+				"is_active": false,
+				"end_date":  time.Now().Format("2006-01-02"),
+			},
+			ChangeSummary:   fmt.Sprintf("Discontinued %s (%s %s, %s)", med.Name, med.Dosage, med.DosageUnit, med.Frequency),
+			ChangedByUserID: userID.String(),
+		}
+		if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
+			fmt.Printf("Warning: Failed to create treatment change record: %v\n", err)
+		}
 	}
 
 	med.IsActive = false

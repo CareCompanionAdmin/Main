@@ -40,7 +40,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		User:              NewUserService(repos.User, repos.Family),
 		Family:            NewFamilyService(repos.Family, repos.Child),
 		Child:             NewChildService(repos.Child, repos.Family),
-		Medication:        NewMedicationService(repos.Medication),
+		Medication:        NewMedicationService(repos.Medication, repos.Transparency),
 		Log:               NewLogService(repos.Log),
 		Alert:             alertService,
 		Correlation:       NewCorrelationService(repos.Correlation, alertService, repos.Child),

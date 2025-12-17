@@ -169,12 +169,18 @@ func (r *medicationRepo) GetSchedules(ctx context.Context, medicationID uuid.UUI
 	var schedules []models.MedicationSchedule
 	for rows.Next() {
 		var s models.MedicationSchedule
+		var daysOfWeek []int64 // pq.Array requires int64
 		err := rows.Scan(
 			&s.ID, &s.MedicationID, &s.TimeOfDay, &s.ScheduledTime,
-			pq.Array(&s.DaysOfWeek), &s.IsActive, &s.CreatedAt,
+			pq.Array(&daysOfWeek), &s.IsActive, &s.CreatedAt,
 		)
 		if err != nil {
 			return nil, err
+		}
+		// Convert []int64 to []int
+		s.DaysOfWeek = make([]int, len(daysOfWeek))
+		for i, d := range daysOfWeek {
+			s.DaysOfWeek[i] = int(d)
 		}
 		schedules = append(schedules, s)
 	}
@@ -324,7 +330,7 @@ func (r *medicationRepo) GetDueMedications(ctx context.Context, childID uuid.UUI
 		SELECT m.id, m.child_id, m.reference_id, m.name, m.dosage, m.dosage_unit, m.frequency, m.instructions, m.prescriber, m.pharmacy, m.start_date, m.end_date, m.is_active, m.created_at, m.updated_at,
 		       ms.id, ms.medication_id, ms.time_of_day, ms.scheduled_time, ms.days_of_week, ms.is_active, ms.created_at,
 		       ml.id IS NOT NULL as is_logged,
-		       COALESCE(ml.status, '') as logged_status
+		       COALESCE(ml.status::text, '') as logged_status
 		FROM medications m
 		JOIN medication_schedules ms ON ms.medication_id = m.id AND ms.is_active = true
 		LEFT JOIN medication_logs ml ON ml.medication_id = m.id AND ml.schedule_id = ms.id AND ml.log_date = $2
@@ -343,6 +349,7 @@ func (r *medicationRepo) GetDueMedications(ctx context.Context, childID uuid.UUI
 	for rows.Next() {
 		var due models.MedicationDue
 		var loggedStatusStr string
+		var daysOfWeek []int64 // pq.Array requires int64, not int
 		err := rows.Scan(
 			&due.Medication.ID, &due.Medication.ChildID, &due.Medication.ReferenceID,
 			&due.Medication.Name, &due.Medication.Dosage, &due.Medication.DosageUnit,
@@ -350,12 +357,17 @@ func (r *medicationRepo) GetDueMedications(ctx context.Context, childID uuid.UUI
 			&due.Medication.Pharmacy, &due.Medication.StartDate, &due.Medication.EndDate,
 			&due.Medication.IsActive, &due.Medication.CreatedAt, &due.Medication.UpdatedAt,
 			&due.Schedule.ID, &due.Schedule.MedicationID, &due.Schedule.TimeOfDay,
-			&due.Schedule.ScheduledTime, pq.Array(&due.Schedule.DaysOfWeek),
+			&due.Schedule.ScheduledTime, pq.Array(&daysOfWeek),
 			&due.Schedule.IsActive, &due.Schedule.CreatedAt,
 			&due.IsLogged, &loggedStatusStr,
 		)
 		if err != nil {
 			return nil, err
+		}
+		// Convert []int64 to []int for the model
+		due.Schedule.DaysOfWeek = make([]int, len(daysOfWeek))
+		for i, d := range daysOfWeek {
+			due.Schedule.DaysOfWeek[i] = int(d)
 		}
 		if loggedStatusStr != "" {
 			due.LoggedStatus = models.LogStatus(loggedStatusStr)

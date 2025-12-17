@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 
 	"carecompanion/internal/models"
 )
@@ -358,6 +359,52 @@ func (r *childRepo) GetDashboard(ctx context.Context, childID uuid.UUID, date ti
 	// Alert count for week
 	alertCountQuery := `SELECT COUNT(*) FROM alerts WHERE child_id = $1 AND created_at BETWEEN $2 AND $3`
 	r.db.QueryRowContext(ctx, alertCountQuery, childID, weekStart, date).Scan(&dashboard.WeekSummary.AlertCount)
+
+	// Get medications due today
+	dayOfWeek := int(date.Weekday())
+	dueMedsQuery := `
+		SELECT m.id, m.child_id, m.reference_id, m.name, m.dosage, m.dosage_unit, m.frequency, m.instructions, m.prescriber, m.pharmacy, m.start_date, m.end_date, m.is_active, m.created_at, m.updated_at,
+		       ms.id, ms.medication_id, ms.time_of_day, ms.scheduled_time, ms.days_of_week, ms.is_active, ms.created_at,
+		       ml.id IS NOT NULL as is_logged,
+		       COALESCE(ml.status::text, '') as logged_status
+		FROM medications m
+		JOIN medication_schedules ms ON ms.medication_id = m.id AND ms.is_active = true
+		LEFT JOIN medication_logs ml ON ml.medication_id = m.id AND ml.schedule_id = ms.id AND ml.log_date = $2
+		WHERE m.child_id = $1 AND m.is_active = true
+		  AND (ms.days_of_week IS NULL OR ms.days_of_week = '{}' OR $3 = ANY(ms.days_of_week))
+		ORDER BY ms.time_of_day ASC, m.name ASC
+	`
+	dueRows, err := r.db.QueryContext(ctx, dueMedsQuery, childID, date, dayOfWeek)
+	if err == nil {
+		defer dueRows.Close()
+		for dueRows.Next() {
+			var due models.MedicationDue
+			var loggedStatusStr string
+			var daysOfWeek []int64
+			err := dueRows.Scan(
+				&due.Medication.ID, &due.Medication.ChildID, &due.Medication.ReferenceID,
+				&due.Medication.Name, &due.Medication.Dosage, &due.Medication.DosageUnit,
+				&due.Medication.Frequency, &due.Medication.Instructions, &due.Medication.Prescriber,
+				&due.Medication.Pharmacy, &due.Medication.StartDate, &due.Medication.EndDate,
+				&due.Medication.IsActive, &due.Medication.CreatedAt, &due.Medication.UpdatedAt,
+				&due.Schedule.ID, &due.Schedule.MedicationID, &due.Schedule.TimeOfDay,
+				&due.Schedule.ScheduledTime, pq.Array(&daysOfWeek),
+				&due.Schedule.IsActive, &due.Schedule.CreatedAt,
+				&due.IsLogged, &loggedStatusStr,
+			)
+			if err != nil {
+				continue
+			}
+			due.Schedule.DaysOfWeek = make([]int, len(daysOfWeek))
+			for i, d := range daysOfWeek {
+				due.Schedule.DaysOfWeek[i] = int(d)
+			}
+			if loggedStatusStr != "" {
+				due.LoggedStatus = models.LogStatus(loggedStatusStr)
+			}
+			dashboard.MedicationsDue = append(dashboard.MedicationsDue, due)
+		}
+	}
 
 	return dashboard, nil
 }

@@ -98,12 +98,13 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				r.Get("/logs", handlers.Medication.GetLogs)
 				r.Get("/interactions", handlers.Medication.CheckInteractions)
 				r.Get("/medical-insights", handlers.Medication.GetMedicalInsights)
-			})
 
-			r.Route("/medications/{medID}", func(r chi.Router) {
-				r.Get("/", handlers.Medication.Get)
-				r.Put("/", handlers.Medication.Update)
-				r.Delete("/", handlers.Medication.Delete)
+				// Specific medication routes (must be after static routes)
+				r.Route("/{medID}", func(r chi.Router) {
+					r.Get("/", handlers.Medication.Get)
+					r.Put("/", handlers.Medication.Update)
+					r.Delete("/", handlers.Medication.Delete)
+				})
 			})
 
 			// Logs

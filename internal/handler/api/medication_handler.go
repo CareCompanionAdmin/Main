@@ -2,6 +2,7 @@ package api
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -122,6 +123,44 @@ func (h *MedicationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get the existing medication to track changes
+	oldMed, err := h.medService.GetByID(r.Context(), medID)
+	if err != nil {
+		respondNotFound(w, "Medication not found")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), oldMed.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	// Create a copy to apply updates to
+	newMed := *oldMed
+	if err := decodeJSON(r, &newMed); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	// Use UpdateWithTracking to create treatment change records
+	if err := h.medService.UpdateWithTracking(r.Context(), oldMed, &newMed, userID); err != nil {
+		respondInternalError(w, "Failed to update medication")
+		return
+	}
+
+	respondOK(w, &newMed)
+}
+
+// Delete discontinues a medication
+func (h *MedicationHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	medID, err := parseUUID(chi.URLParam(r, "medID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid medication ID")
+		return
+	}
+
+	// Get the medication to verify access
 	med, err := h.medService.GetByID(r.Context(), medID)
 	if err != nil {
 		respondNotFound(w, "Medication not found")
@@ -134,28 +173,8 @@ func (h *MedicationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := decodeJSON(r, med); err != nil {
-		respondBadRequest(w, "Invalid request body")
-		return
-	}
-
-	if err := h.medService.Update(r.Context(), med); err != nil {
-		respondInternalError(w, "Failed to update medication")
-		return
-	}
-
-	respondOK(w, med)
-}
-
-// Delete discontinues a medication
-func (h *MedicationHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	medID, err := parseUUID(chi.URLParam(r, "medID"))
-	if err != nil {
-		respondBadRequest(w, "Invalid medication ID")
-		return
-	}
-
-	if err := h.medService.Discontinue(r.Context(), medID); err != nil {
+	// Use DiscontinueWithTracking to create treatment change record
+	if err := h.medService.DiscontinueWithTracking(r.Context(), medID, userID); err != nil {
 		respondInternalError(w, "Failed to discontinue medication")
 		return
 	}
@@ -189,6 +208,7 @@ func (h *MedicationHandler) GetDue(w http.ResponseWriter, r *http.Request) {
 
 	dueMeds, err := h.medService.GetDueMedications(r.Context(), childID, date)
 	if err != nil {
+		log.Printf("GetDueMedications error: %v", err)
 		respondInternalError(w, "Failed to get due medications")
 		return
 	}

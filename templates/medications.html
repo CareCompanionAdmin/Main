@@ -60,10 +60,16 @@
     {{if .Medications}}
     <div class="space-y-4">
         {{range .Medications}}
-        <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-md transition-shadow"
+             onclick="openEditMedication('{{.ID}}', '{{.Name}}', '{{.Dosage}}', '{{.DosageUnit}}', '{{.Frequency}}', '{{if .Instructions.Valid}}{{.Instructions.String}}{{end}}', {{if .Schedules}}{{.Schedules | toJSON}}{{else}}[]{{end}})">
             <div class="flex justify-between items-start">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900">{{.Name}}</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                        {{.Name}}
+                        <svg class="w-4 h-4 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                    </h3>
                     <p class="text-gray-600">{{.Dosage}} {{.DosageUnit}} - {{.Frequency}}</p>
                     {{if .Instructions.Valid}}<p class="text-sm text-gray-500 mt-1">{{.Instructions.String}}</p>{{end}}
                 </div>
@@ -76,7 +82,7 @@
                 <p class="text-sm font-medium text-gray-700 mb-2">Schedule:</p>
                 <div class="flex flex-wrap gap-2">
                     {{range .Schedules}}
-                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">{{.TimeOfDay}}</span>
+                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">{{.TimeOfDay}}{{if .ScheduledTime.Valid}} ({{.ScheduledTime.String}}){{end}}</span>
                     {{end}}
                 </div>
             </div>
@@ -288,7 +294,7 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Frequency *</label>
-                <select name="frequency" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <select name="frequency" id="frequency-select" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateScheduleFields()">
                     <option value="once_daily">Once Daily</option>
                     <option value="twice_daily">Twice Daily</option>
                     <option value="three_times_daily">Three Times Daily</option>
@@ -296,6 +302,15 @@
                     <option value="as_needed">As Needed</option>
                     <option value="weekly">Weekly</option>
                 </select>
+            </div>
+
+            <!-- Schedule Section -->
+            <div id="schedule-section" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Scheduled Times</label>
+                <p class="text-xs text-gray-500 mb-3">Set when this medication should be taken. This determines when it appears in "Medications Due Today".</p>
+                <div id="schedule-inputs" class="space-y-3">
+                    <!-- Dynamically populated based on frequency -->
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
@@ -309,6 +324,100 @@
                     Cancel
                 </button>
             </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Medication Modal -->
+<div id="edit-medication-modal" class="hidden fixed inset-0 z-50">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideEditMedication()"></div>
+    <!-- Modal Container -->
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
+            <div class="bg-white rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Edit Medication</h2>
+                <form id="edit-medication-form" class="space-y-4">
+                    <input type="hidden" name="medication_id" id="edit-med-id">
+
+                    <!-- Warning banner about treatment tracking -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-amber-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm text-amber-800 font-medium">Treatment Change Tracking</p>
+                                <p class="text-xs text-amber-700 mt-1">Changes to dosage or schedule will be recorded for correlation analysis. You may be asked about the reason for this change.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name</label>
+                        <input type="text" name="name" id="edit-med-name" readonly class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Dosage *</label>
+                            <input type="text" name="dosage" id="edit-med-dosage" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
+                            <select name="dosage_unit" id="edit-med-unit" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="mg">mg</option>
+                                <option value="ml">ml</option>
+                                <option value="IU">IU</option>
+                                <option value="mcg">mcg</option>
+                                <option value="tablet">tablet</option>
+                                <option value="capsule">capsule</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Frequency *</label>
+                        <select name="frequency" id="edit-med-frequency" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateEditScheduleFields()">
+                            <option value="once_daily">Once Daily</option>
+                            <option value="twice_daily">Twice Daily</option>
+                            <option value="three_times_daily">Three Times Daily</option>
+                            <option value="four_times_daily">Four Times Daily</option>
+                            <option value="as_needed">As Needed</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                    </div>
+
+                    <!-- Edit Schedule Section -->
+                    <div id="edit-schedule-section" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Scheduled Times</label>
+                        <p class="text-xs text-gray-500 mb-3">Modify when this medication should be taken.</p>
+                        <div id="edit-schedule-inputs" class="space-y-3">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
+                        <textarea name="instructions" id="edit-med-instructions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Take with food"></textarea>
+                    </div>
+
+                    <div class="flex space-x-4">
+                        <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                            Save Changes
+                        </button>
+                        <button type="button" onclick="hideEditMedication()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                            Cancel
+                        </button>
+                    </div>
+
+                    <div class="border-t pt-4 mt-4">
+                        <button type="button" onclick="discontinueMedication()" class="w-full py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 border border-red-200">
+                            Discontinue Medication
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -604,15 +713,96 @@ function toggleExpand(section) {
 }
 
 
+// Schedule configuration for each frequency
+const scheduleConfigs = {
+    once_daily: [{ time_of_day: 'morning', default_time: '08:00', label: 'Morning' }],
+    twice_daily: [
+        { time_of_day: 'morning', default_time: '08:00', label: 'Morning' },
+        { time_of_day: 'evening', default_time: '18:00', label: 'Evening' }
+    ],
+    three_times_daily: [
+        { time_of_day: 'morning', default_time: '08:00', label: 'Morning' },
+        { time_of_day: 'afternoon', default_time: '13:00', label: 'Afternoon' },
+        { time_of_day: 'evening', default_time: '18:00', label: 'Evening' }
+    ],
+    four_times_daily: [
+        { time_of_day: 'morning', default_time: '07:00', label: 'Early Morning' },
+        { time_of_day: 'morning', default_time: '12:00', label: 'Noon' },
+        { time_of_day: 'afternoon', default_time: '16:00', label: 'Afternoon' },
+        { time_of_day: 'evening', default_time: '20:00', label: 'Evening' }
+    ],
+    as_needed: [],
+    weekly: [{ time_of_day: 'morning', default_time: '08:00', label: 'Weekly Dose', weekly: true }]
+};
+
+function updateScheduleFields() {
+    const frequency = document.getElementById('frequency-select').value;
+    const container = document.getElementById('schedule-inputs');
+    const section = document.getElementById('schedule-section');
+    const config = scheduleConfigs[frequency] || [];
+
+    if (config.length === 0) {
+        section.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    section.classList.remove('hidden');
+    container.innerHTML = config.map((slot, idx) => {
+        let html = `<div class="flex items-center gap-3">
+            <span class="text-sm font-medium text-gray-700 w-28">${slot.label}:</span>
+            <input type="time" name="schedule_time_${idx}" value="${slot.default_time}"
+                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+            <input type="hidden" name="schedule_tod_${idx}" value="${slot.time_of_day}">`;
+
+        if (slot.weekly) {
+            html += `<select name="schedule_day_${idx}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="monday">Monday</option>
+                <option value="tuesday">Tuesday</option>
+                <option value="wednesday">Wednesday</option>
+                <option value="thursday">Thursday</option>
+                <option value="friday">Friday</option>
+                <option value="saturday">Saturday</option>
+                <option value="sunday">Sunday</option>
+            </select>`;
+        }
+        html += '</div>';
+        return html;
+    }).join('');
+}
+
+// Initialize schedule fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateScheduleFields();
+});
+
 document.getElementById('medication-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const formData = new FormData(this);
+    const frequency = formData.get('frequency');
+    const config = scheduleConfigs[frequency] || [];
+
+    // Build schedules array
+    const schedules = config.map((slot, idx) => {
+        const schedule = {
+            time_of_day: formData.get(`schedule_tod_${idx}`),
+            scheduled_time: formData.get(`schedule_time_${idx}`)
+        };
+        // Add day for weekly frequency
+        if (slot.weekly) {
+            const day = formData.get(`schedule_day_${idx}`);
+            schedule.days_of_week = [day];
+        }
+        return schedule;
+    });
+
     const data = {
         name: formData.get('name'),
         dosage: formData.get('dosage'),
         dosage_unit: formData.get('dosage_unit'),
-        frequency: formData.get('frequency'),
-        instructions: formData.get('instructions')
+        frequency: frequency,
+        instructions: formData.get('instructions'),
+        schedules: schedules
     };
 
     try {
@@ -640,6 +830,195 @@ function logout() {
     document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/login';
+}
+
+// Edit Medication Modal Functions
+let currentEditMedId = null;
+let originalMedData = null;
+
+function openEditMedication(id, name, dosage, unit, frequency, instructions, schedules) {
+    currentEditMedId = id;
+
+    // Store original values for comparison
+    originalMedData = {
+        dosage: dosage,
+        dosage_unit: unit,
+        frequency: frequency,
+        schedules: schedules
+    };
+
+    // Populate form fields
+    document.getElementById('edit-med-id').value = id;
+    document.getElementById('edit-med-name').value = name;
+    document.getElementById('edit-med-dosage').value = dosage;
+    document.getElementById('edit-med-unit').value = unit;
+    document.getElementById('edit-med-frequency').value = frequency;
+    document.getElementById('edit-med-instructions').value = instructions;
+
+    // Show modal
+    const modal = document.getElementById('edit-medication-modal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleEditEscKey);
+
+    // Populate schedule fields with existing data
+    populateEditSchedules(frequency, schedules);
+}
+
+function hideEditMedication() {
+    document.getElementById('edit-medication-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', handleEditEscKey);
+    currentEditMedId = null;
+    originalMedData = null;
+}
+
+function handleEditEscKey(event) {
+    if (event.key === 'Escape') {
+        hideEditMedication();
+    }
+}
+
+function populateEditSchedules(frequency, existingSchedules) {
+    const config = scheduleConfigs[frequency] || [];
+    const container = document.getElementById('edit-schedule-inputs');
+    const section = document.getElementById('edit-schedule-section');
+
+    if (config.length === 0) {
+        section.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    section.classList.remove('hidden');
+
+    // Try to match existing schedules to config slots
+    container.innerHTML = config.map((slot, idx) => {
+        // Find matching existing schedule by time_of_day or use default
+        const existingSchedule = existingSchedules && existingSchedules.find(s =>
+            s.TimeOfDay === slot.time_of_day || s.time_of_day === slot.time_of_day
+        );
+
+        // Get the time value - handle both string and object formats
+        let timeValue = slot.default_time;
+        if (existingSchedule) {
+            // Handle ScheduledTime which may be a string or an object with Valid/String
+            if (existingSchedule.ScheduledTime) {
+                if (typeof existingSchedule.ScheduledTime === 'string') {
+                    timeValue = existingSchedule.ScheduledTime;
+                } else if (existingSchedule.ScheduledTime.Valid && existingSchedule.ScheduledTime.String) {
+                    timeValue = existingSchedule.ScheduledTime.String;
+                }
+            } else if (existingSchedule.scheduled_time) {
+                timeValue = existingSchedule.scheduled_time;
+            }
+        }
+
+        let html = `<div class="flex items-center gap-3">
+            <span class="text-sm font-medium text-gray-700 w-28">${slot.label}:</span>
+            <input type="time" name="edit_schedule_time_${idx}" value="${timeValue}"
+                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+            <input type="hidden" name="edit_schedule_tod_${idx}" value="${slot.time_of_day}">`;
+
+        if (slot.weekly) {
+            html += `<select name="edit_schedule_day_${idx}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="monday">Monday</option>
+                <option value="tuesday">Tuesday</option>
+                <option value="wednesday">Wednesday</option>
+                <option value="thursday">Thursday</option>
+                <option value="friday">Friday</option>
+                <option value="saturday">Saturday</option>
+                <option value="sunday">Sunday</option>
+            </select>`;
+        }
+        html += '</div>';
+        return html;
+    }).join('');
+}
+
+function updateEditScheduleFields() {
+    const frequency = document.getElementById('edit-med-frequency').value;
+    populateEditSchedules(frequency, []);
+}
+
+// Edit form submission
+document.getElementById('edit-medication-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const frequency = formData.get('frequency');
+    const config = scheduleConfigs[frequency] || [];
+
+    // Build schedules array
+    const schedules = config.map((slot, idx) => {
+        const schedule = {
+            time_of_day: formData.get(`edit_schedule_tod_${idx}`),
+            scheduled_time: formData.get(`edit_schedule_time_${idx}`)
+        };
+        if (slot.weekly) {
+            const day = formData.get(`edit_schedule_day_${idx}`);
+            schedule.days_of_week = [day];
+        }
+        return schedule;
+    });
+
+    const data = {
+        dosage: formData.get('dosage'),
+        dosage_unit: formData.get('dosage_unit'),
+        frequency: frequency,
+        instructions: formData.get('instructions'),
+        schedules: schedules
+    };
+
+    // Determine what changed for treatment tracking
+    const dosageChanged = data.dosage !== originalMedData.dosage || data.dosage_unit !== originalMedData.dosage_unit;
+    const scheduleChanged = data.frequency !== originalMedData.frequency;
+
+    try {
+        const response = await fetch(`/api/children/${childId}/medications/${currentEditMedId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            // If there were changes, show a message about treatment tracking
+            if (dosageChanged || scheduleChanged) {
+                alert('Medication updated. This change has been recorded for treatment tracking and correlation analysis.');
+            }
+            location.reload();
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            alert('Failed to update medication: ' + (errorData.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('An error occurred: ' + error.message);
+    }
+});
+
+async function discontinueMedication() {
+    if (!confirm('Are you sure you want to discontinue this medication? This will be recorded as a treatment change.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/children/${childId}/medications/${currentEditMedId}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            alert('Medication discontinued. This change has been recorded for treatment tracking.');
+            location.reload();
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            alert('Failed to discontinue medication: ' + (errorData.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('An error occurred: ' + error.message);
+    }
 }
 </script>
 </body>

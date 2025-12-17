@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -13,6 +14,14 @@ var templates *template.Template
 
 // Template functions
 var templateFuncs = template.FuncMap{
+	// toJSON converts a value to JSON for use in JavaScript
+	"toJSON": func(v interface{}) template.JS {
+		bytes, err := json.Marshal(v)
+		if err != nil {
+			return template.JS("[]")
+		}
+		return template.JS(bytes)
+	},
 	// deref dereferences a pointer and returns the value, or 0 if nil
 	"deref": func(ptr interface{}) interface{} {
 		if ptr == nil {

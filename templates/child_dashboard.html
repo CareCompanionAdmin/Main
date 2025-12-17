@@ -150,7 +150,7 @@
                 {{if .Dashboard.MedicationsDue}}
                 <div class="space-y-3">
                     {{range .Dashboard.MedicationsDue}}
-                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div id="med-row-{{.Medication.ID}}-{{.Schedule.ID}}" class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
@@ -158,11 +158,24 @@
                         </div>
                         <div class="flex-1">
                             <p class="text-sm font-medium text-gray-900">{{.Medication.Name}}</p>
-                            <p class="text-xs text-gray-500">{{.Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} - {{.Schedule.ScheduledTime.String}}{{end}}</p>
+                            <p class="text-xs text-gray-500">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{.Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{.Schedule.ScheduledTime.String}}){{end}}</p>
                         </div>
-                        <span class="px-2 py-1 text-xs rounded-full {{if .IsLogged}}bg-green-100 text-green-700{{else}}bg-yellow-100 text-yellow-700{{end}}">
-                            {{if .IsLogged}}Logged{{else}}Pending{{end}}
+                        {{if .IsLogged}}
+                        <span class="px-3 py-1 text-xs rounded-full {{if eq .LoggedStatus "taken"}}bg-green-100 text-green-700{{else if or (eq .LoggedStatus "skipped") (eq .LoggedStatus "missed")}}bg-red-100 text-red-700{{else}}bg-yellow-100 text-yellow-700{{end}}">
+                            {{if eq .LoggedStatus "taken"}}✓ Taken{{else if or (eq .LoggedStatus "skipped") (eq .LoggedStatus "missed")}}✗ Missed{{else}}Logged{{end}}
                         </span>
+                        {{else}}
+                        <div class="flex space-x-2">
+                            <button onclick="logMedication('{{.Medication.ID}}', '{{.Schedule.ID}}', 'taken')"
+                                    class="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                                ✓ Taken
+                            </button>
+                            <button onclick="logMedication('{{.Medication.ID}}', '{{.Schedule.ID}}', 'missed')"
+                                    class="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium">
+                                ✗ Missed
+                            </button>
+                        </div>
+                        {{end}}
                     </div>
                     {{end}}
                 </div>
@@ -315,125 +328,246 @@ const token = localStorage.getItem('access_token');
 const formTemplates = {
     behavior: `
         <form id="entry-form" class="space-y-4">
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10)</label>
+                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Energy (1-10)</label>
+                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Anxiety (1-10)</label>
+                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
+                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming Episodes</label>
+                    <input type="number" name="stimming_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Aggression Incidents</label>
+                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Self-Injury Incidents</label>
+                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Behavior Type</label>
-                <select name="behavior_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">Select...</option>
-                    <option value="meltdown">Meltdown</option>
-                    <option value="stimming">Stimming</option>
-                    <option value="aggression">Aggression</option>
-                    <option value="self_injury">Self-injury</option>
-                    <option value="positive">Positive Behavior</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
+                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Positive Behaviors</label>
+                <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
         </form>
     `,
     diet: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
-                <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">Select...</option>
-                    <option value="breakfast">Breakfast</option>
-                    <option value="lunch">Lunch</option>
-                    <option value="dinner">Dinner</option>
-                    <option value="snack">Snack</option>
-                </select>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
+                    <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                        <option value="snack">Snack</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Appetite Level</label>
+                    <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="high">High</option>
+                        <option value="normal">Normal</option>
+                        <option value="low">Low</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Foods</label>
-                <input type="text" name="foods" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., eggs, toast">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Foods Eaten</label>
+                <input type="text" name="foods_eaten" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., eggs, toast, apple)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Appetite Level</label>
-                <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="high">High</option>
-                    <option value="normal" selected>Normal</option>
-                    <option value="low">Low</option>
-                    <option value="none">None</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Foods Refused</label>
+                <input type="text" name="foods_refused" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save</button>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Water Intake (oz)</label>
+                    <input type="number" name="water_intake_oz" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="oz">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Food Tried</label>
+                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                </div>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Supplements Taken</label>
+                <input type="text" name="supplements_taken" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="allergic_reaction" id="qa_allergic_reaction" class="mr-2" onchange="document.getElementById('qa_reaction-details').classList.toggle('hidden', !this.checked)">
+                    <label for="qa_allergic_reaction" class="text-sm text-gray-700">Allergic Reaction</label>
+                </div>
+            </div>
+            <div id="qa_reaction-details" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Reaction Details</label>
+                <textarea name="reaction_details" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Describe the reaction..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <button type="submit" class="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save</button>
         </form>
     `,
     sleep: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Quality</label>
-                <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="excellent">Excellent</option>
-                    <option value="good" selected>Good</option>
-                    <option value="fair">Fair</option>
-                    <option value="poor">Poor</option>
-                </select>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bedtime</label>
+                    <input type="time" name="bedtime" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Wake Time</label>
+                    <input type="time" name="wake_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Total Sleep (minutes)</label>
-                <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 480">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Quality</label>
+                    <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="excellent">Excellent</option>
+                        <option value="good">Good</option>
+                        <option value="fair">Fair</option>
+                        <option value="poor">Poor</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Sleep (minutes)</label>
+                    <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 480">
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Night Wakings</label>
-                <input type="number" name="night_wakings" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div class="flex flex-wrap gap-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="nightmares" id="qa_nightmares" class="mr-2">
+                    <label for="qa_nightmares" class="text-sm text-gray-700">Nightmares</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="bed_wetting" id="qa_bed_wetting" class="mr-2">
+                    <label for="qa_bed_wetting" class="text-sm text-gray-700">Bed Wetting</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="took_sleep_aid" id="qa_took_sleep_aid" class="mr-2" onchange="document.getElementById('qa_sleep-aid-name').classList.toggle('hidden', !this.checked)">
+                    <label for="qa_took_sleep_aid" class="text-sm text-gray-700">Took Sleep Aid</label>
+                </div>
+            </div>
+            <div id="qa_sleep-aid-name" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Aid Name</label>
+                <input type="text" name="sleep_aid_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Melatonin">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Save</button>
         </form>
     `,
     bowel: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Bristol Scale (1-7)</label>
-                <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bristol Scale (1-7)</label>
+                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <p class="text-xs text-gray-500 mt-1">1=hard lumps, 4=smooth, 7=liquid</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pain Level (1-10)</label>
+                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                </div>
             </div>
-            <div class="flex items-center">
-                <input type="checkbox" name="had_accident" id="had_accident" class="mr-2">
-                <label for="had_accident" class="text-sm text-gray-700">Had Accident</label>
+            <div class="flex flex-wrap gap-4">
+                <div class="flex items-center">
+                    <input type="checkbox" name="had_accident" id="qa_had_accident" class="mr-2">
+                    <label for="qa_had_accident" class="text-sm text-gray-700">Had Accident</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" name="blood_present" id="qa_blood_present" class="mr-2">
+                    <label for="qa_blood_present" class="text-sm text-red-600 font-medium">Blood Present</label>
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Save</button>
         </form>
     `,
     speech: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Verbal Output Level (1-10)</label>
-                <input type="number" name="verbal_output_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Verbal Output (1-10)</label>
+                    <input type="number" name="verbal_output_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Clarity (1-10)</label>
+                    <input type="number" name="clarity_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Words</label>
+                    <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lost Words</label>
+                    <input type="text" name="lost_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">New Words</label>
-                <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Echolalia Level (1-10)</label>
+                <input type="number" name="echolalia_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0 = none, 10 = constant">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Communication Attempts</label>
+                    <input type="number" name="communication_attempts" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Successful Communications</label>
+                    <input type="number" name="successful_communications" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save</button>
         </form>
     `,
     weight: `
@@ -450,30 +584,24 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">Save</button>
         </form>
     `,
     sensory: `
         <form id="entry-form" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Overall Regulation (1-10)</label>
-                <input type="number" name="overall_regulation" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sensitivity Level (1-10)</label>
+                <input type="number" name="sensitivity_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Overload Triggers</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
                 <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save</button>
         </form>
     `,
     social: `
@@ -487,17 +615,14 @@ const formTemplates = {
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Engagement Level (1-10)</label>
-                <input type="number" name="engagement_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Quality (1-10)</label>
+                <input type="number" name="interaction_quality" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Save</button>
         </form>
     `,
     therapy: `
@@ -520,10 +645,7 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
         </form>
     `,
     seizure: `
@@ -545,10 +667,7 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Save</button>
         </form>
     `,
     health: `
@@ -571,10 +690,7 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
-            <div class="flex space-x-3">
-                <button type="button" onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" class="flex-1 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
-            </div>
+            <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
     `
 };
@@ -617,27 +733,46 @@ async function handleSubmit(e) {
 
     switch (currentLogType) {
         case 'behavior':
-            const behaviorType = formData.get('behavior_type');
-            data = { notes: formData.get('notes') };
-            if (behaviorType === 'meltdown') data.meltdowns = 1;
-            else if (behaviorType === 'stimming') data.stimming_episodes = 1;
-            else if (behaviorType === 'aggression') data.aggression_incidents = 1;
-            else if (behaviorType === 'self_injury') data.self_injury_incidents = 1;
+            data = {
+                mood_level: formData.get('mood_level') ? parseInt(formData.get('mood_level')) : null,
+                energy_level: formData.get('energy_level') ? parseInt(formData.get('energy_level')) : null,
+                anxiety_level: formData.get('anxiety_level') ? parseInt(formData.get('anxiety_level')) : null,
+                meltdowns: parseInt(formData.get('meltdowns') || 0),
+                stimming_episodes: parseInt(formData.get('stimming_episodes') || 0),
+                aggression_incidents: parseInt(formData.get('aggression_incidents') || 0),
+                self_injury_incidents: parseInt(formData.get('self_injury_incidents') || 0),
+                triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
+                positive_behaviors: formData.get('positive_behaviors') ? formData.get('positive_behaviors').split(',').map(b => b.trim()).filter(b => b) : [],
+                notes: formData.get('notes')
+            };
             endpoint = 'behavior';
             break;
         case 'diet':
             data = {
                 meal_type: formData.get('meal_type'),
-                foods_eaten: formData.get('foods') ? formData.get('foods').split(',').map(f => f.trim()).filter(f => f) : [],
-                appetite_level: formData.get('appetite_level')
+                appetite_level: formData.get('appetite_level'),
+                foods_eaten: formData.get('foods_eaten') ? formData.get('foods_eaten').split(',').map(f => f.trim()).filter(f => f) : [],
+                foods_refused: formData.get('foods_refused') ? formData.get('foods_refused').split(',').map(f => f.trim()).filter(f => f) : [],
+                water_intake_oz: formData.get('water_intake_oz') ? parseInt(formData.get('water_intake_oz')) : null,
+                new_food_tried: formData.get('new_food_tried') || null,
+                supplements_taken: formData.get('supplements_taken') ? formData.get('supplements_taken').split(',').map(s => s.trim()).filter(s => s) : [],
+                allergic_reaction: formData.get('allergic_reaction') === 'on',
+                reaction_details: formData.get('reaction_details') || null,
+                notes: formData.get('notes')
             };
             endpoint = 'diet';
             break;
         case 'sleep':
             data = {
+                bedtime: formData.get('bedtime') || null,
+                wake_time: formData.get('wake_time') || null,
                 sleep_quality: formData.get('sleep_quality'),
                 total_sleep_minutes: formData.get('total_sleep_minutes') ? parseInt(formData.get('total_sleep_minutes')) : null,
                 night_wakings: parseInt(formData.get('night_wakings') || 0),
+                nightmares: formData.get('nightmares') === 'on',
+                bed_wetting: formData.get('bed_wetting') === 'on',
+                took_sleep_aid: formData.get('took_sleep_aid') === 'on',
+                sleep_aid_name: formData.get('sleep_aid_name') || null,
                 notes: formData.get('notes')
             };
             endpoint = 'sleep';
@@ -645,7 +780,9 @@ async function handleSubmit(e) {
         case 'bowel':
             data = {
                 bristol_scale: formData.get('bristol_scale') ? parseInt(formData.get('bristol_scale')) : null,
+                pain_level: formData.get('pain_level') ? parseInt(formData.get('pain_level')) : null,
                 had_accident: formData.get('had_accident') === 'on',
+                blood_present: formData.get('blood_present') === 'on',
                 notes: formData.get('notes')
             };
             endpoint = 'bowel';
@@ -653,7 +790,12 @@ async function handleSubmit(e) {
         case 'speech':
             data = {
                 verbal_output_level: formData.get('verbal_output_level') ? parseInt(formData.get('verbal_output_level')) : null,
+                clarity_level: formData.get('clarity_level') ? parseInt(formData.get('clarity_level')) : null,
                 new_words: formData.get('new_words') ? formData.get('new_words').split(',').map(w => w.trim()).filter(w => w) : [],
+                lost_words: formData.get('lost_words') ? formData.get('lost_words').split(',').map(w => w.trim()).filter(w => w) : [],
+                echolalia_level: formData.get('echolalia_level') ? parseInt(formData.get('echolalia_level')) : null,
+                communication_attempts: formData.get('communication_attempts') ? parseInt(formData.get('communication_attempts')) : null,
+                successful_communications: formData.get('successful_communications') ? parseInt(formData.get('successful_communications')) : null,
                 notes: formData.get('notes')
             };
             endpoint = 'speech';
@@ -668,7 +810,7 @@ async function handleSubmit(e) {
             break;
         case 'sensory':
             data = {
-                overall_regulation: formData.get('overall_regulation') ? parseInt(formData.get('overall_regulation')) : null,
+                overall_regulation: formData.get('sensitivity_level') ? parseInt(formData.get('sensitivity_level')) : null,
                 overload_triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
                 notes: formData.get('notes')
             };
@@ -676,7 +818,7 @@ async function handleSubmit(e) {
             break;
         case 'social':
             data = {
-                social_engagement_level: formData.get('engagement_level') ? parseInt(formData.get('engagement_level')) : null,
+                social_engagement_level: formData.get('interaction_quality') ? parseInt(formData.get('interaction_quality')) : null,
                 peer_interactions: formData.get('interaction_type') === 'peer' ? 1 : 0,
                 notes: formData.get('notes')
             };
@@ -901,6 +1043,65 @@ async function acknowledgeAlert(alertId) {
 document.addEventListener('DOMContentLoaded', function() {
     loadActiveAlerts();
 });
+
+// Log medication as taken or skipped
+async function logMedication(medicationId, scheduleId, status) {
+    try {
+        const response = await fetch(`/api/children/${childId}/medications/log`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                medication_id: medicationId,
+                schedule_id: scheduleId || null,
+                status: status,
+                log_date: new Date().toISOString()
+            })
+        });
+
+        if (response.ok) {
+            // Update the UI to show the new status
+            const row = document.getElementById(`med-row-${medicationId}-${scheduleId}`);
+            if (row) {
+                // Replace the buttons with a status badge
+                const buttonsDiv = row.querySelector('.flex.space-x-2');
+                if (buttonsDiv) {
+                    const badge = document.createElement('span');
+                    if (status === 'taken') {
+                        badge.className = 'px-3 py-1 text-xs rounded-full bg-green-100 text-green-700';
+                        badge.textContent = '✓ Taken';
+                    } else {
+                        badge.className = 'px-3 py-1 text-xs rounded-full bg-red-100 text-red-700';
+                        badge.textContent = '✗ Missed';
+                    }
+                    buttonsDiv.replaceWith(badge);
+                }
+            }
+
+            // Update the medication count in Today's Summary
+            const summaryBox = document.querySelector('.bg-blue-50.rounded-lg.p-4.text-center');
+            if (summaryBox && status === 'taken') {
+                const countText = summaryBox.querySelector('.text-2xl');
+                if (countText) {
+                    const parts = countText.textContent.split('/');
+                    if (parts.length === 2) {
+                        const taken = parseInt(parts[0]) + 1;
+                        countText.textContent = `${taken}/${parts[1]}`;
+                    }
+                }
+            }
+
+            showSuccessMessage(status === 'taken' ? 'Medication marked as taken!' : 'Medication marked as skipped');
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            alert('Failed to log medication: ' + (errorData.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('An error occurred: ' + error.message);
+    }
+}
 </script>
 </body>
 </html>
