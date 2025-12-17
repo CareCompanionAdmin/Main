@@ -14,6 +14,12 @@ type Config struct {
 	Redis       RedisConfig
 	JWT         JWTConfig
 	Correlation CorrelationConfig
+	Storage     StorageConfig
+}
+
+type StorageConfig struct {
+	UploadDir   string
+	MaxFileSize int64
 }
 
 type AppConfig struct {
@@ -92,6 +98,10 @@ func Load() (*Config, error) {
 			MinDataPoints:       getEnvInt("CORRELATION_MIN_DATA_POINTS", 7),
 			ConfidenceThreshold: getEnvFloat("CORRELATION_CONFIDENCE_THRESHOLD", 0.6),
 			BatchSize:           getEnvInt("CORRELATION_BATCH_SIZE", 100),
+		},
+		Storage: StorageConfig{
+			UploadDir:   getEnv("STORAGE_UPLOAD_DIR", "./uploads"),
+			MaxFileSize: int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10*1024*1024)), // 10MB default
 		},
 	}
 

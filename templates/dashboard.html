@@ -79,13 +79,37 @@
         </a>
     </div>
 
+    <!-- Pending Interrogatives Section (Treatment Change Questions) -->
+    <div id="interrogatives-section" class="hidden mb-6">
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-3 flex-1">
+                    <h3 class="text-sm font-medium text-yellow-800">Quick Question About Recent Changes</h3>
+                    <div id="interrogative-content" class="mt-2">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                <button onclick="dismissInterrogatives()" class="flex-shrink-0 ml-4 text-yellow-400 hover:text-yellow-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
     {{if .Dashboard.Children}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {{range .Dashboard.Children}}
-        <div class="bg-white rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow">
+        <div class="{{if .Gender.Valid}}{{if eq .Gender.String "male"}}bg-blue-50{{else if eq .Gender.String "female"}}bg-pink-50{{else}}bg-white{{end}}{{else}}bg-white{{end}} rounded-xl shadow-sm border p-6 hover:shadow-md transition-shadow">
             <div class="flex items-center space-x-4 mb-4">
-                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span class="text-xl font-bold text-indigo-600">{{slice .FirstName 0 1}}</span>
+                <div class="w-12 h-12 {{if .Gender.Valid}}{{if eq .Gender.String "male"}}bg-blue-200{{else if eq .Gender.String "female"}}bg-pink-200{{else}}bg-indigo-100{{end}}{{else}}bg-indigo-100{{end}} rounded-full flex items-center justify-center">
+                    <span class="text-xl font-bold {{if .Gender.Valid}}{{if eq .Gender.String "male"}}text-blue-600{{else if eq .Gender.String "female"}}text-pink-600{{else}}text-indigo-600{{end}}{{else}}text-indigo-600{{end}}">{{slice .FirstName 0 1}}</span>
                 </div>
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900">{{.FullName}}</h3>
@@ -149,7 +173,7 @@
                             {{end}}
                         </div>
                     </div>
-                    <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">{{.Role}}</span>
+                    <span class="px-3 py-1 text-sm rounded-full {{if eq .Role "parent"}}bg-blue-100 text-blue-700{{else if eq .Role "caregiver"}}bg-green-100 text-green-700{{else if eq .Role "medical_provider"}}bg-purple-100 text-purple-700{{else}}bg-gray-100 text-gray-700{{end}}">{{.Role}}</span>
                 </div>
                 {{end}}
             </div>
@@ -159,6 +183,98 @@
 </main>
 
 <script>
+// Load pending interrogatives on page load
+document.addEventListener('DOMContentLoaded', loadPendingInterrogatives);
+
+let pendingInterrogatives = [];
+let currentInterrogativeIndex = 0;
+
+async function loadPendingInterrogatives() {
+    try {
+        const response = await fetch('/api/treatment-changes/pending-questions', {
+            credentials: 'include'
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        pendingInterrogatives = data.pending || [];
+
+        if (pendingInterrogatives.length > 0) {
+            showInterrogativePrompt();
+        }
+    } catch (error) {
+        console.error('Error loading interrogatives:', error);
+    }
+}
+
+function showInterrogativePrompt() {
+    if (currentInterrogativeIndex >= pendingInterrogatives.length) {
+        document.getElementById('interrogatives-section').classList.add('hidden');
+        return;
+    }
+
+    const item = pendingInterrogatives[currentInterrogativeIndex];
+    const change = item.treatment_change;
+    const childName = item.child_name || 'your child';
+
+    document.getElementById('interrogatives-section').classList.remove('hidden');
+    document.getElementById('interrogative-content').innerHTML = `
+        <p class="text-sm text-yellow-700 mb-3">
+            We noticed a change for <strong>${childName}</strong>: ${change.change_summary}
+            ${item.related_alert ? '<br><span class="text-xs text-yellow-600">This might be related to a recent insight we shared.</span>' : ''}
+        </p>
+        <div class="space-y-2">
+            <p class="text-xs font-medium text-yellow-800">What prompted this change?</p>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="respondToChange('${change.id}', 'self_directed')" class="px-3 py-1.5 text-xs bg-white border border-yellow-300 text-yellow-800 rounded-md hover:bg-yellow-100">
+                    I decided myself
+                </button>
+                <button onclick="respondToChange('${change.id}', 'provider_recommended')" class="px-3 py-1.5 text-xs bg-white border border-yellow-300 text-yellow-800 rounded-md hover:bg-yellow-100">
+                    Provider recommended
+                </button>
+                <button onclick="respondToChange('${change.id}', 'other_family_member')" class="px-3 py-1.5 text-xs bg-white border border-yellow-300 text-yellow-800 rounded-md hover:bg-yellow-100">
+                    Other family member
+                </button>
+                <button onclick="skipInterrogative('${change.id}')" class="px-3 py-1.5 text-xs text-yellow-600 hover:text-yellow-800">
+                    Skip
+                </button>
+            </div>
+        </div>
+        ${pendingInterrogatives.length > 1 ? `<p class="text-xs text-yellow-500 mt-2">${currentInterrogativeIndex + 1} of ${pendingInterrogatives.length} questions</p>` : ''}
+    `;
+}
+
+async function respondToChange(changeId, source) {
+    try {
+        const response = await fetch(`/api/treatment-changes/${changeId}/respond`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ change_source: source })
+        });
+
+        if (response.ok) {
+            // Move to next interrogative
+            currentInterrogativeIndex++;
+            showInterrogativePrompt();
+        } else {
+            console.error('Failed to respond to change');
+        }
+    } catch (error) {
+        console.error('Error responding to change:', error);
+    }
+}
+
+function skipInterrogative(changeId) {
+    currentInterrogativeIndex++;
+    showInterrogativePrompt();
+}
+
+function dismissInterrogatives() {
+    document.getElementById('interrogatives-section').classList.add('hidden');
+}
+
 function logout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');

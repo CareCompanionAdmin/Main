@@ -22,17 +22,20 @@ type ChatService struct {
 	chatRepo   repository.ChatRepository
 	userRepo   repository.UserRepository
 	familyRepo repository.FamilyRepository
+	childRepo  repository.ChildRepository
 }
 
 func NewChatService(
 	chatRepo repository.ChatRepository,
 	userRepo repository.UserRepository,
 	familyRepo repository.FamilyRepository,
+	childRepo repository.ChildRepository,
 ) *ChatService {
 	return &ChatService{
 		chatRepo:   chatRepo,
 		userRepo:   userRepo,
 		familyRepo: familyRepo,
+		childRepo:  childRepo,
 	}
 }
 
@@ -86,7 +89,8 @@ func (s *ChatService) CreateThread(ctx context.Context, familyID, creatorID uuid
 
 // SendMessage sends a message to a thread
 func (s *ChatService) SendMessage(ctx context.Context, threadID, senderID uuid.UUID, req *models.SendMessageRequest) (*models.ChatMessage, error) {
-	if req.MessageText == "" {
+	// Require either message text or attachments
+	if req.MessageText == "" && len(req.Attachments) == 0 {
 		return nil, ErrEmptyMessage
 	}
 
@@ -174,6 +178,24 @@ func (s *ChatService) GetThreads(ctx context.Context, familyID, userID uuid.UUID
 		isParticipant, _ := s.chatRepo.IsParticipant(ctx, thread.ID, userID)
 		if isParticipant {
 			thread.UnreadCount, _ = s.chatRepo.GetUnreadCount(ctx, thread.ID, userID)
+
+			// Populate participants
+			participants, err := s.chatRepo.GetParticipants(ctx, thread.ID)
+			if err == nil {
+				thread.Participants = participants
+			}
+
+			// Populate child name if thread is about a child
+			if thread.ChildID != nil {
+				child, err := s.childRepo.GetByID(ctx, *thread.ChildID)
+				if err == nil && child != nil {
+					thread.ChildName = child.FirstName
+					if child.LastName.Valid {
+						thread.ChildName += " " + child.LastName.String
+					}
+				}
+			}
+
 			result = append(result, thread)
 		}
 	}
@@ -198,6 +220,23 @@ func (s *ChatService) GetThread(ctx context.Context, threadID, userID uuid.UUID)
 	}
 
 	thread.UnreadCount, _ = s.chatRepo.GetUnreadCount(ctx, threadID, userID)
+
+	// Populate participants
+	participants, err := s.chatRepo.GetParticipants(ctx, threadID)
+	if err == nil {
+		thread.Participants = participants
+	}
+
+	// Populate child name if thread is about a child
+	if thread.ChildID != nil {
+		child, err := s.childRepo.GetByID(ctx, *thread.ChildID)
+		if err == nil && child != nil {
+			thread.ChildName = child.FirstName
+			if child.LastName.Valid {
+				thread.ChildName += " " + child.LastName.String
+			}
+		}
+	}
 
 	return thread, nil
 }

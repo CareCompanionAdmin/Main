@@ -11,10 +11,60 @@ import (
 
 var templates *template.Template
 
+// Template functions
+var templateFuncs = template.FuncMap{
+	// deref dereferences a pointer and returns the value, or 0 if nil
+	"deref": func(ptr interface{}) interface{} {
+		if ptr == nil {
+			return 0.0
+		}
+		switch v := ptr.(type) {
+		case *float64:
+			if v == nil {
+				return 0.0
+			}
+			return *v
+		case *int:
+			if v == nil {
+				return 0
+			}
+			return *v
+		case *string:
+			if v == nil {
+				return ""
+			}
+			return *v
+		default:
+			return ptr
+		}
+	},
+	// mul multiplies two numbers
+	"mul": func(a, b interface{}) float64 {
+		var af, bf float64
+		switch v := a.(type) {
+		case float64:
+			af = v
+		case *float64:
+			if v != nil {
+				af = *v
+			}
+		case int:
+			af = float64(v)
+		}
+		switch v := b.(type) {
+		case float64:
+			bf = v
+		case int:
+			bf = float64(v)
+		}
+		return af * bf
+	},
+}
+
 // InitTemplates loads all templates
 func InitTemplates(templatesDir string) error {
 	var err error
-	templates, err = template.ParseGlob(filepath.Join(templatesDir, "*.html"))
+	templates, err = template.New("").Funcs(templateFuncs).ParseGlob(filepath.Join(templatesDir, "*.html"))
 	if err != nil {
 		return fmt.Errorf("failed to parse templates: %w", err)
 	}

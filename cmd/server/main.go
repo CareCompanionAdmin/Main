@@ -57,7 +57,7 @@ func main() {
 	services := service.NewServices(repos, redis, cfg)
 
 	// Initialize handlers
-	apiHandlers := api.NewHandlers(services)
+	apiHandlers := api.NewHandlers(services, cfg)
 	webHandlers := web.NewWebHandlers(services)
 
 	// Initialize templates (optional, will use fallback if not available)

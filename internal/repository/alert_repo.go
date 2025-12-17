@@ -319,6 +319,19 @@ func (r *alertRepo) GetByChildIDAndTypeSince(ctx context.Context, childID uuid.U
 	return alerts, rows.Err()
 }
 
+func (r *alertRepo) UserHasAccess(ctx context.Context, alertID, userID uuid.UUID) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM alerts a
+			JOIN family_memberships fm ON fm.family_id = a.family_id
+			WHERE a.id = $1 AND fm.user_id = $2 AND fm.is_active = true
+		)
+	`
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, alertID, userID).Scan(&exists)
+	return exists, err
+}
+
 func (r *alertRepo) GetAlertsPage(ctx context.Context, childID uuid.UUID) (*models.AlertsPage, error) {
 	// Get child
 	childQuery := `

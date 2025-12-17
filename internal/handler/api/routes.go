@@ -3,35 +3,38 @@ package api
 import (
 	"github.com/go-chi/chi/v5"
 
+	"carecompanion/internal/config"
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/service"
 )
 
 // Handlers aggregates all API handlers
 type Handlers struct {
-	Auth        *AuthHandler
-	Child       *ChildHandler
-	Family      *FamilyHandler
-	Medication  *MedicationHandler
-	Log         *LogHandler
-	Alert       *AlertHandler
-	Correlation *CorrelationHandler
-	Insight     *InsightHandler
-	Chat        *ChatHandler
+	Auth         *AuthHandler
+	Child        *ChildHandler
+	Family       *FamilyHandler
+	Medication   *MedicationHandler
+	Log          *LogHandler
+	Alert        *AlertHandler
+	Correlation  *CorrelationHandler
+	Insight      *InsightHandler
+	Chat         *ChatHandler
+	Transparency *TransparencyHandler
 }
 
 // NewHandlers creates all API handlers
-func NewHandlers(services *service.Services) *Handlers {
+func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 	return &Handlers{
-		Auth:        NewAuthHandler(services.Auth),
-		Child:       NewChildHandler(services.Child),
-		Family:      NewFamilyHandler(services.Family, services.User),
-		Medication:  NewMedicationHandler(services.Medication, services.Child, services.DrugDatabase, services.Insight),
-		Log:         NewLogHandler(services.Log, services.Child),
-		Alert:       NewAlertHandler(services.Alert, services.Child),
-		Correlation: NewCorrelationHandler(services.Correlation, services.Child),
-		Insight:     NewInsightHandler(services.Insight, services.Child),
-		Chat:        NewChatHandler(services.Chat, services.Family),
+		Auth:         NewAuthHandler(services.Auth),
+		Child:        NewChildHandler(services.Child),
+		Family:       NewFamilyHandler(services.Family, services.User),
+		Medication:   NewMedicationHandler(services.Medication, services.Child, services.DrugDatabase, services.Insight),
+		Log:          NewLogHandler(services.Log, services.Child),
+		Alert:        NewAlertHandler(services.Alert, services.Child),
+		Correlation:  NewCorrelationHandler(services.Correlation, services.Child),
+		Insight:      NewInsightHandler(services.Insight, services.Child),
+		Chat:         NewChatHandler(services.Chat, services.Family, &cfg.Storage),
+		Transparency: NewTransparencyHandler(services.Transparency),
 	}
 }
 
@@ -82,6 +85,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			// Conditions
 			r.Get("/conditions", handlers.Child.GetConditions)
 			r.Post("/conditions", handlers.Child.AddCondition)
+			r.Put("/conditions/{id}", handlers.Child.UpdateCondition)
 			r.Delete("/conditions/{id}", handlers.Child.RemoveCondition)
 
 			// Medications
@@ -217,13 +221,36 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Get("/threads", handlers.Chat.ListThreads)
 			r.Post("/threads", handlers.Chat.CreateThread)
 			r.Get("/unread", handlers.Chat.GetUnreadCount)
+			r.Get("/files/{filename}", handlers.Chat.ServeFile)
 
 			r.Route("/threads/{threadID}", func(r chi.Router) {
 				r.Get("/", handlers.Chat.GetThread)
+				r.Delete("/", handlers.Chat.DeleteThread)
 				r.Get("/messages", handlers.Chat.GetMessages)
 				r.Post("/messages", handlers.Chat.SendMessage)
+				r.Get("/participants", handlers.Chat.GetParticipants)
 				r.Post("/participants", handlers.Chat.AddParticipant)
+				r.Delete("/participants/{participantID}", handlers.Chat.RemoveParticipant)
+				r.Post("/upload", handlers.Chat.UploadFile)
 			})
 		})
+
+		// Transparency routes - alert analysis and confidence breakdown
+		r.Route("/alerts/{alertID}", func(r chi.Router) {
+			r.Get("/analysis", handlers.Transparency.GetAlertAnalysis)
+			r.Get("/confidence-factors", handlers.Transparency.GetConfidenceFactors)
+			r.Post("/feedback", handlers.Transparency.SubmitAlertFeedback)
+			r.Post("/export", handlers.Transparency.ExportAlert)
+		})
+
+		// Treatment change interrogatives
+		r.Route("/treatment-changes", func(r chi.Router) {
+			r.Get("/pending-questions", handlers.Transparency.GetPendingInterrogatives)
+			r.Post("/{changeID}/respond", handlers.Transparency.RespondToTreatmentChange)
+		})
+
+		// User interaction preferences
+		r.Get("/users/me/interaction-preferences", handlers.Transparency.GetInteractionPreferences)
+		r.Put("/users/me/interaction-preferences", handlers.Transparency.UpdateInteractionPreferences)
 	})
 }

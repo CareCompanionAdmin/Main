@@ -56,11 +56,11 @@
     </div>
 
     <!-- Child Header -->
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+    <div class="{{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}bg-blue-50{{else if eq .Child.Gender.String "female"}}bg-pink-50{{else}}bg-white{{end}}{{else}}bg-white{{end}} rounded-xl shadow-sm border p-6 mb-6">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <span class="text-2xl font-bold text-indigo-600">{{slice .Child.FirstName 0 1}}</span>
+                <div class="w-16 h-16 {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}bg-blue-200{{else if eq .Child.Gender.String "female"}}bg-pink-200{{else}}bg-indigo-100{{end}}{{else}}bg-indigo-100{{end}} rounded-full flex items-center justify-center">
+                    <span class="text-2xl font-bold {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}text-blue-600{{else if eq .Child.Gender.String "female"}}text-pink-600{{else}}text-indigo-600{{end}}{{else}}text-indigo-600{{end}}">{{slice .Child.FirstName 0 1}}</span>
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
@@ -91,19 +91,25 @@
                         {{end}}
                     </div>
                     <p class="text-gray-500">Born: {{.Child.DateOfBirth.Format "January 2, 2006"}}</p>
+                    <a href="/child/{{.Child.ID}}/settings" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center mt-1">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                        </svg>
+                        Edit Profile & Conditions
+                    </a>
                 </div>
             </div>
             <div class="flex space-x-2">
-                <a href="/child/{{.Child.ID}}/logs" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                <a href="/child/{{.Child.ID}}/logs" class="px-4 py-2 bg-transparent border-2 border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50">
                     Daily Logs
                 </a>
-                <a href="/child/{{.Child.ID}}/medications" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <a href="/child/{{.Child.ID}}/medications" class="px-4 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100">
                     Medications
                 </a>
-                <a href="/child/{{.Child.ID}}/alerts" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <a href="/child/{{.Child.ID}}/alerts" class="px-4 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100">
                     Alerts
                 </a>
-                <a href="/child/{{.Child.ID}}/insights" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <a href="/child/{{.Child.ID}}/insights" class="px-4 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100">
                     Insights
                 </a>
             </div>
@@ -269,17 +275,6 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Alerts -->
-            {{if .Dashboard.ActiveAlerts}}
-            <div class="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
-                <h2 class="text-lg font-semibold text-yellow-800 mb-4">Active Alerts</h2>
-                <p class="text-yellow-700 mb-4">You have {{len .Dashboard.ActiveAlerts}} alert(s) that need attention.</p>
-                <a href="/child/{{.Child.ID}}/alerts" class="block w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-center">
-                    View Alerts
-                </a>
-            </div>
-            {{end}}
 
             <!-- Conditions -->
             {{if .Child.Conditions}}
@@ -839,24 +834,42 @@ function renderAlerts(alerts) {
                 </svg>`;
         }
 
+        // Render confidence dots for the alert
+        let confidenceDots = '';
+        if (alert.confidence_score) {
+            const score = alert.confidence_score;
+            const filled = Math.round(score * 5);
+            let colorClass = score >= 0.7 ? 'text-green-500' : score >= 0.4 ? 'text-yellow-500' : 'text-red-500';
+            for (let i = 0; i < 5; i++) {
+                if (i < filled) {
+                    confidenceDots += `<span class="${colorClass}">●</span>`;
+                } else {
+                    confidenceDots += '<span class="text-gray-300">○</span>';
+                }
+            }
+        }
+
         return `
-            <div class="${bgColor} ${borderColor} border-l-4 rounded-lg p-4 shadow-sm">
+            <a href="/child/${childId}/alerts" class="${bgColor} ${borderColor} border-l-4 rounded-lg p-4 shadow-sm block hover:shadow-md transition-shadow cursor-pointer">
                 <div class="flex items-start">
                     <div class="${iconColor} flex-shrink-0">
                         ${icon}
                     </div>
                     <div class="ml-3 flex-1">
-                        <h3 class="text-sm font-semibold ${textColor}">${alert.title}</h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-semibold ${textColor}">${alert.title}</h3>
+                            ${alert.confidence_score ? `<span class="text-xs ml-2">${confidenceDots} ${Math.round(alert.confidence_score * 100)}%</span>` : ''}
+                        </div>
                         <p class="text-sm ${textColor} opacity-90 mt-1">${alert.description}</p>
-                        ${alert.confidence_score ? `<p class="text-xs ${textColor} opacity-70 mt-1">Confidence: ${Math.round(alert.confidence_score * 100)}%</p>` : ''}
                     </div>
-                    <button onclick="acknowledgeAlert('${alert.id}')" class="ml-4 text-gray-400 hover:text-gray-600" title="Dismiss">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    <div class="ml-4 flex-shrink-0 flex items-center space-x-2">
+                        <span class="${textColor} text-xs">View</span>
+                        <svg class="w-4 h-4 ${textColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                         </svg>
-                    </button>
+                    </div>
                 </div>
-            </div>
+            </a>
         `;
     }).join('');
 

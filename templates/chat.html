@@ -49,13 +49,27 @@
                 {{if .Threads}}
                 {{range .Threads}}
                 <div class="p-4 border-b hover:bg-gray-50 cursor-pointer thread-item" data-thread-id="{{.ID}}" onclick="selectThread('{{.ID}}')">
-                    <div class="flex justify-between items-start">
-                        <h3 class="font-medium text-gray-900 truncate">{{if .Title.Valid}}{{.Title.String}}{{else}}Untitled{{end}}</h3>
-                        {{if gt .UnreadCount 0}}
-                        <span class="bg-indigo-600 text-white text-xs rounded-full px-2 py-0.5">{{.UnreadCount}}</span>
-                        {{end}}
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-medium text-gray-900 truncate">
+                                    {{if .Participants}}
+                                        {{range $i, $p := .Participants}}{{if $i}}, {{end}}{{if $p.User}}{{$p.User.FirstName}} {{$p.User.LastName}}{{end}}{{end}}
+                                    {{else if .Title.Valid}}
+                                        {{.Title.String}}
+                                    {{else}}
+                                        Untitled
+                                    {{end}}
+                                </h3>
+                                {{if gt .UnreadCount 0}}
+                                <span class="bg-indigo-600 text-white text-xs rounded-full px-2 py-0.5 flex-shrink-0">{{.UnreadCount}}</span>
+                                {{end}}
+                            </div>
+                            {{if .ChildName}}
+                            <p class="text-xs text-indigo-600 mt-0.5">Re: {{.ChildName}}</p>
+                            {{end}}
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500 mt-1">{{.ThreadType}}</p>
                 </div>
                 {{end}}
                 {{else}}
@@ -73,7 +87,24 @@
         <!-- Message Area -->
         <div class="flex-1 bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
             <div id="message-header" class="p-4 border-b hidden">
-                <h2 id="thread-title" class="font-semibold text-gray-900"></h2>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 id="thread-title" class="font-semibold text-gray-900"></h2>
+                        <p id="thread-participants" class="text-sm text-gray-500"></p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="showManageMembers()" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg" title="Manage Members">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                        </button>
+                        <button id="delete-thread-btn" onclick="deleteThread()" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg hidden" title="Delete Conversation">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
             <div id="message-area" class="flex-1 overflow-y-auto p-4">
                 <div class="flex items-center justify-center h-full text-gray-500">
@@ -86,9 +117,30 @@
                 </div>
             </div>
             <div id="message-input-area" class="p-4 border-t hidden">
-                <form id="message-form" class="flex gap-2">
-                    <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                <!-- Attachment preview -->
+                <div id="attachment-preview" class="hidden mb-2 p-2 bg-gray-100 rounded-lg flex items-center gap-2">
+                    <img id="attachment-preview-img" class="hidden w-16 h-16 object-cover rounded">
+                    <div id="attachment-preview-file" class="hidden flex items-center gap-2">
+                        <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span id="attachment-preview-name" class="text-sm text-gray-700"></span>
+                    </div>
+                    <button type="button" onclick="clearAttachment()" class="ml-auto p-1 text-gray-500 hover:text-red-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <form id="message-form" class="flex gap-2 items-end">
+                    <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.txt" onchange="handleFileSelect(event)">
+                    <button type="button" onclick="document.getElementById('file-input').click()" class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg flex-shrink-0" title="Attach file">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                        </svg>
+                    </button>
+                    <textarea id="message-input" placeholder="Type a message... (Shift+Enter for new line)" rows="1" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none overflow-hidden" style="min-height: 40px; max-height: 120px;"></textarea>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex-shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                         </svg>
@@ -105,36 +157,45 @@
         <h2 class="text-xl font-bold text-gray-900 mb-4">New Conversation</h2>
         <form id="new-thread-form" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input type="text" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Alex's Medication Discussion">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select name="thread_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="general">General Discussion</option>
-                    <option value="care_coordination">Care Coordination</option>
-                    <option value="medication">Medication Discussion</option>
-                    <option value="alert">Alert Discussion</option>
-                </select>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Who do you want to chat with?</label>
+                <div class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                    {{if .Members}}
+                    {{range .Members}}
+                    {{if .User}}
+                    <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer participant-option" data-user-id="{{.UserID}}" data-name="{{.User.FirstName}}">
+                        <input type="checkbox" name="participants" value="{{.UserID}}" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-medium">
+                                {{if .User.FirstName}}{{slice .User.FirstName 0 1}}{{end}}{{if .User.LastName}}{{slice .User.LastName 0 1}}{{end}}
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{.User.FirstName}} {{.User.LastName}}</p>
+                                <p class="text-xs text-gray-500">{{.Role}}</p>
+                            </div>
+                        </div>
+                    </label>
+                    {{end}}
+                    {{end}}
+                    {{else}}
+                    <p class="text-sm text-gray-500 text-center py-2">No other family members yet</p>
+                    {{end}}
+                </div>
+                <p id="participant-error" class="hidden text-sm text-red-500 mt-1">Please select at least one person</p>
             </div>
             {{if .Children}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Related Child (Optional)</label>
-                <select name="child_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">None</option>
+                <label class="block text-sm font-medium text-gray-700 mb-1">About which child? (Optional)</label>
+                <select name="child_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="">Not specific to a child</option>
                     {{range .Children}}
-                    <option value="{{.ID}}">{{.FirstName}} {{.LastName}}</option>
+                    <option value="{{.ID}}">{{.FirstName}}{{if .LastName.Valid}} {{.LastName.String}}{{end}}</option>
                     {{end}}
                 </select>
             </div>
             {{end}}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">First Message</label>
-                <textarea name="initial_message" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Start the conversation..."></textarea>
-            </div>
-            <div class="flex space-x-4">
+            <div class="flex space-x-4 pt-2">
                 <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                    Create
+                    Start Chat
                 </button>
                 <button type="button" onclick="hideNewThread()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                     Cancel
@@ -144,11 +205,74 @@
     </div>
 </div>
 
+<!-- Manage Members Modal -->
+<div id="manage-members-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Manage Members</h2>
+
+        <!-- Current Members -->
+        <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Current Members</h3>
+            <div id="current-members-list" class="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Add New Member -->
+        <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Add Member</h3>
+            <div id="add-member-list" class="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                {{if .Members}}
+                {{range .Members}}
+                {{if .User}}
+                <div class="add-member-option hidden flex items-center justify-between p-2 hover:bg-gray-50 rounded" data-user-id="{{.UserID}}">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-medium">
+                            {{if .User.FirstName}}{{slice .User.FirstName 0 1}}{{end}}{{if .User.LastName}}{{slice .User.LastName 0 1}}{{end}}
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{.User.FirstName}} {{.User.LastName}}</p>
+                            <p class="text-xs text-gray-500">{{.Role}}</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="addMember('{{.UserID}}')" class="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+                        Add
+                    </button>
+                </div>
+                {{end}}
+                {{end}}
+                {{end}}
+                <p id="no-members-to-add" class="hidden text-sm text-gray-500 text-center py-2">All family members are in this conversation</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end">
+            <button type="button" onclick="hideManageMembers()" class="py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Done
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 const userID = '{{.UserID}}';
 let currentThreadID = null;
+let currentParticipants = [];
 
 function showNewThread() {
+    // Reset form
+    document.getElementById('new-thread-form').reset();
+    document.getElementById('participant-error').classList.add('hidden');
+
+    // Hide current user from participant list (can't chat with yourself)
+    document.querySelectorAll('.participant-option').forEach(el => {
+        if (el.dataset.userId === userID) {
+            el.style.display = 'none';
+        } else {
+            el.style.display = 'flex';
+        }
+    });
+
     document.getElementById('new-thread-modal').classList.remove('hidden');
 }
 
@@ -172,7 +296,44 @@ async function selectThread(threadID) {
 
         const data = await response.json();
 
-        document.getElementById('thread-title').textContent = data.thread.title?.String || 'Untitled';
+        // Update title - use participant full names or title
+        const thread = data.thread;
+        let title = thread.title?.String || 'Untitled';
+        if (thread.participants && thread.participants.length > 0) {
+            const names = thread.participants
+                .filter(p => p.user && p.user_id !== userID)
+                .map(p => {
+                    const firstName = p.user?.first_name || '';
+                    const lastName = p.user?.last_name || '';
+                    return (firstName + ' ' + lastName).trim() || 'Unknown';
+                });
+            if (names.length > 0) {
+                title = 'Chat with ' + names.join(', ');
+            }
+        }
+        document.getElementById('thread-title').textContent = title;
+
+        // Update participants line with full names
+        const participantNames = thread.participants
+            ? thread.participants.map(p => {
+                const firstName = p.user?.first_name || '';
+                const lastName = p.user?.last_name || '';
+                return (firstName + ' ' + lastName).trim() || 'Unknown';
+            }).join(', ')
+            : '';
+        const childInfo = thread.child_name ? ` • Re: ${thread.child_name}` : '';
+        document.getElementById('thread-participants').textContent = participantNames + childInfo;
+
+        // Store current participants
+        currentParticipants = thread.participants || [];
+
+        // Show delete button only for thread creator
+        const deleteBtn = document.getElementById('delete-thread-btn');
+        if (thread.created_by === userID) {
+            deleteBtn.classList.remove('hidden');
+        } else {
+            deleteBtn.classList.add('hidden');
+        }
 
         const messageArea = document.getElementById('message-area');
         if (data.messages && data.messages.length > 0) {
@@ -188,18 +349,111 @@ async function selectThread(threadID) {
 
 function renderMessage(msg) {
     const isOwn = msg.sender_id === userID;
-    const name = msg.sender?.first_name || 'Unknown';
+    const firstName = msg.sender?.first_name || '';
+    const lastName = msg.sender?.last_name || '';
+    const name = (firstName + ' ' + lastName).trim() || 'Unknown';
     const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    // Render attachments
+    let attachmentsHtml = '';
+    if (msg.attachments && msg.attachments.length > 0) {
+        attachmentsHtml = msg.attachments.map(att => {
+            if (att.content_type && att.content_type.startsWith('image/')) {
+                return `<a href="${att.url}" target="_blank" class="block mt-2">
+                    <img src="${att.url}" alt="${att.filename}" class="max-w-[200px] rounded">
+                </a>`;
+            } else {
+                return `<a href="${att.url}" target="_blank" class="flex items-center gap-2 mt-2 p-2 bg-white/20 rounded hover:bg-white/30">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-sm">${att.filename}</span>
+                </a>`;
+            }
+        }).join('');
+    }
 
     return `
         <div class="mb-4 ${isOwn ? 'text-right' : ''}">
             <div class="inline-block max-w-[70%] ${isOwn ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg px-4 py-2">
                 ${!isOwn ? `<p class="text-xs font-medium ${isOwn ? 'text-indigo-200' : 'text-gray-500'} mb-1">${name}</p>` : ''}
-                <p>${msg.message_text}</p>
+                ${msg.message_text ? `<p>${msg.message_text}</p>` : ''}
+                ${attachmentsHtml}
                 <p class="text-xs ${isOwn ? 'text-indigo-200' : 'text-gray-400'} mt-1">${time}</p>
             </div>
         </div>
     `;
+}
+
+// File attachment handling
+let pendingAttachment = null;
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File too large. Maximum size is 10MB.');
+        event.target.value = '';
+        return;
+    }
+
+    pendingAttachment = file;
+
+    // Show preview
+    const previewContainer = document.getElementById('attachment-preview');
+    const previewImg = document.getElementById('attachment-preview-img');
+    const previewFile = document.getElementById('attachment-preview-file');
+    const previewName = document.getElementById('attachment-preview-name');
+
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewImg.classList.remove('hidden');
+            previewFile.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewImg.classList.add('hidden');
+        previewFile.classList.remove('hidden');
+        previewName.textContent = file.name;
+    }
+
+    previewContainer.classList.remove('hidden');
+}
+
+function clearAttachment() {
+    pendingAttachment = null;
+    document.getElementById('file-input').value = '';
+    document.getElementById('attachment-preview').classList.add('hidden');
+    document.getElementById('attachment-preview-img').classList.add('hidden');
+    document.getElementById('attachment-preview-file').classList.add('hidden');
+}
+
+async function uploadFile() {
+    if (!pendingAttachment || !currentThreadID) return null;
+
+    const formData = new FormData();
+    formData.append('file', pendingAttachment);
+
+    try {
+        const response = await fetch(`/api/chat/threads/${currentThreadID}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            return await response.json();
+        } else {
+            const err = await response.json();
+            throw new Error(err.error || 'Upload failed');
+        }
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        throw error;
+    }
 }
 
 document.getElementById('message-form').addEventListener('submit', async function(e) {
@@ -208,17 +462,38 @@ document.getElementById('message-form').addEventListener('submit', async functio
 
     const input = document.getElementById('message-input');
     const text = input.value.trim();
-    if (!text) return;
+
+    // Either text or attachment required
+    if (!text && !pendingAttachment) return;
+
+    let attachments = [];
+
+    // Upload file first if present
+    if (pendingAttachment) {
+        try {
+            const uploadResult = await uploadFile();
+            if (uploadResult) {
+                attachments.push(uploadResult);
+            }
+        } catch (error) {
+            alert('Failed to upload file: ' + error.message);
+            return;
+        }
+    }
 
     try {
         const response = await fetch(`/api/chat/threads/${currentThreadID}/messages`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({message_text: text})
+            body: JSON.stringify({
+                message_text: text || (attachments.length > 0 ? 'Shared a file' : ''),
+                attachments: attachments.length > 0 ? attachments : null
+            })
         });
 
         if (response.ok) {
             input.value = '';
+            clearAttachment();
             selectThread(currentThreadID); // Refresh messages
         }
     } catch (error) {
@@ -228,15 +503,35 @@ document.getElementById('message-form').addEventListener('submit', async functio
 
 document.getElementById('new-thread-form').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const formData = new FormData(this);
+
+    // Get selected participants
+    const participantCheckboxes = document.querySelectorAll('input[name="participants"]:checked');
+    const participants = Array.from(participantCheckboxes).map(cb => cb.value);
+
+    // Validate at least one participant selected
+    const errorEl = document.getElementById('participant-error');
+    if (participants.length === 0) {
+        errorEl.classList.remove('hidden');
+        return;
+    }
+    errorEl.classList.add('hidden');
+
+    // Generate title from participant names
+    const participantNames = Array.from(participantCheckboxes).map(cb => {
+        const label = cb.closest('.participant-option');
+        return label ? label.dataset.name : '';
+    }).filter(Boolean);
+    const title = participantNames.length > 0
+        ? 'Chat with ' + participantNames.join(', ')
+        : 'New Conversation';
 
     const data = {
-        title: formData.get('title'),
-        thread_type: formData.get('thread_type'),
-        initial_message: formData.get('initial_message')
+        title: title,
+        thread_type: 'general',
+        participants: participants
     };
 
-    const childID = formData.get('child_id');
+    const childID = new FormData(this).get('child_id');
     if (childID) data.child_id = childID;
 
     try {
@@ -249,12 +544,165 @@ document.getElementById('new-thread-form').addEventListener('submit', async func
         if (response.ok) {
             location.reload();
         } else {
-            alert('Failed to create conversation');
+            const err = await response.json();
+            alert(err.error || 'Failed to create conversation');
         }
     } catch (error) {
         alert('An error occurred');
     }
 });
+
+// Manage Members Functions
+async function showManageMembers() {
+    if (!currentThreadID) return;
+
+    try {
+        const response = await fetch(`/api/chat/threads/${currentThreadID}/participants`);
+        if (!response.ok) throw new Error('Failed to load participants');
+
+        currentParticipants = await response.json();
+        renderCurrentMembers();
+        updateAddMemberList();
+
+        document.getElementById('manage-members-modal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error loading participants:', error);
+        alert('Failed to load participants');
+    }
+}
+
+function hideManageMembers() {
+    document.getElementById('manage-members-modal').classList.add('hidden');
+}
+
+function renderCurrentMembers() {
+    const container = document.getElementById('current-members-list');
+    if (currentParticipants.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 text-center py-2">No members</p>';
+        return;
+    }
+
+    container.innerHTML = currentParticipants.map(p => {
+        const user = p.user || {};
+        const firstName = user.first_name || 'Unknown';
+        const lastName = user.last_name || '';
+        const initials = (firstName[0] || '') + (lastName[0] || '');
+        const isCurrentUser = p.user_id === userID;
+
+        return `
+            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm font-medium">
+                        ${initials}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">${firstName} ${lastName}${isCurrentUser ? ' (You)' : ''}</p>
+                        <p class="text-xs text-gray-500">${p.role}</p>
+                    </div>
+                </div>
+                ${!isCurrentUser ? `
+                    <button type="button" onclick="removeMember('${p.user_id}')" class="text-red-600 hover:text-red-700 text-sm font-medium">
+                        Remove
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+function updateAddMemberList() {
+    const participantIds = currentParticipants.map(p => p.user_id);
+    let anyVisible = false;
+
+    document.querySelectorAll('.add-member-option').forEach(el => {
+        const userId = el.dataset.userId;
+        if (participantIds.includes(userId)) {
+            el.classList.add('hidden');
+        } else {
+            el.classList.remove('hidden');
+            anyVisible = true;
+        }
+    });
+
+    document.getElementById('no-members-to-add').classList.toggle('hidden', anyVisible);
+}
+
+async function addMember(userId) {
+    if (!currentThreadID) return;
+
+    try {
+        const response = await fetch(`/api/chat/threads/${currentThreadID}/participants`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({user_id: userId})
+        });
+
+        if (response.ok) {
+            // Refresh participants list
+            await showManageMembers();
+            // Reload the page to update the thread list
+            location.reload();
+        } else {
+            const err = await response.json();
+            alert(err.error || 'Failed to add member');
+        }
+    } catch (error) {
+        console.error('Error adding member:', error);
+        alert('Failed to add member');
+    }
+}
+
+async function removeMember(userId) {
+    if (!currentThreadID) return;
+
+    if (!confirm('Are you sure you want to remove this member from the conversation?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/chat/threads/${currentThreadID}/participants/${userId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            // Refresh participants list
+            await showManageMembers();
+            // Reload the page to update the thread list
+            location.reload();
+        } else {
+            const err = await response.json();
+            alert(err.error || 'Failed to remove member');
+        }
+    } catch (error) {
+        console.error('Error removing member:', error);
+        alert('Failed to remove member');
+    }
+}
+
+async function deleteThread() {
+    if (!currentThreadID) return;
+
+    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/chat/threads/${currentThreadID}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            // Reload the page to update the thread list
+            location.reload();
+        } else {
+            const err = await response.json();
+            alert(err.error || 'Failed to delete conversation');
+        }
+    } catch (error) {
+        console.error('Error deleting thread:', error);
+        alert('Failed to delete conversation');
+    }
+}
 
 function logout() {
     localStorage.removeItem('access_token');
@@ -263,6 +711,24 @@ function logout() {
     document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/login';
 }
+
+// Message input keyboard handling and auto-resize
+const messageInput = document.getElementById('message-input');
+
+messageInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        // Enter without Shift - submit the form
+        e.preventDefault();
+        document.getElementById('message-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    }
+    // Shift+Enter will naturally add a newline (default behavior)
+});
+
+// Auto-resize textarea as content grows
+messageInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
 </script>
 </body>
 </html>

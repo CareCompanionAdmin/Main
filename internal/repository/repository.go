@@ -186,6 +186,9 @@ type AlertRepository interface {
 
 	// Alerts page data
 	GetAlertsPage(ctx context.Context, childID uuid.UUID) (*models.AlertsPage, error)
+
+	// Access control
+	UserHasAccess(ctx context.Context, alertID, userID uuid.UUID) (bool, error)
 }
 
 // InsightRepository handles insight operations (Three-Tier Learning System)
@@ -304,30 +307,32 @@ type CohortRepository interface {
 
 // Repositories aggregates all repository interfaces
 type Repositories struct {
-	User        UserRepository
-	Family      FamilyRepository
-	Child       ChildRepository
-	Medication  MedicationRepository
-	Log         LogRepository
-	Alert       AlertRepository
-	Insight     InsightRepository
-	Correlation CorrelationRepository
-	Cohort      CohortRepository
-	Chat        ChatRepository
+	User         UserRepository
+	Family       FamilyRepository
+	Child        ChildRepository
+	Medication   MedicationRepository
+	Log          LogRepository
+	Alert        AlertRepository
+	Insight      InsightRepository
+	Correlation  CorrelationRepository
+	Cohort       CohortRepository
+	Chat         ChatRepository
+	Transparency *TransparencyRepository
 }
 
 // NewRepositories creates all repository implementations
 func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
-		User:        NewUserRepo(db),
-		Family:      NewFamilyRepo(db),
-		Child:       NewChildRepo(db),
-		Medication:  NewMedicationRepo(db),
-		Log:         NewLogRepo(db),
-		Alert:       NewAlertRepo(db),
-		Insight:     NewInsightRepo(db),
-		Correlation: NewCorrelationRepo(db),
-		Cohort:      NewCohortRepo(db),
-		Chat:        NewChatRepo(db),
+		User:         NewUserRepo(db),
+		Family:       NewFamilyRepo(db),
+		Child:        NewChildRepo(db),
+		Medication:   NewMedicationRepo(db),
+		Log:          NewLogRepo(db),
+		Alert:        NewAlertRepo(db),
+		Insight:      NewInsightRepo(db),
+		Correlation:  NewCorrelationRepo(db),
+		Cohort:       NewCohortRepo(db),
+		Chat:         NewChatRepo(db),
+		Transparency: NewTransparencyRepository(db),
 	}
 }

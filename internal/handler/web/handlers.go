@@ -242,6 +242,34 @@ func (h *WebHandlers) Insights(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "insights", data)
 }
 
+// ChildSettings renders the child settings page
+func (h *WebHandlers) ChildSettings(w http.ResponseWriter, r *http.Request) {
+	childID, err := parseUUID(chi.URLParam(r, "childID"))
+	if err != nil {
+		renderError(w, "Invalid child ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	child, err := h.services.Child.VerifyChildAccess(r.Context(), childID, userID)
+	if err != nil {
+		renderError(w, "Access denied", http.StatusForbidden)
+		return
+	}
+
+	conditions, err := h.services.Child.GetConditions(r.Context(), childID)
+	if err != nil {
+		conditions = nil
+	}
+
+	data := map[string]interface{}{
+		"Child":      child,
+		"Conditions": conditions,
+	}
+
+	renderTemplate(w, "child_settings", data)
+}
+
 // NewChild renders the new child form
 func (h *WebHandlers) NewChild(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "new_child", nil)
@@ -272,6 +300,35 @@ func (h *WebHandlers) Settings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, "settings", data)
+}
+
+// AlertAnalysis renders the full alert analysis page (Layer 3)
+func (h *WebHandlers) AlertAnalysis(w http.ResponseWriter, r *http.Request) {
+	childID, err := parseUUID(chi.URLParam(r, "childID"))
+	if err != nil {
+		renderError(w, "Invalid child ID", http.StatusBadRequest)
+		return
+	}
+
+	alertID := chi.URLParam(r, "alertID")
+	if alertID == "" {
+		renderError(w, "Invalid alert ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	_, err = h.services.Child.VerifyChildAccess(r.Context(), childID, userID)
+	if err != nil {
+		renderError(w, "Access denied", http.StatusForbidden)
+		return
+	}
+
+	data := map[string]interface{}{
+		"AlertID": alertID,
+		"ChildID": childID.String(),
+	}
+
+	renderTemplate(w, "alert_analysis", data)
 }
 
 // Chat renders the family chat page

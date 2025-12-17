@@ -35,6 +35,7 @@ type ChatThread struct {
 	UnreadCount  int               `json:"unread_count,omitempty"`
 	LastMessage  *ChatMessage      `json:"last_message,omitempty"`
 	Creator      *User             `json:"creator,omitempty"`
+	ChildName    string            `json:"child_name,omitempty"`
 }
 
 // ChatParticipant represents a user in a chat thread
@@ -53,14 +54,14 @@ type ChatParticipant struct {
 
 // ChatMessage represents a single message in a thread
 type ChatMessage struct {
-	ID          uuid.UUID `json:"id"`
-	ThreadID    uuid.UUID `json:"thread_id"`
-	SenderID    uuid.UUID `json:"sender_id"`
-	MessageText string    `json:"message_text"`
-	Attachments JSONB     `json:"attachments"`
-	IsEdited    bool      `json:"is_edited"`
-	EditedAt    NullTime  `json:"edited_at"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          uuid.UUID   `json:"id"`
+	ThreadID    uuid.UUID   `json:"thread_id"`
+	SenderID    uuid.UUID   `json:"sender_id"`
+	MessageText string      `json:"message_text"`
+	Attachments Attachments `json:"attachments"`
+	IsEdited    bool        `json:"is_edited"`
+	EditedAt    NullTime    `json:"edited_at"`
+	CreatedAt   time.Time   `json:"created_at"`
 
 	// Populated on fetch
 	Sender *User `json:"sender,omitempty"`
@@ -77,8 +78,8 @@ type CreateThreadRequest struct {
 }
 
 type SendMessageRequest struct {
-	MessageText string `json:"message_text"`
-	Attachments JSONB  `json:"attachments,omitempty"`
+	MessageText string      `json:"message_text"`
+	Attachments Attachments `json:"attachments,omitempty"`
 }
 
 type EditMessageRequest struct {
@@ -87,12 +88,15 @@ type EditMessageRequest struct {
 
 // ChatThreadSummary for listing threads
 type ChatThreadSummary struct {
-	ID              uuid.UUID      `json:"id"`
-	Title           string         `json:"title"`
-	ThreadType      ChatThreadType `json:"thread_type"`
-	ParticipantCount int           `json:"participant_count"`
-	UnreadCount     int            `json:"unread_count"`
-	LastMessageAt   NullTime       `json:"last_message_at"`
-	LastMessageText string         `json:"last_message_text,omitempty"`
-	CreatedAt       time.Time      `json:"created_at"`
+	ID               uuid.UUID      `json:"id"`
+	Title            NullString     `json:"title"`
+	ThreadType       ChatThreadType `json:"thread_type"`
+	ChildID          *uuid.UUID     `json:"child_id,omitempty"`
+	ChildName        string         `json:"child_name,omitempty"`
+	ParticipantCount int            `json:"participant_count"`
+	ParticipantNames []string       `json:"participant_names,omitempty"`
+	UnreadCount      int            `json:"unread_count"`
+	LastMessageAt    NullTime       `json:"last_message_at"`
+	LastMessageText  string         `json:"last_message_text,omitempty"`
+	CreatedAt        time.Time      `json:"created_at"`
 }

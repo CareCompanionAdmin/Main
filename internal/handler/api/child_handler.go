@@ -265,6 +265,66 @@ func (h *ChildHandler) GetConditions(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, conditions)
 }
 
+// UpdateCondition updates a condition for a child
+func (h *ChildHandler) UpdateCondition(w http.ResponseWriter, r *http.Request) {
+	conditionID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid condition ID")
+		return
+	}
+
+	var req struct {
+		ConditionName string  `json:"condition_name"`
+		ICDCode       *string `json:"icd_code,omitempty"`
+		DiagnosedBy   *string `json:"diagnosed_by,omitempty"`
+		Severity      *string `json:"severity,omitempty"`
+		Notes         *string `json:"notes,omitempty"`
+		IsActive      *bool   `json:"is_active,omitempty"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if req.ConditionName == "" {
+		respondBadRequest(w, "Condition name is required")
+		return
+	}
+
+	condition := &models.ChildCondition{
+		ID:            conditionID,
+		ConditionName: req.ConditionName,
+		IsActive:      true,
+	}
+
+	if req.ICDCode != nil && *req.ICDCode != "" {
+		condition.ICDCode.Valid = true
+		condition.ICDCode.String = *req.ICDCode
+	}
+	if req.DiagnosedBy != nil && *req.DiagnosedBy != "" {
+		condition.DiagnosedBy.Valid = true
+		condition.DiagnosedBy.String = *req.DiagnosedBy
+	}
+	if req.Severity != nil && *req.Severity != "" {
+		condition.Severity.Valid = true
+		condition.Severity.String = *req.Severity
+	}
+	if req.Notes != nil && *req.Notes != "" {
+		condition.Notes.Valid = true
+		condition.Notes.String = *req.Notes
+	}
+	if req.IsActive != nil {
+		condition.IsActive = *req.IsActive
+	}
+
+	if err := h.childService.UpdateCondition(r.Context(), condition); err != nil {
+		respondInternalError(w, "Failed to update condition")
+		return
+	}
+
+	respondOK(w, condition)
+}
+
 // RemoveCondition removes a condition from a child
 func (h *ChildHandler) RemoveCondition(w http.ResponseWriter, r *http.Request) {
 	conditionID, err := getIDFromURL(r)

@@ -160,6 +160,60 @@
             </form>
         </div>
 
+        <!-- Interaction Preferences -->
+        <div class="bg-white rounded-xl shadow-sm border p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h2>
+            <p class="text-sm text-gray-500 mb-4">Configure when and how you receive questions about care changes.</p>
+            <form id="interaction-prefs-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Prompt Delay (hours after a change)</label>
+                    <select id="pref-delay-hours" name="treatment_change_prompt_delay_hours"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="0">Immediately</option>
+                        <option value="24">After 24 hours</option>
+                        <option value="48" selected>After 48 hours</option>
+                        <option value="72">After 72 hours</option>
+                        <option value="168">After 1 week</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Wait this long after a change before asking questions</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quiet Start Time</label>
+                        <input type="time" id="pref-quiet-start" name="interrogative_quiet_start" value="21:00"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quiet End Time</label>
+                        <input type="time" id="pref-quiet-end" name="interrogative_quiet_end" value="08:00"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 -mt-2">No questions will be shown during quiet hours</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Questions Per Day</label>
+                    <select id="pref-max-per-day" name="max_interrogatives_per_day"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="1">1 question</option>
+                        <option value="3" selected>3 questions</option>
+                        <option value="5">5 questions</option>
+                        <option value="10">10 questions</option>
+                        <option value="0">No limit</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="pref-batch" name="batch_interrogatives"
+                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="pref-batch" class="ml-2 block text-sm text-gray-700">
+                        Batch questions together (show all at once instead of one at a time)
+                    </label>
+                </div>
+                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    Save Preferences
+                </button>
+            </form>
+        </div>
+
         <!-- Danger Zone -->
         <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6">
             <h2 class="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
@@ -335,7 +389,7 @@
 
 <!-- Edit Child Modal -->
 <div id="edit-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Edit Child</h3>
             <button onclick="closeEditChildModal()" class="text-gray-400 hover:text-gray-600">
@@ -377,14 +431,82 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea id="edit-child-notes" name="notes" rows="3"
+                <textarea id="edit-child-notes" name="notes" rows="2"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
             </div>
+
+            <!-- Conditions Section -->
+            <div class="border-t pt-4 mt-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-semibold text-gray-900">Conditions</h4>
+                    <button type="button" onclick="openAddConditionModal()" class="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Add Condition
+                    </button>
+                </div>
+                <div id="edit-child-conditions" class="space-y-2 max-h-40 overflow-y-auto">
+                    <p class="text-sm text-gray-500 text-center py-2">Loading conditions...</p>
+                </div>
+            </div>
+
             <div class="flex gap-3 pt-2">
                 <button type="button" id="remove-child-btn" onclick="confirmRemoveChild()" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
                     Remove
                 </button>
                 <button type="button" onclick="closeEditChildModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add/Edit Condition Modal -->
+<div id="condition-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[60]">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="condition-modal-title" class="text-lg font-semibold text-gray-900">Add Condition</h3>
+            <button onclick="closeConditionModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <form id="condition-form" class="space-y-4">
+            <input type="hidden" id="condition-id" name="condition_id">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Condition Name *</label>
+                <input type="text" id="condition-name" name="condition_name" required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., Autism Spectrum Disorder">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">ICD Code</label>
+                <input type="text" id="condition-icd" name="icd_code"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., F84.0">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosed Date</label>
+                <input type="date" id="condition-diagnosed" name="diagnosed_date"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea id="condition-notes" name="notes" rows="2"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Additional details about the condition..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" id="delete-condition-btn" onclick="confirmDeleteCondition()" class="hidden px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
+                    Delete
+                </button>
+                <button type="button" onclick="closeConditionModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
                     Cancel
                 </button>
                 <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
@@ -667,6 +789,8 @@ document.getElementById('add-child-form').addEventListener('submit', async funct
 });
 
 // Edit Child Modal
+let currentConditions = [];
+
 function openEditChildModal(childID) {
     const child = currentChildren.find(c => c.id === childID);
     if (!child) return;
@@ -678,9 +802,186 @@ function openEditChildModal(childID) {
     document.getElementById('edit-child-gender').value = child.gender || '';
     document.getElementById('edit-child-notes').value = child.notes || '';
 
+    // Load conditions for this child
+    loadConditions(childID);
+
     const modal = document.getElementById('edit-child-modal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+}
+
+// Conditions Management
+async function loadConditions(childID) {
+    const container = document.getElementById('edit-child-conditions');
+    container.innerHTML = '<p class="text-sm text-gray-500 text-center py-2">Loading conditions...</p>';
+
+    try {
+        const response = await fetch(`/api/children/${childID}/conditions`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (response.ok) {
+            currentConditions = await response.json() || [];
+            renderConditions();
+        } else {
+            container.innerHTML = '<p class="text-sm text-red-500 text-center py-2">Failed to load conditions</p>';
+        }
+    } catch (error) {
+        console.error('Failed to load conditions:', error);
+        container.innerHTML = '<p class="text-sm text-red-500 text-center py-2">Failed to load conditions</p>';
+    }
+}
+
+function renderConditions() {
+    const container = document.getElementById('edit-child-conditions');
+    if (!currentConditions || currentConditions.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 text-center py-2">No conditions added yet.</p>';
+        return;
+    }
+
+    container.innerHTML = currentConditions.map(condition => {
+        const statusClass = condition.is_active
+            ? 'bg-green-100 text-green-700'
+            : 'bg-gray-100 text-gray-500';
+        return `
+            <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+                 onclick="openEditConditionModal('${condition.id}')">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">${condition.condition_name}</p>
+                    ${condition.icd_code ? `<p class="text-xs text-gray-500">ICD: ${condition.icd_code}</p>` : ''}
+                </div>
+                <span class="px-2 py-0.5 text-xs rounded-full ${statusClass}">
+                    ${condition.is_active ? 'Active' : 'Inactive'}
+                </span>
+            </div>
+        `;
+    }).join('');
+}
+
+function openAddConditionModal() {
+    document.getElementById('condition-modal-title').textContent = 'Add Condition';
+    document.getElementById('condition-id').value = '';
+    document.getElementById('condition-name').value = '';
+    document.getElementById('condition-icd').value = '';
+    document.getElementById('condition-diagnosed').value = '';
+    document.getElementById('condition-notes').value = '';
+    document.getElementById('delete-condition-btn').classList.add('hidden');
+
+    const modal = document.getElementById('condition-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function openEditConditionModal(conditionID) {
+    const condition = currentConditions.find(c => c.id === conditionID);
+    if (!condition) return;
+
+    document.getElementById('condition-modal-title').textContent = 'Edit Condition';
+    document.getElementById('condition-id').value = conditionID;
+    document.getElementById('condition-name').value = condition.condition_name || '';
+    document.getElementById('condition-icd').value = condition.icd_code || '';
+    document.getElementById('condition-diagnosed').value = condition.diagnosed_date ? condition.diagnosed_date.split('T')[0] : '';
+    document.getElementById('condition-notes').value = condition.notes || '';
+    document.getElementById('delete-condition-btn').classList.remove('hidden');
+
+    const modal = document.getElementById('condition-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeConditionModal() {
+    const modal = document.getElementById('condition-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+document.getElementById('condition-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const childID = document.getElementById('edit-child-id').value;
+    const conditionID = document.getElementById('condition-id').value;
+    const conditionName = document.getElementById('condition-name').value.trim();
+    const icdCode = document.getElementById('condition-icd').value.trim();
+    const diagnosedDate = document.getElementById('condition-diagnosed').value;
+    const notes = document.getElementById('condition-notes').value.trim();
+
+    if (!conditionName) {
+        showMessage('error', 'Condition name is required');
+        return;
+    }
+
+    const data = {
+        condition_name: conditionName,
+        icd_code: icdCode || null,
+        diagnosed_date: diagnosedDate ? diagnosedDate + 'T00:00:00Z' : null,
+        notes: notes || null,
+        is_active: true
+    };
+
+    try {
+        let response;
+        if (conditionID) {
+            // Update existing condition
+            response = await fetch(`/api/children/${childID}/conditions/${conditionID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // Add new condition
+            response = await fetch(`/api/children/${childID}/conditions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(data)
+            });
+        }
+
+        if (response.ok) {
+            closeConditionModal();
+            showMessage('success', conditionID ? 'Condition updated' : 'Condition added');
+            loadConditions(childID);
+        } else {
+            const result = await response.json();
+            showMessage('error', result.error || 'Failed to save condition');
+        }
+    } catch (error) {
+        showMessage('error', 'An error occurred');
+    }
+});
+
+async function confirmDeleteCondition() {
+    const childID = document.getElementById('edit-child-id').value;
+    const conditionID = document.getElementById('condition-id').value;
+    const conditionName = document.getElementById('condition-name').value;
+
+    if (!confirm(`Are you sure you want to delete "${conditionName}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/children/${childID}/conditions/${conditionID}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (response.ok) {
+            closeConditionModal();
+            showMessage('success', 'Condition deleted');
+            loadConditions(childID);
+        } else {
+            const result = await response.json();
+            showMessage('error', result.error || 'Failed to delete condition');
+        }
+    } catch (error) {
+        showMessage('error', 'An error occurred');
+    }
 }
 
 function closeEditChildModal() {
@@ -1010,6 +1311,64 @@ async function confirmRemoveMember() {
         showMessage('error', 'An error occurred');
     }
 }
+
+// Interaction Preferences Management
+async function loadInteractionPreferences() {
+    try {
+        const response = await fetch('/api/users/me/interaction-preferences', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (response.ok) {
+            const prefs = await response.json();
+
+            // Set form values
+            document.getElementById('pref-delay-hours').value = prefs.treatment_change_prompt_delay_hours || 48;
+            document.getElementById('pref-quiet-start').value = prefs.interrogative_quiet_start || '21:00';
+            document.getElementById('pref-quiet-end').value = prefs.interrogative_quiet_end || '08:00';
+            document.getElementById('pref-max-per-day').value = prefs.max_interrogatives_per_day || 3;
+            document.getElementById('pref-batch').checked = prefs.batch_interrogatives || false;
+        }
+    } catch (error) {
+        console.error('Failed to load interaction preferences:', error);
+    }
+}
+
+document.getElementById('interaction-prefs-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const data = {
+        treatment_change_prompt_delay_hours: parseInt(document.getElementById('pref-delay-hours').value) || 48,
+        interrogative_quiet_start: document.getElementById('pref-quiet-start').value || null,
+        interrogative_quiet_end: document.getElementById('pref-quiet-end').value || null,
+        max_interrogatives_per_day: parseInt(document.getElementById('pref-max-per-day').value) || 3,
+        batch_interrogatives: document.getElementById('pref-batch').checked
+    };
+
+    try {
+        const response = await fetch('/api/users/me/interaction-preferences', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            showMessage('success', 'Notification preferences saved successfully');
+        } else {
+            const result = await response.json();
+            showMessage('error', result.error || 'Failed to save preferences');
+        }
+    } catch (error) {
+        showMessage('error', 'An error occurred while saving preferences');
+    }
+});
+
+// Load interaction preferences on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadInteractionPreferences();
+});
 </script>
 </body>
 </html>

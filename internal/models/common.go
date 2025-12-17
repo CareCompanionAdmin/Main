@@ -113,6 +113,37 @@ func (j *JSONB) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, j)
 }
 
+// Attachment represents a file attachment in chat messages
+type Attachment struct {
+	Filename    string `json:"filename"`
+	StoredName  string `json:"stored_name,omitempty"`
+	ContentType string `json:"content_type"`
+	Size        int64  `json:"size,omitempty"`
+	URL         string `json:"url"`
+}
+
+// Attachments is a slice of Attachment for PostgreSQL JSONB columns
+type Attachments []Attachment
+
+func (a Attachments) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+	return json.Marshal(a)
+}
+
+func (a *Attachments) Scan(value interface{}) error {
+	if value == nil {
+		*a = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return nil
+	}
+	return json.Unmarshal(bytes, a)
+}
+
 // StringArray for PostgreSQL TEXT[] columns
 type StringArray []string
 

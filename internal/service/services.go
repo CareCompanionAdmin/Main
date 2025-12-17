@@ -23,6 +23,7 @@ type Services struct {
 	Validation        *ValidationService
 	AlertIntelligence *AlertIntelligenceService
 	RealtimeDetection *RealtimeDetectionService
+	Transparency      *TransparencyService
 }
 
 // NewServices creates all services with their dependencies
@@ -31,7 +32,8 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	alertService := NewAlertService(repos.Alert, repos.Child)
 	insightService := NewInsightService(repos.Insight, repos.Correlation, repos.Child)
 	cohortService := NewCohortService(repos.Cohort, repos.Child, repos.Insight)
-	chatService := NewChatService(repos.Chat, repos.User, repos.Family)
+	chatService := NewChatService(repos.Chat, repos.User, repos.Family, repos.Child)
+	transparencyService := NewTransparencyService(repos.Transparency, repos.Alert, repos.Child)
 
 	return &Services{
 		Auth:              NewAuthService(repos.User, repos.Family, redis, &cfg.JWT),
@@ -49,5 +51,6 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Validation:        NewValidationService(repos.Correlation, repos.Insight, repos.Medication),
 		AlertIntelligence: NewAlertIntelligenceService(repos.Alert, repos.Correlation, repos.Insight),
 		RealtimeDetection: NewRealtimeDetectionService(repos.Correlation, repos.Alert, repos.Child, repos.Medication, alertService),
+		Transparency:      transparencyService,
 	}
 }
