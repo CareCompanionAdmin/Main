@@ -420,6 +420,29 @@ function renderTechnicalDetails(details, terms) {
             `;
         }
 
+        // Statistical Measures (clinical view)
+        if (viewContent.statistical_measures) {
+            html += `
+                <div>
+                    <h3 class="font-medium text-gray-900 mb-2">Statistical Measures</h3>
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <dl class="grid grid-cols-2 gap-4 text-sm">
+                            ${Object.entries(viewContent.statistical_measures).map(([key, value]) => `
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">${formatLabel(key)}</dt>
+                                    <dd class="font-semibold text-blue-700">${
+                                        Array.isArray(value)
+                                            ? '[' + value.map(v => typeof v === 'number' ? v.toFixed(2) : v).join(', ') + ']'
+                                            : (typeof value === 'number' ? value.toFixed(4) : value)
+                                    }</dd>
+                                </div>
+                            `).join('')}
+                        </dl>
+                    </div>
+                </div>
+            `;
+        }
+
         // Limitations (clinical view)
         if (viewContent.limitations && viewContent.limitations.length > 0) {
             html += `
