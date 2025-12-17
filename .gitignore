@@ -28,3 +28,28 @@ Thumbs.db
 
 # Transfers (data files)
 transfers/
+
+# Uploads
+uploads/
+
+# Debug/utility scripts
+cmd/addtofamily/
+cmd/checkdb/
+cmd/checktables/
+cmd/fixanalysis/
+cmd/fixmembership/
+cmd/insertalerts/
+cmd/loadtestdata/
+cmd/querydb/
+cmd/runcorrelations/
+cmd/seedtransparency/
+cmd/testalerts/
+cmd/testdata/
+cmd/testdates/
+cmd/updatealert/
+cmd/verifydata/
+
+# Test data files
+testdata.md
+testdata.sql
+
