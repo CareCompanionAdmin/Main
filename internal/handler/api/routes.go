@@ -98,12 +98,14 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				r.Get("/logs", handlers.Medication.GetLogs)
 				r.Get("/interactions", handlers.Medication.CheckInteractions)
 				r.Get("/medical-insights", handlers.Medication.GetMedicalInsights)
+				r.Get("/history", handlers.Medication.GetHistory)
 
 				// Specific medication routes (must be after static routes)
 				r.Route("/{medID}", func(r chi.Router) {
 					r.Get("/", handlers.Medication.Get)
 					r.Put("/", handlers.Medication.Update)
 					r.Delete("/", handlers.Medication.Delete)
+					r.Post("/discontinue", handlers.Medication.Discontinue)
 				})
 			})
 
@@ -115,48 +117,59 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				// Behavior logs
 				r.Get("/behavior", handlers.Log.GetBehaviorLogs)
 				r.Post("/behavior", handlers.Log.CreateBehaviorLog)
+				r.Put("/behavior/{id}", handlers.Log.UpdateBehaviorLog)
 				r.Delete("/behavior/{id}", handlers.Log.DeleteBehaviorLog)
 
 				// Bowel logs
 				r.Get("/bowel", handlers.Log.GetBowelLogs)
 				r.Post("/bowel", handlers.Log.CreateBowelLog)
+				r.Put("/bowel/{id}", handlers.Log.UpdateBowelLog)
 				r.Delete("/bowel/{id}", handlers.Log.DeleteBowelLog)
 
 				// Speech logs
 				r.Get("/speech", handlers.Log.GetSpeechLogs)
 				r.Post("/speech", handlers.Log.CreateSpeechLog)
+				r.Put("/speech/{id}", handlers.Log.UpdateSpeechLog)
 
 				// Diet logs
 				r.Get("/diet", handlers.Log.GetDietLogs)
 				r.Post("/diet", handlers.Log.CreateDietLog)
+				r.Put("/diet/{id}", handlers.Log.UpdateDietLog)
 
 				// Weight logs
 				r.Get("/weight", handlers.Log.GetWeightLogs)
 				r.Post("/weight", handlers.Log.CreateWeightLog)
+				r.Put("/weight/{id}", handlers.Log.UpdateWeightLog)
 
 				// Sleep logs
 				r.Get("/sleep", handlers.Log.GetSleepLogs)
 				r.Post("/sleep", handlers.Log.CreateSleepLog)
+				r.Put("/sleep/{id}", handlers.Log.UpdateSleepLog)
 
 				// Sensory logs
 				r.Get("/sensory", handlers.Log.GetSensoryLogs)
 				r.Post("/sensory", handlers.Log.CreateSensoryLog)
+				r.Put("/sensory/{id}", handlers.Log.UpdateSensoryLog)
 
 				// Social logs
 				r.Get("/social", handlers.Log.GetSocialLogs)
 				r.Post("/social", handlers.Log.CreateSocialLog)
+				r.Put("/social/{id}", handlers.Log.UpdateSocialLog)
 
 				// Therapy logs
 				r.Get("/therapy", handlers.Log.GetTherapyLogs)
 				r.Post("/therapy", handlers.Log.CreateTherapyLog)
+				r.Put("/therapy/{id}", handlers.Log.UpdateTherapyLog)
 
 				// Seizure logs
 				r.Get("/seizure", handlers.Log.GetSeizureLogs)
 				r.Post("/seizure", handlers.Log.CreateSeizureLog)
+				r.Put("/seizure/{id}", handlers.Log.UpdateSeizureLog)
 
 				// Health event logs
 				r.Get("/health", handlers.Log.GetHealthEventLogs)
 				r.Post("/health", handlers.Log.CreateHealthEventLog)
+				r.Put("/health/{id}", handlers.Log.UpdateHealthEventLog)
 			})
 
 			// Alerts
@@ -249,6 +262,9 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Get("/pending-questions", handlers.Transparency.GetPendingInterrogatives)
 			r.Post("/{changeID}/respond", handlers.Transparency.RespondToTreatmentChange)
 		})
+
+		// Interaction alerts (for remind me later)
+		r.Post("/interaction-alerts", handlers.Transparency.CreateInteractionAlert)
 
 		// User interaction preferences
 		r.Get("/users/me/interaction-preferences", handlers.Transparency.GetInteractionPreferences)

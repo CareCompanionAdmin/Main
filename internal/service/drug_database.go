@@ -392,26 +392,181 @@ func (s *DrugDatabaseService) ValidateMedication(ctx context.Context, name strin
 	return result, nil
 }
 
+// knownInteractions is a built-in database of clinically relevant drug interactions
+// that may not always appear in FDA labels but are important to flag
+var knownInteractions = map[string]map[string]struct {
+	Severity    string
+	Description string
+}{
+	// Stimulants interact with many drugs
+	"stimulant": {
+		"melatonin":       {"moderate", "Stimulants may reduce the effectiveness of melatonin for sleep. The stimulant effect can counteract melatonin's sedative properties. Consider timing doses appropriately."},
+		"maoi":            {"major", "CONTRAINDICATED: MAOIs with stimulants can cause dangerous increases in blood pressure and risk of serotonin syndrome. Do not use together."},
+		"ssri":            {"moderate", "Combined use may increase risk of serotonin syndrome. Monitor for symptoms like agitation, rapid heartbeat, and tremors."},
+		"snri":            {"moderate", "Combined use may increase risk of serotonin syndrome. Monitor for symptoms like agitation, rapid heartbeat, and tremors."},
+		"antacid":         {"moderate", "Antacids can increase absorption of stimulants, potentially intensifying effects. Monitor for increased side effects."},
+		"ppi":             {"moderate", "Proton pump inhibitors may affect stimulant absorption and effectiveness."},
+		"antihistamine":   {"minor", "Antihistamines may partially counteract stimulant effects or cause unpredictable responses."},
+		"cns depressant":  {"moderate", "Stimulants and CNS depressants have opposing effects. Combined use may mask overdose symptoms."},
+		"benzodiazepine":  {"moderate", "Combined use masks symptoms of either drug. Monitor carefully."},
+	},
+	// SSRIs
+	"ssri": {
+		"maoi":           {"major", "CONTRAINDICATED: Risk of fatal serotonin syndrome. Do not use within 14 days of each other."},
+		"opioid":         {"major", "Increased risk of serotonin syndrome, especially with tramadol, fentanyl, and meperidine."},
+		"nsaid":          {"moderate", "Increased risk of bleeding when SSRIs are combined with NSAIDs."},
+		"anticoagulant":  {"moderate", "SSRIs may increase anticoagulant effects and bleeding risk."},
+		"triptans":       {"moderate", "Risk of serotonin syndrome with combined use."},
+	},
+	// Anticoagulants
+	"anticoagulant": {
+		"nsaid":          {"major", "Significantly increased risk of bleeding. Avoid combination if possible."},
+		"antiplatelet":   {"major", "Greatly increased bleeding risk with combined use."},
+		"ssri":           {"moderate", "Increased bleeding risk with combined use."},
+	},
+	// Opioids
+	"opioid": {
+		"benzodiazepine": {"major", "FDA Black Box Warning: Combined use increases risk of respiratory depression and death."},
+		"cns depressant": {"major", "Additive CNS depression increases risk of respiratory failure."},
+		"maoi":           {"major", "Risk of serotonin syndrome and unpredictable effects."},
+		"ssri":           {"moderate", "Risk of serotonin syndrome, especially with tramadol."},
+	},
+	// Melatonin
+	"melatonin": {
+		"stimulant":       {"moderate", "Stimulants may reduce the effectiveness of melatonin for sleep. Consider timing doses appropriately."},
+		"cns depressant":  {"moderate", "Additive sedation effects. Use caution."},
+		"benzodiazepine":  {"moderate", "Combined sedative effects may be enhanced."},
+		"anticoagulant":   {"minor", "Melatonin may have mild anticoagulant effects."},
+	},
+}
+
+// getDrugClass returns the drug class for a medication name
+func getDrugClass(drugName string) string {
+	drugClasses := map[string]string{
+		// Stimulants
+		"vyvanse": "stimulant", "adderall": "stimulant", "ritalin": "stimulant",
+		"concerta": "stimulant", "focalin": "stimulant", "dexedrine": "stimulant",
+		"amphetamine": "stimulant", "dextroamphetamine": "stimulant",
+		"methylphenidate": "stimulant", "lisdexamfetamine": "stimulant",
+		// MAOIs
+		"selegiline": "maoi", "phenelzine": "maoi", "tranylcypromine": "maoi",
+		"isocarboxazid": "maoi", "rasagiline": "maoi", "nardil": "maoi", "parnate": "maoi",
+		// SSRIs
+		"prozac": "ssri", "zoloft": "ssri", "lexapro": "ssri", "paxil": "ssri", "celexa": "ssri",
+		"fluoxetine": "ssri", "sertraline": "ssri", "escitalopram": "ssri",
+		"paroxetine": "ssri", "citalopram": "ssri", "fluvoxamine": "ssri",
+		// SNRIs
+		"effexor": "snri", "cymbalta": "snri", "pristiq": "snri",
+		"venlafaxine": "snri", "duloxetine": "snri", "desvenlafaxine": "snri",
+		// Opioids
+		"tramadol": "opioid", "hydrocodone": "opioid", "oxycodone": "opioid",
+		"codeine": "opioid", "morphine": "opioid", "fentanyl": "opioid",
+		"vicodin": "opioid", "percocet": "opioid", "oxycontin": "opioid",
+		// Benzodiazepines
+		"xanax": "benzodiazepine", "ativan": "benzodiazepine", "valium": "benzodiazepine",
+		"klonopin": "benzodiazepine", "alprazolam": "benzodiazepine",
+		"lorazepam": "benzodiazepine", "diazepam": "benzodiazepine", "clonazepam": "benzodiazepine",
+		// Anticoagulants
+		"warfarin": "anticoagulant", "coumadin": "anticoagulant", "heparin": "anticoagulant",
+		"eliquis": "anticoagulant", "xarelto": "anticoagulant", "pradaxa": "anticoagulant",
+		"apixaban": "anticoagulant", "rivaroxaban": "anticoagulant", "dabigatran": "anticoagulant",
+		// NSAIDs
+		"ibuprofen": "nsaid", "advil": "nsaid", "motrin": "nsaid", "naproxen": "nsaid",
+		"aleve": "nsaid", "aspirin": "antiplatelet", "celecoxib": "nsaid", "celebrex": "nsaid",
+		// Supplements
+		"melatonin": "melatonin",
+		// PPIs
+		"omeprazole": "ppi", "prilosec": "ppi", "nexium": "ppi", "prevacid": "ppi",
+		"pantoprazole": "ppi", "esomeprazole": "ppi", "lansoprazole": "ppi",
+	}
+
+	lower := strings.ToLower(drugName)
+	if class, ok := drugClasses[lower]; ok {
+		return class
+	}
+	return ""
+}
+
 // CheckInteractions checks for interactions between medications
 func (s *DrugDatabaseService) CheckInteractions(ctx context.Context, medications []string) ([]InteractionWarning, error) {
 	var warnings []InteractionWarning
+	seen := make(map[string]bool) // Prevent duplicate warnings
 
+	// First, check built-in known interactions based on drug classes
+	for i := 0; i < len(medications); i++ {
+		class1 := getDrugClass(medications[i])
+		if class1 == "" {
+			continue
+		}
+
+		for j := i + 1; j < len(medications); j++ {
+			class2 := getDrugClass(medications[j])
+			if class2 == "" {
+				continue
+			}
+
+			// Check if class1 has interaction with class2
+			if interactions, ok := knownInteractions[class1]; ok {
+				if interaction, found := interactions[class2]; found {
+					key := medications[i] + "-" + medications[j]
+					if !seen[key] {
+						seen[key] = true
+						warnings = append(warnings, InteractionWarning{
+							Drug1:       medications[i],
+							Drug2:       medications[j],
+							Severity:    interaction.Severity,
+							Description: interaction.Description,
+						})
+					}
+				}
+			}
+
+			// Check reverse (class2 interacting with class1)
+			if interactions, ok := knownInteractions[class2]; ok {
+				if interaction, found := interactions[class1]; found {
+					key := medications[i] + "-" + medications[j]
+					if !seen[key] {
+						seen[key] = true
+						warnings = append(warnings, InteractionWarning{
+							Drug1:       medications[j],
+							Drug2:       medications[i],
+							Severity:    interaction.Severity,
+							Description: interaction.Description,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// Then check FDA data for additional interactions
+	// Look up each drug and check if any OTHER drug in the list appears in its interactions
 	for i := 0; i < len(medications); i++ {
 		info, err := s.LookupDrug(ctx, medications[i])
 		if err != nil {
 			continue
 		}
 
-		for j := i + 1; j < len(medications); j++ {
+		// Check ALL other medications (not just j > i) to catch both directions
+		for j := 0; j < len(medications); j++ {
+			if i == j {
+				continue
+			}
 			otherDrug := medications[j]
 			for _, interaction := range info.Interactions {
 				if matchesDrugName(interaction.Drug, otherDrug) {
-					warnings = append(warnings, InteractionWarning{
-						Drug1:       medications[i],
-						Drug2:       otherDrug,
-						Severity:    interaction.Severity,
-						Description: interaction.Description,
-					})
+					// Use sorted key to prevent duplicates regardless of order
+					key := medications[i] + "-" + medications[j]
+					reverseKey := medications[j] + "-" + medications[i]
+					if !seen[key] && !seen[reverseKey] {
+						seen[key] = true
+						warnings = append(warnings, InteractionWarning{
+							Drug1:       medications[i],
+							Drug2:       otherDrug,
+							Severity:    interaction.Severity,
+							Description: interaction.Description,
+						})
+					}
 				}
 			}
 		}
@@ -520,21 +675,73 @@ func parseSideEffects(text string) []SideEffect {
 func parseInteractions(text string) []DrugInteraction {
 	var interactions []DrugInteraction
 
-	// Simple parsing - look for drug names mentioned
-	// In production, use a drug interaction database
-	commonDrugs := []string{
-		"warfarin", "aspirin", "ibuprofen", "acetaminophen",
-		"metformin", "lisinopril", "amlodipine", "metoprolol",
-		"sertraline", "fluoxetine", "alprazolam", "lorazepam",
+	// Expanded list of common medications to check for interactions
+	commonDrugs := map[string]string{
+		// Stimulants / ADHD
+		"amphetamine": "Stimulant", "dextroamphetamine": "Stimulant", "methylphenidate": "Stimulant",
+		"lisdexamfetamine": "Stimulant", "adderall": "Stimulant", "ritalin": "Stimulant",
+		"concerta": "Stimulant", "vyvanse": "Stimulant", "focalin": "Stimulant",
+		// MAOIs (critical for stimulants)
+		"maoi": "MAOI", "monoamine oxidase": "MAOI", "selegiline": "MAOI", "phenelzine": "MAOI",
+		"tranylcypromine": "MAOI", "isocarboxazid": "MAOI", "rasagiline": "MAOI",
+		// SSRIs/SNRIs
+		"sertraline": "SSRI", "fluoxetine": "SSRI", "paroxetine": "SSRI", "citalopram": "SSRI",
+		"escitalopram": "SSRI", "venlafaxine": "SNRI", "duloxetine": "SNRI", "desvenlafaxine": "SNRI",
+		"prozac": "SSRI", "zoloft": "SSRI", "lexapro": "SSRI", "paxil": "SSRI", "effexor": "SNRI",
+		// Blood thinners
+		"warfarin": "Anticoagulant", "coumadin": "Anticoagulant", "heparin": "Anticoagulant",
+		"aspirin": "Antiplatelet", "clopidogrel": "Antiplatelet", "plavix": "Antiplatelet",
+		// Pain medications
+		"ibuprofen": "NSAID", "naproxen": "NSAID", "acetaminophen": "Analgesic", "tylenol": "Analgesic",
+		"tramadol": "Opioid", "hydrocodone": "Opioid", "oxycodone": "Opioid", "codeine": "Opioid",
+		"morphine": "Opioid", "fentanyl": "Opioid",
+		// Blood pressure
+		"lisinopril": "ACE Inhibitor", "amlodipine": "Calcium Channel Blocker", "metoprolol": "Beta Blocker",
+		"atenolol": "Beta Blocker", "propranolol": "Beta Blocker", "losartan": "ARB", "valsartan": "ARB",
+		// Benzos/Sedatives
+		"alprazolam": "Benzodiazepine", "lorazepam": "Benzodiazepine", "diazepam": "Benzodiazepine",
+		"clonazepam": "Benzodiazepine", "xanax": "Benzodiazepine", "ativan": "Benzodiazepine",
+		"valium": "Benzodiazepine", "klonopin": "Benzodiazepine",
+		// Antipsychotics
+		"risperidone": "Antipsychotic", "olanzapine": "Antipsychotic", "quetiapine": "Antipsychotic",
+		"aripiprazole": "Antipsychotic", "haloperidol": "Antipsychotic",
+		"risperdal": "Antipsychotic", "zyprexa": "Antipsychotic", "seroquel": "Antipsychotic", "abilify": "Antipsychotic",
+		// Anticonvulsants
+		"valproic acid": "Anticonvulsant", "valproate": "Anticonvulsant", "carbamazepine": "Anticonvulsant",
+		"phenytoin": "Anticonvulsant", "lamotrigine": "Anticonvulsant", "topiramate": "Anticonvulsant",
+		"depakote": "Anticonvulsant", "tegretol": "Anticonvulsant", "dilantin": "Anticonvulsant",
+		// Diabetes
+		"metformin": "Antidiabetic", "insulin": "Antidiabetic", "glipizide": "Antidiabetic",
+		// Antacids/GI
+		"omeprazole": "PPI", "pantoprazole": "PPI", "esomeprazole": "PPI", "lansoprazole": "PPI",
+		"ranitidine": "H2 Blocker", "famotidine": "H2 Blocker",
+		// Other CNS
+		"lithium": "Mood Stabilizer", "bupropion": "Antidepressant", "wellbutrin": "Antidepressant",
+		"trazodone": "Antidepressant", "mirtazapine": "Antidepressant",
+		// Miscellaneous
+		"alcohol": "CNS Depressant", "caffeine": "Stimulant", "grapefruit": "CYP3A4 Inhibitor",
+		"st. john's wort": "Herbal", "melatonin": "Supplement",
 	}
 
 	lowerText := strings.ToLower(text)
-	for _, drug := range commonDrugs {
-		if strings.Contains(lowerText, drug) {
+	seen := make(map[string]bool)
+
+	for drug, class := range commonDrugs {
+		if strings.Contains(lowerText, drug) && !seen[drug] {
+			seen[drug] = true
+			// Determine severity based on context
+			severity := "moderate"
+			if strings.Contains(lowerText, "contraindicated") || strings.Contains(lowerText, "should not") ||
+				strings.Contains(lowerText, "do not use") || class == "MAOI" {
+				severity = "major"
+			} else if strings.Contains(lowerText, "caution") || strings.Contains(lowerText, "monitor") {
+				severity = "moderate"
+			}
+
 			interactions = append(interactions, DrugInteraction{
-				Drug:        drug,
-				Severity:    "moderate",
-				Description: fmt.Sprintf("Potential interaction with %s mentioned in drug label", drug),
+				Drug:        strings.Title(drug),
+				Severity:    severity,
+				Description: fmt.Sprintf("Potential interaction with %s (%s) mentioned in drug label", strings.Title(drug), class),
 			})
 		}
 	}
@@ -546,4 +753,161 @@ func matchesDrugName(name1, name2 string) bool {
 	return strings.EqualFold(name1, name2) ||
 		strings.Contains(strings.ToLower(name1), strings.ToLower(name2)) ||
 		strings.Contains(strings.ToLower(name2), strings.ToLower(name1))
+}
+
+// DrugSuggestion represents a medication suggestion for autocomplete
+type DrugSuggestion struct {
+	Name        string `json:"name"`
+	GenericName string `json:"generic_name,omitempty"`
+	BrandNames  []string `json:"brand_names,omitempty"`
+}
+
+// SearchDrugs searches the FDA database for medications matching the query
+func (s *DrugDatabaseService) SearchDrugs(ctx context.Context, query string) ([]DrugSuggestion, error) {
+	if len(query) < 2 {
+		return nil, nil
+	}
+
+	// Search FDA drug labels
+	searchURL := fmt.Sprintf("%s/label.json?search=(openfda.brand_name:%s*+openfda.generic_name:%s*)&limit=20",
+		s.openFDAURL,
+		url.QueryEscape(query),
+		url.QueryEscape(query),
+	)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", searchURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// Try alternative search without wildcard
+		return s.searchDrugsExact(ctx, query)
+	}
+
+	var result struct {
+		Results []struct {
+			OpenFDA struct {
+				BrandName   []string `json:"brand_name"`
+				GenericName []string `json:"generic_name"`
+			} `json:"openfda"`
+		} `json:"results"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	// Deduplicate and build suggestions
+	seen := make(map[string]bool)
+	var suggestions []DrugSuggestion
+
+	for _, r := range result.Results {
+		// Add generic names
+		for _, gn := range r.OpenFDA.GenericName {
+			gnLower := strings.ToLower(gn)
+			if !seen[gnLower] && strings.Contains(gnLower, strings.ToLower(query)) {
+				seen[gnLower] = true
+				suggestions = append(suggestions, DrugSuggestion{
+					Name:        gn,
+					GenericName: gn,
+					BrandNames:  r.OpenFDA.BrandName,
+				})
+			}
+		}
+		// Add brand names
+		for _, bn := range r.OpenFDA.BrandName {
+			bnLower := strings.ToLower(bn)
+			if !seen[bnLower] && strings.Contains(bnLower, strings.ToLower(query)) {
+				seen[bnLower] = true
+				genericName := ""
+				if len(r.OpenFDA.GenericName) > 0 {
+					genericName = r.OpenFDA.GenericName[0]
+				}
+				suggestions = append(suggestions, DrugSuggestion{
+					Name:        bn,
+					GenericName: genericName,
+				})
+			}
+		}
+	}
+
+	return suggestions, nil
+}
+
+// searchDrugsExact performs an exact search without wildcards
+func (s *DrugDatabaseService) searchDrugsExact(ctx context.Context, query string) ([]DrugSuggestion, error) {
+	// Use quoted search for better matching
+	searchURL := fmt.Sprintf("%s/label.json?search=(openfda.brand_name:\"%s\"+openfda.generic_name:\"%s\")&limit=20",
+		s.openFDAURL,
+		url.QueryEscape(query),
+		url.QueryEscape(query),
+	)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", searchURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, nil
+	}
+
+	var result struct {
+		Results []struct {
+			OpenFDA struct {
+				BrandName   []string `json:"brand_name"`
+				GenericName []string `json:"generic_name"`
+			} `json:"openfda"`
+		} `json:"results"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]bool)
+	var suggestions []DrugSuggestion
+
+	for _, r := range result.Results {
+		for _, gn := range r.OpenFDA.GenericName {
+			gnLower := strings.ToLower(gn)
+			if !seen[gnLower] {
+				seen[gnLower] = true
+				suggestions = append(suggestions, DrugSuggestion{
+					Name:        gn,
+					GenericName: gn,
+					BrandNames:  r.OpenFDA.BrandName,
+				})
+			}
+		}
+		for _, bn := range r.OpenFDA.BrandName {
+			bnLower := strings.ToLower(bn)
+			if !seen[bnLower] {
+				seen[bnLower] = true
+				genericName := ""
+				if len(r.OpenFDA.GenericName) > 0 {
+					genericName = r.OpenFDA.GenericName[0]
+				}
+				suggestions = append(suggestions, DrugSuggestion{
+					Name:        bn,
+					GenericName: genericName,
+				})
+			}
+		}
+	}
+
+	return suggestions, nil
 }

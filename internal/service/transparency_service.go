@@ -293,6 +293,16 @@ func (s *TransparencyService) UpdateUserInteractionPreferences(ctx context.Conte
 	return s.repo.UpsertUserInteractionPreferences(ctx, prefs)
 }
 
+// CreateTreatmentChange creates a new treatment change record
+func (s *TransparencyService) CreateTreatmentChange(ctx context.Context, tc *models.TreatmentChange) error {
+	return s.repo.CreateTreatmentChange(ctx, tc)
+}
+
+// GetMedicationHistory retrieves medication change history for a child
+func (s *TransparencyService) GetMedicationHistory(ctx context.Context, childID string) ([]repository.MedicationHistoryEntry, error) {
+	return s.repo.GetMedicationHistory(ctx, childID)
+}
+
 // Helper functions
 
 func getFactorIcon(factorType models.FactorType) string {

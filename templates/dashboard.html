@@ -40,8 +40,8 @@
 </nav>
 
 <!-- Intro Video Overlay -->
-<div id="introVideoOverlay" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-center">
-    <div class="relative">
+<div id="introVideoOverlay" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-center" onclick="closeIntroVideo()">
+    <div class="relative" onclick="event.stopPropagation()">
         <button onclick="closeIntroVideo()" class="absolute -top-12 right-0 text-white hover:text-gray-300 text-lg font-medium flex items-center">
             <span>Skip</span>
             <svg class="w-6 h-6 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,8 +56,8 @@
 </div>
 
 <!-- Help Modal -->
-<div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+<div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center" onclick="closeHelpModal()">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
         <div class="p-6 border-b flex items-center justify-between">
             <div class="flex items-center">
                 <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="w-12 h-12 mr-3">

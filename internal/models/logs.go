@@ -8,23 +8,28 @@ import (
 
 // Behavior Log
 type BehaviorLog struct {
-	ID                  uuid.UUID   `json:"id"`
-	ChildID             uuid.UUID   `json:"child_id"`
-	LogDate             time.Time   `json:"log_date"`
-	LogTime             NullString  `json:"log_time,omitempty"`
-	MoodLevel           *int        `json:"mood_level,omitempty"`
-	EnergyLevel         *int        `json:"energy_level,omitempty"`
-	AnxietyLevel        *int        `json:"anxiety_level,omitempty"`
-	Meltdowns           int         `json:"meltdowns"`
-	StimmingEpisodes    int         `json:"stimming_episodes"`
-	AggressionIncidents int         `json:"aggression_incidents"`
-	SelfInjuryIncidents int         `json:"self_injury_incidents"`
-	Triggers            StringArray `json:"triggers,omitempty"`
-	PositiveBehaviors   StringArray `json:"positive_behaviors,omitempty"`
-	Notes               NullString  `json:"notes,omitempty"`
-	LoggedBy            uuid.UUID   `json:"logged_by"`
-	CreatedAt           time.Time   `json:"created_at"`
-	UpdatedAt           time.Time   `json:"updated_at"`
+	ID                    uuid.UUID   `json:"id"`
+	ChildID               uuid.UUID   `json:"child_id"`
+	LogDate               time.Time   `json:"log_date"`
+	LogTime               NullString  `json:"log_time,omitempty"`
+	TimeScope             NullString  `json:"time_scope,omitempty"`
+	MoodLevel             *int        `json:"mood_level,omitempty"`
+	EnergyLevel           *int        `json:"energy_level,omitempty"`
+	AnxietyLevel          *int        `json:"anxiety_level,omitempty"`
+	InterpersonalBehavior NullString  `json:"interpersonal_behavior,omitempty"`
+	Meltdowns             int         `json:"meltdowns"`
+	StimmingEpisodes      int         `json:"stimming_episodes"`
+	StimmingLevel         NullString  `json:"stimming_level,omitempty"`
+	AggressionIncidents   int         `json:"aggression_incidents"`
+	SelfInjuryIncidents   int         `json:"self_injury_incidents"`
+	Location              NullString  `json:"location,omitempty"`
+	LocationOther         NullString  `json:"location_other,omitempty"`
+	Triggers              StringArray `json:"triggers,omitempty"`
+	PositiveBehaviors     StringArray `json:"positive_behaviors,omitempty"`
+	Notes                 NullString  `json:"notes,omitempty"`
+	LoggedBy              uuid.UUID   `json:"logged_by"`
+	CreatedAt             time.Time   `json:"created_at"`
+	UpdatedAt             time.Time   `json:"updated_at"`
 }
 
 // Bowel Log
@@ -33,6 +38,7 @@ type BowelLog struct {
 	ChildID      uuid.UUID  `json:"child_id"`
 	LogDate      time.Time  `json:"log_date"`
 	LogTime      NullString `json:"log_time,omitempty"`
+	TimeScope    NullString `json:"time_scope,omitempty"`
 	BristolScale *int       `json:"bristol_scale,omitempty"`
 	HadAccident  bool       `json:"had_accident"`
 	PainLevel    *int       `json:"pain_level,omitempty"`
@@ -47,6 +53,8 @@ type SpeechLog struct {
 	ID                       uuid.UUID   `json:"id"`
 	ChildID                  uuid.UUID   `json:"child_id"`
 	LogDate                  time.Time   `json:"log_date"`
+	LogTime                  NullString  `json:"log_time,omitempty"`
+	TimeScope                NullString  `json:"time_scope,omitempty"`
 	VerbalOutputLevel        *int        `json:"verbal_output_level,omitempty"`
 	ClarityLevel             *int        `json:"clarity_level,omitempty"`
 	NewWords                 StringArray `json:"new_words,omitempty"`
@@ -64,6 +72,8 @@ type DietLog struct {
 	ID               uuid.UUID   `json:"id"`
 	ChildID          uuid.UUID   `json:"child_id"`
 	LogDate          time.Time   `json:"log_date"`
+	LogTime          NullString  `json:"log_time,omitempty"`
+	TimeScope        NullString  `json:"time_scope,omitempty"`
 	MealType         NullString  `json:"meal_type,omitempty"`
 	MealTime         NullString  `json:"meal_time,omitempty"`
 	FoodsEaten       StringArray `json:"foods_eaten,omitempty"`
@@ -71,8 +81,9 @@ type DietLog struct {
 	AppetiteLevel    NullString  `json:"appetite_level,omitempty"`
 	WaterIntakeOz    *int        `json:"water_intake_oz,omitempty"`
 	SupplementsTaken StringArray `json:"supplements_taken,omitempty"`
-	NewFoodTried     NullString  `json:"new_food_tried,omitempty"`
-	AllergicReaction bool        `json:"allergic_reaction"`
+	NewFoodTried      NullString  `json:"new_food_tried,omitempty"`
+	NewFoodAcceptance NullString  `json:"new_food_acceptance,omitempty"`
+	AllergicReaction  bool        `json:"allergic_reaction"`
 	ReactionDetails  NullString  `json:"reaction_details,omitempty"`
 	Notes            NullString  `json:"notes,omitempty"`
 	LoggedBy         uuid.UUID   `json:"logged_by"`
@@ -84,6 +95,8 @@ type WeightLog struct {
 	ID           uuid.UUID  `json:"id"`
 	ChildID      uuid.UUID  `json:"child_id"`
 	LogDate      time.Time  `json:"log_date"`
+	LogTime      NullString `json:"log_time,omitempty"`
+	TimeScope    NullString `json:"time_scope,omitempty"`
 	WeightLbs    *float64   `json:"weight_lbs,omitempty"`
 	HeightInches *float64   `json:"height_inches,omitempty"`
 	Notes        NullString `json:"notes,omitempty"`
@@ -96,6 +109,7 @@ type SleepLog struct {
 	ID                uuid.UUID  `json:"id"`
 	ChildID           uuid.UUID  `json:"child_id"`
 	LogDate           time.Time  `json:"log_date"`
+	TimeScope         NullString `json:"time_scope,omitempty"`
 	Bedtime           NullString `json:"bedtime,omitempty"`
 	WakeTime          NullString `json:"wake_time,omitempty"`
 	TotalSleepMinutes *int       `json:"total_sleep_minutes,omitempty"`
@@ -116,6 +130,7 @@ type SensoryLog struct {
 	ChildID                  uuid.UUID   `json:"child_id"`
 	LogDate                  time.Time   `json:"log_date"`
 	LogTime                  NullString  `json:"log_time,omitempty"`
+	TimeScope                NullString  `json:"time_scope,omitempty"`
 	SensorySeekingBehaviors  StringArray `json:"sensory_seeking_behaviors,omitempty"`
 	SensoryAvoidingBehaviors StringArray `json:"sensory_avoiding_behaviors,omitempty"`
 	OverloadTriggers         StringArray `json:"overload_triggers,omitempty"`
@@ -132,6 +147,8 @@ type SocialLog struct {
 	ID                     uuid.UUID  `json:"id"`
 	ChildID                uuid.UUID  `json:"child_id"`
 	LogDate                time.Time  `json:"log_date"`
+	LogTime                NullString `json:"log_time,omitempty"`
+	TimeScope              NullString `json:"time_scope,omitempty"`
 	EyeContactLevel        *int       `json:"eye_contact_level,omitempty"`
 	SocialEngagementLevel  *int       `json:"social_engagement_level,omitempty"`
 	PeerInteractions       int        `json:"peer_interactions"`
@@ -149,6 +166,8 @@ type TherapyLog struct {
 	ID               uuid.UUID   `json:"id"`
 	ChildID          uuid.UUID   `json:"child_id"`
 	LogDate          time.Time   `json:"log_date"`
+	LogTime          NullString  `json:"log_time,omitempty"`
+	TimeScope        NullString  `json:"time_scope,omitempty"`
 	TherapyType      NullString  `json:"therapy_type,omitempty"`
 	TherapistName    NullString  `json:"therapist_name,omitempty"`
 	DurationMinutes  *int        `json:"duration_minutes,omitempty"`
@@ -166,6 +185,7 @@ type SeizureLog struct {
 	ChildID               uuid.UUID   `json:"child_id"`
 	LogDate               time.Time   `json:"log_date"`
 	LogTime               string      `json:"log_time"`
+	TimeScope             NullString  `json:"time_scope,omitempty"`
 	SeizureType           NullString  `json:"seizure_type,omitempty"`
 	DurationSeconds       *int        `json:"duration_seconds,omitempty"`
 	Triggers              StringArray `json:"triggers,omitempty"`
@@ -184,6 +204,8 @@ type HealthEventLog struct {
 	ID           uuid.UUID   `json:"id"`
 	ChildID      uuid.UUID   `json:"child_id"`
 	LogDate      time.Time   `json:"log_date"`
+	LogTime      NullString  `json:"log_time,omitempty"`
+	TimeScope    NullString  `json:"time_scope,omitempty"`
 	EventType    NullString  `json:"event_type,omitempty"`
 	Description  NullString  `json:"description,omitempty"`
 	Symptoms     StringArray `json:"symptoms,omitempty"`
@@ -219,18 +241,23 @@ type DateWithEntryCount struct {
 
 // Request types for creating logs
 type CreateBehaviorLogRequest struct {
-	LogDate             time.Time `json:"log_date"`
-	LogTime             string    `json:"log_time,omitempty"`
-	MoodLevel           *int      `json:"mood_level,omitempty"`
-	EnergyLevel         *int      `json:"energy_level,omitempty"`
-	AnxietyLevel        *int      `json:"anxiety_level,omitempty"`
-	Meltdowns           int       `json:"meltdowns"`
-	StimmingEpisodes    int       `json:"stimming_episodes"`
-	AggressionIncidents int       `json:"aggression_incidents"`
-	SelfInjuryIncidents int       `json:"self_injury_incidents"`
-	Triggers            []string  `json:"triggers,omitempty"`
-	PositiveBehaviors   []string  `json:"positive_behaviors,omitempty"`
-	Notes               string    `json:"notes,omitempty"`
+	LogDate               time.Time `json:"log_date"`
+	LogTime               string    `json:"log_time,omitempty"`
+	TimeScope             string    `json:"time_scope,omitempty"`
+	MoodLevel             *int      `json:"mood_level,omitempty"`
+	EnergyLevel           *int      `json:"energy_level,omitempty"`
+	AnxietyLevel          *int      `json:"anxiety_level,omitempty"`
+	InterpersonalBehavior string    `json:"interpersonal_behavior,omitempty"`
+	Meltdowns             int       `json:"meltdowns"`
+	StimmingEpisodes      int       `json:"stimming_episodes"`
+	StimmingLevel         string    `json:"stimming_level,omitempty"`
+	AggressionIncidents   int       `json:"aggression_incidents"`
+	SelfInjuryIncidents   int       `json:"self_injury_incidents"`
+	Location              string    `json:"location,omitempty"`
+	LocationOther         string    `json:"location_other,omitempty"`
+	Triggers              []string  `json:"triggers,omitempty"`
+	PositiveBehaviors     []string  `json:"positive_behaviors,omitempty"`
+	Notes                 string    `json:"notes,omitempty"`
 }
 
 type CreateBowelLogRequest struct {
@@ -256,18 +283,19 @@ type CreateSpeechLogRequest struct {
 }
 
 type CreateDietLogRequest struct {
-	LogDate          time.Time `json:"log_date"`
-	MealType         string    `json:"meal_type,omitempty"`
-	MealTime         string    `json:"meal_time,omitempty"`
-	FoodsEaten       []string  `json:"foods_eaten,omitempty"`
-	FoodsRefused     []string  `json:"foods_refused,omitempty"`
-	AppetiteLevel    string    `json:"appetite_level,omitempty"`
-	WaterIntakeOz    *int      `json:"water_intake_oz,omitempty"`
-	SupplementsTaken []string  `json:"supplements_taken,omitempty"`
-	NewFoodTried     string    `json:"new_food_tried,omitempty"`
-	AllergicReaction bool      `json:"allergic_reaction"`
-	ReactionDetails  string    `json:"reaction_details,omitempty"`
-	Notes            string    `json:"notes,omitempty"`
+	LogDate           time.Time `json:"log_date"`
+	MealType          string    `json:"meal_type,omitempty"`
+	MealTime          string    `json:"meal_time,omitempty"`
+	FoodsEaten        []string  `json:"foods_eaten,omitempty"`
+	FoodsRefused      []string  `json:"foods_refused,omitempty"`
+	AppetiteLevel     string    `json:"appetite_level,omitempty"`
+	WaterIntakeOz     *int      `json:"water_intake_oz,omitempty"`
+	SupplementsTaken  []string  `json:"supplements_taken,omitempty"`
+	NewFoodTried      string    `json:"new_food_tried,omitempty"`
+	NewFoodAcceptance string    `json:"new_food_acceptance,omitempty"`
+	AllergicReaction  bool      `json:"allergic_reaction"`
+	ReactionDetails   string    `json:"reaction_details,omitempty"`
+	Notes             string    `json:"notes,omitempty"`
 }
 
 type CreateWeightLogRequest struct {

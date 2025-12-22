@@ -36,6 +36,9 @@ type FamilyRepository interface {
 	GetMembership(ctx context.Context, familyID, userID uuid.UUID) (*models.FamilyMembership, error)
 	GetUserFamilies(ctx context.Context, userID uuid.UUID) ([]models.FamilyMembership, error)
 	UpdateMemberRole(ctx context.Context, familyID, userID uuid.UUID, role models.FamilyRole) error
+
+	// Invitation operations
+	CreateInvitation(ctx context.Context, familyID uuid.UUID, email, firstName, lastName string, role models.FamilyRole) error
 }
 
 // ChildRepository handles child data operations
@@ -84,6 +87,10 @@ type MedicationRepository interface {
 	// Reference data
 	GetMedicationReference(ctx context.Context, name string) (*models.MedicationReference, error)
 	SearchMedicationReferences(ctx context.Context, query string) ([]models.MedicationReference, error)
+
+	// Discontinuation helpers
+	HasMedicationLogs(ctx context.Context, medicationID uuid.UUID) (bool, error)
+	HardDeleteMedication(ctx context.Context, id uuid.UUID) error
 }
 
 // LogRepository handles all log types
@@ -99,60 +106,70 @@ type LogRepository interface {
 	CreateBowelLog(ctx context.Context, log *models.BowelLog) error
 	GetBowelLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.BowelLog, error)
 	GetBowelLogByID(ctx context.Context, id uuid.UUID) (*models.BowelLog, error)
+	UpdateBowelLog(ctx context.Context, log *models.BowelLog) error
 	DeleteBowelLog(ctx context.Context, id uuid.UUID) error
 
 	// Speech logs
 	CreateSpeechLog(ctx context.Context, log *models.SpeechLog) error
 	GetSpeechLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SpeechLog, error)
 	GetSpeechLogByID(ctx context.Context, id uuid.UUID) (*models.SpeechLog, error)
+	UpdateSpeechLog(ctx context.Context, log *models.SpeechLog) error
 	DeleteSpeechLog(ctx context.Context, id uuid.UUID) error
 
 	// Diet logs
 	CreateDietLog(ctx context.Context, log *models.DietLog) error
 	GetDietLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.DietLog, error)
 	GetDietLogByID(ctx context.Context, id uuid.UUID) (*models.DietLog, error)
+	UpdateDietLog(ctx context.Context, log *models.DietLog) error
 	DeleteDietLog(ctx context.Context, id uuid.UUID) error
 
 	// Weight logs
 	CreateWeightLog(ctx context.Context, log *models.WeightLog) error
 	GetWeightLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.WeightLog, error)
 	GetWeightLogByID(ctx context.Context, id uuid.UUID) (*models.WeightLog, error)
+	UpdateWeightLog(ctx context.Context, log *models.WeightLog) error
 	DeleteWeightLog(ctx context.Context, id uuid.UUID) error
 
 	// Sleep logs
 	CreateSleepLog(ctx context.Context, log *models.SleepLog) error
 	GetSleepLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SleepLog, error)
 	GetSleepLogByID(ctx context.Context, id uuid.UUID) (*models.SleepLog, error)
+	UpdateSleepLog(ctx context.Context, log *models.SleepLog) error
 	DeleteSleepLog(ctx context.Context, id uuid.UUID) error
 
 	// Sensory logs
 	CreateSensoryLog(ctx context.Context, log *models.SensoryLog) error
 	GetSensoryLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SensoryLog, error)
 	GetSensoryLogByID(ctx context.Context, id uuid.UUID) (*models.SensoryLog, error)
+	UpdateSensoryLog(ctx context.Context, log *models.SensoryLog) error
 	DeleteSensoryLog(ctx context.Context, id uuid.UUID) error
 
 	// Social logs
 	CreateSocialLog(ctx context.Context, log *models.SocialLog) error
 	GetSocialLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SocialLog, error)
 	GetSocialLogByID(ctx context.Context, id uuid.UUID) (*models.SocialLog, error)
+	UpdateSocialLog(ctx context.Context, log *models.SocialLog) error
 	DeleteSocialLog(ctx context.Context, id uuid.UUID) error
 
 	// Therapy logs
 	CreateTherapyLog(ctx context.Context, log *models.TherapyLog) error
 	GetTherapyLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.TherapyLog, error)
 	GetTherapyLogByID(ctx context.Context, id uuid.UUID) (*models.TherapyLog, error)
+	UpdateTherapyLog(ctx context.Context, log *models.TherapyLog) error
 	DeleteTherapyLog(ctx context.Context, id uuid.UUID) error
 
 	// Seizure logs
 	CreateSeizureLog(ctx context.Context, log *models.SeizureLog) error
 	GetSeizureLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SeizureLog, error)
 	GetSeizureLogByID(ctx context.Context, id uuid.UUID) (*models.SeizureLog, error)
+	UpdateSeizureLog(ctx context.Context, log *models.SeizureLog) error
 	DeleteSeizureLog(ctx context.Context, id uuid.UUID) error
 
 	// Health event logs
 	CreateHealthEventLog(ctx context.Context, log *models.HealthEventLog) error
 	GetHealthEventLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.HealthEventLog, error)
 	GetHealthEventLogByID(ctx context.Context, id uuid.UUID) (*models.HealthEventLog, error)
+	UpdateHealthEventLog(ctx context.Context, log *models.HealthEventLog) error
 	DeleteHealthEventLog(ctx context.Context, id uuid.UUID) error
 
 	// Daily log page

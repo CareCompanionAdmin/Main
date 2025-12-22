@@ -112,15 +112,17 @@
         <h2 class="text-lg font-semibold text-blue-800 mb-4">Medications Due Today</h2>
         <div class="space-y-3">
             {{range .MedicationsDue}}
+            {{if not .IsLogged}}
             <div class="flex items-center justify-between bg-white p-4 rounded-lg">
                 <div>
-                    <p class="font-medium text-gray-900">{{.MedicationName}}</p>
-                    <p class="text-sm text-gray-500">{{.Dosage}} - {{.ScheduledTime}}</p>
+                    <p class="font-medium text-gray-900">{{.Medication.Name}}</p>
+                    <p class="text-sm text-gray-500">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{.Schedule.TimeOfDay}}</p>
                 </div>
-                <button onclick="logMedication('{{.ID}}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                <button onclick="logMedication('{{.Schedule.ID}}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                     Mark as Taken
                 </button>
             </div>
+            {{end}}
             {{end}}
         </div>
     </div>
@@ -264,10 +266,19 @@
                 data-entry-id="{{.ID}}"
                 data-entry-type="Behavior"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-mood="{{if .MoodLevel}}{{.MoodLevel}}{{else}}0{{end}}"
+                data-entry-energy="{{if .EnergyLevel}}{{.EnergyLevel}}{{else}}0{{end}}"
+                data-entry-anxiety="{{if .AnxietyLevel}}{{.AnxietyLevel}}{{else}}0{{end}}"
+                data-entry-interpersonal="{{if .InterpersonalBehavior.Valid}}{{.InterpersonalBehavior.String}}{{end}}"
+                data-entry-stimminglevel="{{if .StimmingLevel.Valid}}{{.StimmingLevel.String}}{{end}}"
                 data-entry-meltdowns="{{.Meltdowns}}"
                 data-entry-stimming="{{.StimmingEpisodes}}"
                 data-entry-aggression="{{.AggressionIncidents}}"
                 data-entry-selfinjury="{{.SelfInjuryIncidents}}"
+                data-entry-location="{{if .Location.Valid}}{{.Location.String}}{{end}}"
+                data-entry-locationother="{{if .LocationOther.Valid}}{{.LocationOther.String}}{{end}}"
+                data-entry-triggers="{{if .Triggers}}{{range $i, $t := .Triggers}}{{if $i}}, {{end}}{{$t}}{{end}}{{end}}"
+                data-entry-positivebehaviors="{{if .PositiveBehaviors}}{{range $i, $b := .PositiveBehaviors}}{{if $i}}, {{end}}{{$b}}{{end}}{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -298,8 +309,14 @@
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-mealtype="{{if .MealType.Valid}}{{.MealType.String}}{{end}}"
                 data-entry-foods="{{if .FoodsEaten}}{{range $i, $f := .FoodsEaten}}{{if $i}}, {{end}}{{$f}}{{end}}{{end}}"
+                data-entry-foodsrefused="{{if .FoodsRefused}}{{range $i, $f := .FoodsRefused}}{{if $i}}, {{end}}{{$f}}{{end}}{{end}}"
                 data-entry-appetitelevel="{{if .AppetiteLevel.Valid}}{{.AppetiteLevel.String}}{{end}}"
                 data-entry-fluidoz="{{if .WaterIntakeOz}}{{.WaterIntakeOz}}{{else}}0{{end}}"
+                data-entry-newfoodtried="{{if .NewFoodTried.Valid}}{{.NewFoodTried.String}}{{end}}"
+                data-entry-newfoodacceptance="{{if .NewFoodAcceptance.Valid}}{{.NewFoodAcceptance.String}}{{end}}"
+                data-entry-supplements="{{if .SupplementsTaken}}{{range $i, $s := .SupplementsTaken}}{{if $i}}, {{end}}{{$s}}{{end}}{{end}}"
+                data-entry-allergicreaction="{{.AllergicReaction}}"
+                data-entry-reactiondetails="{{if .ReactionDetails.Valid}}{{.ReactionDetails.String}}{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,6 +344,10 @@
                 data-entry-nightwakings="{{.NightWakings}}"
                 data-entry-bedtime="{{if .Bedtime.Valid}}{{.Bedtime.String}}{{end}}"
                 data-entry-waketime="{{if .WakeTime.Valid}}{{.WakeTime.String}}{{end}}"
+                data-entry-nightmares="{{.Nightmares}}"
+                data-entry-bedwetting="{{.BedWetting}}"
+                data-entry-tooksleepaid="{{.TookSleepAid}}"
+                data-entry-sleepaidname="{{if .SleepAidName.Valid}}{{.SleepAidName.String}}{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -351,6 +372,8 @@
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-bristolscale="{{if .BristolScale}}{{.BristolScale}}{{else}}0{{end}}"
                 data-entry-hadaccident="{{.HadAccident}}"
+                data-entry-painlevel="{{if .PainLevel}}{{.PainLevel}}{{else}}0{{end}}"
+                data-entry-bloodpresent="{{.BloodPresent}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -397,6 +420,12 @@
                 data-entry-type="Speech"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-verballevel="{{if .VerbalOutputLevel}}{{.VerbalOutputLevel}}{{else}}0{{end}}"
+                data-entry-claritylevel="{{if .ClarityLevel}}{{.ClarityLevel}}{{else}}0{{end}}"
+                data-entry-newwords="{{if .NewWords}}{{range $i, $w := .NewWords}}{{if $i}}, {{end}}{{$w}}{{end}}{{end}}"
+                data-entry-lostwords="{{if .LostWords}}{{range $i, $w := .LostWords}}{{if $i}}, {{end}}{{$w}}{{end}}{{end}}"
+                data-entry-echolalialevel="{{if .EcholaliaLevel}}{{.EcholaliaLevel}}{{else}}0{{end}}"
+                data-entry-communicationattempts="{{if .CommunicationAttempts}}{{.CommunicationAttempts}}{{else}}0{{end}}"
+                data-entry-successfulcommunications="{{if .SuccessfulCommunications}}{{.SuccessfulCommunications}}{{else}}0{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,23 +575,55 @@ const formTemplates = {
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
-                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Interpersonal Behavior</label>
+                    <select name="interpersonal_behavior" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="withdrawn">Withdrawn</option>
+                        <option value="somewhat_withdrawn">Somewhat Withdrawn</option>
+                        <option value="neutral">Neutral</option>
+                        <option value="somewhat_interactive">Somewhat Interactive</option>
+                        <option value="interactive">Interactive</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming Episodes</label>
-                    <input type="number" name="stimming_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming</label>
+                    <select name="stimming_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="none">None</option>
+                        <option value="low">Low</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="high">High</option>
+                    </select>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
+                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Aggression Incidents</label>
                     <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Self-Injury Incidents</label>
                     <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <select name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="toggleLocationOther(this)">
+                        <option value="">Select location...</option>
+                        <option value="home">Home</option>
+                        <option value="school">School</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div id="location-other-container" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Specify Location</label>
+                <input type="text" name="location_other" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter location">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
@@ -575,6 +636,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
         </form>
@@ -618,8 +702,18 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">New Food Tried</label>
-                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
                 </div>
+            </div>
+            <div id="new-food-acceptance-container" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Food Acceptance</label>
+                <select name="new_food_acceptance" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Select...</option>
+                    <option value="touch_lips">Touch Lips</option>
+                    <option value="touch_tongue">Touch Tongue</option>
+                    <option value="bite">Bite</option>
+                    <option value="multiple_bites">Multiple Bites</option>
+                </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Supplements Taken</label>
@@ -638,6 +732,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save</button>
         </form>
@@ -696,6 +813,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Save</button>
         </form>
     `,
@@ -725,6 +865,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Save</button>
         </form>
@@ -787,6 +950,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save</button>
         </form>
     `,
@@ -804,6 +990,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">Save</button>
         </form>
     `,
@@ -820,6 +1029,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save</button>
         </form>
@@ -841,6 +1073,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Save</button>
         </form>
@@ -865,6 +1120,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
         </form>
     `,
@@ -886,6 +1164,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Save</button>
         </form>
@@ -910,6 +1211,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
     `
@@ -931,8 +1255,10 @@ const modalTitles = {
 };
 
 let currentLogType = null;
+let editingEntryId = null;
 
 function openModal(type) {
+    editingEntryId = null;
     currentLogType = type;
     document.getElementById('modal-title').textContent = modalTitles[type];
     document.getElementById('modal-content').innerHTML = formTemplates[type];
@@ -944,6 +1270,143 @@ function closeModal(event) {
     if (event && event.target !== event.currentTarget) return;
     document.getElementById('modal-overlay').classList.add('hidden');
     currentLogType = null;
+    editingEntryId = null;
+}
+
+function editEntry(type, element) {
+    const ds = element.dataset;
+    editingEntryId = ds.entryId;
+    currentLogType = type;
+
+    // Open modal with form
+    document.getElementById('modal-title').textContent = 'Edit ' + modalTitles[type].replace('Log ', '');
+    document.getElementById('modal-content').innerHTML = formTemplates[type];
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('entry-form').addEventListener('submit', handleSubmit);
+
+    // Wait for DOM to update, then populate form fields
+    setTimeout(() => {
+        const form = document.getElementById('entry-form');
+
+        switch(type) {
+            case 'behavior':
+                if (ds.entryMood && parseInt(ds.entryMood) > 0) form.querySelector('[name="mood_level"]').value = ds.entryMood;
+                if (ds.entryEnergy && parseInt(ds.entryEnergy) > 0) form.querySelector('[name="energy_level"]').value = ds.entryEnergy;
+                if (ds.entryAnxiety && parseInt(ds.entryAnxiety) > 0) form.querySelector('[name="anxiety_level"]').value = ds.entryAnxiety;
+                if (ds.entryInterpersonal) form.querySelector('[name="interpersonal_behavior"]').value = ds.entryInterpersonal;
+                if (ds.entryStimminglevel) form.querySelector('[name="stimming_level"]').value = ds.entryStimminglevel;
+                form.querySelector('[name="meltdowns"]').value = ds.entryMeltdowns || 0;
+                form.querySelector('[name="stimming_episodes"]').value = ds.entryStimming || 0;
+                form.querySelector('[name="aggression_incidents"]').value = ds.entryAggression || 0;
+                form.querySelector('[name="self_injury_incidents"]').value = ds.entrySelfinjury || 0;
+                if (ds.entryLocation) {
+                    form.querySelector('[name="location"]').value = ds.entryLocation;
+                    if (ds.entryLocation === 'other') {
+                        document.getElementById('location-other-container').classList.remove('hidden');
+                        form.querySelector('[name="location_other"]').value = ds.entryLocationother || '';
+                    }
+                }
+                if (ds.entryTriggers) form.querySelector('[name="triggers"]').value = ds.entryTriggers;
+                if (ds.entryPositivebehaviors) form.querySelector('[name="positive_behaviors"]').value = ds.entryPositivebehaviors;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'diet':
+                if (ds.entryMealtype) form.querySelector('[name="meal_type"]').value = ds.entryMealtype;
+                if (ds.entryAppetitelevel) form.querySelector('[name="appetite_level"]').value = ds.entryAppetitelevel;
+                if (ds.entryFoods) form.querySelector('[name="foods_eaten"]').value = ds.entryFoods;
+                if (ds.entryFoodsrefused) form.querySelector('[name="foods_refused"]').value = ds.entryFoodsrefused;
+                if (ds.entryFluidoz && parseInt(ds.entryFluidoz) > 0) form.querySelector('[name="water_intake_oz"]').value = ds.entryFluidoz;
+                if (ds.entryNewfoodtried) {
+                    form.querySelector('[name="new_food_tried"]').value = ds.entryNewfoodtried;
+                    const newFoodSection = document.getElementById('new-food-section');
+                    if (newFoodSection) newFoodSection.classList.remove('hidden');
+                }
+                if (ds.entryNewfoodacceptance) form.querySelector('[name="new_food_acceptance"]').value = ds.entryNewfoodacceptance;
+                if (ds.entrySupplements) form.querySelector('[name="supplements_taken"]').value = ds.entrySupplements;
+                if (ds.entryAllergicreaction === 'true') {
+                    const checkbox = form.querySelector('[name="allergic_reaction"]');
+                    if (checkbox) checkbox.checked = true;
+                    const reactionSection = document.getElementById('reaction-details-section');
+                    if (reactionSection) reactionSection.classList.remove('hidden');
+                }
+                if (ds.entryReactiondetails) form.querySelector('[name="reaction_details"]').value = ds.entryReactiondetails;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'sleep':
+                if (ds.entryQuality) form.querySelector('[name="sleep_quality"]').value = ds.entryQuality;
+                if (ds.entryTotalminutes && parseInt(ds.entryTotalminutes) > 0) form.querySelector('[name="total_sleep_minutes"]').value = ds.entryTotalminutes;
+                form.querySelector('[name="night_wakings"]').value = ds.entryNightwakings || 0;
+                if (ds.entryBedtime) form.querySelector('[name="bedtime"]').value = ds.entryBedtime;
+                if (ds.entryWaketime) form.querySelector('[name="wake_time"]').value = ds.entryWaketime;
+                if (ds.entryNightmares === 'true') form.querySelector('[name="nightmares"]').checked = true;
+                if (ds.entryBedwetting === 'true') form.querySelector('[name="bed_wetting"]').checked = true;
+                if (ds.entryTooksleepaid === 'true') {
+                    form.querySelector('[name="took_sleep_aid"]').checked = true;
+                    const sleepAidSection = document.getElementById('sleep-aid-section');
+                    if (sleepAidSection) sleepAidSection.classList.remove('hidden');
+                }
+                if (ds.entrySleepaidname) form.querySelector('[name="sleep_aid_name"]').value = ds.entrySleepaidname;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'bowel':
+                if (ds.entryBristolscale && parseInt(ds.entryBristolscale) > 0) form.querySelector('[name="bristol_scale"]').value = ds.entryBristolscale;
+                if (ds.entryPainlevel && parseInt(ds.entryPainlevel) > 0) form.querySelector('[name="pain_level"]').value = ds.entryPainlevel;
+                if (ds.entryHadaccident === 'true') form.querySelector('[name="had_accident"]').checked = true;
+                if (ds.entryBloodpresent === 'true') form.querySelector('[name="blood_present"]').checked = true;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'speech':
+                if (ds.entryVerballevel && parseInt(ds.entryVerballevel) > 0) form.querySelector('[name="verbal_output_level"]').value = ds.entryVerballevel;
+                if (ds.entryClaritylevel && parseInt(ds.entryClaritylevel) > 0) form.querySelector('[name="clarity_level"]').value = ds.entryClaritylevel;
+                if (ds.entryEcholalialevel && parseInt(ds.entryEcholalialevel) > 0) form.querySelector('[name="echolalia_level"]').value = ds.entryEcholalialevel;
+                if (ds.entryCommunicationattempts && parseInt(ds.entryCommunicationattempts) > 0) form.querySelector('[name="communication_attempts"]').value = ds.entryCommunicationattempts;
+                if (ds.entrySuccessfulcommunications && parseInt(ds.entrySuccessfulcommunications) > 0) form.querySelector('[name="successful_communications"]').value = ds.entrySuccessfulcommunications;
+                if (ds.entryNewwords) form.querySelector('[name="new_words"]').value = ds.entryNewwords;
+                if (ds.entryLostwords) form.querySelector('[name="lost_words"]').value = ds.entryLostwords;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'weight':
+                if (ds.entryWeightlbs && parseFloat(ds.entryWeightlbs) > 0) form.querySelector('[name="weight_lbs"]').value = ds.entryWeightlbs;
+                if (ds.entryHeightinches && parseFloat(ds.entryHeightinches) > 0) form.querySelector('[name="height_inches"]').value = ds.entryHeightinches;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+        }
+    }, 10);
+}
+
+function toggleLocationOther(select) {
+    const container = document.getElementById('location-other-container');
+    if (select.value === 'other') {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        document.querySelector('input[name="location_other"]').value = '';
+    }
+}
+
+function toggleTimeScope(radio) {
+    const timeContainer = document.getElementById('time-picker-container');
+    if (radio.value === 'momentary') {
+        timeContainer.classList.remove('hidden');
+        // Set current time as default
+        const now = new Date();
+        const timeInput = document.querySelector('input[name="log_time"]');
+        if (timeInput && !timeInput.value) {
+            timeInput.value = now.toTimeString().slice(0, 5);
+        }
+    } else {
+        timeContainer.classList.add('hidden');
+    }
+}
+
+function toggleNewFoodAcceptance(input) {
+    const container = document.getElementById('new-food-acceptance-container');
+    if (input.value.trim()) {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        document.querySelector('select[name="new_food_acceptance"]').value = '';
+    }
 }
 
 async function handleSubmit(e) {
@@ -954,21 +1417,30 @@ async function handleSubmit(e) {
 
     switch (currentLogType) {
         case 'behavior':
+            const behaviorDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 mood_level: formData.get('mood_level') ? parseInt(formData.get('mood_level')) : null,
                 energy_level: formData.get('energy_level') ? parseInt(formData.get('energy_level')) : null,
                 anxiety_level: formData.get('anxiety_level') ? parseInt(formData.get('anxiety_level')) : null,
+                interpersonal_behavior: formData.get('interpersonal_behavior') || '',
                 meltdowns: parseInt(formData.get('meltdowns') || 0),
-                stimming_episodes: parseInt(formData.get('stimming_episodes') || 0),
+                stimming_episodes: 0,
+                stimming_level: formData.get('stimming_level') || '',
                 aggression_incidents: parseInt(formData.get('aggression_incidents') || 0),
                 self_injury_incidents: parseInt(formData.get('self_injury_incidents') || 0),
+                location: formData.get('location') || '',
+                location_other: formData.get('location_other') || '',
                 triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
                 positive_behaviors: formData.get('positive_behaviors') ? formData.get('positive_behaviors').split(',').map(b => b.trim()).filter(b => b) : [],
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: behaviorDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'behavior';
             break;
         case 'diet':
+            const dietDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 meal_type: formData.get('meal_type'),
                 appetite_level: formData.get('appetite_level'),
@@ -976,14 +1448,19 @@ async function handleSubmit(e) {
                 foods_refused: formData.get('foods_refused') ? formData.get('foods_refused').split(',').map(f => f.trim()).filter(f => f) : [],
                 water_intake_oz: formData.get('water_intake_oz') ? parseInt(formData.get('water_intake_oz')) : null,
                 new_food_tried: formData.get('new_food_tried') || null,
+                new_food_acceptance: formData.get('new_food_acceptance') || null,
                 supplements_taken: formData.get('supplements_taken') ? formData.get('supplements_taken').split(',').map(s => s.trim()).filter(s => s) : [],
                 allergic_reaction: formData.get('allergic_reaction') === 'on',
                 reaction_details: formData.get('reaction_details') || null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: dietDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'diet';
             break;
         case 'sleep':
+            const sleepDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 bedtime: formData.get('bedtime') || null,
                 wake_time: formData.get('wake_time') || null,
@@ -994,21 +1471,29 @@ async function handleSubmit(e) {
                 bed_wetting: formData.get('bed_wetting') === 'on',
                 took_sleep_aid: formData.get('took_sleep_aid') === 'on',
                 sleep_aid_name: formData.get('sleep_aid_name') || null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: sleepDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'sleep';
             break;
         case 'bowel':
+            const bowelDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 bristol_scale: formData.get('bristol_scale') ? parseInt(formData.get('bristol_scale')) : null,
                 pain_level: formData.get('pain_level') ? parseInt(formData.get('pain_level')) : null,
                 had_accident: formData.get('had_accident') === 'on',
                 blood_present: formData.get('blood_present') === 'on',
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: bowelDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'bowel';
             break;
         case 'speech':
+            const speechDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 verbal_output_level: formData.get('verbal_output_level') ? parseInt(formData.get('verbal_output_level')) : null,
                 clarity_level: formData.get('clarity_level') ? parseInt(formData.get('clarity_level')) : null,
@@ -1017,56 +1502,82 @@ async function handleSubmit(e) {
                 echolalia_level: formData.get('echolalia_level') ? parseInt(formData.get('echolalia_level')) : null,
                 communication_attempts: formData.get('communication_attempts') ? parseInt(formData.get('communication_attempts')) : null,
                 successful_communications: formData.get('successful_communications') ? parseInt(formData.get('successful_communications')) : null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: speechDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'speech';
             break;
         case 'weight':
+            const weightDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 weight_lbs: formData.get('weight_lbs') ? parseFloat(formData.get('weight_lbs')) : null,
                 height_inches: formData.get('height_inches') ? parseFloat(formData.get('height_inches')) : null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: weightDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'weight';
             break;
         case 'sensory':
+            const sensoryDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 overall_regulation: formData.get('sensitivity_level') ? parseInt(formData.get('sensitivity_level')) : null,
                 overload_triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: sensoryDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'sensory';
             break;
         case 'social':
+            const socialDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 social_engagement_level: formData.get('interaction_quality') ? parseInt(formData.get('interaction_quality')) : null,
                 peer_interactions: formData.get('interaction_type') === 'peer' ? 1 : 0,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: socialDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'social';
             break;
         case 'therapy':
+            const therapyDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 therapy_type: formData.get('therapy_type'),
                 duration_minutes: formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes')) : null,
-                parent_notes: formData.get('notes')
+                parent_notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: therapyDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'therapy';
             break;
         case 'seizure':
+            const seizureDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
-                log_time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
                 seizure_type: formData.get('seizure_type'),
                 duration_seconds: formData.get('duration_seconds') ? parseInt(formData.get('duration_seconds')) : null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: seizureDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'seizure';
             break;
         case 'health':
+            const healthDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 event_type: formData.get('event_type'),
                 description: formData.get('description'),
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: healthDate + 'T00:00:00Z',
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'health';
             break;
@@ -1081,8 +1592,13 @@ async function handleSubmit(e) {
     }
 
     try {
-        const response = await fetch(`/api/children/${childId}/logs/${endpoint}`, {
-            method: 'POST',
+        const isEdit = editingEntryId !== null;
+        const url = isEdit
+            ? `/api/children/${childId}/logs/${endpoint}/${editingEntryId}`
+            : `/api/children/${childId}/logs/${endpoint}`;
+
+        const response = await fetch(url, {
+            method: isEdit ? 'PUT' : 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
@@ -1127,34 +1643,64 @@ function showDetails(type, element) {
 
     switch(type) {
         case 'behavior':
+            const mood = parseInt(ds.entryMood) || 0;
+            const energy = parseInt(ds.entryEnergy) || 0;
+            const anxiety = parseInt(ds.entryAnxiety) || 0;
+            const interpersonal = ds.entryInterpersonal || '';
+            const stimmingLevel = ds.entryStimminglevel || '';
             const meltdowns = parseInt(ds.entryMeltdowns) || 0;
             const stimming = parseInt(ds.entryStimming) || 0;
             const aggression = parseInt(ds.entryAggression) || 0;
             const selfInjury = parseInt(ds.entrySelfinjury) || 0;
+            const location = ds.entryLocation || '';
+            const locationOther = ds.entryLocationother || '';
+            const triggers = ds.entryTriggers || '';
+            const positiveBehaviors = ds.entryPositivebehaviors || '';
+            const displayLocation = location === 'other' && locationOther ? locationOther : location;
             content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
-                    ${meltdowns > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Meltdowns:</span><span class="font-medium">${meltdowns}</span></div>` : ''}
-                    ${stimming > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Stimming Episodes:</span><span class="font-medium">${stimming}</span></div>` : ''}
-                    ${aggression > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Aggression Incidents:</span><span class="font-medium">${aggression}</span></div>` : ''}
-                    ${selfInjury > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Self-injury Incidents:</span><span class="font-medium">${selfInjury}</span></div>` : ''}
-                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Mood:</span><span class="font-medium">${mood > 0 ? mood + '/10' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Energy:</span><span class="font-medium">${energy > 0 ? energy + '/10' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Anxiety:</span><span class="font-medium">${anxiety > 0 ? anxiety + '/10' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Interpersonal:</span><span class="font-medium capitalize">${interpersonal || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Stimming Level:</span><span class="font-medium capitalize">${stimmingLevel || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Meltdowns:</span><span class="font-medium">${meltdowns}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Stimming Episodes:</span><span class="font-medium">${stimming}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Aggression Incidents:</span><span class="font-medium">${aggression}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Self-injury Incidents:</span><span class="font-medium">${selfInjury}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Location:</span><span class="font-medium capitalize">${displayLocation || 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Triggers:</span><p class="text-gray-900">${triggers || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Positive Behaviors:</span><p class="text-gray-900">${positiveBehaviors || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
         case 'diet':
             const mealType = ds.entryMealtype || '';
             const foods = ds.entryFoods || '';
+            const foodsRefused = ds.entryFoodsrefused || '';
             const appetiteLevel = ds.entryAppetitelevel || '';
             const fluidOz = parseInt(ds.entryFluidoz) || 0;
+            const newFoodTried = ds.entryNewfoodtried || '';
+            const newFoodAcceptance = ds.entryNewfoodacceptance || '';
+            const supplements = ds.entrySupplements || '';
+            const allergicReaction = ds.entryAllergicreaction === 'true';
+            const reactionDetails = ds.entryReactiondetails || '';
             content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
-                    ${mealType ? `<div class="flex justify-between"><span class="text-gray-500">Meal Type:</span><span class="font-medium capitalize">${mealType}</span></div>` : ''}
-                    ${foods ? `<div class="flex justify-between"><span class="text-gray-500">Foods:</span><span class="font-medium">${foods}</span></div>` : ''}
-                    ${appetiteLevel ? `<div class="flex justify-between"><span class="text-gray-500">Appetite Level:</span><span class="font-medium capitalize">${appetiteLevel}</span></div>` : ''}
-                    ${fluidOz > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Fluid Intake:</span><span class="font-medium">${fluidOz} oz</span></div>` : ''}
-                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Meal Type:</span><span class="font-medium capitalize">${mealType || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Appetite Level:</span><span class="font-medium capitalize">${appetiteLevel || 'Not recorded'}</span></div>
+                    <div><span class="text-gray-500 block mb-1">Foods Eaten:</span><p class="text-gray-900">${foods || 'None'}</p></div>
+                    <div><span class="text-gray-500 block mb-1">Foods Refused:</span><p class="text-gray-900">${foodsRefused || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Fluid Intake:</span><span class="font-medium">${fluidOz > 0 ? fluidOz + ' oz' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">New Food Tried:</span><span class="font-medium">${newFoodTried || 'None'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Acceptance:</span><span class="font-medium capitalize">${newFoodAcceptance || 'N/A'}</span></div>
+                    <div><span class="text-gray-500 block mb-1">Supplements:</span><p class="text-gray-900">${supplements || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Allergic Reaction:</span><span class="font-medium ${allergicReaction ? 'text-red-600' : ''}">${allergicReaction ? 'Yes' : 'No'}</span></div>
+                    ${allergicReaction ? `<div><span class="text-gray-500 block mb-1">Reaction Details:</span><p class="text-gray-900">${reactionDetails || 'Not specified'}</p></div>` : ''}
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -1164,27 +1710,38 @@ function showDetails(type, element) {
             const nightWakings = parseInt(ds.entryNightwakings) || 0;
             const bedTime = ds.entryBedtime || '';
             const wakeTime = ds.entryWaketime || '';
+            const nightmares = ds.entryNightmares === 'true';
+            const bedWetting = ds.entryBedwetting === 'true';
+            const tookSleepAid = ds.entryTooksleepaid === 'true';
+            const sleepAidName = ds.entrySleepaidname || '';
             content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
-                    ${quality ? `<div class="flex justify-between"><span class="text-gray-500">Quality:</span><span class="font-medium capitalize">${quality}</span></div>` : ''}
-                    ${totalMinutes > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Total Sleep:</span><span class="font-medium">${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m</span></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Quality:</span><span class="font-medium capitalize">${quality || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Total Sleep:</span><span class="font-medium">${totalMinutes > 0 ? Math.floor(totalMinutes/60) + 'h ' + (totalMinutes%60) + 'm' : 'Not recorded'}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Night Wakings:</span><span class="font-medium">${nightWakings}</span></div>
-                    ${bedTime ? `<div class="flex justify-between"><span class="text-gray-500">Bed Time:</span><span class="font-medium">${bedTime}</span></div>` : ''}
-                    ${wakeTime ? `<div class="flex justify-between"><span class="text-gray-500">Wake Time:</span><span class="font-medium">${wakeTime}</span></div>` : ''}
-                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Bed Time:</span><span class="font-medium">${bedTime || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Wake Time:</span><span class="font-medium">${wakeTime || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Nightmares:</span><span class="font-medium ${nightmares ? 'text-red-600' : ''}">${nightmares ? 'Yes' : 'No'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Bed Wetting:</span><span class="font-medium ${bedWetting ? 'text-amber-600' : ''}">${bedWetting ? 'Yes' : 'No'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Sleep Aid:</span><span class="font-medium">${tookSleepAid ? (sleepAidName || 'Yes') : 'No'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
         case 'bowel':
             const bristolScale = parseInt(ds.entryBristolscale) || 0;
             const hadAccident = ds.entryHadaccident === 'true';
+            const painLevel = parseInt(ds.entryPainlevel) || 0;
+            const bloodPresent = ds.entryBloodpresent === 'true';
             content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
-                    ${bristolScale > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Bristol Scale:</span><span class="font-medium">${bristolScale}</span></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Bristol Scale:</span><span class="font-medium">${bristolScale > 0 ? bristolScale : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Pain Level:</span><span class="font-medium">${painLevel > 0 ? painLevel + '/10' : 'None'}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Had Accident:</span><span class="font-medium">${hadAccident ? 'Yes' : 'No'}</span></div>
-                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Blood Present:</span><span class="font-medium ${bloodPresent ? 'text-red-600' : ''}">${bloodPresent ? 'Yes' : 'No'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -1200,11 +1757,23 @@ function showDetails(type, element) {
             break;
         case 'speech':
             const verbalLevel = parseInt(ds.entryVerballevel) || 0;
+            const clarityLevel = parseInt(ds.entryClaritylevel) || 0;
+            const newWords = ds.entryNewwords || '';
+            const lostWords = ds.entryLostwords || '';
+            const echolaliaLevel = parseInt(ds.entryEcholalialevel) || 0;
+            const commAttempts = parseInt(ds.entryCommunicationattempts) || 0;
+            const successfulComms = parseInt(ds.entrySuccessfulcommunications) || 0;
             content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
-                    ${verbalLevel > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Verbal Output Level:</span><span class="font-medium">${verbalLevel}/10</span></div>` : ''}
-                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Verbal Output Level:</span><span class="font-medium">${verbalLevel > 0 ? verbalLevel + '/10' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Clarity Level:</span><span class="font-medium">${clarityLevel > 0 ? clarityLevel + '/10' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Echolalia Level:</span><span class="font-medium">${echolaliaLevel > 0 ? echolaliaLevel + '/10' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Communication Attempts:</span><span class="font-medium">${commAttempts > 0 ? commAttempts : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Successful Communications:</span><span class="font-medium">${successfulComms > 0 ? successfulComms : 'Not recorded'}</span></div>
+                    <div><span class="text-gray-500 block mb-1">New Words:</span><p class="text-gray-900 ${newWords ? 'text-green-600' : ''}">${newWords || 'None'}</p></div>
+                    <div><span class="text-gray-500 block mb-1">Lost Words:</span><p class="text-gray-900 ${lostWords ? 'text-red-600' : ''}">${lostWords || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -1214,9 +1783,9 @@ function showDetails(type, element) {
             content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
-                    ${weightLbs > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Weight:</span><span class="font-medium">${weightLbs} lbs</span></div>` : ''}
-                    ${heightInches > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Height:</span><span class="font-medium">${heightInches} inches</span></div>` : ''}
-                    ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
+                    <div class="flex justify-between"><span class="text-gray-500">Weight:</span><span class="font-medium">${weightLbs > 0 ? weightLbs + ' lbs' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Height:</span><span class="font-medium">${heightInches > 0 ? heightInches + ' inches' : 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -1224,11 +1793,13 @@ function showDetails(type, element) {
             content = `<p class="text-gray-500">Details not available for this entry type.</p>`;
     }
 
+    const entryId = element.dataset.entryId;
     document.getElementById('modal-title').textContent = entryType + ' Details';
     document.getElementById('modal-content').innerHTML = `
         ${content}
-        <div class="mt-4 pt-4 border-t">
-            <button onclick="closeModal()" class="w-full py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
+        <div class="mt-4 pt-4 border-t flex gap-2">
+            ${type !== 'medication' ? `<button onclick="editEntry('${type}', document.querySelector('[data-entry-id=\\'${entryId}\\']'))" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit</button>` : ''}
+            <button onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
         </div>
     `;
     document.getElementById('modal-overlay').classList.remove('hidden');

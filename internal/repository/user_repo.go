@@ -81,7 +81,7 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 		SELECT id, email, password_hash, first_name, last_name, phone, timezone, status,
 		       email_verified_at, last_login_at, created_at, updated_at
 		FROM users
-		WHERE email = $1
+		WHERE LOWER(email) = LOWER($1)
 	`
 	user := &models.User{}
 	err := r.db.QueryRowContext(ctx, query, email).Scan(

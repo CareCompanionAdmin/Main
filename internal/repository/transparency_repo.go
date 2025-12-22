@@ -473,3 +473,45 @@ func (r *TransparencyRepository) CreateAlertFeedback(ctx context.Context, alertI
 	_, err := r.db.ExecContext(ctx, query, alertID, userID, wasHelpful, feedbackText, actionTaken)
 	return err
 }
+
+// ============================================================================
+// MEDICATION HISTORY
+// ============================================================================
+
+// MedicationHistoryEntry represents a medication change entry with user info
+type MedicationHistoryEntry struct {
+	ID            string    `json:"id"`
+	ChangeType    string    `json:"change_type"`
+	ChangeSummary string    `json:"change_summary"`
+	ChangedByName string    `json:"changed_by_name"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// GetMedicationHistory retrieves all medication-related changes for a child
+func (r *TransparencyRepository) GetMedicationHistory(ctx context.Context, childID string) ([]MedicationHistoryEntry, error) {
+	query := `
+		SELECT tc.id, tc.change_type, tc.change_summary,
+			   COALESCE(u.first_name || ' ' || u.last_name, 'Unknown User') as changed_by_name,
+			   tc.created_at
+		FROM treatment_changes tc
+		LEFT JOIN users u ON u.id = tc.changed_by_user_id
+		WHERE tc.child_id = $1 AND tc.source_table = 'medications'
+		ORDER BY tc.created_at DESC`
+
+	rows, err := r.db.QueryContext(ctx, query, childID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []MedicationHistoryEntry
+	for rows.Next() {
+		var e MedicationHistoryEntry
+		err := rows.Scan(&e.ID, &e.ChangeType, &e.ChangeSummary, &e.ChangedByName, &e.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, e)
+	}
+	return entries, rows.Err()
+}

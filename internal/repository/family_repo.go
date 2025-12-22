@@ -237,3 +237,19 @@ func (r *familyRepo) GetMemberByID(ctx context.Context, memberID uuid.UUID) (*mo
 	}
 	return m, nil
 }
+
+func (r *familyRepo) CreateInvitation(ctx context.Context, familyID uuid.UUID, email, firstName, lastName string, role models.FamilyRole) error {
+	query := `
+		INSERT INTO family_invitations (family_id, email, first_name, last_name, role, status)
+		VALUES ($1, $2, $3, $4, $5, 'pending')
+		ON CONFLICT (family_id, email) DO UPDATE SET
+			first_name = EXCLUDED.first_name,
+			last_name = EXCLUDED.last_name,
+			role = EXCLUDED.role,
+			status = 'pending',
+			created_at = NOW(),
+			expires_at = NOW() + INTERVAL '7 days'
+	`
+	_, err := r.db.ExecContext(ctx, query, familyID, email, firstName, lastName, role)
+	return err
+}

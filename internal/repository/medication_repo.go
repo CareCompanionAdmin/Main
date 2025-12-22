@@ -428,3 +428,40 @@ func (r *medicationRepo) SearchMedicationReferences(ctx context.Context, searchQ
 	}
 	return refs, rows.Err()
 }
+
+func (r *medicationRepo) HasMedicationLogs(ctx context.Context, medicationID uuid.UUID) (bool, error) {
+	query := `SELECT EXISTS(SELECT 1 FROM medication_logs WHERE medication_id = $1)`
+	var exists bool
+	err := r.db.QueryRowContext(ctx, query, medicationID).Scan(&exists)
+	return exists, err
+}
+
+func (r *medicationRepo) HardDeleteMedication(ctx context.Context, id uuid.UUID) error {
+	// Delete in order: logs, schedules, then medication
+	// Start a transaction for atomicity
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete any logs (should be none if we got here, but be safe)
+	_, err = tx.ExecContext(ctx, `DELETE FROM medication_logs WHERE medication_id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	// Delete schedules
+	_, err = tx.ExecContext(ctx, `DELETE FROM medication_schedules WHERE medication_id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	// Delete the medication itself
+	_, err = tx.ExecContext(ctx, `DELETE FROM medications WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}

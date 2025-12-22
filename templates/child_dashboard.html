@@ -166,7 +166,8 @@
                         </span>
                         {{else}}
                         <div class="flex space-x-2">
-                            <button onclick="logMedication('{{.Medication.ID}}', '{{.Schedule.ID}}', 'taken')"
+                            <button data-med-id="{{.Medication.ID}}" data-schedule-id="{{.Schedule.ID}}" data-med-name="{{.Medication.Name}}" data-time-of-day="{{.Schedule.TimeOfDay}}" data-scheduled-time="{{if .Schedule.ScheduledTime.Valid}}{{.Schedule.ScheduledTime.String}}{{end}}" data-days-of-week="{{range $i, $d := .Schedule.DaysOfWeek}}{{if $i}},{{end}}{{$d}}{{end}}"
+                                    onclick="openMedTakenModalFromButton(this)"
                                     class="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
                                 ✓ Taken
                             </button>
@@ -321,6 +322,68 @@
     </div>
 </div>
 
+<!-- Medication Taken Modal -->
+<div id="med-taken-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeMedTakenModal(event)">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900">When was this medication taken?</h2>
+            <button onclick="closeMedTakenModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <p id="med-taken-name" class="text-sm text-gray-600 font-medium"></p>
+
+            <!-- Option 1: Now -->
+            <button onclick="confirmMedTaken('now')" class="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Now (within the last 15 min)</p>
+                        <p class="text-sm text-gray-500">Record as taken at current time</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- Option 2: Earlier -->
+            <div class="border-2 border-gray-200 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Earlier</p>
+                        <p class="text-sm text-gray-500">Select when it was taken</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="med-taken-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" id="med-taken-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+                <p id="med-taken-error" class="text-sm text-red-600 mb-3 hidden"></p>
+                <p id="med-taken-hint" class="text-xs text-gray-500 mb-3"></p>
+                <button onclick="confirmMedTaken('earlier')" class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 const childId = '{{.Child.ID}}';
 const token = localStorage.getItem('access_token');
@@ -344,23 +407,55 @@ const formTemplates = {
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
-                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Interpersonal Behavior</label>
+                    <select name="interpersonal_behavior" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="withdrawn">Withdrawn</option>
+                        <option value="somewhat_withdrawn">Somewhat Withdrawn</option>
+                        <option value="neutral">Neutral</option>
+                        <option value="somewhat_interactive">Somewhat Interactive</option>
+                        <option value="interactive">Interactive</option>
+                    </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming Episodes</label>
-                    <input type="number" name="stimming_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming</label>
+                    <select name="stimming_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="none">None</option>
+                        <option value="low">Low</option>
+                        <option value="moderate">Moderate</option>
+                        <option value="high">High</option>
+                    </select>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
+                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Aggression Incidents</label>
                     <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Self-Injury Incidents</label>
                     <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <select name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="toggleLocationOther(this)">
+                        <option value="">Select location...</option>
+                        <option value="home">Home</option>
+                        <option value="school">School</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div id="location-other-container" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Specify Location</label>
+                <input type="text" name="location_other" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter location">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
@@ -373,6 +468,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
         </form>
@@ -416,8 +534,18 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">New Food Tried</label>
-                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
                 </div>
+            </div>
+            <div id="new-food-acceptance-container" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Food Acceptance</label>
+                <select name="new_food_acceptance" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <option value="">Select...</option>
+                    <option value="touch_lips">Touch Lips</option>
+                    <option value="touch_tongue">Touch Tongue</option>
+                    <option value="bite">Bite</option>
+                    <option value="multiple_bites">Multiple Bites</option>
+                </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Supplements Taken</label>
@@ -436,6 +564,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save</button>
         </form>
@@ -494,6 +645,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Save</button>
         </form>
     `,
@@ -523,6 +697,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Save</button>
         </form>
@@ -567,6 +764,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save</button>
         </form>
     `,
@@ -584,6 +804,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">Save</button>
         </form>
     `,
@@ -600,6 +843,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save</button>
         </form>
@@ -621,6 +887,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Save</button>
         </form>
@@ -645,6 +934,29 @@ const formTemplates = {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+            </div>
             <button type="submit" class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
         </form>
     `,
@@ -666,6 +978,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Save</button>
         </form>
@@ -689,6 +1024,29 @@ const formTemplates = {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+            <div class="border-t pt-4 mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <div class="flex space-x-4 mb-3">
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Day</span>
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
+                        <span class="text-sm text-gray-700">Momentary</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div id="time-picker-container" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
             </div>
             <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
@@ -725,6 +1083,41 @@ function closeModal(event) {
     currentLogType = null;
 }
 
+function toggleLocationOther(select) {
+    const container = document.getElementById('location-other-container');
+    if (select.value === 'other') {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        document.querySelector('input[name="location_other"]').value = '';
+    }
+}
+
+function toggleTimeScope(radio) {
+    const timeContainer = document.getElementById('time-picker-container');
+    if (radio.value === 'momentary') {
+        timeContainer.classList.remove('hidden');
+        // Set current time as default
+        const now = new Date();
+        const timeInput = document.querySelector('input[name="log_time"]');
+        if (timeInput && !timeInput.value) {
+            timeInput.value = now.toTimeString().slice(0, 5);
+        }
+    } else {
+        timeContainer.classList.add('hidden');
+    }
+}
+
+function toggleNewFoodAcceptance(input) {
+    const container = document.getElementById('new-food-acceptance-container');
+    if (input.value.trim()) {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+        document.querySelector('select[name="new_food_acceptance"]').value = '';
+    }
+}
+
 async function handleSubmit(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -737,13 +1130,20 @@ async function handleSubmit(e) {
                 mood_level: formData.get('mood_level') ? parseInt(formData.get('mood_level')) : null,
                 energy_level: formData.get('energy_level') ? parseInt(formData.get('energy_level')) : null,
                 anxiety_level: formData.get('anxiety_level') ? parseInt(formData.get('anxiety_level')) : null,
+                interpersonal_behavior: formData.get('interpersonal_behavior') || '',
                 meltdowns: parseInt(formData.get('meltdowns') || 0),
-                stimming_episodes: parseInt(formData.get('stimming_episodes') || 0),
+                stimming_episodes: 0,
+                stimming_level: formData.get('stimming_level') || '',
                 aggression_incidents: parseInt(formData.get('aggression_incidents') || 0),
                 self_injury_incidents: parseInt(formData.get('self_injury_incidents') || 0),
+                location: formData.get('location') || '',
+                location_other: formData.get('location_other') || '',
                 triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
                 positive_behaviors: formData.get('positive_behaviors') ? formData.get('positive_behaviors').split(',').map(b => b.trim()).filter(b => b) : [],
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'behavior';
             break;
@@ -755,10 +1155,14 @@ async function handleSubmit(e) {
                 foods_refused: formData.get('foods_refused') ? formData.get('foods_refused').split(',').map(f => f.trim()).filter(f => f) : [],
                 water_intake_oz: formData.get('water_intake_oz') ? parseInt(formData.get('water_intake_oz')) : null,
                 new_food_tried: formData.get('new_food_tried') || null,
+                new_food_acceptance: formData.get('new_food_acceptance') || null,
                 supplements_taken: formData.get('supplements_taken') ? formData.get('supplements_taken').split(',').map(s => s.trim()).filter(s => s) : [],
                 allergic_reaction: formData.get('allergic_reaction') === 'on',
                 reaction_details: formData.get('reaction_details') || null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'diet';
             break;
@@ -773,7 +1177,10 @@ async function handleSubmit(e) {
                 bed_wetting: formData.get('bed_wetting') === 'on',
                 took_sleep_aid: formData.get('took_sleep_aid') === 'on',
                 sleep_aid_name: formData.get('sleep_aid_name') || null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'sleep';
             break;
@@ -783,7 +1190,10 @@ async function handleSubmit(e) {
                 pain_level: formData.get('pain_level') ? parseInt(formData.get('pain_level')) : null,
                 had_accident: formData.get('had_accident') === 'on',
                 blood_present: formData.get('blood_present') === 'on',
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'bowel';
             break;
@@ -796,7 +1206,10 @@ async function handleSubmit(e) {
                 echolalia_level: formData.get('echolalia_level') ? parseInt(formData.get('echolalia_level')) : null,
                 communication_attempts: formData.get('communication_attempts') ? parseInt(formData.get('communication_attempts')) : null,
                 successful_communications: formData.get('successful_communications') ? parseInt(formData.get('successful_communications')) : null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'speech';
             break;
@@ -804,7 +1217,10 @@ async function handleSubmit(e) {
             data = {
                 weight_lbs: formData.get('weight_lbs') ? parseFloat(formData.get('weight_lbs')) : null,
                 height_inches: formData.get('height_inches') ? parseFloat(formData.get('height_inches')) : null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'weight';
             break;
@@ -812,7 +1228,10 @@ async function handleSubmit(e) {
             data = {
                 overall_regulation: formData.get('sensitivity_level') ? parseInt(formData.get('sensitivity_level')) : null,
                 overload_triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'sensory';
             break;
@@ -820,7 +1239,10 @@ async function handleSubmit(e) {
             data = {
                 social_engagement_level: formData.get('interaction_quality') ? parseInt(formData.get('interaction_quality')) : null,
                 peer_interactions: formData.get('interaction_type') === 'peer' ? 1 : 0,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'social';
             break;
@@ -828,16 +1250,21 @@ async function handleSubmit(e) {
             data = {
                 therapy_type: formData.get('therapy_type'),
                 duration_minutes: formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes')) : null,
-                parent_notes: formData.get('notes')
+                parent_notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'therapy';
             break;
         case 'seizure':
             data = {
-                log_time: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
                 seizure_type: formData.get('seizure_type'),
                 duration_seconds: formData.get('duration_seconds') ? parseInt(formData.get('duration_seconds')) : null,
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'seizure';
             break;
@@ -845,7 +1272,10 @@ async function handleSubmit(e) {
             data = {
                 event_type: formData.get('event_type'),
                 description: formData.get('description'),
-                notes: formData.get('notes')
+                notes: formData.get('notes'),
+                time_scope: formData.get('time_scope') || 'day',
+                log_date: formData.get('log_date') || new Date().toISOString().split('T')[0],
+                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'health';
             break;
@@ -1044,8 +1474,178 @@ document.addEventListener('DOMContentLoaded', function() {
     loadActiveAlerts();
 });
 
+// Medication taken modal state
+let currentMedModal = {
+    medicationId: null,
+    scheduleId: null,
+    medName: null,
+    timeOfDay: null,
+    scheduledTime: null,
+    daysOfWeek: null,
+    earliestAllowed: null
+};
+
+function openMedTakenModalFromButton(button) {
+    const medicationId = button.dataset.medId;
+    const scheduleId = button.dataset.scheduleId;
+    const medName = button.dataset.medName;
+    const timeOfDay = button.dataset.timeOfDay;
+    const scheduledTime = button.dataset.scheduledTime || '';
+    const daysOfWeek = button.dataset.daysOfWeek || '';
+
+    openMedTakenModal(medicationId, scheduleId, medName, timeOfDay, scheduledTime, daysOfWeek);
+}
+
+function openMedTakenModal(medicationId, scheduleId, medName, timeOfDay, scheduledTime, daysOfWeek) {
+    // Parse daysOfWeek - now comes as comma-separated string like "0,1,2,3,4,5,6"
+    let parsedDays = [];
+    if (daysOfWeek && daysOfWeek.trim()) {
+        parsedDays = daysOfWeek.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+    }
+
+    currentMedModal = {
+        medicationId,
+        scheduleId,
+        medName,
+        timeOfDay,
+        scheduledTime,
+        daysOfWeek: parsedDays
+    };
+
+    // Calculate earliest allowed time (previous scheduled dose)
+    currentMedModal.earliestAllowed = calculateEarliestAllowedTime(timeOfDay, scheduledTime, currentMedModal.daysOfWeek);
+
+    // Set modal content
+    document.getElementById('med-taken-name').textContent = medName + ' - ' + timeOfDay + (scheduledTime ? ' (' + scheduledTime + ')' : '');
+
+    // Set default date/time to now
+    const now = new Date();
+    document.getElementById('med-taken-date').value = now.toISOString().split('T')[0];
+    document.getElementById('med-taken-time').value = now.toTimeString().slice(0, 5);
+
+    // Set min date based on earliest allowed
+    const earliestDate = new Date(currentMedModal.earliestAllowed);
+    document.getElementById('med-taken-date').min = earliestDate.toISOString().split('T')[0];
+
+    // Show hint about earliest allowed time
+    const hintEl = document.getElementById('med-taken-hint');
+    hintEl.textContent = 'Earliest allowed: ' + earliestDate.toLocaleString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    });
+
+    // Clear any previous error
+    document.getElementById('med-taken-error').classList.add('hidden');
+
+    // Show modal
+    document.getElementById('med-taken-modal').classList.remove('hidden');
+}
+
+function closeMedTakenModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    document.getElementById('med-taken-modal').classList.add('hidden');
+    currentMedModal = { medicationId: null, scheduleId: null, medName: null, timeOfDay: null, scheduledTime: null, daysOfWeek: null, earliestAllowed: null };
+}
+
+function calculateEarliestAllowedTime(timeOfDay, scheduledTime, daysOfWeek) {
+    const now = new Date();
+
+    // Parse scheduled time or use default times for time of day
+    let scheduledHour, scheduledMinute;
+    if (scheduledTime) {
+        const parts = scheduledTime.split(':');
+        scheduledHour = parseInt(parts[0]);
+        scheduledMinute = parseInt(parts[1] || 0);
+    } else {
+        // Default times for each time of day
+        const defaultTimes = {
+            'morning': { hour: 8, minute: 0 },
+            'noon': { hour: 12, minute: 0 },
+            'afternoon': { hour: 15, minute: 0 },
+            'evening': { hour: 18, minute: 0 },
+            'bedtime': { hour: 21, minute: 0 },
+            'as needed': { hour: 0, minute: 0 }
+        };
+        const defaults = defaultTimes[timeOfDay.toLowerCase()] || { hour: 9, minute: 0 };
+        scheduledHour = defaults.hour;
+        scheduledMinute = defaults.minute;
+    }
+
+    // Find the previous scheduled dose time
+    let previousDose = new Date(now);
+    previousDose.setHours(scheduledHour, scheduledMinute, 0, 0);
+
+    // If the scheduled time today hasn't passed yet, or we're looking for previous dose
+    // we need to go back to find the last valid scheduled time
+
+    if (daysOfWeek && daysOfWeek.length > 0 && daysOfWeek.length < 7) {
+        // Medication is not taken every day - find previous scheduled day
+        let daysBack = 1;
+        let foundPrevious = false;
+
+        while (!foundPrevious && daysBack <= 7) {
+            let checkDate = new Date(now);
+            checkDate.setDate(checkDate.getDate() - daysBack);
+            const dayOfWeek = checkDate.getDay();
+
+            if (daysOfWeek.includes(dayOfWeek)) {
+                previousDose = new Date(checkDate);
+                previousDose.setHours(scheduledHour, scheduledMinute, 1, 0); // 1 second after scheduled time
+                foundPrevious = true;
+            }
+            daysBack++;
+        }
+    } else {
+        // Daily medication - previous dose was yesterday at the same time
+        previousDose.setDate(previousDose.getDate() - 1);
+        previousDose.setSeconds(1); // 1 second after scheduled time
+    }
+
+    return previousDose;
+}
+
+function confirmMedTaken(option) {
+    let logDate;
+
+    if (option === 'now') {
+        logDate = new Date();
+    } else {
+        // Get the selected date and time
+        const dateVal = document.getElementById('med-taken-date').value;
+        const timeVal = document.getElementById('med-taken-time').value;
+
+        if (!dateVal || !timeVal) {
+            document.getElementById('med-taken-error').textContent = 'Please select both date and time.';
+            document.getElementById('med-taken-error').classList.remove('hidden');
+            return;
+        }
+
+        logDate = new Date(dateVal + 'T' + timeVal);
+
+        // Validate against earliest allowed time
+        if (logDate < currentMedModal.earliestAllowed) {
+            const earliestStr = new Date(currentMedModal.earliestAllowed).toLocaleString('en-US', {
+                weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+            });
+            document.getElementById('med-taken-error').textContent = 'Time must be after ' + earliestStr + '. Earlier doses would be considered missed.';
+            document.getElementById('med-taken-error').classList.remove('hidden');
+            return;
+        }
+
+        // Validate not in the future
+        if (logDate > new Date()) {
+            document.getElementById('med-taken-error').textContent = 'Cannot log medication for a future time.';
+            document.getElementById('med-taken-error').classList.remove('hidden');
+            return;
+        }
+    }
+
+    // Close modal and log the medication
+    closeMedTakenModal();
+    logMedication(currentMedModal.medicationId, currentMedModal.scheduleId, 'taken', logDate);
+}
+
 // Log medication as taken or skipped
-async function logMedication(medicationId, scheduleId, status) {
+async function logMedication(medicationId, scheduleId, status, logDate = null) {
     try {
         const response = await fetch(`/api/children/${childId}/medications/log`, {
             method: 'POST',
@@ -1057,7 +1657,7 @@ async function logMedication(medicationId, scheduleId, status) {
                 medication_id: medicationId,
                 schedule_id: scheduleId || null,
                 status: status,
-                log_date: new Date().toISOString()
+                log_date: (logDate || new Date()).toISOString()
             })
         });
 

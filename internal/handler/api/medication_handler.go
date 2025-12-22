@@ -10,6 +10,7 @@ import (
 
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/models"
+	"carecompanion/internal/repository"
 	"carecompanion/internal/service"
 )
 
@@ -81,6 +82,12 @@ func (h *MedicationHandler) Get(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, med)
 }
 
+// MedicationCreateResponse includes the medication and any detected interactions
+type MedicationCreateResponse struct {
+	Medication   *models.Medication           `json:"medication"`
+	Interactions []service.InteractionWarning `json:"interactions,omitempty"`
+}
+
 // Create creates a new medication
 func (h *MedicationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)
@@ -112,7 +119,41 @@ func (h *MedicationHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondCreated(w, med)
+	// Check for interactions with existing medications
+	var interactions []service.InteractionWarning
+	if h.drugDBService != nil {
+		existingMeds, err := h.medService.GetByChildID(r.Context(), childID, true)
+		if err == nil && len(existingMeds) > 0 {
+			// Build list of all medication names (excluding the one just added)
+			var medNames []string
+			for _, m := range existingMeds {
+				if m.ID != med.ID {
+					medNames = append(medNames, m.Name)
+				}
+			}
+			// Add the new medication name
+			medNames = append(medNames, med.Name)
+
+			// Check for interactions
+			interactions, _ = h.drugDBService.CheckInteractions(r.Context(), medNames)
+
+			// Filter to only show interactions involving the new medication
+			var relevantInteractions []service.InteractionWarning
+			for _, interaction := range interactions {
+				if interaction.Drug1 == med.Name || interaction.Drug2 == med.Name {
+					relevantInteractions = append(relevantInteractions, interaction)
+				}
+			}
+			interactions = relevantInteractions
+		}
+	}
+
+	response := MedicationCreateResponse{
+		Medication:   med,
+		Interactions: interactions,
+	}
+
+	respondCreated(w, response)
 }
 
 // Update updates a medication
@@ -180,6 +221,58 @@ func (h *MedicationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondNoContent(w)
+}
+
+// DiscontinueRequest represents the discontinuation request body
+type DiscontinueRequest struct {
+	Reason     string `json:"reason"`
+	ReasonText string `json:"reason_text"`
+}
+
+// Discontinue handles medication discontinuation with reason tracking
+func (h *MedicationHandler) Discontinue(w http.ResponseWriter, r *http.Request) {
+	medID, err := parseUUID(chi.URLParam(r, "medID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid medication ID")
+		return
+	}
+
+	// Get the medication to verify access
+	med, err := h.medService.GetByID(r.Context(), medID)
+	if err != nil {
+		respondNotFound(w, "Medication not found")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), med.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	var req DiscontinueRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if req.Reason == "" {
+		respondBadRequest(w, "Discontinuation reason is required")
+		return
+	}
+
+	// Use the service to handle discontinuation with reason
+	deleted, err := h.medService.DiscontinueWithReason(r.Context(), medID, userID, req.Reason, req.ReasonText)
+	if err != nil {
+		log.Printf("Failed to discontinue medication: %v", err)
+		respondInternalError(w, "Failed to discontinue medication")
+		return
+	}
+
+	respondOK(w, map[string]interface{}{
+		"success": true,
+		"deleted": deleted,
+	})
 }
 
 // GetDue returns medications due for today
@@ -313,7 +406,7 @@ func (h *MedicationHandler) GetAdherence(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-// SearchReferences searches medication references
+// SearchReferences searches medication references using FDA database
 func (h *MedicationHandler) SearchReferences(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {
@@ -321,6 +414,28 @@ func (h *MedicationHandler) SearchReferences(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Try FDA API first for comprehensive results
+	fdaResults, err := h.drugDBService.SearchDrugs(r.Context(), query)
+	if err == nil && len(fdaResults) > 0 {
+		// Convert FDA results to a format compatible with the frontend
+		type SearchResult struct {
+			Name        string   `json:"name"`
+			GenericName string   `json:"generic_name,omitempty"`
+			BrandNames  []string `json:"brand_names,omitempty"`
+		}
+		results := make([]SearchResult, len(fdaResults))
+		for i, r := range fdaResults {
+			results[i] = SearchResult{
+				Name:        r.Name,
+				GenericName: r.GenericName,
+				BrandNames:  r.BrandNames,
+			}
+		}
+		respondOK(w, results)
+		return
+	}
+
+	// Fall back to local database if FDA API fails
 	refs, err := h.medService.SearchMedicationReferences(r.Context(), query)
 	if err != nil {
 		respondInternalError(w, "Failed to search medications")
@@ -495,4 +610,32 @@ func hasMajorWarnings(warnings []service.InteractionWarning) bool {
 		}
 	}
 	return false
+}
+
+// GetHistory returns medication change history for a child
+func (h *MedicationHandler) GetHistory(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	history, err := h.medService.GetMedicationHistory(r.Context(), childID)
+	if err != nil {
+		log.Printf("GetMedicationHistory error: %v", err)
+		respondInternalError(w, "Failed to get medication history")
+		return
+	}
+
+	if history == nil {
+		history = []repository.MedicationHistoryEntry{}
+	}
+
+	respondOK(w, history)
 }

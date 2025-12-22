@@ -154,6 +154,62 @@ func (h *TransparencyHandler) RespondToTreatmentChange(w http.ResponseWriter, r 
 	respondJSON(w, map[string]string{"status": "ok"}, http.StatusOK)
 }
 
+// InteractionAlertRequest is the request body for creating an interaction alert
+type InteractionAlertRequest struct {
+	ChildID        string                   `json:"child_id"`
+	MedicationID   string                   `json:"medication_id"`
+	MedicationName string                   `json:"medication_name"`
+	Interactions   []map[string]interface{} `json:"interactions"`
+}
+
+// CreateInteractionAlert creates a pending interaction alert for the dashboard
+// POST /api/interaction-alerts
+func (h *TransparencyHandler) CreateInteractionAlert(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context()).String()
+
+	var req InteractionAlertRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Build interaction description
+	var interactionDesc string
+	for i, interaction := range req.Interactions {
+		drug1, _ := interaction["drug1"].(string)
+		drug2, _ := interaction["drug2"].(string)
+		desc, _ := interaction["description"].(string)
+
+		otherDrug := drug1
+		if drug1 == req.MedicationName {
+			otherDrug = drug2
+		}
+
+		if i > 0 {
+			interactionDesc += "; "
+		}
+		interactionDesc += otherDrug + ": " + desc
+	}
+
+	// Create a treatment change entry for the interaction alert
+	tc := &models.TreatmentChange{
+		ChildID:             req.ChildID,
+		ChangeType:          models.ChangeType("interaction_alert"),
+		SourceTable:         "medications",
+		SourceID:            req.MedicationID,
+		ChangeSummary:       "You added " + req.MedicationName + " which may interact with other medications. " + interactionDesc,
+		ChangedByUserID:     userID,
+		InterrogativeStatus: models.InterrogativeStatusPending,
+	}
+
+	if err := h.service.CreateTreatmentChange(r.Context(), tc); err != nil {
+		respondError(w, "Failed to create interaction alert", http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, map[string]string{"status": "ok"}, http.StatusOK)
+}
+
 // GetInteractionPreferences returns user interaction preferences
 // GET /api/users/me/interaction-preferences
 func (h *TransparencyHandler) GetInteractionPreferences(w http.ResponseWriter, r *http.Request) {

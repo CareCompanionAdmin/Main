@@ -246,3 +246,8 @@ func (s *FamilyService) UpdateMemberRoleSafe(ctx context.Context, familyID, memb
 
 	return s.familyRepo.UpdateMemberRole(ctx, familyID, member.UserID, role)
 }
+
+// CreateInvitation creates a pending invitation for a user to join the family
+func (s *FamilyService) CreateInvitation(ctx context.Context, familyID uuid.UUID, email, firstName, lastName string, role models.FamilyRole) error {
+	return s.familyRepo.CreateInvitation(ctx, familyID, email, firstName, lastName, role)
+}

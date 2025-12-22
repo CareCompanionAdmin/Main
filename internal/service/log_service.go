@@ -42,6 +42,10 @@ func (s *LogService) CreateBehaviorLog(ctx context.Context, childID, loggedBy uu
 	}
 	log.LogTime.String = req.LogTime
 	log.LogTime.Valid = req.LogTime != ""
+	log.Location.String = req.Location
+	log.Location.Valid = req.Location != ""
+	log.LocationOther.String = req.LocationOther
+	log.LocationOther.Valid = req.LocationOther != ""
 	log.Notes.String = req.Notes
 	log.Notes.Valid = req.Notes != ""
 
@@ -101,6 +105,10 @@ func (s *LogService) GetBowelLogByID(ctx context.Context, id uuid.UUID) (*models
 	return s.logRepo.GetBowelLogByID(ctx, id)
 }
 
+func (s *LogService) UpdateBowelLog(ctx context.Context, log *models.BowelLog) error {
+	return s.logRepo.UpdateBowelLog(ctx, log)
+}
+
 func (s *LogService) DeleteBowelLog(ctx context.Context, id uuid.UUID) error {
 	return s.logRepo.DeleteBowelLog(ctx, id)
 }
@@ -138,6 +146,10 @@ func (s *LogService) GetSpeechLogs(ctx context.Context, childID uuid.UUID, start
 
 func (s *LogService) GetSpeechLogByID(ctx context.Context, id uuid.UUID) (*models.SpeechLog, error) {
 	return s.logRepo.GetSpeechLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateSpeechLog(ctx context.Context, log *models.SpeechLog) error {
+	return s.logRepo.UpdateSpeechLog(ctx, log)
 }
 
 func (s *LogService) DeleteSpeechLog(ctx context.Context, id uuid.UUID) error {
@@ -187,6 +199,10 @@ func (s *LogService) GetDietLogByID(ctx context.Context, id uuid.UUID) (*models.
 	return s.logRepo.GetDietLogByID(ctx, id)
 }
 
+func (s *LogService) UpdateDietLog(ctx context.Context, log *models.DietLog) error {
+	return s.logRepo.UpdateDietLog(ctx, log)
+}
+
 func (s *LogService) DeleteDietLog(ctx context.Context, id uuid.UUID) error {
 	return s.logRepo.DeleteDietLog(ctx, id)
 }
@@ -219,6 +235,10 @@ func (s *LogService) GetWeightLogs(ctx context.Context, childID uuid.UUID, start
 
 func (s *LogService) GetWeightLogByID(ctx context.Context, id uuid.UUID) (*models.WeightLog, error) {
 	return s.logRepo.GetWeightLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateWeightLog(ctx context.Context, log *models.WeightLog) error {
+	return s.logRepo.UpdateWeightLog(ctx, log)
 }
 
 func (s *LogService) DeleteWeightLog(ctx context.Context, id uuid.UUID) error {
@@ -264,6 +284,10 @@ func (s *LogService) GetSleepLogs(ctx context.Context, childID uuid.UUID, startD
 
 func (s *LogService) GetSleepLogByID(ctx context.Context, id uuid.UUID) (*models.SleepLog, error) {
 	return s.logRepo.GetSleepLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateSleepLog(ctx context.Context, log *models.SleepLog) error {
+	return s.logRepo.UpdateSleepLog(ctx, log)
 }
 
 func (s *LogService) DeleteSleepLog(ctx context.Context, id uuid.UUID) error {
@@ -329,6 +353,14 @@ func (s *LogService) GetSensoryLogs(ctx context.Context, childID uuid.UUID, star
 	return s.logRepo.GetSensoryLogs(ctx, childID, startDate, endDate)
 }
 
+func (s *LogService) GetSensoryLogByID(ctx context.Context, id uuid.UUID) (*models.SensoryLog, error) {
+	return s.logRepo.GetSensoryLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateSensoryLog(ctx context.Context, log *models.SensoryLog) error {
+	return s.logRepo.UpdateSensoryLog(ctx, log)
+}
+
 func (s *LogService) DeleteSensoryLog(ctx context.Context, id uuid.UUID) error {
 	return s.logRepo.DeleteSensoryLog(ctx, id)
 }
@@ -362,6 +394,14 @@ func (s *LogService) CreateSocialLog(ctx context.Context, childID, loggedBy uuid
 
 func (s *LogService) GetSocialLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SocialLog, error) {
 	return s.logRepo.GetSocialLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) GetSocialLogByID(ctx context.Context, id uuid.UUID) (*models.SocialLog, error) {
+	return s.logRepo.GetSocialLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateSocialLog(ctx context.Context, log *models.SocialLog) error {
+	return s.logRepo.UpdateSocialLog(ctx, log)
 }
 
 func (s *LogService) DeleteSocialLog(ctx context.Context, id uuid.UUID) error {
@@ -402,6 +442,14 @@ func (s *LogService) GetTherapyLogs(ctx context.Context, childID uuid.UUID, star
 	return s.logRepo.GetTherapyLogs(ctx, childID, startDate, endDate)
 }
 
+func (s *LogService) GetTherapyLogByID(ctx context.Context, id uuid.UUID) (*models.TherapyLog, error) {
+	return s.logRepo.GetTherapyLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateTherapyLog(ctx context.Context, log *models.TherapyLog) error {
+	return s.logRepo.UpdateTherapyLog(ctx, log)
+}
+
 func (s *LogService) DeleteTherapyLog(ctx context.Context, id uuid.UUID) error {
 	return s.logRepo.DeleteTherapyLog(ctx, id)
 }
@@ -439,6 +487,14 @@ func (s *LogService) CreateSeizureLog(ctx context.Context, childID, loggedBy uui
 
 func (s *LogService) GetSeizureLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SeizureLog, error) {
 	return s.logRepo.GetSeizureLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) GetSeizureLogByID(ctx context.Context, id uuid.UUID) (*models.SeizureLog, error) {
+	return s.logRepo.GetSeizureLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateSeizureLog(ctx context.Context, log *models.SeizureLog) error {
+	return s.logRepo.UpdateSeizureLog(ctx, log)
 }
 
 func (s *LogService) DeleteSeizureLog(ctx context.Context, id uuid.UUID) error {
@@ -483,6 +539,14 @@ func (s *LogService) CreateHealthEventLog(ctx context.Context, childID, loggedBy
 
 func (s *LogService) GetHealthEventLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.HealthEventLog, error) {
 	return s.logRepo.GetHealthEventLogs(ctx, childID, startDate, endDate)
+}
+
+func (s *LogService) GetHealthEventLogByID(ctx context.Context, id uuid.UUID) (*models.HealthEventLog, error) {
+	return s.logRepo.GetHealthEventLogByID(ctx, id)
+}
+
+func (s *LogService) UpdateHealthEventLog(ctx context.Context, log *models.HealthEventLog) error {
+	return s.logRepo.UpdateHealthEventLog(ctx, log)
 }
 
 func (s *LogService) DeleteHealthEventLog(ctx context.Context, id uuid.UUID) error {

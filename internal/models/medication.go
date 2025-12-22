@@ -14,7 +14,7 @@ type MedicationReference struct {
 	CommonDosages     StringArray `json:"common_dosages,omitempty"`
 	CommonSideEffects StringArray `json:"common_side_effects,omitempty"`
 	Warnings          StringArray `json:"warnings,omitempty"`
-	Interactions      JSONB       `json:"interactions,omitempty"`
+	Interactions      JSONArray   `json:"interactions,omitempty"`
 	CreatedAt         time.Time   `json:"created_at"`
 }
 

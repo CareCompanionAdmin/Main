@@ -90,7 +90,7 @@
                         <p class="text-sm text-gray-500">Role: {{.Role}}</p>
                     </div>
                     <button onclick="switchFamily('{{.FamilyID}}')" class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 text-sm">
-                        Switch to Family
+                        Switch Family
                     </button>
                 </div>
                 {{end}}
@@ -228,8 +228,8 @@
 </main>
 
 <!-- Add Member Modal -->
-<div id="add-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+<div id="add-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeAddMemberModal()">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Add Family Member</h3>
             <button onclick="closeAddMemberModal()" class="text-gray-400 hover:text-gray-600">
@@ -239,6 +239,20 @@
             </button>
         </div>
         <form id="add-member-form" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input type="text" id="add-member-first-name" name="first_name" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="First name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input type="text" id="add-member-last-name" name="last_name" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Last name">
+                </div>
+            </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                 <div class="flex gap-2">
@@ -256,8 +270,8 @@
                         <span class="font-medium">Found:</span> <span id="found-user-name"></span>
                     </p>
                 </div>
-                <div id="user-not-found" class="hidden p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p class="text-sm text-yellow-800">User not found. They must register first before being added to the family.</p>
+                <div id="user-not-found" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p class="text-sm text-amber-800">User not found. An invitation will be sent to this email address.</p>
                 </div>
             </div>
             <div>
@@ -282,8 +296,8 @@
 </div>
 
 <!-- Edit Member Modal -->
-<div id="edit-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+<div id="edit-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeEditMemberModal()">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Edit Member</h3>
             <button onclick="closeEditMemberModal()" class="text-gray-400 hover:text-gray-600">
@@ -331,8 +345,8 @@
 </div>
 
 <!-- Add Child Modal -->
-<div id="add-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+<div id="add-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeAddChildModal()">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Add Child</h3>
             <button onclick="closeAddChildModal()" class="text-gray-400 hover:text-gray-600">
@@ -390,8 +404,8 @@
 </div>
 
 <!-- Edit Child Modal -->
-<div id="edit-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto">
+<div id="edit-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeEditChildModal()">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Edit Child</h3>
             <button onclick="closeEditChildModal()" class="text-gray-400 hover:text-gray-600">
@@ -469,8 +483,8 @@
 </div>
 
 <!-- Add/Edit Condition Modal -->
-<div id="condition-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[60]">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+<div id="condition-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[60]" onclick="closeConditionModal()">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 id="condition-modal-title" class="text-lg font-semibold text-gray-900">Add Condition</h3>
             <button onclick="closeConditionModal()" class="text-gray-400 hover:text-gray-600">
@@ -1121,7 +1135,11 @@ function getRoleColor(role) {
 }
 
 // Add Member Modal
+let isInviteMode = false;
+
 function openAddMemberModal() {
+    document.getElementById('add-member-first-name').value = '';
+    document.getElementById('add-member-last-name').value = '';
     document.getElementById('add-member-email').value = '';
     document.getElementById('add-member-role').value = 'parent';
     document.getElementById('user-lookup-result').classList.add('hidden');
@@ -1129,6 +1147,7 @@ function openAddMemberModal() {
     document.getElementById('user-not-found').classList.add('hidden');
     document.getElementById('add-member-submit').disabled = true;
     foundUserEmail = null;
+    isInviteMode = false;
 
     const modal = document.getElementById('add-member-modal');
     modal.classList.remove('hidden');
@@ -1167,12 +1186,16 @@ async function lookupUser() {
             document.getElementById('found-user-name').textContent =
                 [data.user.first_name, data.user.last_name].filter(Boolean).join(' ') || data.user.email;
             document.getElementById('add-member-submit').disabled = false;
+            document.getElementById('add-member-submit').textContent = 'Add Member';
             foundUserEmail = email;
+            isInviteMode = false;
         } else {
             document.getElementById('user-found').classList.add('hidden');
             document.getElementById('user-not-found').classList.remove('hidden');
-            document.getElementById('add-member-submit').disabled = true;
-            foundUserEmail = null;
+            document.getElementById('add-member-submit').disabled = false;
+            document.getElementById('add-member-submit').textContent = 'Send Invitation';
+            foundUserEmail = email;
+            isInviteMode = true;
         }
     } catch (error) {
         showMessage('error', 'Failed to look up user');
@@ -1183,11 +1206,18 @@ document.getElementById('add-member-form').addEventListener('submit', async func
     e.preventDefault();
 
     if (!foundUserEmail) {
-        showMessage('error', 'Please find a user first');
+        showMessage('error', 'Please look up the email address first');
         return;
     }
 
+    const firstName = document.getElementById('add-member-first-name').value.trim();
+    const lastName = document.getElementById('add-member-last-name').value.trim();
     const role = document.getElementById('add-member-role').value;
+
+    if (!firstName || !lastName) {
+        showMessage('error', 'Please enter first and last name');
+        return;
+    }
 
     try {
         const response = await fetch('/api/family/members', {
@@ -1198,14 +1228,20 @@ document.getElementById('add-member-form').addEventListener('submit', async func
             },
             body: JSON.stringify({
                 email: foundUserEmail,
+                first_name: firstName,
+                last_name: lastName,
                 role: role,
-                mode: 'direct'
+                mode: isInviteMode ? 'invite' : 'direct'
             })
         });
 
         if (response.ok) {
             closeAddMemberModal();
-            showMessage('success', 'Member added successfully');
+            if (isInviteMode) {
+                showMessage('success', 'Invitation sent successfully');
+            } else {
+                showMessage('success', 'Member added successfully');
+            }
             loadFamilyMembers();
         } else {
             const data = await response.json();

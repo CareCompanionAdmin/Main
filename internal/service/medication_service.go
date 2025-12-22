@@ -199,6 +199,88 @@ func (s *MedicationService) DiscontinueWithTracking(ctx context.Context, id uuid
 	return s.medRepo.Update(ctx, med)
 }
 
+// DiscontinueWithReason discontinues a medication with a specific reason
+// Returns true if the medication was hard deleted (added_by_accident with no logs)
+func (s *MedicationService) DiscontinueWithReason(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason, reasonText string) (bool, error) {
+	med, err := s.medRepo.GetByID(ctx, id)
+	if err != nil {
+		return false, err
+	}
+	if med == nil {
+		return false, ErrMedicationNotFound
+	}
+
+	// Build reason display text
+	reasonDisplay := reason
+	switch reason {
+	case "provider_changed":
+		reasonDisplay = "Provider changed prescription"
+	case "adverse_effect":
+		reasonDisplay = "Noticed adverse effect"
+	case "added_by_accident":
+		reasonDisplay = "Added on accident"
+	case "other":
+		reasonDisplay = "Other: " + reasonText
+	}
+
+	// If added by accident, check if there are any medication logs
+	if reason == "added_by_accident" {
+		hasLogs, err := s.medRepo.HasMedicationLogs(ctx, id)
+		if err != nil {
+			return false, err
+		}
+
+		if !hasLogs {
+			// No logs exist - hard delete the medication and related records
+			if err := s.medRepo.HardDeleteMedication(ctx, id); err != nil {
+				return false, err
+			}
+			return true, nil // Return true indicating hard delete
+		}
+		// Has logs, fall through to soft delete
+	}
+
+	// Create treatment change record for correlation tracking
+	if s.transparencyRepo != nil && userID != uuid.Nil {
+		tc := &models.TreatmentChange{
+			ChildID:     med.ChildID.String(),
+			ChangeType:  models.ChangeTypeMedicationDiscontinued,
+			SourceTable: "medications",
+			SourceID:    med.ID.String(),
+			PreviousValue: models.JSONMap{
+				"is_active":   true,
+				"name":        med.Name,
+				"dosage":      med.Dosage,
+				"dosage_unit": med.DosageUnit,
+				"frequency":   med.Frequency,
+			},
+			NewValue: models.JSONMap{
+				"is_active":           false,
+				"end_date":            time.Now().Format("2006-01-02"),
+				"discontinue_reason":  reason,
+				"discontinue_details": reasonText,
+			},
+			ChangeSummary:   fmt.Sprintf("Discontinued %s (%s %s) - Reason: %s", med.Name, med.Dosage, med.DosageUnit, reasonDisplay),
+			ChangedByUserID: userID.String(),
+		}
+
+		// Mark for correlation tracking if adverse effect or provider changed
+		if reason == "adverse_effect" || reason == "provider_changed" {
+			tc.NewValue["track_correlations"] = true
+		}
+
+		if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
+			fmt.Printf("Warning: Failed to create treatment change record: %v\n", err)
+		}
+	}
+
+	// Soft delete - mark as inactive
+	med.IsActive = false
+	med.EndDate.Time = time.Now()
+	med.EndDate.Valid = true
+	return false, s.medRepo.Update(ctx, med)
+}
+
 // Schedule management
 func (s *MedicationService) AddSchedule(ctx context.Context, medicationID uuid.UUID, req *models.CreateScheduleRequest) (*models.MedicationSchedule, error) {
 	schedule := &models.MedicationSchedule{
@@ -303,4 +385,9 @@ func (s *MedicationService) CalculateAdherence(ctx context.Context, childID uuid
 	}
 
 	return float64(taken) / float64(len(logs)) * 100, nil
+}
+
+// GetMedicationHistory retrieves medication change history for a child
+func (s *MedicationService) GetMedicationHistory(ctx context.Context, childID uuid.UUID) ([]repository.MedicationHistoryEntry, error) {
+	return s.transparencyRepo.GetMedicationHistory(ctx, childID.String())
 }

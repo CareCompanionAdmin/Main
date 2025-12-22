@@ -54,9 +54,11 @@ func (h *FamilyHandler) ListMembers(w http.ResponseWriter, r *http.Request) {
 
 // AddMemberRequest represents a request to add a member
 type AddMemberRequest struct {
-	Email string `json:"email"`
-	Role  string `json:"role"`
-	Mode  string `json:"mode"` // "direct" or "invite"
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Role      string `json:"role"`
+	Mode      string `json:"mode"` // "direct" or "invite"
 }
 
 // AddMember adds a new member to the family
@@ -101,7 +103,20 @@ func (h *FamilyHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user == nil {
-		// User not found - would need invitation system
+		// User not found - handle invitation mode
+		if req.Mode == "invite" {
+			// Create pending invitation (store in database for when they register)
+			err := h.familyService.CreateInvitation(r.Context(), familyID, req.Email, req.FirstName, req.LastName, role)
+			if err != nil {
+				respondInternalError(w, "Failed to create invitation")
+				return
+			}
+			respondCreated(w, map[string]interface{}{
+				"success": true,
+				"message": "Invitation created. They will be added when they register.",
+			})
+			return
+		}
 		respondNotFound(w, "User not found. They must register first before being added to a family.")
 		return
 	}

@@ -57,6 +57,36 @@
         <h1 class="text-2xl font-bold text-gray-900">{{.Child.FirstName}}'s Medications</h1>
     </div>
 
+    <!-- Interaction Alert (hidden by default) -->
+    <div id="interaction-alert" class="hidden mb-6">
+        <div class="bg-red-50 border-2 border-red-500 rounded-xl p-6 shadow-lg">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-4 flex-1">
+                    <h3 class="text-lg font-bold text-red-800">Potential Drug Interaction Identified!</h3>
+                    <div id="interaction-details" class="mt-2 text-red-700">
+                        <!-- Interaction details will be populated here -->
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button onclick="acknowledgeInteraction()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
+                            Acknowledge & Continue
+                        </button>
+                        <button onclick="undoMedication()" class="px-4 py-2 bg-white text-red-700 border border-red-300 rounded-lg hover:bg-red-50 font-medium">
+                            Undo Adding Medication
+                        </button>
+                        <button onclick="remindMeLater()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">
+                            Remind Me Later
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{if .Medications}}
     <div class="space-y-4">
         {{range .Medications}}
@@ -104,22 +134,46 @@
         </button>
     </div>
     {{end}}
+
+    <!-- Medication History Section -->
+    <div class="mt-8">
+        <button onclick="toggleMedicationHistory()" class="w-full bg-white rounded-xl shadow-sm border p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-gray-700 font-medium">Medication History</span>
+            </div>
+            <svg id="history-chevron" class="w-5 h-5 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+        <div id="medication-history-content" class="hidden mt-2 bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div id="medication-history-list" class="divide-y divide-gray-100">
+                <div class="p-8 text-center text-gray-500">
+                    <div class="animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    Loading history...
+                </div>
+            </div>
+        </div>
+    </div>
 </main>
 
 <!-- Add Medication Modal -->
 <div id="add-medication-modal" class="hidden fixed inset-0 z-50">
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideAddMedication()"></div>
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <!-- Modal Container - this scrolls -->
-    <div class="fixed inset-0 overflow-y-auto">
+    <div class="fixed inset-0 overflow-y-auto" onclick="hideAddMedication()">
         <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
             <div id="modal-content" class="bg-white rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
                 <h2 class="text-xl font-bold text-gray-900 mb-4">Add Medication</h2>
         <form id="medication-form" class="space-y-4">
             <!-- Name, Dosage, Unit - required for lookup -->
-            <div>
+            <div class="relative">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name *</label>
-                <input type="text" name="name" id="med-name-input" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Vyvanse">
+                <input type="text" name="name" id="med-name-input" required autocomplete="off" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Start typing medication name...">
+                <div id="med-suggestions" class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto hidden"></div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -330,12 +384,58 @@
     </div>
 </div>
 
+<!-- Discontinue Medication Modal -->
+<div id="discontinue-modal" class="hidden fixed inset-0 z-50">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideDiscontinueModal()"></div>
+    <!-- Modal -->
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="bg-white rounded-xl p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Discontinue Medication</h2>
+                <p class="text-gray-600 text-sm mb-4">Please select the reason for discontinuing this medication:</p>
+
+                <div class="space-y-3 mb-4">
+                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input type="radio" name="discontinue_reason" value="provider_changed" class="mr-3 text-indigo-600">
+                        <span class="text-gray-800">Provider changed prescription</span>
+                    </label>
+                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input type="radio" name="discontinue_reason" value="adverse_effect" class="mr-3 text-indigo-600">
+                        <span class="text-gray-800">Noticed adverse effect</span>
+                    </label>
+                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input type="radio" name="discontinue_reason" value="added_by_accident" class="mr-3 text-indigo-600">
+                        <span class="text-gray-800">Added on accident</span>
+                    </label>
+                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                        <input type="radio" name="discontinue_reason" value="other" class="mr-3 text-indigo-600" onchange="toggleOtherReason()">
+                        <span class="text-gray-800">Other</span>
+                    </label>
+                    <div id="other-reason-container" class="hidden pl-6">
+                        <textarea id="other-reason-text" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Please specify the reason..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button type="button" onclick="confirmDiscontinue()" class="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        Discontinue
+                    </button>
+                    <button type="button" onclick="hideDiscontinueModal()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Edit Medication Modal -->
 <div id="edit-medication-modal" class="hidden fixed inset-0 z-50">
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideEditMedication()"></div>
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <!-- Modal Container -->
-    <div class="fixed inset-0 overflow-y-auto">
+    <div class="fixed inset-0 overflow-y-auto" onclick="hideEditMedication()">
         <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
             <div class="bg-white rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
                 <h2 class="text-xl font-bold text-gray-900 mb-4">Edit Medication</h2>
@@ -413,6 +513,135 @@
                         </button>
                     </div>
 
+                    <!-- Additional Information Collapsible Section -->
+                    <div class="border-t pt-4 mt-4">
+                        <button type="button" onclick="toggleAdditionalInfo()" id="additional-info-btn" class="w-full py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 border border-blue-200 flex items-center justify-center">
+                            <span id="additional-info-btn-text">Additional Information</span>
+                            <svg id="additional-info-chevron" class="w-5 h-5 ml-2 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        <div id="additional-info-content" class="hidden mt-4 space-y-4">
+                            <!-- Loading indicator -->
+                            <div id="edit-drug-loading" class="hidden text-center py-4">
+                                <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                                <p class="text-gray-500 mt-2">Loading drug information...</p>
+                            </div>
+
+                            <!-- Black Box Warning -->
+                            <div id="edit-black-box-warning" class="hidden p-4 bg-red-50 border-2 border-red-500 rounded-lg">
+                                <div class="flex items-start">
+                                    <svg class="w-6 h-6 text-red-600 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <div class="flex-1">
+                                        <h4 class="font-bold text-red-800">BLACK BOX WARNING</h4>
+                                        <p id="edit-black-box-text" class="text-red-700 text-sm mt-1"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pediatric Warnings -->
+                            <div id="edit-pediatric-warnings" class="hidden p-4 bg-amber-50 border border-amber-300 rounded-lg">
+                                <h4 class="font-semibold text-amber-800 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Pediatric Information
+                                </h4>
+                                <p id="edit-pediatric-text" class="text-amber-700 text-sm mt-2"></p>
+                            </div>
+
+                            <!-- Side Effects -->
+                            <div id="edit-side-effects-section" class="hidden p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                <h4 class="font-semibold text-gray-800 mb-2">Common Side Effects</h4>
+                                <div id="edit-side-effects-list" class="flex flex-wrap gap-2"></div>
+                            </div>
+
+                            <!-- Drug Interactions -->
+                            <div id="edit-interactions-section" class="hidden p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                                <h4 class="font-semibold text-orange-800 mb-2">Known Drug Interactions</h4>
+                                <div id="edit-interactions-list" class="space-y-2"></div>
+                                <p id="edit-interactions-note" class="text-orange-700 text-xs mt-3 italic hidden">
+                                    Note: This is a partial list. Click "View on Drugs.com" below for complete interaction information.
+                                </p>
+                            </div>
+
+                            <!-- Generic Info -->
+                            <div id="edit-generic-info" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p class="text-blue-800 text-sm"><span class="font-medium">Generic Name:</span> <span id="edit-generic-name"></span></p>
+                                <p class="text-blue-800 text-sm mt-1"><span class="font-medium">Drug Class:</span> <span id="edit-drug-class"></span></p>
+                            </div>
+
+                            <!-- Indications/Uses -->
+                            <div id="edit-indications-section" class="hidden p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <h4 class="font-semibold text-green-800 mb-2">Approved Uses</h4>
+                                <p id="edit-indications-text" class="text-green-700 text-sm"></p>
+                            </div>
+
+                            <!-- Physical Description / Pill ID -->
+                            <div id="edit-physical-section" class="hidden p-4 bg-purple-50 border-2 border-purple-300 rounded-lg">
+                                <h4 class="font-semibold text-purple-800 mb-3 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                    Pill Identification
+                                </h4>
+                                <div class="bg-white rounded-lg p-4 border-2 border-purple-200">
+                                    <div class="grid grid-cols-2 gap-3 mb-4">
+                                        <div id="edit-pill-color-box" class="hidden">
+                                            <p class="text-xs text-purple-600 uppercase font-semibold">Color</p>
+                                            <p id="edit-pill-color" class="text-lg font-bold text-purple-900"></p>
+                                        </div>
+                                        <div id="edit-pill-shape-box" class="hidden">
+                                            <p class="text-xs text-purple-600 uppercase font-semibold">Shape</p>
+                                            <p id="edit-pill-shape" class="text-lg font-bold text-purple-900"></p>
+                                        </div>
+                                        <div id="edit-pill-imprint-box" class="hidden">
+                                            <p class="text-xs text-purple-600 uppercase font-semibold">Imprint</p>
+                                            <p id="edit-pill-imprint" class="text-lg font-bold text-purple-900 font-mono"></p>
+                                        </div>
+                                        <div id="edit-pill-scoring-box" class="hidden">
+                                            <p class="text-xs text-purple-600 uppercase font-semibold">Scoring</p>
+                                            <p id="edit-pill-scoring" class="text-lg font-bold text-purple-900"></p>
+                                        </div>
+                                    </div>
+                                    <a id="edit-pill-photos-link" href="#" target="_blank"
+                                       class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                        View Pill Photos on Drugs.com
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Source Links -->
+                            <div id="edit-source-link-section" class="hidden space-y-2">
+                                <a id="edit-source-link" href="#" target="_blank" class="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                    </svg>
+                                    View Complete Drug Information on DailyMed (FDA)
+                                </a>
+                                <a id="edit-drugs-com-link" href="#" target="_blank" class="inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium ml-4">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                    </svg>
+                                    View on Drugs.com (Interactions)
+                                </a>
+                            </div>
+
+                            <!-- No info message -->
+                            <div id="edit-no-drug-info" class="hidden text-center py-4">
+                                <p class="text-gray-500">No additional drug information available for this medication.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="border-t pt-4 mt-4">
                         <button type="button" onclick="discontinueMedication()" class="w-full py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 border border-red-200">
                             Discontinue Medication
@@ -426,6 +655,64 @@
 
 <script>
 const childId = '{{.Child.ID}}';
+const token = localStorage.getItem('access_token');
+
+// Medication autocomplete
+let searchTimeout = null;
+const medNameInput = document.getElementById('med-name-input');
+const suggestionsDiv = document.getElementById('med-suggestions');
+
+if (medNameInput) {
+    medNameInput.addEventListener('input', function() {
+        const query = this.value.trim();
+
+        if (searchTimeout) clearTimeout(searchTimeout);
+
+        if (query.length < 2) {
+            suggestionsDiv.classList.add('hidden');
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/medication-references?q=${encodeURIComponent(query)}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (response.ok) {
+                    const medications = await response.json();
+                    if (medications && medications.length > 0) {
+                        suggestionsDiv.innerHTML = medications.map(med => `
+                            <div class="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                                 onclick="selectMedication('${med.name.replace(/'/g, "\\'")}', '${(med.generic_name || '').replace(/'/g, "\\'")}', '${(med.drug_class || '').replace(/'/g, "\\'")}')">
+                                <div class="font-medium text-gray-900">${med.name}</div>
+                                ${med.generic_name ? `<div class="text-sm text-gray-500">${med.generic_name}</div>` : ''}
+                                ${med.drug_class ? `<div class="text-xs text-blue-600">${med.drug_class}</div>` : ''}
+                            </div>
+                        `).join('');
+                        suggestionsDiv.classList.remove('hidden');
+                    } else {
+                        suggestionsDiv.innerHTML = '<div class="px-4 py-2 text-gray-500">No medications found. You can still enter a custom name.</div>';
+                        suggestionsDiv.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Error searching medications:', error);
+            }
+        }, 300);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!medNameInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+            suggestionsDiv.classList.add('hidden');
+        }
+    });
+}
+
+function selectMedication(name, genericName, drugClass) {
+    document.getElementById('med-name-input').value = name;
+    document.getElementById('med-suggestions').classList.add('hidden');
+}
 
 function showAddMedication() {
     const modal = document.getElementById('add-medication-modal');
@@ -776,6 +1063,10 @@ document.addEventListener('DOMContentLoaded', function() {
     updateScheduleFields();
 });
 
+// Track the newly added medication for interaction handling
+let newlyAddedMedication = null;
+let detectedInteractions = null;
+
 document.getElementById('medication-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const formData = new FormData(this);
@@ -811,11 +1102,26 @@ document.getElementById('medication-form').addEventListener('submit', async func
             headers: {
                 'Content-Type': 'application/json'
             },
-            credentials: 'include',  // Send cookies for authentication
+            credentials: 'include',
             body: JSON.stringify(data)
         });
         if (response.ok) {
-            location.reload();
+            const result = await response.json();
+
+            // Check if there are interactions
+            if (result.interactions && result.interactions.length > 0) {
+                newlyAddedMedication = result.medication;
+                detectedInteractions = result.interactions;
+
+                // Hide the add modal
+                hideAddMedication();
+
+                // Show the interaction alert
+                showInteractionAlert(result.medication, result.interactions);
+            } else {
+                // No interactions, just reload
+                location.reload();
+            }
         } else {
             alert('Failed to add medication');
         }
@@ -823,6 +1129,103 @@ document.getElementById('medication-form').addEventListener('submit', async func
         alert('An error occurred');
     }
 });
+
+function showInteractionAlert(medication, interactions) {
+    const alertDiv = document.getElementById('interaction-alert');
+    const detailsDiv = document.getElementById('interaction-details');
+
+    // Build the interaction details HTML
+    let html = `<p class="font-medium mb-2">The medication "${medication.name}" may interact with:</p><ul class="list-disc list-inside space-y-1">`;
+
+    interactions.forEach(interaction => {
+        const otherDrug = interaction.drug1 === medication.name ? interaction.drug2 : interaction.drug1;
+        const severityClass = interaction.severity === 'major' ? 'font-bold text-red-900' : '';
+        html += `<li class="${severityClass}"><strong>${otherDrug}</strong> - ${interaction.description}</li>`;
+    });
+
+    html += '</ul>';
+    html += '<p class="mt-3 text-sm">Please consult with your healthcare provider about this interaction.</p>';
+
+    detailsDiv.innerHTML = html;
+    alertDiv.classList.remove('hidden');
+
+    // Scroll to the alert
+    alertDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hideInteractionAlert() {
+    document.getElementById('interaction-alert').classList.add('hidden');
+    newlyAddedMedication = null;
+    detectedInteractions = null;
+}
+
+async function acknowledgeInteraction() {
+    // User acknowledges the interaction - just hide the alert and reload
+    hideInteractionAlert();
+    location.reload();
+}
+
+async function undoMedication() {
+    if (!newlyAddedMedication) {
+        hideInteractionAlert();
+        return;
+    }
+
+    try {
+        // Delete the newly added medication
+        const response = await fetch(`/api/children/${childId}/medications/${newlyAddedMedication.id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            hideInteractionAlert();
+            location.reload();
+        } else {
+            alert('Failed to remove medication');
+        }
+    } catch (error) {
+        alert('An error occurred while removing the medication');
+    }
+}
+
+async function remindMeLater() {
+    if (!newlyAddedMedication || !detectedInteractions) {
+        hideInteractionAlert();
+        location.reload();
+        return;
+    }
+
+    try {
+        // Create a pending notification for the dashboard
+        const response = await fetch('/api/interaction-alerts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                child_id: childId,
+                medication_id: newlyAddedMedication.id,
+                medication_name: newlyAddedMedication.name,
+                interactions: detectedInteractions
+            })
+        });
+
+        if (response.ok) {
+            hideInteractionAlert();
+            location.reload();
+        } else {
+            // Even if saving fails, proceed with adding the med
+            hideInteractionAlert();
+            location.reload();
+        }
+    } catch (error) {
+        // Even if saving fails, proceed with adding the med
+        hideInteractionAlert();
+        location.reload();
+    }
+}
 
 function logout() {
     localStorage.removeItem('access_token');
@@ -871,11 +1274,214 @@ function hideEditMedication() {
     document.removeEventListener('keydown', handleEditEscKey);
     currentEditMedId = null;
     originalMedData = null;
+    // Reset additional info section
+    resetAdditionalInfo();
 }
 
 function handleEditEscKey(event) {
     if (event.key === 'Escape') {
         hideEditMedication();
+    }
+}
+
+// Additional Information section
+let additionalInfoLoaded = false;
+let additionalInfoExpanded = false;
+
+function resetAdditionalInfo() {
+    additionalInfoLoaded = false;
+    additionalInfoExpanded = false;
+    document.getElementById('additional-info-content').classList.add('hidden');
+    document.getElementById('additional-info-chevron').classList.remove('rotate-180');
+    // Hide all info sections
+    ['edit-black-box-warning', 'edit-pediatric-warnings', 'edit-side-effects-section',
+     'edit-interactions-section', 'edit-interactions-note', 'edit-generic-info', 'edit-indications-section',
+     'edit-physical-section', 'edit-source-link-section', 'edit-no-drug-info',
+     'edit-drug-loading'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    // Hide pill ID boxes
+    ['edit-pill-color-box', 'edit-pill-shape-box', 'edit-pill-imprint-box', 'edit-pill-scoring-box'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+}
+
+async function toggleAdditionalInfo() {
+    const content = document.getElementById('additional-info-content');
+    const chevron = document.getElementById('additional-info-chevron');
+
+    if (additionalInfoExpanded) {
+        // Collapse
+        content.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+        additionalInfoExpanded = false;
+    } else {
+        // Expand
+        content.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+        additionalInfoExpanded = true;
+
+        // Load info if not already loaded
+        if (!additionalInfoLoaded) {
+            await loadAdditionalDrugInfo();
+        }
+    }
+}
+
+async function loadAdditionalDrugInfo() {
+    const drugName = document.getElementById('edit-med-name').value;
+    const dosage = document.getElementById('edit-med-dosage').value;
+    const unit = document.getElementById('edit-med-unit').value;
+
+    if (!drugName) {
+        document.getElementById('edit-no-drug-info').classList.remove('hidden');
+        additionalInfoLoaded = true;
+        return;
+    }
+
+    const loading = document.getElementById('edit-drug-loading');
+    loading.classList.remove('hidden');
+
+    try {
+        const fullDosage = dosage + unit;
+        const response = await fetch(`/api/drugs/info?name=${encodeURIComponent(drugName)}&dosage=${encodeURIComponent(fullDosage)}`, {
+            credentials: 'include'
+        });
+
+        loading.classList.add('hidden');
+
+        if (!response.ok) {
+            document.getElementById('edit-no-drug-info').classList.remove('hidden');
+            additionalInfoLoaded = true;
+            return;
+        }
+
+        const data = await response.json();
+        displayEditDrugInfo(data);
+        additionalInfoLoaded = true;
+    } catch (error) {
+        loading.classList.add('hidden');
+        document.getElementById('edit-no-drug-info').classList.remove('hidden');
+        additionalInfoLoaded = true;
+    }
+}
+
+function displayEditDrugInfo(data) {
+    let hasAnyInfo = false;
+
+    // Black Box Warning
+    if (data.black_box_warning) {
+        document.getElementById('edit-black-box-text').textContent = data.black_box_warning;
+        document.getElementById('edit-black-box-warning').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Pediatric Warnings
+    if (data.pediatric_warnings && data.pediatric_warnings.length > 0) {
+        document.getElementById('edit-pediatric-text').textContent = data.pediatric_warnings[0];
+        document.getElementById('edit-pediatric-warnings').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Side Effects
+    if (data.side_effects && data.side_effects.length > 0) {
+        const list = document.getElementById('edit-side-effects-list');
+        list.innerHTML = data.side_effects.slice(0, 12).map(se => {
+            const colorClass = se.severity === 'severe' ? 'bg-red-100 text-red-700' :
+                              se.severity === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700';
+            return `<span class="px-2 py-1 ${colorClass} rounded text-xs">${se.effect}${se.frequency ? ' (' + se.frequency + ')' : ''}</span>`;
+        }).join('');
+        document.getElementById('edit-side-effects-section').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Drug Interactions
+    if (data.interactions && data.interactions.length > 0) {
+        const list = document.getElementById('edit-interactions-list');
+        list.innerHTML = data.interactions.map(int => {
+            const bgClass = int.severity === 'major' ? 'bg-red-100 border-red-300' :
+                           int.severity === 'moderate' ? 'bg-orange-100 border-orange-300' : 'bg-gray-100 border-gray-300';
+            const textClass = int.severity === 'major' ? 'text-red-800' :
+                             int.severity === 'moderate' ? 'text-orange-800' : 'text-gray-800';
+            return `<div class="p-2 ${bgClass} border rounded">
+                <strong class="${textClass}">${int.drug}</strong>
+                <p class="${textClass} text-sm mt-1">${int.description}</p>
+            </div>`;
+        }).join('');
+        document.getElementById('edit-interactions-note').classList.remove('hidden');
+        document.getElementById('edit-interactions-section').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Generic Info
+    if (data.generic_name || data.drug_class) {
+        if (data.generic_name) document.getElementById('edit-generic-name').textContent = data.generic_name;
+        if (data.drug_class) document.getElementById('edit-drug-class').textContent = data.drug_class;
+        document.getElementById('edit-generic-info').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Indications
+    if (data.indications && data.indications.length > 0) {
+        document.getElementById('edit-indications-text').textContent = data.indications[0];
+        document.getElementById('edit-indications-section').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Physical Description
+    const pd = data.physical_description || {};
+    let hasPillInfo = false;
+
+    if (pd.color && pd.color.length > 0) {
+        document.getElementById('edit-pill-color').textContent = Array.isArray(pd.color) ? pd.color.join(', ') : pd.color;
+        document.getElementById('edit-pill-color-box').classList.remove('hidden');
+        hasPillInfo = true;
+    }
+    if (pd.shape) {
+        document.getElementById('edit-pill-shape').textContent = pd.shape;
+        document.getElementById('edit-pill-shape-box').classList.remove('hidden');
+        hasPillInfo = true;
+    }
+    if (pd.imprint) {
+        document.getElementById('edit-pill-imprint').textContent = pd.imprint;
+        document.getElementById('edit-pill-imprint-box').classList.remove('hidden');
+        hasPillInfo = true;
+    }
+    if (pd.scoring) {
+        document.getElementById('edit-pill-scoring').textContent = pd.scoring;
+        document.getElementById('edit-pill-scoring-box').classList.remove('hidden');
+        hasPillInfo = true;
+    }
+
+    if (hasPillInfo || data.pill_identifier_url) {
+        if (data.pill_identifier_url) {
+            document.getElementById('edit-pill-photos-link').href = data.pill_identifier_url;
+        } else {
+            document.getElementById('edit-pill-photos-link').href = 'https://www.drugs.com/pill_identification.html?drugname=' + encodeURIComponent(document.getElementById('edit-med-name').value);
+        }
+        document.getElementById('edit-physical-section').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Source Links
+    const drugName = document.getElementById('edit-med-name').value;
+    if (data.source_url || drugName) {
+        if (data.source_url) {
+            document.getElementById('edit-source-link').href = data.source_url;
+        }
+        // Always show drugs.com link for interactions
+        const drugsComUrl = data.drugs_com_url || `https://www.drugs.com/drug-interactions/${encodeURIComponent(drugName.toLowerCase().replace(/\s+/g, '-'))}.html`;
+        document.getElementById('edit-drugs-com-link').href = drugsComUrl;
+        document.getElementById('edit-source-link-section').classList.remove('hidden');
+        hasAnyInfo = true;
+    }
+
+    // Show no info message if nothing was found
+    if (!hasAnyInfo) {
+        document.getElementById('edit-no-drug-info').classList.remove('hidden');
     }
 }
 
@@ -998,19 +1604,107 @@ document.getElementById('edit-medication-form').addEventListener('submit', async
     }
 });
 
-async function discontinueMedication() {
-    if (!confirm('Are you sure you want to discontinue this medication? This will be recorded as a treatment change.')) {
+let discontinueMedId = null;
+
+function discontinueMedication() {
+    // Save the medication ID before hiding the edit modal
+    console.log('discontinueMedication called, currentEditMedId:', currentEditMedId);
+    discontinueMedId = currentEditMedId;
+
+    if (!discontinueMedId) {
+        // Fallback: try to get from the hidden input
+        discontinueMedId = document.getElementById('edit-med-id').value;
+        console.log('Fallback to hidden input:', discontinueMedId);
+    }
+
+    // Hide edit modal (which clears currentEditMedId)
+    hideEditMedication();
+    // Show discontinue modal
+    showDiscontinueModal();
+}
+
+function showDiscontinueModal() {
+    const modal = document.getElementById('discontinue-modal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    // Reset form state
+    document.querySelectorAll('input[name="discontinue_reason"]').forEach(r => r.checked = false);
+    document.getElementById('other-reason-container').classList.add('hidden');
+    document.getElementById('other-reason-text').value = '';
+}
+
+function hideDiscontinueModal() {
+    document.getElementById('discontinue-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+    discontinueMedId = null;
+}
+
+function toggleOtherReason() {
+    const otherRadio = document.querySelector('input[name="discontinue_reason"][value="other"]');
+    const container = document.getElementById('other-reason-container');
+    if (otherRadio.checked) {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+// Listen for radio button changes to toggle other reason field
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'discontinue_reason') {
+        const container = document.getElementById('other-reason-container');
+        if (e.target.value === 'other') {
+            container.classList.remove('hidden');
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+});
+
+async function confirmDiscontinue() {
+    if (!discontinueMedId || discontinueMedId === 'null') {
+        alert('Error: No medication selected. Please try again.');
+        hideDiscontinueModal();
         return;
     }
 
+    const selectedReason = document.querySelector('input[name="discontinue_reason"]:checked');
+    if (!selectedReason) {
+        alert('Please select a reason for discontinuing this medication.');
+        return;
+    }
+
+    let reason = selectedReason.value;
+    let reasonText = '';
+
+    if (reason === 'other') {
+        reasonText = document.getElementById('other-reason-text').value.trim();
+        if (!reasonText) {
+            alert('Please specify the reason for discontinuing.');
+            return;
+        }
+    }
+
     try {
-        const response = await fetch(`/api/children/${childId}/medications/${currentEditMedId}`, {
-            method: 'DELETE',
-            credentials: 'include'
+        const response = await fetch(`/api/children/${childId}/medications/${discontinueMedId}/discontinue`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                reason: reason,
+                reason_text: reasonText
+            })
         });
 
         if (response.ok) {
-            alert('Medication discontinued. This change has been recorded for treatment tracking.');
+            const result = await response.json();
+            if (result.deleted) {
+                alert('Medication removed from records (no dosing history found).');
+            } else {
+                alert('Medication discontinued. This change has been recorded for treatment tracking.');
+            }
             location.reload();
         } else {
             const errorData = await response.json().catch(() => ({}));
@@ -1018,6 +1712,106 @@ async function discontinueMedication() {
         }
     } catch (error) {
         alert('An error occurred: ' + error.message);
+    }
+}
+
+// Medication History functions
+let historyLoaded = false;
+
+function toggleMedicationHistory() {
+    const content = document.getElementById('medication-history-content');
+    const chevron = document.getElementById('history-chevron');
+
+    if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+        if (!historyLoaded) {
+            loadMedicationHistory();
+        }
+    } else {
+        content.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+    }
+}
+
+async function loadMedicationHistory() {
+    const listContainer = document.getElementById('medication-history-list');
+
+    try {
+        const response = await fetch(`/api/children/${childId}/medications/history`, {
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const history = await response.json();
+            historyLoaded = true;
+
+            if (history.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p>No medication changes recorded yet.</p>
+                    </div>`;
+                return;
+            }
+
+            listContainer.innerHTML = history.map(entry => {
+                const date = new Date(entry.created_at);
+                const formattedDate = date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                });
+
+                let icon = '📝';
+                let iconBg = 'bg-blue-100';
+                let iconColor = 'text-blue-600';
+
+                if (entry.change_type.includes('discontinued') || entry.change_type.includes('deleted')) {
+                    icon = '🗑️';
+                    iconBg = 'bg-red-100';
+                    iconColor = 'text-red-600';
+                } else if (entry.change_type.includes('added') || entry.change_type.includes('created')) {
+                    icon = '➕';
+                    iconBg = 'bg-green-100';
+                    iconColor = 'text-green-600';
+                } else if (entry.change_type.includes('dose') || entry.change_type.includes('schedule')) {
+                    icon = '⚡';
+                    iconBg = 'bg-amber-100';
+                    iconColor = 'text-amber-600';
+                }
+
+                return `
+                    <div class="p-4 flex items-start space-x-4 hover:bg-gray-50">
+                        <div class="${iconBg} rounded-full p-2 flex-shrink-0">
+                            <span class="${iconColor}">${icon}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900">${entry.change_summary}</p>
+                            <div class="mt-1 flex items-center text-xs text-gray-500">
+                                <span>${entry.changed_by_name}</span>
+                                <span class="mx-2">•</span>
+                                <span>${formattedDate}</span>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        } else {
+            listContainer.innerHTML = `
+                <div class="p-8 text-center text-red-500">
+                    <p>Failed to load medication history.</p>
+                </div>`;
+        }
+    } catch (error) {
+        console.error('Error loading medication history:', error);
+        listContainer.innerHTML = `
+            <div class="p-8 text-center text-red-500">
+                <p>Failed to load medication history.</p>
+            </div>`;
     }
 }
 </script>
