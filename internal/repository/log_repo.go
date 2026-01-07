@@ -1031,12 +1031,47 @@ func (r *logRepo) GetDailyLogs(ctx context.Context, childID uuid.UUID, date time
 	}
 	page.SleepLogs = sleepLogs
 
+	// Get sensory logs
+	sensoryLogs, err := r.GetSensoryLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.SensoryLogs = sensoryLogs
+
+	// Get social logs
+	socialLogs, err := r.GetSocialLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.SocialLogs = socialLogs
+
+	// Get therapy logs
+	therapyLogs, err := r.GetTherapyLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.TherapyLogs = therapyLogs
+
+	// Get seizure logs
+	seizureLogs, err := r.GetSeizureLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.SeizureLogs = seizureLogs
+
+	// Get health event logs
+	healthEventLogs, err := r.GetHealthEventLogs(ctx, childID, date, date)
+	if err != nil {
+		return nil, err
+	}
+	page.HealthEventLogs = healthEventLogs
+
 	return page, nil
 }
 
 func (r *logRepo) getMedicationLogsForDate(ctx context.Context, childID uuid.UUID, date time.Time) ([]models.MedicationLog, error) {
 	query := `
-		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
 		FROM medication_logs
 		WHERE child_id = $1 AND log_date = $2
 		ORDER BY created_at DESC

@@ -1,14 +1,222 @@
 package web
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/google/uuid"
+
+	"carecompanion/internal/models"
 )
+
+// formatTimeInTZ formats a time in the given timezone
+func formatTimeInTZ(t time.Time, tz string, layout string) string {
+	if tz == "" {
+		tz = "America/New_York"
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return t.Format(layout)
+	}
+	return t.In(loc).Format(layout)
+}
+
+// LogWithTime wraps any log entry with a formatted time string
+type LogWithTime struct {
+	Entry         interface{}
+	FormattedTime string
+}
+
+// DailyLogsTemplateData is the template data for daily logs page
+type DailyLogsTemplateData struct {
+	Child          models.Child
+	Date           time.Time
+	FormattedDate  string
+	UserTimezone   string
+	Logs           *LogsWithFormattedTimes
+	MedicationsDue []models.MedicationDue
+}
+
+// LogsWithFormattedTimes contains all log types with formatted times
+type LogsWithFormattedTimes struct {
+	BehaviorLogs    []BehaviorLogWithTime
+	DietLogs        []DietLogWithTime
+	SleepLogs       []SleepLogWithTime
+	BowelLogs       []BowelLogWithTime
+	MedicationLogs  []MedicationLogWithTime
+	SpeechLogs      []SpeechLogWithTime
+	WeightLogs      []WeightLogWithTime
+	SensoryLogs     []SensoryLogWithTime
+	SocialLogs      []SocialLogWithTime
+	TherapyLogs     []TherapyLogWithTime
+	SeizureLogs     []SeizureLogWithTime
+	HealthEventLogs []HealthEventLogWithTime
+}
+
+// Log wrapper types - embed original + add FormattedTime
+type BehaviorLogWithTime struct {
+	models.BehaviorLog
+	FormattedTime string
+}
+
+type DietLogWithTime struct {
+	models.DietLog
+	FormattedTime string
+}
+
+type SleepLogWithTime struct {
+	models.SleepLog
+	FormattedTime string
+}
+
+type BowelLogWithTime struct {
+	models.BowelLog
+	FormattedTime string
+}
+
+type MedicationLogWithTime struct {
+	models.MedicationLog
+	FormattedTime string
+}
+
+type SpeechLogWithTime struct {
+	models.SpeechLog
+	FormattedTime string
+}
+
+type WeightLogWithTime struct {
+	models.WeightLog
+	FormattedTime string
+}
+
+type SensoryLogWithTime struct {
+	models.SensoryLog
+	FormattedTime string
+}
+
+type SocialLogWithTime struct {
+	models.SocialLog
+	FormattedTime string
+}
+
+type TherapyLogWithTime struct {
+	models.TherapyLog
+	FormattedTime string
+}
+
+type SeizureLogWithTime struct {
+	models.SeizureLog
+	FormattedTime string
+}
+
+type HealthEventLogWithTime struct {
+	models.HealthEventLog
+	FormattedTime string
+}
+
+// convertLogsWithTimezone converts a DailyLogPage to LogsWithFormattedTimes
+func convertLogsWithTimezone(logs *models.DailyLogPage, tz string) *LogsWithFormattedTimes {
+	if logs == nil {
+		return &LogsWithFormattedTimes{}
+	}
+
+	result := &LogsWithFormattedTimes{}
+
+	for _, log := range logs.BehaviorLogs {
+		result.BehaviorLogs = append(result.BehaviorLogs, BehaviorLogWithTime{
+			BehaviorLog:   log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.DietLogs {
+		result.DietLogs = append(result.DietLogs, DietLogWithTime{
+			DietLog:       log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.SleepLogs {
+		result.SleepLogs = append(result.SleepLogs, SleepLogWithTime{
+			SleepLog:      log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.BowelLogs {
+		result.BowelLogs = append(result.BowelLogs, BowelLogWithTime{
+			BowelLog:      log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.MedicationLogs {
+		ft := formatTimeInTZ(log.CreatedAt, tz, "3:04 PM")
+		if log.ActualTime.Valid {
+			ft = log.ActualTime.String
+		}
+		result.MedicationLogs = append(result.MedicationLogs, MedicationLogWithTime{
+			MedicationLog: log,
+			FormattedTime: ft,
+		})
+	}
+
+	for _, log := range logs.SpeechLogs {
+		result.SpeechLogs = append(result.SpeechLogs, SpeechLogWithTime{
+			SpeechLog:     log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.WeightLogs {
+		result.WeightLogs = append(result.WeightLogs, WeightLogWithTime{
+			WeightLog:     log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.SensoryLogs {
+		result.SensoryLogs = append(result.SensoryLogs, SensoryLogWithTime{
+			SensoryLog:    log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.SocialLogs {
+		result.SocialLogs = append(result.SocialLogs, SocialLogWithTime{
+			SocialLog:     log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.TherapyLogs {
+		result.TherapyLogs = append(result.TherapyLogs, TherapyLogWithTime{
+			TherapyLog:    log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.SeizureLogs {
+		result.SeizureLogs = append(result.SeizureLogs, SeizureLogWithTime{
+			SeizureLog:    log,
+			FormattedTime: formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	for _, log := range logs.HealthEventLogs {
+		result.HealthEventLogs = append(result.HealthEventLogs, HealthEventLogWithTime{
+			HealthEventLog: log,
+			FormattedTime:  formatTimeInTZ(log.CreatedAt, tz, "3:04 PM"),
+		})
+	}
+
+	return result
+}
 
 var templates *template.Template
 
@@ -68,6 +276,31 @@ var templateFuncs = template.FuncMap{
 		}
 		return af * bf
 	},
+	// formatTime formats a time in the given timezone with the specified layout
+	// Usage: {{formatTime .CreatedAt $.UserTimezone "3:04 PM"}}
+	"formatTime": func(t time.Time, tz string, layout string) string {
+		if tz == "" {
+			tz = "UTC"
+		}
+		loc, err := time.LoadLocation(tz)
+		if err != nil {
+			// Fall back to UTC if timezone is invalid
+			return t.UTC().Format(layout)
+		}
+		return t.In(loc).Format(layout)
+	},
+	// formatDate formats a date in the given timezone with the specified layout
+	// Usage: {{formatDate .LogDate $.UserTimezone "Jan 2, 2006"}}
+	"formatDate": func(t time.Time, tz string, layout string) string {
+		if tz == "" {
+			tz = "UTC"
+		}
+		loc, err := time.LoadLocation(tz)
+		if err != nil {
+			return t.UTC().Format(layout)
+		}
+		return t.In(loc).Format(layout)
+	},
 }
 
 // InitTemplates loads all templates
@@ -98,10 +331,16 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) {
 		return
 	}
 
-	err := templates.ExecuteTemplate(w, name+".html", data)
+	// Buffer the output to catch errors before writing
+	var buf bytes.Buffer
+	err := templates.ExecuteTemplate(&buf, name+".html", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Log the error and show error page
+		fmt.Printf("Template error for %s: %v\n", name, err)
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
+	buf.WriteTo(w)
 }
 
 // renderError renders an error page

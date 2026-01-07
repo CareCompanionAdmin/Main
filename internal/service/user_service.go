@@ -122,3 +122,50 @@ func (s *UserService) Deactivate(ctx context.Context, userID uuid.UUID) error {
 func (s *UserService) Reactivate(ctx context.Context, userID uuid.UUID) error {
 	return s.userRepo.UpdateStatus(ctx, userID, models.UserStatusActive)
 }
+
+// GetPreferences returns user display preferences
+func (s *UserService) GetPreferences(ctx context.Context, userID uuid.UUID) (*models.UserPreferences, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+
+	prefs := &models.UserPreferences{}
+	if user.Timezone.Valid {
+		prefs.Timezone = user.Timezone.String
+	}
+	if user.TimeFormat.Valid {
+		prefs.TimeFormat = user.TimeFormat.String
+	} else {
+		prefs.TimeFormat = "12h" // Default to 12h format
+	}
+	// Theme is stored in localStorage on the client, not in the database
+
+	return prefs, nil
+}
+
+// UpdatePreferences updates user display preferences
+func (s *UserService) UpdatePreferences(ctx context.Context, userID uuid.UUID, req *models.UpdatePreferencesRequest) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return ErrUserNotFound
+	}
+
+	if req.Timezone != nil {
+		user.Timezone.String = *req.Timezone
+		user.Timezone.Valid = *req.Timezone != ""
+	}
+	if req.TimeFormat != nil {
+		user.TimeFormat.String = *req.TimeFormat
+		user.TimeFormat.Valid = *req.TimeFormat != ""
+	}
+	// Theme is stored in localStorage on the client, not saved here
+
+	return s.userRepo.Update(ctx, user)
+}

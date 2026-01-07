@@ -96,7 +96,8 @@ func (h *LogHandler) CreateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 
 	var req models.CreateBehaviorLogRequest
 	if err := decodeJSON(r, &req); err != nil {
-		respondBadRequest(w, "Invalid request body")
+		stdlog.Printf("CreateBehaviorLog decode error: %v", err)
+		respondBadRequest(w, "Invalid request body: "+err.Error())
 		return
 	}
 
@@ -340,7 +341,8 @@ func (h *LogHandler) CreateSpeechLog(w http.ResponseWriter, r *http.Request) {
 
 	log, err := h.logService.CreateSpeechLog(r.Context(), childID, userID, &req)
 	if err != nil {
-		respondInternalError(w, "Failed to create speech log")
+		stdlog.Printf("Failed to create speech log: %v", err)
+		respondInternalError(w, "Failed to create speech log: "+err.Error())
 		return
 	}
 
@@ -415,6 +417,21 @@ func (h *LogHandler) UpdateSpeechLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondOK(w, existing)
+}
+
+func (h *LogHandler) DeleteSpeechLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteSpeechLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete speech log")
+		return
+	}
+
+	respondNoContent(w)
 }
 
 // Diet logs
@@ -526,6 +543,21 @@ func (h *LogHandler) UpdateDietLog(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, existing)
 }
 
+func (h *LogHandler) DeleteDietLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteDietLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete diet log")
+		return
+	}
+
+	respondNoContent(w)
+}
+
 // Weight logs
 func (h *LogHandler) CreateWeightLog(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)
@@ -618,6 +650,21 @@ func (h *LogHandler) UpdateWeightLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondOK(w, existing)
+}
+
+func (h *LogHandler) DeleteWeightLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteWeightLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete weight log")
+		return
+	}
+
+	respondNoContent(w)
 }
 
 // Sleep logs
@@ -725,6 +772,21 @@ func (h *LogHandler) UpdateSleepLog(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, existing)
 }
 
+func (h *LogHandler) DeleteSleepLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteSleepLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete sleep log")
+		return
+	}
+
+	respondNoContent(w)
+}
+
 // Sensory logs
 func (h *LogHandler) CreateSensoryLog(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)
@@ -825,6 +887,21 @@ func (h *LogHandler) UpdateSensoryLog(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, existing)
 }
 
+func (h *LogHandler) DeleteSensoryLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteSensoryLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete sensory log")
+		return
+	}
+
+	respondNoContent(w)
+}
+
 // Social logs
 func (h *LogHandler) CreateSocialLog(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)
@@ -922,6 +999,21 @@ func (h *LogHandler) UpdateSocialLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondOK(w, existing)
+}
+
+func (h *LogHandler) DeleteSocialLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteSocialLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete social log")
+		return
+	}
+
+	respondNoContent(w)
 }
 
 // Therapy logs
@@ -1026,6 +1118,21 @@ func (h *LogHandler) UpdateTherapyLog(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, existing)
 }
 
+func (h *LogHandler) DeleteTherapyLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteTherapyLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete therapy log")
+		return
+	}
+
+	respondNoContent(w)
+}
+
 // Seizure logs
 func (h *LogHandler) CreateSeizureLog(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)
@@ -1048,7 +1155,8 @@ func (h *LogHandler) CreateSeizureLog(w http.ResponseWriter, r *http.Request) {
 
 	log, err := h.logService.CreateSeizureLog(r.Context(), childID, userID, &req)
 	if err != nil {
-		respondInternalError(w, "Failed to create seizure log")
+		stdlog.Printf("Failed to create seizure log: %v", err)
+		respondInternalError(w, "Failed to create seizure log: "+err.Error())
 		return
 	}
 
@@ -1127,6 +1235,21 @@ func (h *LogHandler) UpdateSeizureLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondOK(w, existing)
+}
+
+func (h *LogHandler) DeleteSeizureLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteSeizureLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete seizure log")
+		return
+	}
+
+	respondNoContent(w)
 }
 
 // Health event logs
@@ -1237,4 +1360,128 @@ func (h *LogHandler) UpdateHealthEventLog(w http.ResponseWriter, r *http.Request
 	}
 
 	respondOK(w, existing)
+}
+
+func (h *LogHandler) DeleteHealthEventLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := getIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	if err := h.logService.DeleteHealthEventLog(r.Context(), logID); err != nil {
+		respondInternalError(w, "Failed to delete health event log")
+		return
+	}
+
+	respondNoContent(w)
+}
+
+// QuickSummaryResponse represents the response for quick summary
+type QuickSummaryResponse struct {
+	Category  string            `json:"category"`
+	TimeRange string            `json:"time_range"`
+	Days      []DaySummary      `json:"days"`
+}
+
+type DaySummary struct {
+	Date      string  `json:"date"`
+	DayOfWeek string  `json:"day_of_week"`
+	Score     float64 `json:"score"` // 0-100, where 100 is best
+	HasData   bool    `json:"has_data"`
+	Details   string  `json:"details,omitempty"`
+}
+
+// GetQuickSummary returns a summary of logs for a category over a time range
+func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	category := r.URL.Query().Get("category")
+	if category == "" {
+		category = "behavior"
+	}
+
+	timeRange := r.URL.Query().Get("range")
+	if timeRange == "" {
+		timeRange = "weekly"
+	}
+
+	// Calculate date range
+	now := time.Now()
+	var startDate, endDate time.Time
+	var days []DaySummary
+
+	switch timeRange {
+	case "daily":
+		startDate = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		endDate = startDate.Add(24 * time.Hour)
+		days = make([]DaySummary, 1)
+		days[0] = DaySummary{
+			Date:      startDate.Format("2006-01-02"),
+			DayOfWeek: startDate.Weekday().String(),
+		}
+	case "weekly":
+		// Start from Sunday of current week
+		daysUntilSunday := int(now.Weekday())
+		startDate = time.Date(now.Year(), now.Month(), now.Day()-daysUntilSunday, 0, 0, 0, 0, now.Location())
+		endDate = startDate.Add(7 * 24 * time.Hour)
+		days = make([]DaySummary, 7)
+		for i := 0; i < 7; i++ {
+			d := startDate.Add(time.Duration(i) * 24 * time.Hour)
+			days[i] = DaySummary{
+				Date:      d.Format("2006-01-02"),
+				DayOfWeek: d.Weekday().String()[:3],
+			}
+		}
+	case "monthly":
+		startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		endDate = startDate.AddDate(0, 1, 0)
+		numDays := int(endDate.Sub(startDate).Hours() / 24)
+		days = make([]DaySummary, numDays)
+		for i := 0; i < numDays; i++ {
+			d := startDate.Add(time.Duration(i) * 24 * time.Hour)
+			days[i] = DaySummary{
+				Date:      d.Format("2006-01-02"),
+				DayOfWeek: d.Weekday().String()[:3],
+			}
+		}
+	default:
+		respondBadRequest(w, "Invalid time range")
+		return
+	}
+
+	// Get summary data from service
+	summaryData, err := h.logService.GetQuickSummary(r.Context(), childID, category, startDate, endDate)
+	if err != nil {
+		stdlog.Printf("Error getting quick summary: %v", err)
+		respondInternalError(w, "Failed to get summary")
+		return
+	}
+
+	// Map the data to days
+	for i := range days {
+		if data, ok := summaryData[days[i].Date]; ok {
+			days[i].Score = data.Score
+			days[i].HasData = data.HasData
+			days[i].Details = data.Details
+		}
+	}
+
+	response := QuickSummaryResponse{
+		Category:  category,
+		TimeRange: timeRange,
+		Days:      days,
+	}
+
+	respondOK(w, response)
 }

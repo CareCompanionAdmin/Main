@@ -128,10 +128,23 @@ func (h *WebHandlers) DailyLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user preferences for timezone
+	userTimezone := "America/New_York" // Default timezone
+	prefs, err := h.services.User.GetPreferences(r.Context(), userID)
+	if err == nil && prefs != nil && prefs.Timezone != "" {
+		userTimezone = prefs.Timezone
+	}
+
 	dateStr := r.URL.Query().Get("date")
 	date := time.Now()
 	if dateStr != "" {
-		date, _ = time.Parse("2006-01-02", dateStr)
+		// Parse in user's timezone
+		loc, locErr := time.LoadLocation(userTimezone)
+		if locErr == nil {
+			date, _ = time.ParseInLocation("2006-01-02", dateStr, loc)
+		} else {
+			date, _ = time.ParseInLocation("2006-01-02", dateStr, time.Local)
+		}
 	}
 
 	logs, err := h.services.Log.GetDailyLogs(r.Context(), childID, date)
@@ -150,6 +163,7 @@ func (h *WebHandlers) DailyLogs(w http.ResponseWriter, r *http.Request) {
 		"Date":           date,
 		"Logs":           logs,
 		"MedicationsDue": dueMeds,
+		"UserTimezone":   userTimezone,
 	}
 
 	renderTemplate(w, "daily_logs", data)
@@ -199,6 +213,13 @@ func (h *WebHandlers) Alerts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user preferences for timezone
+	userTimezone := "America/New_York" // Default timezone
+	prefs, err := h.services.User.GetPreferences(r.Context(), userID)
+	if err == nil && prefs != nil && prefs.Timezone != "" {
+		userTimezone = prefs.Timezone
+	}
+
 	alertsPage, err := h.services.Alert.GetAlertsPage(r.Context(), childID)
 	if err != nil {
 		renderError(w, "Failed to load alerts", http.StatusInternalServerError)
@@ -206,8 +227,9 @@ func (h *WebHandlers) Alerts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"Child":      child,
-		"AlertsPage": alertsPage,
+		"Child":        child,
+		"AlertsPage":   alertsPage,
+		"UserTimezone": userTimezone,
 	}
 
 	renderTemplate(w, "alerts", data)

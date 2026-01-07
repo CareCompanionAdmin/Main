@@ -6,29 +6,40 @@
     <title>Daily Logs - CareCompanion</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
 
 <!-- Navigation -->
-<nav class="bg-white shadow-sm border-b">
+<nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
                 <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="/chat" class="text-gray-500 hover:text-gray-700" title="Family Chat">
+                <a href="/chat" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" title="Family Chat">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                 </a>
-                <a href="/settings" class="text-gray-500 hover:text-gray-700" title="Settings">
+                <a href="/settings" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" title="Settings">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </a>
-                <button onclick="logout()" class="text-gray-500 hover:text-gray-700" title="Logout">
+                <button onclick="logout()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -57,26 +68,26 @@
         </a>
         <div class="flex items-center space-x-2">
             <!-- View Mode Toggle -->
-            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
+            <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
                 <button id="daily-view-btn" onclick="setViewMode('daily')"
                     class="px-3 py-2 text-sm font-medium bg-indigo-600 text-white">
                     Daily
                 </button>
                 <button id="weekly-view-btn" onclick="setViewMode('weekly')"
-                    class="px-3 py-2 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50">
+                    class="px-3 py-2 text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                     Weekly
                 </button>
             </div>
             <input type="date" id="log-date" value="{{.Date.Format "2006-01-02"}}"
-                class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 onchange="window.location.href='?date=' + this.value + '&view=' + currentViewMode">
         </div>
     </div>
 
     <!-- Date Navigation -->
-    <div class="mb-6 bg-white rounded-xl shadow-sm border p-4">
+    <div class="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4">
         <div class="flex items-center justify-between">
-            <button onclick="navigateDate(-1)" class="flex items-center px-3 py-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+            <button onclick="navigateDate(-1)" class="flex items-center px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
@@ -84,7 +95,7 @@
             </button>
 
             <div class="text-center">
-                <button onclick="openHistoryModal()" class="flex items-center px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                <button onclick="openHistoryModal()" class="flex items-center px-4 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
@@ -92,7 +103,7 @@
                 </button>
             </div>
 
-            <button onclick="navigateDate(1)" class="flex items-center px-3 py-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" id="next-btn">
+            <button onclick="navigateDate(1)" class="flex items-center px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors" id="next-btn">
                 <span id="next-label">Next Day</span>
                 <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -101,22 +112,22 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Daily Logs for {{.Child.FirstName}}</h1>
-        <p class="text-gray-500">{{.Date.Format "Monday, January 2, 2006"}}</p>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Daily Logs for {{.Child.FirstName}}</h1>
+        <p class="text-gray-500 dark:text-gray-400">{{.Date.Format "Monday, January 2, 2006"}}</p>
     </div>
 
     <!-- Medications Due -->
     {{if .MedicationsDue}}
-    <div class="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-blue-800 mb-4">Medications Due Today</h2>
+    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-4">Medications Due Today</h2>
         <div class="space-y-3">
             {{range .MedicationsDue}}
             {{if not .IsLogged}}
-            <div class="flex items-center justify-between bg-white p-4 rounded-lg">
+            <div class="flex items-center justify-between bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
                 <div>
-                    <p class="font-medium text-gray-900">{{.Medication.Name}}</p>
-                    <p class="text-sm text-gray-500">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{.Schedule.TimeOfDay}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">{{.Medication.Name}}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{.Schedule.TimeOfDay}}</p>
                 </div>
                 <button onclick="logMedication('{{.Schedule.ID}}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                     Mark as Taken
@@ -129,8 +140,8 @@
     {{end}}
 
     <!-- Log Type Grid -->
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Entry</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Entry</h2>
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
             <!-- Behavior -->
             <button onclick="openModal('behavior')" class="flex flex-col items-center p-4 rounded-xl bg-red-50 hover:bg-red-100 transition-colors">
@@ -139,7 +150,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Behavior</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Behavior</span>
             </button>
 
             <!-- Diet -->
@@ -149,7 +160,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Meal</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Meal</span>
             </button>
 
             <!-- Sleep -->
@@ -159,7 +170,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Sleep</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Sleep</span>
             </button>
 
             <!-- Bowel -->
@@ -169,7 +180,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Bowel</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Bowel</span>
             </button>
 
             <!-- Medication -->
@@ -179,7 +190,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Medication</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Medication</span>
             </button>
 
             <!-- Speech -->
@@ -189,7 +200,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Speech</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Speech</span>
             </button>
 
             <!-- Weight -->
@@ -199,7 +210,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Weight</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Weight</span>
             </button>
 
             <!-- Sensory -->
@@ -210,7 +221,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Sensory</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Sensory</span>
             </button>
 
             <!-- Social -->
@@ -220,7 +231,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Social</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Social</span>
             </button>
 
             <!-- Therapy -->
@@ -230,7 +241,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Therapy</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Therapy</span>
             </button>
 
             <!-- Seizure -->
@@ -240,7 +251,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Seizure</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Seizure</span>
             </button>
 
             <!-- Health Event -->
@@ -250,19 +261,19 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700">Health</span>
+                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Health</span>
             </button>
         </div>
     </div>
 
     <!-- Today's Logs -->
-    <div class="bg-white rounded-xl shadow-sm border p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Today's Entries</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Today's Entries</h2>
 
-        {{if or .Logs.BehaviorLogs .Logs.DietLogs .Logs.MedicationLogs .Logs.BowelLogs .Logs.SleepLogs .Logs.SpeechLogs .Logs.WeightLogs}}
+        {{if or .Logs.BehaviorLogs .Logs.DietLogs .Logs.MedicationLogs .Logs.BowelLogs .Logs.SleepLogs .Logs.SpeechLogs .Logs.WeightLogs .Logs.SensoryLogs .Logs.SocialLogs .Logs.TherapyLogs .Logs.SeizureLogs .Logs.HealthEventLogs}}
         <div class="space-y-3">
             {{range .Logs.BehaviorLogs}}
-            <div onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors"
+            <div onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Behavior"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
@@ -286,24 +297,24 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900">Behavior</p>
-                    <p class="text-sm text-gray-600">
+                    <p class="font-medium text-gray-900 dark:text-white">Behavior</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
                         {{if gt .Meltdowns 0}}Meltdowns: {{.Meltdowns}} {{end}}
                         {{if gt .StimmingEpisodes 0}}Stimming: {{.StimmingEpisodes}} {{end}}
                         {{if gt .AggressionIncidents 0}}Aggression: {{.AggressionIncidents}} {{end}}
                         {{if gt .SelfInjuryIncidents 0}}Self-injury: {{.SelfInjuryIncidents}} {{end}}
                         {{if .Notes.Valid}}{{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.DietLogs}}
-            <div onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+            <div onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Meal"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
@@ -324,18 +335,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900">Meal{{if .MealType.Valid}}: {{.MealType.String}}{{end}}</p>
-                    <p class="text-sm text-gray-600">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Meal{{if .MealType.Valid}}: {{.MealType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.SleepLogs}}
-            <div onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+            <div onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sleep"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
@@ -355,18 +366,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900">Sleep</p>
-                    <p class="text-sm text-gray-600">{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{if .TotalSleepMinutes}} - {{.TotalSleepMinutes}} min{{end}}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Sleep</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{if .TotalSleepMinutes}} - {{.TotalSleepMinutes}} min{{end}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.BowelLogs}}
-            <div onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors"
+            <div onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Bowel Movement"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
@@ -381,22 +392,24 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900">Bowel Movement</p>
-                    <p class="text-sm text-gray-600">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Bowel Movement</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.MedicationLogs}}
-            <div onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+            <div onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Medication"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{if .ActualTime.Valid}}{{.ActualTime.String}}{{else}}{{.CreatedAt.Format "3:04 PM"}}{{end}}"
                 data-entry-status="{{.Status}}"
+                data-entry-actualtime="{{if .ActualTime.Valid}}{{.ActualTime.String}}{{end}}"
+                data-entry-dosagegiven="{{if .DosageGiven.Valid}}{{.DosageGiven.String}}{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
                 <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -404,18 +417,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900">Medication</p>
-                    <p class="text-sm text-gray-600">Status: {{.Status}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Medication</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Status: {{.Status}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{if .ActualTime.Valid}}{{.ActualTime.String}}{{else}}{{.CreatedAt.Format "3:04 PM"}}{{end}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.SpeechLogs}}
-            <div onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 rounded-lg cursor-pointer hover:bg-teal-100 transition-colors"
+            <div onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Speech"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
@@ -433,18 +446,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900">Speech</p>
-                    <p class="text-sm text-gray-600">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Speech</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.WeightLogs}}
-            <div onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 rounded-lg cursor-pointer hover:bg-pink-100 transition-colors"
+            <div onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg cursor-pointer hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Weight"
                 data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
@@ -457,28 +470,190 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900">Weight</p>
-                    <p class="text-sm text-gray-600">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">Weight</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+            {{end}}
+
+            {{range .Logs.SensoryLogs}}
+            <div onclick="showDetails('sensory', this)" class="flex items-start space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Sensory"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-overloadepisodes="{{.OverloadEpisodes}}"
+                data-entry-overallregulation="{{if .OverallRegulation}}{{.OverallRegulation}}{{else}}0{{end}}"
+                data-entry-overloadtriggers="{{range $i, $v := .OverloadTriggers}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-sensoryseekingbehaviors="{{range $i, $v := .SensorySeekingBehaviors}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-calmingstrategiesused="{{range $i, $v := .CalmingStrategiesUsed}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
+                <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium text-gray-900 dark:text-white">Sensory</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        {{if gt .OverloadEpisodes 0}}Overload episodes: {{.OverloadEpisodes}} {{end}}
+                        {{if .OverallRegulation}}{{if gt (deref .OverallRegulation) 0}}Regulation: {{deref .OverallRegulation}}/5 {{end}}{{end}}
+                        {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+            {{end}}
+
+            {{range .Logs.SocialLogs}}
+            <div onclick="showDetails('social', this)" class="flex items-start space-x-3 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Social"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-eyecontactlevel="{{if .EyeContactLevel}}{{.EyeContactLevel}}{{else}}0{{end}}"
+                data-entry-socialengagementlevel="{{if .SocialEngagementLevel}}{{.SocialEngagementLevel}}{{else}}0{{end}}"
+                data-entry-peerinteractions="{{.PeerInteractions}}"
+                data-entry-positiveinteractions="{{.PositiveInteractions}}"
+                data-entry-conflicts="{{.Conflicts}}"
+                data-entry-parallelplayminutes="{{if .ParallelPlayMinutes}}{{.ParallelPlayMinutes}}{{else}}0{{end}}"
+                data-entry-cooperativeplayminutes="{{if .CooperativePlayMinutes}}{{.CooperativePlayMinutes}}{{else}}0{{end}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
+                <div class="w-10 h-10 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium text-gray-900 dark:text-white">Social</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        {{if .PeerInteractions}}Interactions: {{.PeerInteractions}} {{end}}
+                        {{if .SocialEngagementLevel}}Engagement: {{.SocialEngagementLevel}}/5 {{end}}
+                        {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+            {{end}}
+
+            {{range .Logs.TherapyLogs}}
+            <div onclick="showDetails('therapy', this)" class="flex items-start space-x-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Therapy"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-therapytype="{{if .TherapyType.Valid}}{{.TherapyType.String}}{{end}}"
+                data-entry-therapistname="{{if .TherapistName.Valid}}{{.TherapistName.String}}{{end}}"
+                data-entry-durationminutes="{{if .DurationMinutes}}{{.DurationMinutes}}{{else}}0{{end}}"
+                data-entry-goalsworkedon="{{range $i, $v := .GoalsWorkedOn}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-homeworkassigned="{{if .HomeworkAssigned.Valid}}{{.HomeworkAssigned.String}}{{end}}"
+                data-entry-progressnotes="{{if .ProgressNotes.Valid}}{{.ProgressNotes.String}}{{end}}">
+                <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium text-gray-900 dark:text-white">Therapy{{if .TherapyType.Valid}} - {{.TherapyType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        {{if .DurationMinutes}}{{.DurationMinutes}} min {{end}}
+                        {{if .TherapistName.Valid}}with {{.TherapistName.String}}{{end}}
+                        {{if .ProgressNotes.Valid}} - {{.ProgressNotes.String}}{{end}}
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+            {{end}}
+
+            {{range .Logs.SeizureLogs}}
+            <div onclick="showDetails('seizure', this)" class="flex items-start space-x-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Seizure"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-seizuretype="{{if .SeizureType.Valid}}{{.SeizureType.String}}{{end}}"
+                data-entry-durationseconds="{{if .DurationSeconds}}{{.DurationSeconds}}{{else}}0{{end}}"
+                data-entry-triggers="{{range $i, $v := .Triggers}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-warningsigns="{{range $i, $v := .WarningSigns}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-postictalsymptoms="{{range $i, $v := .PostIctalSymptoms}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-rescuemedicationgiven="{{.RescueMedicationGiven}}"
+                data-entry-rescuemedicationname="{{if .RescueMedicationName.Valid}}{{.RescueMedicationName.String}}{{end}}"
+                data-entry-called911="{{.Called911}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
+                <div class="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium text-gray-900 dark:text-white">Seizure{{if .SeizureType.Valid}} - {{.SeizureType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        {{if .DurationSeconds}}Duration: {{.DurationSeconds}}s {{end}}
+                        {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+            {{end}}
+
+            {{range .Logs.HealthEventLogs}}
+            <div onclick="showDetails('health_event', this)" class="flex items-start space-x-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                data-entry-id="{{.ID}}"
+                data-entry-type="Health Event"
+                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-eventtype="{{if .EventType.Valid}}{{.EventType.String}}{{end}}"
+                data-entry-description="{{if .Description.Valid}}{{.Description.String}}{{end}}"
+                data-entry-symptoms="{{range $i, $v := .Symptoms}}{{if $i}}, {{end}}{{$v}}{{end}}"
+                data-entry-temperaturef="{{if .TemperatureF}}{{.TemperatureF}}{{else}}0{{end}}"
+                data-entry-providername="{{if .ProviderName.Valid}}{{.ProviderName.String}}{{end}}"
+                data-entry-diagnosis="{{if .Diagnosis.Valid}}{{.Diagnosis.String}}{{end}}"
+                data-entry-treatment="{{if .Treatment.Valid}}{{.Treatment.String}}{{end}}"
+                data-entry-followupdate="{{if .FollowUpDate.Valid}}{{.FollowUpDate.Time.Format "2006-01-02"}}{{end}}"
+                data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
+                <div class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <p class="font-medium text-gray-900 dark:text-white">Health Event{{if .EventType.Valid}} - {{.EventType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        {{if .Description.Valid}}{{.Description.String}}{{end}}
+                        {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
+                    </p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
         </div>
         {{else}}
-        <p class="text-gray-500 text-center py-8">No entries yet today. Start logging!</p>
+        <p class="text-gray-500 dark:text-gray-400 text-center py-8">No entries yet today. Start logging!</p>
         {{end}}
     </div>
 </main>
 
 <!-- History Modal -->
 <div id="history-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeHistoryModal(event)">
-    <div class="bg-white rounded-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900">Log History</h2>
-            <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-600">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Log History</h2>
+            <button onclick="closeHistoryModal()" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -487,34 +662,34 @@
 
         <!-- Quick Jump -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Jump to Date</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jump to Date</label>
             <input type="date" id="history-date-picker"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 onchange="jumpToHistoryDate()">
         </div>
 
         <!-- Quick Presets -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Quick Jump</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Jump</label>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="jumpToPreset('yesterday')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">Yesterday</button>
-                <button onclick="jumpToPreset('week')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">1 Week Ago</button>
-                <button onclick="jumpToPreset('twoweeks')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">2 Weeks Ago</button>
-                <button onclick="jumpToPreset('month')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">1 Month Ago</button>
+                <button onclick="jumpToPreset('yesterday')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">Yesterday</button>
+                <button onclick="jumpToPreset('week')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">1 Week Ago</button>
+                <button onclick="jumpToPreset('twoweeks')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">2 Weeks Ago</button>
+                <button onclick="jumpToPreset('month')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">1 Month Ago</button>
             </div>
         </div>
 
         <!-- Recent Dates with Data -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Recent Days with Data</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent Days with Data</label>
             <div id="recent-dates-list" class="space-y-2 max-h-64 overflow-y-auto">
-                <p class="text-gray-500 text-sm">Loading...</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
             </div>
         </div>
 
         <!-- Calendar View -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Calendar View</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Calendar View</label>
             <div class="flex justify-between items-center mb-2">
                 <button onclick="changeHistoryMonth(-1)" class="p-1 hover:bg-gray-100 rounded">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -533,16 +708,16 @@
             </div>
         </div>
 
-        <button onclick="closeHistoryModal()" class="w-full py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
+        <button onclick="closeHistoryModal()" class="w-full py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Close</button>
     </div>
 </div>
 
 <!-- Modal Container -->
 <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeModal(event)">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4">
-            <h2 id="modal-title" class="text-xl font-bold text-gray-900">Add Entry</h2>
-            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+            <h2 id="modal-title" class="text-xl font-bold text-gray-900 dark:text-white">Add Entry</h2>
+            <button onclick="closeModal()" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -561,22 +736,22 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-3 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10)</label>
-                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mood (1-10)</label>
+                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="1-10">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Energy (1-10)</label>
-                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Energy (1-10)</label>
+                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="1-10">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Anxiety (1-10)</label>
-                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Anxiety (1-10)</label>
+                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="1-10">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Interpersonal Behavior</label>
-                    <select name="interpersonal_behavior" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interpersonal Behavior</label>
+                    <select name="interpersonal_behavior" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                         <option value="">Select...</option>
                         <option value="withdrawn">Withdrawn</option>
                         <option value="somewhat_withdrawn">Somewhat Withdrawn</option>
@@ -586,8 +761,8 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming</label>
-                    <select name="stimming_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stimming</label>
+                    <select name="stimming_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                         <option value="">Select...</option>
                         <option value="none">None</option>
                         <option value="low">Low</option>
@@ -598,22 +773,22 @@ const formTemplates = {
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
-                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meltdowns</label>
+                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Aggression Incidents</label>
-                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aggression Incidents</label>
+                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Self-Injury Incidents</label>
-                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Self-Injury Incidents</label>
+                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                    <select name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="toggleLocationOther(this)">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                    <select name="location" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" onchange="toggleLocationOther(this)">
                         <option value="">Select location...</option>
                         <option value="home">Home</option>
                         <option value="school">School</option>
@@ -623,19 +798,19 @@ const formTemplates = {
             </div>
             <div id="location-other-container" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Specify Location</label>
-                <input type="text" name="location_other" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter location">
+                <input type="text" name="location_other" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Enter location">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
-                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
+                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Positive Behaviors</label>
-                <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
+                <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -651,12 +826,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -667,8 +842,8 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
-                    <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meal Type</label>
+                    <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                         <option value="">Select...</option>
                         <option value="breakfast">Breakfast</option>
                         <option value="lunch">Lunch</option>
@@ -677,8 +852,8 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Appetite Level</label>
-                    <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Appetite Level</label>
+                    <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                         <option value="">Select...</option>
                         <option value="high">High</option>
                         <option value="normal">Normal</option>
@@ -689,25 +864,25 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foods Eaten</label>
-                <input type="text" name="foods_eaten" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., eggs, toast, apple)">
+                <input type="text" name="foods_eaten" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., eggs, toast, apple)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foods Refused</label>
-                <input type="text" name="foods_refused" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <input type="text" name="foods_refused" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Water Intake (oz)</label>
-                    <input type="number" name="water_intake_oz" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="oz">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Water Intake (oz)</label>
+                    <input type="number" name="water_intake_oz" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="oz">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">New Food Tried</label>
-                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Food Tried</label>
+                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
                 </div>
             </div>
             <div id="new-food-acceptance-container" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">New Food Acceptance</label>
-                <select name="new_food_acceptance" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <select name="new_food_acceptance" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     <option value="">Select...</option>
                     <option value="touch_lips">Touch Lips</option>
                     <option value="touch_tongue">Touch Tongue</option>
@@ -717,7 +892,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Supplements Taken</label>
-                <input type="text" name="supplements_taken" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <input type="text" name="supplements_taken" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
             </div>
             <div class="flex items-center space-x-4">
                 <div class="flex items-center">
@@ -727,11 +902,11 @@ const formTemplates = {
             </div>
             <div id="reaction-details" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Reaction Details</label>
-                <textarea name="reaction_details" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Describe the reaction..."></textarea>
+                <textarea name="reaction_details" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Describe the reaction..."></textarea>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -747,12 +922,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -763,18 +938,18 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Bedtime</label>
-                    <input type="time" name="bedtime" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bedtime</label>
+                    <input type="time" name="bedtime" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Wake Time</label>
-                    <input type="time" name="wake_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wake Time</label>
+                    <input type="time" name="wake_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Quality</label>
-                    <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sleep Quality</label>
+                    <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                         <option value="">Select...</option>
                         <option value="excellent">Excellent</option>
                         <option value="good">Good</option>
@@ -783,13 +958,13 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Sleep (minutes)</label>
-                    <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 480">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Sleep (minutes)</label>
+                    <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 480">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Night Wakings</label>
-                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
             </div>
             <div class="flex flex-wrap gap-4">
                 <div class="flex items-center">
@@ -807,11 +982,11 @@ const formTemplates = {
             </div>
             <div id="sleep-aid-name" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Aid Name</label>
-                <input type="text" name="sleep_aid_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Melatonin">
+                <input type="text" name="sleep_aid_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., Melatonin">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -827,12 +1002,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -843,13 +1018,13 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Bristol Scale (1-7)</label>
-                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bristol Scale (1-7)</label>
+                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     <p class="text-xs text-gray-500 mt-1">1=hard lumps, 4=smooth, 7=liquid</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pain Level (1-10)</label>
-                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pain Level (1-10)</label>
+                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="If any">
                 </div>
             </div>
             <div class="flex flex-wrap gap-4">
@@ -864,7 +1039,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -880,12 +1055,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -897,15 +1072,15 @@ const formTemplates = {
             <p class="text-sm text-gray-600">Log an as-needed medication dose.</p>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name</label>
-                <input type="text" name="medication_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="text" name="medication_name" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                <input type="text" name="dosage" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 10mg">
+                <input type="text" name="dosage" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 10mg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
         </form>
@@ -914,41 +1089,41 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Verbal Output (1-10)</label>
-                    <input type="number" name="verbal_output_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Verbal Output (1-5)</label>
+                    <input type="number" name="verbal_output_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Clarity (1-10)</label>
-                    <input type="number" name="clarity_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Clarity (1-5)</label>
+                    <input type="number" name="clarity_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">New Words</label>
-                    <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Words</label>
+                    <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Lost Words</label>
-                    <input type="text" name="lost_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lost Words</label>
+                    <input type="text" name="lost_words" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Echolalia Level (1-10)</label>
-                <input type="number" name="echolalia_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0 = none, 10 = constant">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Echolalia Level (0-5)</label>
+                <input type="number" name="echolalia_level" min="0" max="5" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="0 = none, 5 = constant">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Communication Attempts</label>
-                    <input type="number" name="communication_attempts" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Communication Attempts</label>
+                    <input type="number" name="communication_attempts" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Successful Communications</label>
-                    <input type="number" name="successful_communications" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Successful Communications</label>
+                    <input type="number" name="successful_communications" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -964,12 +1139,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -980,15 +1155,15 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Weight (lbs)</label>
-                <input type="number" step="0.1" name="weight_lbs" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" step="0.1" name="weight_lbs" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Height (inches)</label>
-                <input type="number" step="0.1" name="height_inches" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" step="0.1" name="height_inches" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1004,12 +1179,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1018,38 +1193,59 @@ const formTemplates = {
     `,
     sensory: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Sensitivity Level (1-10)</label>
-                <input type="number" name="sensitivity_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overall Regulation (1-5)</label>
+                    <select name="overall_regulation" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="1">1 - Very Dysregulated</option>
+                        <option value="2">2 - Dysregulated</option>
+                        <option value="3">3 - Moderate</option>
+                        <option value="4">4 - Regulated</option>
+                        <option value="5">5 - Well Regulated</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overload Episodes</label>
+                    <input type="number" name="overload_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
-                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overload Triggers</label>
+                <input type="text" name="overload_triggers" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., loud noises, bright lights)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensory Seeking Behaviors</label>
+                <input type="text" name="sensory_seeking_behaviors" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., spinning, jumping)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Calming Strategies Used</label>
+                <input type="text" name="calming_strategies_used" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., weighted blanket, quiet space)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Scope</label>
                 <div class="flex space-x-4 mb-3">
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Day</span>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Day</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Momentary</span>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Momentary</span>
                     </label>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1058,42 +1254,78 @@ const formTemplates = {
     `,
     social: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Interaction Type</label>
-                <select name="interaction_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="peer">Peer Interaction</option>
-                    <option value="adult">Adult Interaction</option>
-                    <option value="group">Group Activity</option>
-                </select>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Eye Contact Level (1-5)</label>
+                    <select name="eye_contact_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="1">1 - None</option>
+                        <option value="2">2 - Minimal</option>
+                        <option value="3">3 - Some</option>
+                        <option value="4">4 - Good</option>
+                        <option value="5">5 - Excellent</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Social Engagement (1-5)</label>
+                    <select name="social_engagement_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="1">1 - Withdrawn</option>
+                        <option value="2">2 - Low</option>
+                        <option value="3">3 - Moderate</option>
+                        <option value="4">4 - Good</option>
+                        <option value="5">5 - Very Engaged</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Peer Interactions</label>
+                    <input type="number" name="peer_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Positive Interactions</label>
+                    <input type="number" name="positive_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conflicts</label>
+                    <input type="number" name="conflicts" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parallel Play (minutes)</label>
+                    <input type="number" name="parallel_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cooperative Play (minutes)</label>
+                    <input type="number" name="cooperative_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Quality (1-10)</label>
-                <input type="number" name="interaction_quality" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Scope</label>
                 <div class="flex space-x-4 mb-3">
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Day</span>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Day</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Momentary</span>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Momentary</span>
                     </label>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1102,44 +1334,60 @@ const formTemplates = {
     `,
     therapy: `
         <form id="entry-form" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Therapy Type</label>
-                <select name="therapy_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="aba">ABA</option>
-                    <option value="speech">Speech Therapy</option>
-                    <option value="occupational">Occupational Therapy</option>
-                    <option value="physical">Physical Therapy</option>
-                    <option value="other">Other</option>
-                </select>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Therapy Type</label>
+                    <select name="therapy_type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="aba">ABA</option>
+                        <option value="speech">Speech Therapy</option>
+                        <option value="occupational">Occupational Therapy</option>
+                        <option value="physical">Physical Therapy</option>
+                        <option value="behavioral">Behavioral Therapy</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (minutes)</label>
+                    <input type="number" name="duration_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                <input type="number" name="duration_minutes" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Therapist Name</label>
+                <input type="text" name="therapist_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Optional">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Goals Worked On</label>
+                <input type="text" name="goals_worked_on" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Progress Notes</label>
+                <textarea name="progress_notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="How did the session go?"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Homework Assigned</label>
+                <input type="text" name="homework_assigned" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Optional">
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Scope</label>
                 <div class="flex space-x-4 mb-3">
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Day</span>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Day</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Momentary</span>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">Momentary</span>
                     </label>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1148,43 +1396,68 @@ const formTemplates = {
     `,
     seizure: `
         <form id="entry-form" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time of Seizure <span class="text-red-500">*</span></label>
+                    <input type="time" name="log_time" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (seconds)</label>
+                    <input type="number" name="duration_seconds" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+            </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Seizure Type</label>
-                <select name="seizure_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seizure Type</label>
+                <select name="seizure_type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <option value="">Select...</option>
                     <option value="absence">Absence</option>
                     <option value="tonic_clonic">Tonic-Clonic</option>
                     <option value="focal">Focal</option>
+                    <option value="myoclonic">Myoclonic</option>
+                    <option value="atonic">Atonic</option>
                     <option value="unknown">Unknown</option>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Duration (seconds)</label>
-                <input type="number" name="duration_seconds" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Triggers</label>
+                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., flashing lights, stress)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Warning Signs</label>
+                <input type="text" name="warning_signs" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., aura, dizziness)">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Post-Ictal Symptoms</label>
+                <input type="text" name="post_ictal_symptoms" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., confusion, fatigue)">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" name="rescue_medication_given" id="rescue_med_check" class="w-4 h-4" onchange="document.getElementById('rescue_med_name').classList.toggle('hidden', !this.checked)">
+                    <label for="rescue_med_check" class="text-sm font-medium text-gray-700 dark:text-gray-300">Rescue Medication Given</label>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" name="called_911" id="called_911_check" class="w-4 h-4">
+                    <label for="called_911_check" class="text-sm font-medium text-gray-700 dark:text-gray-300">Called 911</label>
+                </div>
+            </div>
+            <div id="rescue_med_name" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rescue Medication Name</label>
+                <input type="text" name="rescue_medication_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
-                <div class="flex space-x-4 mb-3">
-                    <label class="flex items-center">
-                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Day</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Momentary</span>
-                    </label>
-                </div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time</label>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
                     </div>
-                    <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1193,46 +1466,85 @@ const formTemplates = {
     `,
     health: `
         <form id="entry-form" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Type</label>
+                    <select name="event_type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <option value="">Select...</option>
+                        <option value="illness">Illness</option>
+                        <option value="injury">Injury</option>
+                        <option value="appointment">Doctor Appointment</option>
+                        <option value="vaccination">Vaccination</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temperature (°F)</label>
+                    <input type="number" name="temperature_f" step="0.1" min="90" max="110" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 98.6">
+                </div>
+            </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
-                <select name="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="illness">Illness</option>
-                    <option value="injury">Injury</option>
-                    <option value="appointment">Doctor Appointment</option>
-                    <option value="vaccination">Vaccination</option>
-                    <option value="other">Other</option>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <input type="text" name="description" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Brief description of the event">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symptoms</label>
+                <input type="text" name="symptoms" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., fever, cough, headache)">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Provider Name</label>
+                    <input type="text" name="provider_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Doctor/clinic name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Diagnosis</label>
+                    <input type="text" name="diagnosis" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Treatment</label>
+                <input type="text" name="treatment" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Prescribed treatment or medications">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Follow-up Date</label>
+                    <input type="date" name="follow_up_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Date</label>
+                    <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+            </div>
+            <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
+        </form>
+    `,
+    medication: `
+        <form id="entry-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <option value="taken">Taken</option>
+                    <option value="missed">Missed</option>
+                    <option value="skipped">Skipped</option>
+                    <option value="partial">Partial</option>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input type="text" name="description" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Actual Time</label>
+                <input type="time" name="actual_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dosage Given</label>
+                <input type="text" name="dosage_given" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 10mg, 1 tablet">
             </div>
-            <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
-                <div class="flex space-x-4 mb-3">
-                    <label class="flex items-center">
-                        <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Day</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700">Momentary</span>
-                    </label>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}">
-                    </div>
-                    <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    </div>
-                </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Any notes about this dose"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
@@ -1296,7 +1608,6 @@ function editEntry(type, element) {
                 if (ds.entryInterpersonal) form.querySelector('[name="interpersonal_behavior"]').value = ds.entryInterpersonal;
                 if (ds.entryStimminglevel) form.querySelector('[name="stimming_level"]').value = ds.entryStimminglevel;
                 form.querySelector('[name="meltdowns"]').value = ds.entryMeltdowns || 0;
-                form.querySelector('[name="stimming_episodes"]').value = ds.entryStimming || 0;
                 form.querySelector('[name="aggression_incidents"]').value = ds.entryAggression || 0;
                 form.querySelector('[name="self_injury_incidents"]').value = ds.entrySelfinjury || 0;
                 if (ds.entryLocation) {
@@ -1368,6 +1679,69 @@ function editEntry(type, element) {
             case 'weight':
                 if (ds.entryWeightlbs && parseFloat(ds.entryWeightlbs) > 0) form.querySelector('[name="weight_lbs"]').value = ds.entryWeightlbs;
                 if (ds.entryHeightinches && parseFloat(ds.entryHeightinches) > 0) form.querySelector('[name="height_inches"]').value = ds.entryHeightinches;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'medication':
+                if (ds.entryStatus) form.querySelector('[name="status"]').value = ds.entryStatus;
+                if (ds.entryActualtime) form.querySelector('[name="actual_time"]').value = ds.entryActualtime;
+                if (ds.entryDosagegiven) form.querySelector('[name="dosage_given"]').value = ds.entryDosagegiven;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'sensory':
+                if (ds.entryOverallregulation && parseInt(ds.entryOverallregulation) > 0) form.querySelector('[name="overall_regulation"]').value = ds.entryOverallregulation;
+                form.querySelector('[name="overload_episodes"]').value = ds.entryOverloadepisodes || 0;
+                if (ds.entryOverloadtriggers) form.querySelector('[name="overload_triggers"]').value = ds.entryOverloadtriggers;
+                if (ds.entrySensoryseekingbehaviors) form.querySelector('[name="sensory_seeking_behaviors"]').value = ds.entrySensoryseekingbehaviors;
+                if (ds.entryCalmingstrategiesused) form.querySelector('[name="calming_strategies_used"]').value = ds.entryCalmingstrategiesused;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'social':
+                if (ds.entryEyecontactlevel && parseInt(ds.entryEyecontactlevel) > 0) form.querySelector('[name="eye_contact_level"]').value = ds.entryEyecontactlevel;
+                if (ds.entrySocialengagementlevel && parseInt(ds.entrySocialengagementlevel) > 0) form.querySelector('[name="social_engagement_level"]').value = ds.entrySocialengagementlevel;
+                form.querySelector('[name="peer_interactions"]').value = ds.entryPeerinteractions || 0;
+                form.querySelector('[name="positive_interactions"]').value = ds.entryPositiveinteractions || 0;
+                form.querySelector('[name="conflicts"]').value = ds.entryConflicts || 0;
+                if (ds.entryParallelplayminutes && parseInt(ds.entryParallelplayminutes) > 0) form.querySelector('[name="parallel_play_minutes"]').value = ds.entryParallelplayminutes;
+                if (ds.entryCooperativeplayminutes && parseInt(ds.entryCooperativeplayminutes) > 0) form.querySelector('[name="cooperative_play_minutes"]').value = ds.entryCooperativeplayminutes;
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'therapy':
+                if (ds.entryTherapytype) form.querySelector('[name="therapy_type"]').value = ds.entryTherapytype;
+                if (ds.entryTherapistname) form.querySelector('[name="therapist_name"]').value = ds.entryTherapistname;
+                if (ds.entryDurationminutes && parseInt(ds.entryDurationminutes) > 0) form.querySelector('[name="duration_minutes"]').value = ds.entryDurationminutes;
+                if (ds.entryGoalsworkedon) form.querySelector('[name="goals_worked_on"]').value = ds.entryGoalsworkedon;
+                if (ds.entryProgressnotes) form.querySelector('[name="progress_notes"]').value = ds.entryProgressnotes;
+                if (ds.entryHomeworkassigned) form.querySelector('[name="homework_assigned"]').value = ds.entryHomeworkassigned;
+                break;
+            case 'seizure':
+                if (ds.entrySeizuretype) form.querySelector('[name="seizure_type"]').value = ds.entrySeizuretype;
+                if (ds.entryDurationseconds && parseInt(ds.entryDurationseconds) > 0) form.querySelector('[name="duration_seconds"]').value = ds.entryDurationseconds;
+                if (ds.entryTriggers) form.querySelector('[name="triggers"]').value = ds.entryTriggers;
+                if (ds.entryWarningsigns) form.querySelector('[name="warning_signs"]').value = ds.entryWarningsigns;
+                if (ds.entryPostictalsymptoms) form.querySelector('[name="post_ictal_symptoms"]').value = ds.entryPostictalsymptoms;
+                if (ds.entryRescuemedicationgiven === 'true') {
+                    const checkbox = form.querySelector('[name="rescue_medication_given"]');
+                    if (checkbox) checkbox.checked = true;
+                    const rescueMedSection = document.getElementById('rescue-medication-section');
+                    if (rescueMedSection) rescueMedSection.classList.remove('hidden');
+                }
+                if (ds.entryRescuemedicationname) form.querySelector('[name="rescue_medication_name"]').value = ds.entryRescuemedicationname;
+                if (ds.entryCalled911 === 'true') {
+                    const checkbox = form.querySelector('[name="called_911"]');
+                    if (checkbox) checkbox.checked = true;
+                }
+                if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
+                break;
+            case 'health_event':
+            case 'health':
+                if (ds.entryEventtype) form.querySelector('[name="event_type"]').value = ds.entryEventtype;
+                if (ds.entryDescription) form.querySelector('[name="description"]').value = ds.entryDescription;
+                if (ds.entrySymptoms) form.querySelector('[name="symptoms"]').value = ds.entrySymptoms;
+                if (ds.entryTemperaturef && parseFloat(ds.entryTemperaturef) > 0) form.querySelector('[name="temperature_f"]').value = ds.entryTemperaturef;
+                if (ds.entryProvidername) form.querySelector('[name="provider_name"]').value = ds.entryProvidername;
+                if (ds.entryDiagnosis) form.querySelector('[name="diagnosis"]').value = ds.entryDiagnosis;
+                if (ds.entryTreatment) form.querySelector('[name="treatment"]').value = ds.entryTreatment;
+                if (ds.entryFollowupdate) form.querySelector('[name="follow_up_date"]').value = ds.entryFollowupdate;
                 if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
                 break;
         }
@@ -1524,8 +1898,11 @@ async function handleSubmit(e) {
         case 'sensory':
             const sensoryDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
-                overall_regulation: formData.get('sensitivity_level') ? parseInt(formData.get('sensitivity_level')) : null,
-                overload_triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
+                overall_regulation: formData.get('overall_regulation') ? parseInt(formData.get('overall_regulation')) : null,
+                overload_episodes: formData.get('overload_episodes') ? parseInt(formData.get('overload_episodes')) : 0,
+                overload_triggers: formData.get('overload_triggers') ? formData.get('overload_triggers').split(',').map(t => t.trim()).filter(t => t) : [],
+                sensory_seeking_behaviors: formData.get('sensory_seeking_behaviors') ? formData.get('sensory_seeking_behaviors').split(',').map(t => t.trim()).filter(t => t) : [],
+                calming_strategies_used: formData.get('calming_strategies_used') ? formData.get('calming_strategies_used').split(',').map(t => t.trim()).filter(t => t) : [],
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
                 log_date: sensoryDate + 'T00:00:00Z',
@@ -1536,8 +1913,13 @@ async function handleSubmit(e) {
         case 'social':
             const socialDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
-                social_engagement_level: formData.get('interaction_quality') ? parseInt(formData.get('interaction_quality')) : null,
-                peer_interactions: formData.get('interaction_type') === 'peer' ? 1 : 0,
+                eye_contact_level: formData.get('eye_contact_level') ? parseInt(formData.get('eye_contact_level')) : null,
+                social_engagement_level: formData.get('social_engagement_level') ? parseInt(formData.get('social_engagement_level')) : null,
+                peer_interactions: formData.get('peer_interactions') ? parseInt(formData.get('peer_interactions')) : 0,
+                positive_interactions: formData.get('positive_interactions') ? parseInt(formData.get('positive_interactions')) : 0,
+                conflicts: formData.get('conflicts') ? parseInt(formData.get('conflicts')) : 0,
+                parallel_play_minutes: formData.get('parallel_play_minutes') ? parseInt(formData.get('parallel_play_minutes')) : null,
+                cooperative_play_minutes: formData.get('cooperative_play_minutes') ? parseInt(formData.get('cooperative_play_minutes')) : null,
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
                 log_date: socialDate + 'T00:00:00Z',
@@ -1549,8 +1931,11 @@ async function handleSubmit(e) {
             const therapyDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
             data = {
                 therapy_type: formData.get('therapy_type'),
+                therapist_name: formData.get('therapist_name') || null,
                 duration_minutes: formData.get('duration_minutes') ? parseInt(formData.get('duration_minutes')) : null,
-                parent_notes: formData.get('notes'),
+                goals_worked_on: formData.get('goals_worked_on') ? formData.get('goals_worked_on').split(',').map(g => g.trim()).filter(g => g) : [],
+                progress_notes: formData.get('progress_notes') || null,
+                homework_assigned: formData.get('homework_assigned') || null,
                 time_scope: formData.get('time_scope') || 'day',
                 log_date: therapyDate + 'T00:00:00Z',
                 log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
@@ -1562,10 +1947,15 @@ async function handleSubmit(e) {
             data = {
                 seizure_type: formData.get('seizure_type'),
                 duration_seconds: formData.get('duration_seconds') ? parseInt(formData.get('duration_seconds')) : null,
+                triggers: formData.get('triggers') ? formData.get('triggers').split(',').map(t => t.trim()).filter(t => t) : [],
+                warning_signs: formData.get('warning_signs') ? formData.get('warning_signs').split(',').map(w => w.trim()).filter(w => w) : [],
+                post_ictal_symptoms: formData.get('post_ictal_symptoms') ? formData.get('post_ictal_symptoms').split(',').map(s => s.trim()).filter(s => s) : [],
+                rescue_medication_given: formData.get('rescue_medication_given') === 'on',
+                rescue_medication_name: formData.get('rescue_medication_name') || null,
+                called_911: formData.get('called_911') === 'on',
                 notes: formData.get('notes'),
-                time_scope: formData.get('time_scope') || 'day',
                 log_date: seizureDate + 'T00:00:00Z',
-                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
+                log_time: formData.get('log_time') || null
             };
             endpoint = 'seizure';
             break;
@@ -1574,16 +1964,49 @@ async function handleSubmit(e) {
             data = {
                 event_type: formData.get('event_type'),
                 description: formData.get('description'),
+                symptoms: formData.get('symptoms') ? formData.get('symptoms').split(',').map(s => s.trim()).filter(s => s) : [],
+                temperature_f: formData.get('temperature_f') ? parseFloat(formData.get('temperature_f')) : null,
+                provider_name: formData.get('provider_name') || null,
+                diagnosis: formData.get('diagnosis') || null,
+                treatment: formData.get('treatment') || null,
+                follow_up_date: formData.get('follow_up_date') ? formData.get('follow_up_date') + 'T00:00:00Z' : null,
                 notes: formData.get('notes'),
-                time_scope: formData.get('time_scope') || 'day',
-                log_date: healthDate + 'T00:00:00Z',
-                log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
+                log_date: healthDate + 'T00:00:00Z'
             };
             endpoint = 'health';
             break;
         case 'medication':
-            alert('Use the Medications page to add medications');
-            closeModal();
+            // Medication logs can only be edited, not created from here
+            if (editingEntryId === null) {
+                alert('Use the Medications page to add medications');
+                closeModal();
+                return;
+            }
+            data = {
+                status: formData.get('status'),
+                actual_time: formData.get('actual_time') || '',
+                dosage_given: formData.get('dosage_given') || '',
+                notes: formData.get('notes') || ''
+            };
+            // Use different endpoint for medication logs
+            try {
+                const response = await fetch(`/api/children/${childId}/medications/logs/${editingEntryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    alert('Failed to save medication log: ' + (errorData.message || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('An error occurred while saving medication log');
+            }
             return;
         default:
             alert('Unknown log type');
@@ -1608,10 +2031,11 @@ async function handleSubmit(e) {
         if (response.ok) {
             location.reload();
         } else {
-            alert('Failed to save entry');
+            const errorData = await response.json().catch(() => ({}));
+            alert('Failed to save entry: ' + (errorData.message || 'Unknown error'));
         }
     } catch (error) {
-        alert('An error occurred');
+        alert('An error occurred: ' + error.message);
     }
 }
 
@@ -1630,6 +2054,76 @@ async function logMedication(scheduleId) {
         }
     } catch (error) {
         alert('Failed to log medication');
+    }
+}
+
+async function deleteEntry(type, entryId) {
+    if (!confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+        return;
+    }
+
+    // Handle medication logs specially (different API path)
+    if (type === 'medication') {
+        try {
+            const response = await fetch(`/api/children/${childId}/medications/logs/${entryId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+
+            if (response.ok) {
+                closeModal();
+                location.reload();
+            } else {
+                const errorData = await response.json().catch(() => ({}));
+                alert('Failed to delete medication log: ' + (errorData.message || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('An error occurred while deleting the medication log');
+        }
+        return;
+    }
+
+    // Map type to API endpoint
+    const endpointMap = {
+        'behavior': 'behavior',
+        'diet': 'diet',
+        'sleep': 'sleep',
+        'bowel': 'bowel',
+        'speech': 'speech',
+        'weight': 'weight',
+        'sensory': 'sensory',
+        'social': 'social',
+        'therapy': 'therapy',
+        'seizure': 'seizure',
+        'health': 'health',
+        'health_event': 'health'
+    };
+
+    const endpoint = endpointMap[type];
+    if (!endpoint) {
+        alert('Cannot delete this entry type');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/children/${childId}/logs/${endpoint}/${entryId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (response.ok) {
+            closeModal();
+            location.reload();
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            alert('Failed to delete entry: ' + (errorData.message || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('An error occurred while deleting the entry');
     }
 }
 
@@ -1789,6 +2283,113 @@ function showDetails(type, element) {
                 </div>
             `;
             break;
+        case 'sensory':
+            const overallReg = parseInt(ds.entryOverallregulation) || 0;
+            const overloadEps = parseInt(ds.entryOverloadepisodes) || 0;
+            const overloadTriggers = ds.entryOverloadtriggers || '';
+            const sensorySeekingBehaviors = ds.entrySensoryseekingbehaviors || '';
+            const calmingStrategies = ds.entryCalmingstrategiesused || '';
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Regulation:</span><span class="font-medium dark:text-white">${overallReg > 0 ? overallReg + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overload Episodes:</span><span class="font-medium dark:text-white">${overloadEps}</span></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Overload Triggers:</span><p class="text-gray-900 dark:text-white">${overloadTriggers || 'None'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Sensory Seeking Behaviors:</span><p class="text-gray-900 dark:text-white">${sensorySeekingBehaviors || 'None'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Calming Strategies Used:</span><p class="text-gray-900 dark:text-white">${calmingStrategies || 'None'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                </div>
+            `;
+            break;
+        case 'social':
+            const eyeContactLevel = parseInt(ds.entryEyecontactlevel) || 0;
+            const socialEngagementLevel = parseInt(ds.entrySocialengagementlevel) || 0;
+            const peerInteractions = parseInt(ds.entryPeerinteractions) || 0;
+            const positiveInteractions = parseInt(ds.entryPositiveinteractions) || 0;
+            const conflictCount = parseInt(ds.entryConflicts) || 0;
+            const parallelPlayMins = parseInt(ds.entryParallelplayminutes) || 0;
+            const cooperativePlayMins = parseInt(ds.entryCooperativeplayminutes) || 0;
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Eye Contact Level:</span><span class="font-medium dark:text-white">${eyeContactLevel > 0 ? eyeContactLevel + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Social Engagement:</span><span class="font-medium dark:text-white">${socialEngagementLevel > 0 ? socialEngagementLevel + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Peer Interactions:</span><span class="font-medium dark:text-white">${peerInteractions}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Positive Interactions:</span><span class="font-medium dark:text-white">${positiveInteractions}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Conflicts:</span><span class="font-medium dark:text-white">${conflictCount}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Parallel Play:</span><span class="font-medium dark:text-white">${parallelPlayMins > 0 ? parallelPlayMins + ' min' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Cooperative Play:</span><span class="font-medium dark:text-white">${cooperativePlayMins > 0 ? cooperativePlayMins + ' min' : 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                </div>
+            `;
+            break;
+        case 'therapy':
+            const therapyType = ds.entryTherapytype || '';
+            const therapistName = ds.entryTherapistname || '';
+            const durationMins = parseInt(ds.entryDurationminutes) || 0;
+            const goalsWorkedOn = ds.entryGoalsworkedon || '';
+            const progressNotes = ds.entryProgressnotes || '';
+            const homeworkAssigned = ds.entryHomeworkassigned || '';
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Therapy Type:</span><span class="font-medium capitalize dark:text-white">${therapyType || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Therapist:</span><span class="font-medium dark:text-white">${therapistName || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span><span class="font-medium dark:text-white">${durationMins > 0 ? durationMins + ' min' : 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Goals Worked On:</span><p class="text-gray-900 dark:text-white">${goalsWorkedOn || 'None'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Progress Notes:</span><p class="text-gray-900 dark:text-white">${progressNotes || 'None'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Homework Assigned:</span><p class="text-gray-900 dark:text-white">${homeworkAssigned || 'None'}</p></div>
+                </div>
+            `;
+            break;
+        case 'seizure':
+            const seizureType = ds.entrySeizuretype || '';
+            const durationSecs = parseInt(ds.entryDurationseconds) || 0;
+            const seizureTriggers = ds.entryTriggers || '';
+            const warningSigns = ds.entryWarningsigns || '';
+            const postIctalSymptoms = ds.entryPostictalsymptoms || '';
+            const rescueMedGiven = ds.entryRescuemedicationgiven === 'true';
+            const rescueMedName = ds.entryRescuemedicationname || '';
+            const called911 = ds.entryCalled911 === 'true';
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Seizure Type:</span><span class="font-medium capitalize dark:text-white">${seizureType || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span><span class="font-medium dark:text-white">${durationSecs > 0 ? durationSecs + ' seconds' : 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Triggers:</span><p class="text-gray-900 dark:text-white">${seizureTriggers || 'None identified'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Warning Signs:</span><p class="text-gray-900 dark:text-white">${warningSigns || 'None'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Post-Ictal Symptoms:</span><p class="text-gray-900 dark:text-white">${postIctalSymptoms || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Rescue Medication Given:</span><span class="font-medium ${rescueMedGiven ? 'text-amber-600' : 'dark:text-white'}">${rescueMedGiven ? (rescueMedName || 'Yes') : 'No'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Called 911:</span><span class="font-medium ${called911 ? 'text-red-600' : 'dark:text-white'}">${called911 ? 'Yes' : 'No'}</span></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                </div>
+            `;
+            break;
+        case 'health_event':
+        case 'health':
+            const eventType = ds.entryEventtype || '';
+            const eventDescription = ds.entryDescription || '';
+            const symptoms = ds.entrySymptoms || '';
+            const temperatureF = parseFloat(ds.entryTemperaturef) || 0;
+            const providerName = ds.entryProvidername || '';
+            const diagnosis = ds.entryDiagnosis || '';
+            const treatment = ds.entryTreatment || '';
+            const followUpDate = ds.entryFollowupdate || '';
+            content = `
+                <div class="space-y-3">
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Event Type:</span><span class="font-medium capitalize dark:text-white">${eventType || 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Description:</span><p class="text-gray-900 dark:text-white">${eventDescription || 'None'}</p></div>
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Symptoms:</span><p class="text-gray-900 dark:text-white">${symptoms || 'None'}</p></div>
+                    ${temperatureF > 0 ? `<div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Temperature:</span><span class="font-medium ${temperatureF >= 100.4 ? 'text-red-600' : 'dark:text-white'}">${temperatureF}°F</span></div>` : ''}
+                    ${providerName ? `<div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Provider:</span><span class="font-medium dark:text-white">${providerName}</span></div>` : ''}
+                    ${diagnosis ? `<div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Diagnosis:</span><p class="text-gray-900 dark:text-white">${diagnosis}</p></div>` : ''}
+                    ${treatment ? `<div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Treatment:</span><p class="text-gray-900 dark:text-white">${treatment}</p></div>` : ''}
+                    ${followUpDate ? `<div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Follow-up Date:</span><span class="font-medium dark:text-white">${followUpDate}</span></div>` : ''}
+                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                </div>
+            `;
+            break;
         default:
             content = `<p class="text-gray-500">Details not available for this entry type.</p>`;
     }
@@ -1798,8 +2399,9 @@ function showDetails(type, element) {
     document.getElementById('modal-content').innerHTML = `
         ${content}
         <div class="mt-4 pt-4 border-t flex gap-2">
-            ${type !== 'medication' ? `<button onclick="editEntry('${type}', document.querySelector('[data-entry-id=\\'${entryId}\\']'))" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit</button>` : ''}
-            <button onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
+            <button onclick="editEntry('${type}', document.querySelector('[data-entry-id=\\'${entryId}\\']'))" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit</button>
+            <button onclick="deleteEntry('${type}', '${entryId}')" class="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+            <button onclick="closeModal()" class="flex-1 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500">Close</button>
         </div>
     `;
     document.getElementById('modal-overlay').classList.remove('hidden');
@@ -1913,6 +2515,14 @@ async function acknowledgeAlert(alertId) {
 
 // Auto-open modal if 'open' query parameter is present
 document.addEventListener('DOMContentLoaded', function() {
+    // Reapply theme as backup in case IIFE didn't run
+    const theme = localStorage.getItem('theme') || 'system';
+    if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const openType = urlParams.get('open');
     if (openType && formTemplates[openType]) {

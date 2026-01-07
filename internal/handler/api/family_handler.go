@@ -310,3 +310,39 @@ func (h *FamilyHandler) GetMember(w http.ResponseWriter, r *http.Request) {
 
 	respondOK(w, member)
 }
+
+// GetUserPreferences returns user display preferences
+// GET /api/users/me/preferences
+func (h *FamilyHandler) GetUserPreferences(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+
+	prefs, err := h.userService.GetPreferences(r.Context(), userID)
+	if err != nil {
+		respondInternalError(w, "Failed to get preferences")
+		return
+	}
+
+	respondOK(w, prefs)
+}
+
+// UpdateUserPreferences updates user display preferences
+// PUT /api/users/me/preferences
+func (h *FamilyHandler) UpdateUserPreferences(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+
+	var req models.UpdatePreferencesRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	err := h.userService.UpdatePreferences(r.Context(), userID, &req)
+	if err != nil {
+		respondInternalError(w, "Failed to update preferences")
+		return
+	}
+
+	// Return updated preferences
+	prefs, _ := h.userService.GetPreferences(r.Context(), userID)
+	respondOK(w, prefs)
+}

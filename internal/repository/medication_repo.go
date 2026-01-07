@@ -108,7 +108,20 @@ func (r *medicationRepo) GetByChildID(ctx context.Context, childID uuid.UUID, ac
 		}
 		medications = append(medications, med)
 	}
-	return medications, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Load schedules for each medication
+	for i := range medications {
+		schedules, err := r.GetSchedules(ctx, medications[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		medications[i].Schedules = schedules
+	}
+
+	return medications, nil
 }
 
 func (r *medicationRepo) Update(ctx context.Context, med *models.Medication) error {
@@ -155,7 +168,7 @@ func (r *medicationRepo) CreateSchedule(ctx context.Context, schedule *models.Me
 
 func (r *medicationRepo) GetSchedules(ctx context.Context, medicationID uuid.UUID) ([]models.MedicationSchedule, error) {
 	query := `
-		SELECT id, medication_id, time_of_day, scheduled_time, days_of_week, is_active, created_at
+		SELECT id, medication_id, time_of_day, scheduled_time::text, days_of_week, is_active, created_at
 		FROM medication_schedules
 		WHERE medication_id = $1 AND is_active = true
 		ORDER BY time_of_day ASC
@@ -223,9 +236,30 @@ func (r *medicationRepo) CreateLog(ctx context.Context, log *models.MedicationLo
 	return err
 }
 
+func (r *medicationRepo) GetLogByID(ctx context.Context, id uuid.UUID) (*models.MedicationLog, error) {
+	query := `
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
+		FROM medication_logs
+		WHERE id = $1
+	`
+	log := &models.MedicationLog{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.MedicationID, &log.ChildID, &log.ScheduleID, &log.LogDate,
+		&log.ScheduledTime, &log.ActualTime, &log.Status, &log.DosageGiven,
+		&log.Notes, &log.LoggedBy, &log.CreatedAt, &log.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
 func (r *medicationRepo) GetLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.MedicationLog, error) {
 	query := `
-		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
 		FROM medication_logs
 		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
 		ORDER BY log_date DESC, created_at DESC
@@ -254,7 +288,7 @@ func (r *medicationRepo) GetLogs(ctx context.Context, childID uuid.UUID, startDa
 
 func (r *medicationRepo) GetLogsByMedication(ctx context.Context, medicationID uuid.UUID, startDate, endDate time.Time) ([]models.MedicationLog, error) {
 	query := `
-		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
 		FROM medication_logs
 		WHERE medication_id = $1 AND log_date BETWEEN $2 AND $3
 		ORDER BY log_date DESC, created_at DESC
@@ -283,7 +317,7 @@ func (r *medicationRepo) GetLogsByMedication(ctx context.Context, medicationID u
 
 func (r *medicationRepo) GetLogsByMedicationSince(ctx context.Context, medicationID uuid.UUID, since time.Time) ([]models.MedicationLog, error) {
 	query := `
-		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
 		FROM medication_logs
 		WHERE medication_id = $1 AND log_date >= $2
 		ORDER BY log_date DESC, created_at DESC
@@ -323,12 +357,18 @@ func (r *medicationRepo) UpdateLog(ctx context.Context, log *models.MedicationLo
 	return err
 }
 
+func (r *medicationRepo) DeleteLog(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM medication_logs WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
+
 func (r *medicationRepo) GetDueMedications(ctx context.Context, childID uuid.UUID, date time.Time) ([]models.MedicationDue, error) {
 	dayOfWeek := int(date.Weekday())
 
 	query := `
 		SELECT m.id, m.child_id, m.reference_id, m.name, m.dosage, m.dosage_unit, m.frequency, m.instructions, m.prescriber, m.pharmacy, m.start_date, m.end_date, m.is_active, m.created_at, m.updated_at,
-		       ms.id, ms.medication_id, ms.time_of_day, ms.scheduled_time, ms.days_of_week, ms.is_active, ms.created_at,
+		       ms.id, ms.medication_id, ms.time_of_day, ms.scheduled_time::text, ms.days_of_week, ms.is_active, ms.created_at,
 		       ml.id IS NOT NULL as is_logged,
 		       COALESCE(ml.status::text, '') as logged_status
 		FROM medications m

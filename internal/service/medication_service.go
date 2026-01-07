@@ -344,8 +344,54 @@ func (s *MedicationService) GetLogsByMedication(ctx context.Context, medicationI
 	return s.medRepo.GetLogsByMedication(ctx, medicationID, startDate, endDate)
 }
 
+func (s *MedicationService) GetLogByID(ctx context.Context, id uuid.UUID) (*models.MedicationLog, error) {
+	return s.medRepo.GetLogByID(ctx, id)
+}
+
 func (s *MedicationService) UpdateLog(ctx context.Context, log *models.MedicationLog) error {
 	return s.medRepo.UpdateLog(ctx, log)
+}
+
+func (s *MedicationService) DeleteLog(ctx context.Context, id uuid.UUID) error {
+	return s.medRepo.DeleteLog(ctx, id)
+}
+
+// UpdateLogWithTracking updates a medication log and creates a treatment change record for audit
+func (s *MedicationService) UpdateLogWithTracking(ctx context.Context, oldLog *models.MedicationLog, newLog *models.MedicationLog, userID uuid.UUID) error {
+	// Update the log
+	if err := s.medRepo.UpdateLog(ctx, newLog); err != nil {
+		return err
+	}
+
+	// Create treatment change record for audit
+	if s.transparencyRepo != nil {
+		tc := &models.TreatmentChange{
+			ChildID:     newLog.ChildID.String(),
+			ChangeType:  models.ChangeTypeMedicationLogEdited,
+			SourceTable: "medication_logs",
+			SourceID:    newLog.ID.String(),
+			PreviousValue: models.JSONMap{
+				"status":       string(oldLog.Status),
+				"actual_time":  oldLog.ActualTime.String,
+				"dosage_given": oldLog.DosageGiven.String,
+				"notes":        oldLog.Notes.String,
+			},
+			NewValue: models.JSONMap{
+				"status":       string(newLog.Status),
+				"actual_time":  newLog.ActualTime.String,
+				"dosage_given": newLog.DosageGiven.String,
+				"notes":        newLog.Notes.String,
+			},
+			ChangeSummary:   fmt.Sprintf("Medication log edited: status changed from '%s' to '%s'", oldLog.Status, newLog.Status),
+			ChangedByUserID: userID.String(),
+		}
+		if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
+			// Log but don't fail the update
+			fmt.Printf("Warning: Failed to create treatment change record for medication log: %v\n", err)
+		}
+	}
+
+	return nil
 }
 
 // Due medications

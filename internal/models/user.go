@@ -14,6 +14,7 @@ type User struct {
 	LastName        string     `json:"last_name"`
 	Phone           NullString `json:"phone,omitempty"`
 	Timezone        NullString `json:"timezone,omitempty"`
+	TimeFormat      NullString `json:"time_format,omitempty"` // 12h or 24h
 	Status          UserStatus `json:"status"`
 	EmailVerifiedAt NullTime   `json:"email_verified_at,omitempty"`
 	LastLoginAt     NullTime   `json:"last_login_at,omitempty"`
@@ -100,6 +101,19 @@ type UpdateProfileRequest struct {
 	FirstName *string `json:"first_name,omitempty"`
 	LastName  *string `json:"last_name,omitempty"`
 	Phone     *string `json:"phone,omitempty"`
+}
+
+// UserPreferences represents user display preferences
+type UserPreferences struct {
+	Timezone   string `json:"timezone,omitempty"`
+	TimeFormat string `json:"time_format,omitempty"` // 12h or 24h
+	Theme      string `json:"theme,omitempty"`       // light, dark, or system
+}
+
+type UpdatePreferencesRequest struct {
+	Timezone   *string `json:"timezone,omitempty"`
+	TimeFormat *string `json:"time_format,omitempty"`
+	Theme      *string `json:"theme,omitempty"`
 }
 
 type FamilyContextResponse struct {

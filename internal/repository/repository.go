@@ -76,10 +76,12 @@ type MedicationRepository interface {
 
 	// Log operations
 	CreateLog(ctx context.Context, log *models.MedicationLog) error
+	GetLogByID(ctx context.Context, id uuid.UUID) (*models.MedicationLog, error)
 	GetLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.MedicationLog, error)
 	GetLogsByMedication(ctx context.Context, medicationID uuid.UUID, startDate, endDate time.Time) ([]models.MedicationLog, error)
 	GetLogsByMedicationSince(ctx context.Context, medicationID uuid.UUID, since time.Time) ([]models.MedicationLog, error)
 	UpdateLog(ctx context.Context, log *models.MedicationLog) error
+	DeleteLog(ctx context.Context, id uuid.UUID) error
 
 	// Due medications
 	GetDueMedications(ctx context.Context, childID uuid.UUID, date time.Time) ([]models.MedicationDue, error)

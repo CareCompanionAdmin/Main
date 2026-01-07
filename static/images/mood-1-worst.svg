@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Face -->
+  <circle cx="50" cy="50" r="46" fill="#B91C1C"/>
+  <circle cx="50" cy="50" r="42" fill="#F87171"/>
+  <!-- Eyes -->
+  <ellipse cx="35" cy="44" rx="7" ry="8" fill="#fff"/>
+  <ellipse cx="65" cy="44" rx="7" ry="8" fill="#fff"/>
+  <circle cx="35" cy="46" r="4" fill="#1a1a1a"/>
+  <circle cx="65" cy="46" r="4" fill="#1a1a1a"/>
+  <circle cx="36" cy="44" r="1.5" fill="#fff"/>
+  <circle cx="66" cy="44" r="1.5" fill="#fff"/>
+  <!-- Angry eyebrows -->
+  <line x1="26" y1="32" x2="42" y2="36" stroke="#991B1B" stroke-width="4" stroke-linecap="round"/>
+  <line x1="74" y1="32" x2="58" y2="36" stroke="#991B1B" stroke-width="4" stroke-linecap="round"/>
+  <!-- Big frown -->
+  <path d="M 30 72 Q 50 58 70 72" stroke="#991B1B" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>

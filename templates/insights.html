@@ -6,29 +6,40 @@
     <title>Insights - CareCompanion</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
 
 <!-- Navigation -->
-<nav class="bg-white shadow-sm border-b">
+<nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
                 <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="/chat" class="text-gray-500 hover:text-gray-700" title="Family Chat">
+                <a href="/chat" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Family Chat">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                 </a>
-                <a href="/settings" class="text-gray-500 hover:text-gray-700" title="Settings">
+                <a href="/settings" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Settings">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </a>
-                <button onclick="logout()" class="text-gray-500 hover:text-gray-700" title="Logout">
+                <button onclick="logout()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -50,16 +61,16 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Insights for {{.Child.FirstName}}</h1>
-        <p class="text-gray-500">Patterns and correlations discovered from logged data</p>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Insights for {{.Child.FirstName}}</h1>
+        <p class="text-gray-500 dark:text-gray-400">Patterns and correlations discovered from logged data</p>
     </div>
 
     {{if .Insights.Patterns}}
     <div class="space-y-6">
-        <h2 class="text-lg font-semibold text-gray-900">Discovered Patterns</h2>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Discovered Patterns</h2>
         {{range .Insights.Patterns}}
-        <div class="bg-white rounded-xl shadow-sm border p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
             <div class="flex items-start space-x-4">
                 <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,12 +78,12 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-medium text-gray-900">{{if .Description.Valid}}{{.Description.String}}{{else}}{{.PatternType}}: {{.InputFactor}} → {{.OutputFactor}}{{end}}</h3>
-                    <p class="text-gray-600 mt-1">Correlation strength: {{printf "%.2f" .CorrelationStrength}}{{if gt .LagHours 0}} ({{.LagHours}} hour lag){{end}}</p>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{if .Description.Valid}}{{.Description.String}}{{else}}{{.PatternType}}: {{.InputFactor}} → {{.OutputFactor}}{{end}}</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mt-1">Correlation strength: {{printf "%.2f" .CorrelationStrength}}{{if gt .LagHours 0}} ({{.LagHours}} hour lag){{end}}</p>
                     <div class="flex items-center mt-3 space-x-4">
-                        <span class="text-sm text-gray-500">Confidence: {{.ConfidencePercent}}%</span>
-                        <span class="text-sm text-gray-500">Confirmed: {{.TimesConfirmed}} times</span>
-                        <span class="text-sm text-gray-500">Sample size: {{.SampleSize}}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Confidence: {{.ConfidencePercent}}%</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Confirmed: {{.TimesConfirmed}} times</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Sample size: {{.SampleSize}}</span>
                     </div>
                 </div>
             </div>
@@ -80,14 +91,14 @@
         {{end}}
     </div>
     {{else}}
-    <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-12 text-center">
         <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
             </svg>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No patterns yet</h3>
-        <p class="text-gray-500 mb-4">Keep logging data to discover patterns and insights. The system needs at least 7 days of data.</p>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No patterns yet</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Keep logging data to discover patterns and insights. The system needs at least 7 days of data.</p>
     </div>
     {{end}}
 </main>

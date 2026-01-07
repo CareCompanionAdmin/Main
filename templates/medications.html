@@ -6,29 +6,40 @@
     <title>Medications - CareCompanion</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
 
 <!-- Navigation -->
-<nav class="bg-white shadow-sm border-b">
+<nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
                 <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="/chat" class="text-gray-500 hover:text-gray-700" title="Family Chat">
+                <a href="/chat" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" title="Family Chat">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                 </a>
-                <a href="/settings" class="text-gray-500 hover:text-gray-700" title="Settings">
+                <a href="/settings" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" title="Settings">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </a>
-                <button onclick="logout()" class="text-gray-500 hover:text-gray-700" title="Logout">
+                <button onclick="logout()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
@@ -53,8 +64,8 @@
         </button>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">{{.Child.FirstName}}'s Medications</h1>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{.Child.FirstName}}'s Medications</h1>
     </div>
 
     <!-- Interaction Alert (hidden by default) -->
@@ -78,7 +89,7 @@
                         <button onclick="undoMedication()" class="px-4 py-2 bg-white text-red-700 border border-red-300 rounded-lg hover:bg-red-50 font-medium">
                             Undo Adding Medication
                         </button>
-                        <button onclick="remindMeLater()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium">
+                        <button onclick="remindMeLater()" class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-medium">
                             Remind Me Later
                         </button>
                     </div>
@@ -90,26 +101,26 @@
     {{if .Medications}}
     <div class="space-y-4">
         {{range .Medications}}
-        <div class="bg-white rounded-xl shadow-sm border p-6 cursor-pointer hover:shadow-md transition-shadow"
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 cursor-pointer hover:shadow-md transition-shadow"
              onclick="openEditMedication('{{.ID}}', '{{.Name}}', '{{.Dosage}}', '{{.DosageUnit}}', '{{.Frequency}}', '{{if .Instructions.Valid}}{{.Instructions.String}}{{end}}', {{if .Schedules}}{{.Schedules | toJSON}}{{else}}[]{{end}})">
             <div class="flex justify-between items-start">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                         {{.Name}}
-                        <svg class="w-4 h-4 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 ml-2 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                     </h3>
-                    <p class="text-gray-600">{{.Dosage}} {{.DosageUnit}} - {{.Frequency}}</p>
-                    {{if .Instructions.Valid}}<p class="text-sm text-gray-500 mt-1">{{.Instructions.String}}</p>{{end}}
+                    <p class="text-gray-600 dark:text-gray-300">{{.Dosage}} {{.DosageUnit}} - {{.Frequency}}</p>
+                    {{if .Instructions.Valid}}<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{.Instructions.String}}</p>{{end}}
                 </div>
                 <span class="px-3 py-1 {{if .IsActive}}bg-green-100 text-green-700{{else}}bg-gray-100 text-gray-600{{end}} rounded-full text-sm">
                     {{if .IsActive}}Active{{else}}Inactive{{end}}
                 </span>
             </div>
             {{if .Schedules}}
-            <div class="mt-4 pt-4 border-t">
-                <p class="text-sm font-medium text-gray-700 mb-2">Schedule:</p>
+            <div class="mt-4 pt-4 border-t dark:border-gray-700">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Schedule:</p>
                 <div class="flex flex-wrap gap-2">
                     {{range .Schedules}}
                     <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">{{.TimeOfDay}}{{if .ScheduledTime.Valid}} ({{.ScheduledTime.String}}){{end}}</span>
@@ -121,14 +132,14 @@
         {{end}}
     </div>
     {{else}}
-    <div class="bg-white rounded-xl shadow-sm border p-12 text-center">
-        <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-12 text-center">
+        <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
             </svg>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No medications</h3>
-        <p class="text-gray-500 mb-4">Add medications to track dosing schedules and adherence.</p>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No medications</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Add medications to track dosing schedules and adherence.</p>
         <button onclick="showAddMedication()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
             Add First Medication
         </button>
@@ -137,20 +148,20 @@
 
     <!-- Medication History Section -->
     <div class="mt-8">
-        <button onclick="toggleMedicationHistory()" class="w-full bg-white rounded-xl shadow-sm border p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+        <button onclick="toggleMedicationHistory()" class="w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
             <div class="flex items-center">
-                <svg class="w-5 h-5 text-gray-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span class="text-gray-700 font-medium">Medication History</span>
+                <span class="text-gray-700 dark:text-gray-300 font-medium">Medication History</span>
             </div>
-            <svg id="history-chevron" class="w-5 h-5 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg id="history-chevron" class="w-5 h-5 text-gray-400 dark:text-gray-500 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
         </button>
-        <div id="medication-history-content" class="hidden mt-2 bg-white rounded-xl shadow-sm border overflow-hidden">
-            <div id="medication-history-list" class="divide-y divide-gray-100">
-                <div class="p-8 text-center text-gray-500">
+        <div id="medication-history-content" class="hidden mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 overflow-hidden">
+            <div id="medication-history-list" class="divide-y divide-gray-100 dark:divide-gray-700">
+                <div class="p-8 text-center text-gray-500 dark:text-gray-400">
                     <div class="animate-spin w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full mx-auto mb-2"></div>
                     Loading history...
                 </div>
@@ -166,23 +177,23 @@
     <!-- Modal Container - this scrolls -->
     <div class="fixed inset-0 overflow-y-auto" onclick="hideAddMedication()">
         <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
-            <div id="modal-content" class="bg-white rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Add Medication</h2>
+            <div id="modal-content" class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Add Medication</h2>
         <form id="medication-form" class="space-y-4">
             <!-- Name, Dosage, Unit - required for lookup -->
             <div class="relative">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name *</label>
-                <input type="text" name="name" id="med-name-input" required autocomplete="off" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Start typing medication name...">
-                <div id="med-suggestions" class="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto hidden"></div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Medication Name *</label>
+                <input type="text" name="name" id="med-name-input" required autocomplete="off" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Start typing medication name...">
+                <div id="med-suggestions" class="absolute z-50 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto hidden"></div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Dosage *</label>
-                    <input type="text" name="dosage" id="med-dosage-input" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 30">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dosage *</label>
+                    <input type="text" name="dosage" id="med-dosage-input" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 30">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
-                    <select name="dosage_unit" id="med-unit-input" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unit *</label>
+                    <select name="dosage_unit" id="med-unit-input" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                         <option value="mg">mg</option>
                         <option value="ml">ml</option>
                         <option value="IU">IU</option>
@@ -196,14 +207,14 @@
                 <button type="button" onclick="lookupDrugInfo()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
                     Look Up Drug Information
                 </button>
-                <p class="text-xs text-gray-500 mt-1 text-center">Enter name and dosage, then click to get FDA drug information and pill identification</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">Enter name and dosage, then click to get FDA drug information and pill identification</p>
             </div>
 
             <!-- Drug Info Section (hidden until lookup) -->
             <div id="drug-info-section" class="hidden">
                 <div id="drug-loading" class="hidden text-center py-4">
                     <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                    <p class="text-gray-500 mt-2">Looking up drug information...</p>
+                    <p class="text-gray-500 dark:text-gray-400 mt-2">Looking up drug information...</p>
                 </div>
 
                 <!-- Black Box Warning -->
@@ -246,10 +257,10 @@
                 </div>
 
                 <!-- Side Effects -->
-                <div id="side-effects-section" class="hidden mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <h4 class="font-semibold text-gray-800 mb-2 flex items-center justify-between">
+                <div id="side-effects-section" class="hidden mb-4 p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center justify-between">
                         <span>Common Side Effects</span>
-                        <a id="sideeffects-source" href="#" target="_blank" class="text-gray-600 hover:text-gray-800" title="View source"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>
+                        <a id="sideeffects-source" href="#" target="_blank" class="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300" title="View source"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg></a>
                     </h4>
                     <div id="side-effects-list" class="flex flex-wrap gap-2"></div>
                 </div>
@@ -295,7 +306,7 @@
 
                     <!-- Physical characteristics for pill identification -->
                     <div id="physical-details" class="mb-4">
-                        <div class="bg-white rounded-lg p-4 border-2 border-purple-200">
+                        <div class="bg-white dark:bg-gray-700 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-600">
                             <div class="grid grid-cols-2 gap-3 mb-4">
                                 <div id="pill-color-box" class="hidden">
                                     <p class="text-xs text-purple-600 uppercase font-semibold">Color</p>
@@ -347,8 +358,8 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Frequency *</label>
-                <select name="frequency" id="frequency-select" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateScheduleFields()">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency *</label>
+                <select name="frequency" id="frequency-select" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" onchange="updateScheduleFields()">
                     <option value="once_daily">Once Daily</option>
                     <option value="twice_daily">Twice Daily</option>
                     <option value="three_times_daily">Three Times Daily</option>
@@ -359,22 +370,22 @@
             </div>
 
             <!-- Schedule Section -->
-            <div id="schedule-section" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Scheduled Times</label>
-                <p class="text-xs text-gray-500 mb-3">Set when this medication should be taken. This determines when it appears in "Medications Due Today".</p>
+            <div id="schedule-section" class="p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scheduled Times</label>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Set when this medication should be taken. This determines when it appears in "Medications Due Today".</p>
                 <div id="schedule-inputs" class="space-y-3">
                     <!-- Dynamically populated based on frequency -->
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                <textarea name="instructions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Take with food"></textarea>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Instructions</label>
+                <textarea name="instructions" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., Take with food"></textarea>
             </div>
             <div class="flex space-x-4">
                 <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                     Add Medication
                 </button>
-                <button type="button" onclick="hideAddMedication()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <button type="button" onclick="hideAddMedication()" class="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
                     Cancel
                 </button>
             </div>
@@ -391,29 +402,29 @@
     <!-- Modal -->
     <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
-            <div class="bg-white rounded-xl p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Discontinue Medication</h2>
-                <p class="text-gray-600 text-sm mb-4">Please select the reason for discontinuing this medication:</p>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Discontinue Medication</h2>
+                <p class="text-gray-600 dark:text-gray-300 text-sm mb-4">Please select the reason for discontinuing this medication:</p>
 
                 <div class="space-y-3 mb-4">
-                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <label class="flex items-center p-3 border dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <input type="radio" name="discontinue_reason" value="provider_changed" class="mr-3 text-indigo-600">
-                        <span class="text-gray-800">Provider changed prescription</span>
+                        <span class="text-gray-800 dark:text-gray-200">Provider changed prescription</span>
                     </label>
-                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <label class="flex items-center p-3 border dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <input type="radio" name="discontinue_reason" value="adverse_effect" class="mr-3 text-indigo-600">
-                        <span class="text-gray-800">Noticed adverse effect</span>
+                        <span class="text-gray-800 dark:text-gray-200">Noticed adverse effect</span>
                     </label>
-                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <label class="flex items-center p-3 border dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <input type="radio" name="discontinue_reason" value="added_by_accident" class="mr-3 text-indigo-600">
-                        <span class="text-gray-800">Added on accident</span>
+                        <span class="text-gray-800 dark:text-gray-200">Added on accident</span>
                     </label>
-                    <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <label class="flex items-center p-3 border dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <input type="radio" name="discontinue_reason" value="other" class="mr-3 text-indigo-600" onchange="toggleOtherReason()">
-                        <span class="text-gray-800">Other</span>
+                        <span class="text-gray-800 dark:text-gray-200">Other</span>
                     </label>
                     <div id="other-reason-container" class="hidden pl-6">
-                        <textarea id="other-reason-text" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Please specify the reason..."></textarea>
+                        <textarea id="other-reason-text" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" placeholder="Please specify the reason..."></textarea>
                     </div>
                 </div>
 
@@ -421,7 +432,7 @@
                     <button type="button" onclick="confirmDiscontinue()" class="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                         Discontinue
                     </button>
-                    <button type="button" onclick="hideDiscontinueModal()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                    <button type="button" onclick="hideDiscontinueModal()" class="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
                         Cancel
                     </button>
                 </div>
@@ -437,13 +448,13 @@
     <!-- Modal Container -->
     <div class="fixed inset-0 overflow-y-auto" onclick="hideEditMedication()">
         <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
-            <div class="bg-white rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Edit Medication</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Edit Medication</h2>
                 <form id="edit-medication-form" class="space-y-4">
                     <input type="hidden" name="medication_id" id="edit-med-id">
 
                     <!-- Warning banner about treatment tracking -->
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <div class="bg-amber-50 dark:bg-amber-900 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
                         <div class="flex items-start">
                             <svg class="w-5 h-5 text-amber-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -456,18 +467,18 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name</label>
-                        <input type="text" name="name" id="edit-med-name" readonly class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Medication Name</label>
+                        <input type="text" name="name" id="edit-med-name" readonly class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Dosage *</label>
-                            <input type="text" name="dosage" id="edit-med-dosage" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dosage *</label>
+                            <input type="text" name="dosage" id="edit-med-dosage" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Unit *</label>
-                            <select name="dosage_unit" id="edit-med-unit" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unit *</label>
+                            <select name="dosage_unit" id="edit-med-unit" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                                 <option value="mg">mg</option>
                                 <option value="ml">ml</option>
                                 <option value="IU">IU</option>
@@ -479,8 +490,8 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Frequency *</label>
-                        <select name="frequency" id="edit-med-frequency" required class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="updateEditScheduleFields()">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Frequency *</label>
+                        <select name="frequency" id="edit-med-frequency" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" onchange="updateEditScheduleFields()">
                             <option value="once_daily">Once Daily</option>
                             <option value="twice_daily">Twice Daily</option>
                             <option value="three_times_daily">Three Times Daily</option>
@@ -491,31 +502,31 @@
                     </div>
 
                     <!-- Edit Schedule Section -->
-                    <div id="edit-schedule-section" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Scheduled Times</label>
-                        <p class="text-xs text-gray-500 mb-3">Modify when this medication should be taken.</p>
+                    <div id="edit-schedule-section" class="p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scheduled Times</label>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Modify when this medication should be taken.</p>
                         <div id="edit-schedule-inputs" class="space-y-3">
                             <!-- Dynamically populated -->
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                        <textarea name="instructions" id="edit-med-instructions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Take with food"></textarea>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Instructions</label>
+                        <textarea name="instructions" id="edit-med-instructions" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., Take with food"></textarea>
                     </div>
 
                     <div class="flex space-x-4">
                         <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                             Save Changes
                         </button>
-                        <button type="button" onclick="hideEditMedication()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                        <button type="button" onclick="hideEditMedication()" class="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
                             Cancel
                         </button>
                     </div>
 
                     <!-- Additional Information Collapsible Section -->
-                    <div class="border-t pt-4 mt-4">
-                        <button type="button" onclick="toggleAdditionalInfo()" id="additional-info-btn" class="w-full py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 border border-blue-200 flex items-center justify-center">
+                    <div class="border-t dark:border-gray-700 pt-4 mt-4">
+                        <button type="button" onclick="toggleAdditionalInfo()" id="additional-info-btn" class="w-full py-2 bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 border border-blue-200 dark:border-blue-700 flex items-center justify-center">
                             <span id="additional-info-btn-text">Additional Information</span>
                             <svg id="additional-info-chevron" class="w-5 h-5 ml-2 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -526,7 +537,7 @@
                             <!-- Loading indicator -->
                             <div id="edit-drug-loading" class="hidden text-center py-4">
                                 <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                                <p class="text-gray-500 mt-2">Loading drug information...</p>
+                                <p class="text-gray-500 dark:text-gray-400 mt-2">Loading drug information...</p>
                             </div>
 
                             <!-- Black Box Warning -->
@@ -555,8 +566,8 @@
                             </div>
 
                             <!-- Side Effects -->
-                            <div id="edit-side-effects-section" class="hidden p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                <h4 class="font-semibold text-gray-800 mb-2">Common Side Effects</h4>
+                            <div id="edit-side-effects-section" class="hidden p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-2">Common Side Effects</h4>
                                 <div id="edit-side-effects-list" class="flex flex-wrap gap-2"></div>
                             </div>
 
@@ -590,7 +601,7 @@
                                     </svg>
                                     Pill Identification
                                 </h4>
-                                <div class="bg-white rounded-lg p-4 border-2 border-purple-200">
+                                <div class="bg-white dark:bg-gray-700 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-600">
                                     <div class="grid grid-cols-2 gap-3 mb-4">
                                         <div id="edit-pill-color-box" class="hidden">
                                             <p class="text-xs text-purple-600 uppercase font-semibold">Color</p>
@@ -682,16 +693,16 @@ if (medNameInput) {
                     const medications = await response.json();
                     if (medications && medications.length > 0) {
                         suggestionsDiv.innerHTML = medications.map(med => `
-                            <div class="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+                            <div class="px-4 py-2 hover:bg-blue-50 dark:hover:bg-blue-900 cursor-pointer border-b dark:border-gray-600 last:border-b-0"
                                  onclick="selectMedication('${med.name.replace(/'/g, "\\'")}', '${(med.generic_name || '').replace(/'/g, "\\'")}', '${(med.drug_class || '').replace(/'/g, "\\'")}')">
-                                <div class="font-medium text-gray-900">${med.name}</div>
-                                ${med.generic_name ? `<div class="text-sm text-gray-500">${med.generic_name}</div>` : ''}
-                                ${med.drug_class ? `<div class="text-xs text-blue-600">${med.drug_class}</div>` : ''}
+                                <div class="font-medium text-gray-900 dark:text-white">${med.name}</div>
+                                ${med.generic_name ? `<div class="text-sm text-gray-500 dark:text-gray-400">${med.generic_name}</div>` : ''}
+                                ${med.drug_class ? `<div class="text-xs text-blue-600 dark:text-blue-400">${med.drug_class}</div>` : ''}
                             </div>
                         `).join('');
                         suggestionsDiv.classList.remove('hidden');
                     } else {
-                        suggestionsDiv.innerHTML = '<div class="px-4 py-2 text-gray-500">No medications found. You can still enter a custom name.</div>';
+                        suggestionsDiv.innerHTML = '<div class="px-4 py-2 text-gray-500 dark:text-gray-400">No medications found. You can still enter a custom name.</div>';
                         suggestionsDiv.classList.remove('hidden');
                     }
                 }
@@ -811,7 +822,7 @@ async function lookupDrugInfo() {
         loading.classList.add('hidden');
 
         if (!response.ok) {
-            section.innerHTML = '<p class="text-gray-500 text-center py-4">Drug information not found in FDA database</p>';
+            section.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-4">Drug information not found in FDA database</p>';
             return;
         }
 
@@ -819,7 +830,7 @@ async function lookupDrugInfo() {
         displayDrugInfo(data);
     } catch (error) {
         loading.classList.add('hidden');
-        section.innerHTML = '<p class="text-red-500 text-center py-4">Failed to lookup drug information</p>';
+        section.innerHTML = '<p class="text-red-500 dark:text-red-400 text-center py-4">Failed to lookup drug information</p>';
     }
 }
 
@@ -1037,13 +1048,13 @@ function updateScheduleFields() {
     section.classList.remove('hidden');
     container.innerHTML = config.map((slot, idx) => {
         let html = `<div class="flex items-center gap-3">
-            <span class="text-sm font-medium text-gray-700 w-28">${slot.label}:</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 w-28">${slot.label}:</span>
             <input type="time" name="schedule_time_${idx}" value="${slot.default_time}"
-                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+                   class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" required>
             <input type="hidden" name="schedule_tod_${idx}" value="${slot.time_of_day}">`;
 
         if (slot.weekly) {
-            html += `<select name="schedule_day_${idx}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            html += `<select name="schedule_day_${idx}" class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
                 <option value="monday">Monday</option>
                 <option value="tuesday">Tuesday</option>
                 <option value="wednesday">Wednesday</option>
@@ -1061,6 +1072,13 @@ function updateScheduleFields() {
 // Initialize schedule fields on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateScheduleFields();
+    // Reapply theme as backup in case IIFE didn't run
+    const theme = localStorage.getItem('theme') || 'system';
+    if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
 });
 
 // Track the newly added medication for interaction handling
@@ -1521,13 +1539,13 @@ function populateEditSchedules(frequency, existingSchedules) {
         }
 
         let html = `<div class="flex items-center gap-3">
-            <span class="text-sm font-medium text-gray-700 w-28">${slot.label}:</span>
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 w-28">${slot.label}:</span>
             <input type="time" name="edit_schedule_time_${idx}" value="${timeValue}"
-                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+                   class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" required>
             <input type="hidden" name="edit_schedule_tod_${idx}" value="${slot.time_of_day}">`;
 
         if (slot.weekly) {
-            html += `<select name="edit_schedule_day_${idx}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            html += `<select name="edit_schedule_day_${idx}" class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
                 <option value="monday">Monday</option>
                 <option value="tuesday">Tuesday</option>
                 <option value="wednesday">Wednesday</option>
@@ -1748,8 +1766,8 @@ async function loadMedicationHistory() {
 
             if (history.length === 0) {
                 listContainer.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         <p>No medication changes recorded yet.</p>
@@ -1786,13 +1804,13 @@ async function loadMedicationHistory() {
                 }
 
                 return `
-                    <div class="p-4 flex items-start space-x-4 hover:bg-gray-50">
+                    <div class="p-4 flex items-start space-x-4 hover:bg-gray-50 dark:hover:bg-gray-700">
                         <div class="${iconBg} rounded-full p-2 flex-shrink-0">
                             <span class="${iconColor}">${icon}</span>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900">${entry.change_summary}</p>
-                            <div class="mt-1 flex items-center text-xs text-gray-500">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">${entry.change_summary}</p>
+                            <div class="mt-1 flex items-center text-xs text-gray-500 dark:text-gray-400">
                                 <span>${entry.changed_by_name}</span>
                                 <span class="mx-2">•</span>
                                 <span>${formattedDate}</span>
@@ -1802,14 +1820,14 @@ async function loadMedicationHistory() {
             }).join('');
         } else {
             listContainer.innerHTML = `
-                <div class="p-8 text-center text-red-500">
+                <div class="p-8 text-center text-red-500 dark:text-red-400">
                     <p>Failed to load medication history.</p>
                 </div>`;
         }
     } catch (error) {
         console.error('Error loading medication history:', error);
         listContainer.innerHTML = `
-            <div class="p-8 text-center text-red-500">
+            <div class="p-8 text-center text-red-500 dark:text-red-400">
                 <p>Failed to load medication history.</p>
             </div>`;
     }

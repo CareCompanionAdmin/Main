@@ -375,6 +375,93 @@ func (h *MedicationHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, logs)
 }
 
+// UpdateLog updates a medication log entry
+func (h *MedicationHandler) UpdateLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := parseUUID(chi.URLParam(r, "logID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	// Get the existing log
+	existingLog, err := h.medService.GetLogByID(r.Context(), logID)
+	if err != nil || existingLog == nil {
+		respondNotFound(w, "Medication log not found")
+		return
+	}
+
+	// Store old values for audit trail
+	oldLog := *existingLog
+
+	// Verify access to the child
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), existingLog.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	// Parse update request
+	var req struct {
+		Status      models.LogStatus `json:"status"`
+		ActualTime  string           `json:"actual_time,omitempty"`
+		DosageGiven string           `json:"dosage_given,omitempty"`
+		Notes       string           `json:"notes,omitempty"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	// Update the log fields
+	existingLog.Status = req.Status
+	existingLog.ActualTime.String = req.ActualTime
+	existingLog.ActualTime.Valid = req.ActualTime != ""
+	existingLog.DosageGiven.String = req.DosageGiven
+	existingLog.DosageGiven.Valid = req.DosageGiven != ""
+	existingLog.Notes.String = req.Notes
+	existingLog.Notes.Valid = req.Notes != ""
+
+	// Update with tracking for audit log
+	if err := h.medService.UpdateLogWithTracking(r.Context(), &oldLog, existingLog, userID); err != nil {
+		log.Printf("UpdateLog error: %v", err)
+		respondInternalError(w, "Failed to update medication log")
+		return
+	}
+
+	respondOK(w, existingLog)
+}
+
+// DeleteLog deletes a medication log
+func (h *MedicationHandler) DeleteLog(w http.ResponseWriter, r *http.Request) {
+	logID, err := parseUUID(chi.URLParam(r, "logID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid log ID")
+		return
+	}
+
+	// Get the existing log to verify access
+	existingLog, err := h.medService.GetLogByID(r.Context(), logID)
+	if err != nil || existingLog == nil {
+		respondNotFound(w, "Medication log not found")
+		return
+	}
+
+	// Verify access to the child
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), existingLog.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	if err := h.medService.DeleteLog(r.Context(), logID); err != nil {
+		log.Printf("DeleteLog error: %v", err)
+		respondInternalError(w, "Failed to delete medication log")
+		return
+	}
+
+	respondOK(w, map[string]string{"message": "Medication log deleted"})
+}
+
 // GetAdherence returns medication adherence rate
 func (h *MedicationHandler) GetAdherence(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)

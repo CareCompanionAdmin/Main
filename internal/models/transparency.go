@@ -90,6 +90,7 @@ const (
 	ChangeTypeMedicationDoseChanged     ChangeType = "medication_dose_changed"
 	ChangeTypeMedicationScheduleChanged ChangeType = "medication_schedule_changed"
 	ChangeTypeMedicationSwitched        ChangeType = "medication_switched"
+	ChangeTypeMedicationLogEdited       ChangeType = "medication_log_edited"
 	ChangeTypeDietPlanStarted           ChangeType = "diet_plan_started"
 	ChangeTypeDietPlanEnded             ChangeType = "diet_plan_ended"
 	ChangeTypeConditionAdded            ChangeType = "condition_added"

@@ -47,7 +47,7 @@ func (r *userRepo) Create(ctx context.Context, user *models.User) error {
 
 func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, first_name, last_name, phone, timezone, status,
+		SELECT id, email, password_hash, first_name, last_name, phone, timezone, time_format, status,
 		       email_verified_at, last_login_at, created_at, updated_at
 		FROM users
 		WHERE id = $1
@@ -61,6 +61,7 @@ func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.User, err
 		&user.LastName,
 		&user.Phone,
 		&user.Timezone,
+		&user.TimeFormat,
 		&user.Status,
 		&user.EmailVerifiedAt,
 		&user.LastLoginAt,
@@ -78,7 +79,7 @@ func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.User, err
 
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, email, password_hash, first_name, last_name, phone, timezone, status,
+		SELECT id, email, password_hash, first_name, last_name, phone, timezone, time_format, status,
 		       email_verified_at, last_login_at, created_at, updated_at
 		FROM users
 		WHERE LOWER(email) = LOWER($1)
@@ -92,6 +93,7 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 		&user.LastName,
 		&user.Phone,
 		&user.Timezone,
+		&user.TimeFormat,
 		&user.Status,
 		&user.EmailVerifiedAt,
 		&user.LastLoginAt,
@@ -110,7 +112,7 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (*models.User, 
 func (r *userRepo) Update(ctx context.Context, user *models.User) error {
 	query := `
 		UPDATE users
-		SET email = $2, first_name = $3, last_name = $4, phone = $5, timezone = $6, updated_at = $7
+		SET email = $2, first_name = $3, last_name = $4, phone = $5, timezone = $6, time_format = $7, updated_at = $8
 		WHERE id = $1
 	`
 	user.UpdatedAt = time.Now()
@@ -121,6 +123,7 @@ func (r *userRepo) Update(ctx context.Context, user *models.User) error {
 		user.LastName,
 		user.Phone,
 		user.Timezone,
+		user.TimeFormat,
 		user.UpdatedAt,
 	)
 	return err

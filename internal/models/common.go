@@ -60,6 +60,40 @@ func (nt *NullTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// FlexDate is a time.Time wrapper that accepts multiple date formats when unmarshaling JSON.
+// It accepts both "2006-01-02" (date only) and "2006-01-02T15:04:05Z07:00" (RFC3339) formats.
+type FlexDate struct {
+	time.Time
+}
+
+func (fd FlexDate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fd.Time)
+}
+
+func (fd *FlexDate) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	if s == "" {
+		fd.Time = time.Time{}
+		return nil
+	}
+	// Try RFC3339 first (with time component)
+	t, err := time.Parse(time.RFC3339, s)
+	if err == nil {
+		fd.Time = t
+		return nil
+	}
+	// Try date-only format
+	t, err = time.Parse("2006-01-02", s)
+	if err == nil {
+		fd.Time = t
+		return nil
+	}
+	return err
+}
+
 type NullUUID struct {
 	UUID  uuid.UUID
 	Valid bool

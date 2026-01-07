@@ -221,16 +221,21 @@ type HealthEventLog struct {
 
 // Daily Log Page combines all logs for a day
 type DailyLogPage struct {
-	Child          Child           `json:"child"`
-	Date           time.Time       `json:"date"`
-	MedicationLogs []MedicationLog `json:"medication_logs"`
-	MedicationsDue []MedicationDue `json:"medications_due"`
-	BehaviorLogs   []BehaviorLog   `json:"behavior_logs"`
-	BowelLogs      []BowelLog      `json:"bowel_logs"`
-	SpeechLogs     []SpeechLog     `json:"speech_logs"`
-	DietLogs       []DietLog       `json:"diet_logs"`
-	WeightLogs     []WeightLog     `json:"weight_logs"`
-	SleepLogs      []SleepLog      `json:"sleep_logs"`
+	Child           Child            `json:"child"`
+	Date            time.Time        `json:"date"`
+	MedicationLogs  []MedicationLog  `json:"medication_logs"`
+	MedicationsDue  []MedicationDue  `json:"medications_due"`
+	BehaviorLogs    []BehaviorLog    `json:"behavior_logs"`
+	BowelLogs       []BowelLog       `json:"bowel_logs"`
+	SpeechLogs      []SpeechLog      `json:"speech_logs"`
+	DietLogs        []DietLog        `json:"diet_logs"`
+	WeightLogs      []WeightLog      `json:"weight_logs"`
+	SleepLogs       []SleepLog       `json:"sleep_logs"`
+	SensoryLogs     []SensoryLog     `json:"sensory_logs"`
+	SocialLogs      []SocialLog      `json:"social_logs"`
+	TherapyLogs     []TherapyLog     `json:"therapy_logs"`
+	SeizureLogs     []SeizureLog     `json:"seizure_logs"`
+	HealthEventLogs []HealthEventLog `json:"health_event_logs"`
 }
 
 // DateWithEntryCount represents a date that has log entries
@@ -241,7 +246,7 @@ type DateWithEntryCount struct {
 
 // Request types for creating logs
 type CreateBehaviorLogRequest struct {
-	LogDate               time.Time `json:"log_date"`
+	LogDate               FlexDate `json:"log_date"`
 	LogTime               string    `json:"log_time,omitempty"`
 	TimeScope             string    `json:"time_scope,omitempty"`
 	MoodLevel             *int      `json:"mood_level,omitempty"`
@@ -261,7 +266,7 @@ type CreateBehaviorLogRequest struct {
 }
 
 type CreateBowelLogRequest struct {
-	LogDate      time.Time `json:"log_date"`
+	LogDate      FlexDate `json:"log_date"`
 	LogTime      string    `json:"log_time,omitempty"`
 	BristolScale *int      `json:"bristol_scale,omitempty"`
 	HadAccident  bool      `json:"had_accident"`
@@ -271,7 +276,7 @@ type CreateBowelLogRequest struct {
 }
 
 type CreateSpeechLogRequest struct {
-	LogDate                  time.Time `json:"log_date"`
+	LogDate                  FlexDate `json:"log_date"`
 	VerbalOutputLevel        *int      `json:"verbal_output_level,omitempty"`
 	ClarityLevel             *int      `json:"clarity_level,omitempty"`
 	NewWords                 []string  `json:"new_words,omitempty"`
@@ -283,7 +288,7 @@ type CreateSpeechLogRequest struct {
 }
 
 type CreateDietLogRequest struct {
-	LogDate           time.Time `json:"log_date"`
+	LogDate           FlexDate `json:"log_date"`
 	MealType          string    `json:"meal_type,omitempty"`
 	MealTime          string    `json:"meal_time,omitempty"`
 	FoodsEaten        []string  `json:"foods_eaten,omitempty"`
@@ -299,14 +304,14 @@ type CreateDietLogRequest struct {
 }
 
 type CreateWeightLogRequest struct {
-	LogDate      time.Time `json:"log_date"`
+	LogDate      FlexDate `json:"log_date"`
 	WeightLbs    *float64  `json:"weight_lbs,omitempty"`
 	HeightInches *float64  `json:"height_inches,omitempty"`
 	Notes        string    `json:"notes,omitempty"`
 }
 
 type CreateSleepLogRequest struct {
-	LogDate           time.Time `json:"log_date"`
+	LogDate           FlexDate `json:"log_date"`
 	Bedtime           string    `json:"bedtime,omitempty"`
 	WakeTime          string    `json:"wake_time,omitempty"`
 	TotalSleepMinutes *int      `json:"total_sleep_minutes,omitempty"`
@@ -320,7 +325,7 @@ type CreateSleepLogRequest struct {
 }
 
 type CreateSensoryLogRequest struct {
-	LogDate                  time.Time `json:"log_date"`
+	LogDate                  FlexDate `json:"log_date"`
 	LogTime                  string    `json:"log_time,omitempty"`
 	SensorySeekingBehaviors  []string  `json:"sensory_seeking_behaviors,omitempty"`
 	SensoryAvoidingBehaviors []string  `json:"sensory_avoiding_behaviors,omitempty"`
@@ -332,7 +337,7 @@ type CreateSensoryLogRequest struct {
 }
 
 type CreateSocialLogRequest struct {
-	LogDate                time.Time `json:"log_date"`
+	LogDate                FlexDate `json:"log_date"`
 	EyeContactLevel        *int      `json:"eye_contact_level,omitempty"`
 	SocialEngagementLevel  *int      `json:"social_engagement_level,omitempty"`
 	PeerInteractions       int       `json:"peer_interactions"`
@@ -344,7 +349,7 @@ type CreateSocialLogRequest struct {
 }
 
 type CreateTherapyLogRequest struct {
-	LogDate          time.Time `json:"log_date"`
+	LogDate          FlexDate `json:"log_date"`
 	TherapyType      string    `json:"therapy_type,omitempty"`
 	TherapistName    string    `json:"therapist_name,omitempty"`
 	DurationMinutes  *int      `json:"duration_minutes,omitempty"`
@@ -355,7 +360,7 @@ type CreateTherapyLogRequest struct {
 }
 
 type CreateSeizureLogRequest struct {
-	LogDate               time.Time `json:"log_date"`
+	LogDate               FlexDate `json:"log_date"`
 	LogTime               string    `json:"log_time"`
 	SeizureType           string    `json:"seizure_type,omitempty"`
 	DurationSeconds       *int      `json:"duration_seconds,omitempty"`
@@ -369,7 +374,7 @@ type CreateSeizureLogRequest struct {
 }
 
 type CreateHealthEventLogRequest struct {
-	LogDate      time.Time  `json:"log_date"`
+	LogDate      FlexDate  `json:"log_date"`
 	EventType    string     `json:"event_type,omitempty"`
 	Description  string     `json:"description,omitempty"`
 	Symptoms     []string   `json:"symptoms,omitempty"`

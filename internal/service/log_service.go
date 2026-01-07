@@ -22,7 +22,7 @@ func NewLogService(logRepo repository.LogRepository) *LogService {
 
 // Behavior Logs
 func (s *LogService) CreateBehaviorLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateBehaviorLogRequest) (*models.BehaviorLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -73,7 +73,7 @@ func (s *LogService) DeleteBehaviorLog(ctx context.Context, id uuid.UUID) error 
 
 // Bowel Logs
 func (s *LogService) CreateBowelLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateBowelLogRequest) (*models.BowelLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -115,7 +115,7 @@ func (s *LogService) DeleteBowelLog(ctx context.Context, id uuid.UUID) error {
 
 // Speech Logs
 func (s *LogService) CreateSpeechLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSpeechLogRequest) (*models.SpeechLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -158,7 +158,7 @@ func (s *LogService) DeleteSpeechLog(ctx context.Context, id uuid.UUID) error {
 
 // Diet Logs
 func (s *LogService) CreateDietLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateDietLogRequest) (*models.DietLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -209,7 +209,7 @@ func (s *LogService) DeleteDietLog(ctx context.Context, id uuid.UUID) error {
 
 // Weight Logs
 func (s *LogService) CreateWeightLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateWeightLogRequest) (*models.WeightLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -247,7 +247,7 @@ func (s *LogService) DeleteWeightLog(ctx context.Context, id uuid.UUID) error {
 
 // Sleep Logs
 func (s *LogService) CreateSleepLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSleepLogRequest) (*models.SleepLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -323,9 +323,14 @@ func (s *LogService) GetThisWeekRange() (time.Time, time.Time) {
 
 // Sensory Logs
 func (s *LogService) CreateSensoryLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSensoryLogRequest) (*models.SensoryLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
+	}
+	// Handle overall_regulation - treat 0 or out-of-range as NULL (check constraint requires 1-5)
+	var overallRegulation *int
+	if req.OverallRegulation != nil && *req.OverallRegulation >= 1 && *req.OverallRegulation <= 5 {
+		overallRegulation = req.OverallRegulation
 	}
 	log := &models.SensoryLog{
 		ChildID:                  childID,
@@ -335,7 +340,7 @@ func (s *LogService) CreateSensoryLog(ctx context.Context, childID, loggedBy uui
 		OverloadTriggers:         models.StringArray(req.OverloadTriggers),
 		CalmingStrategiesUsed:    models.StringArray(req.CalmingStrategiesUsed),
 		OverloadEpisodes:         req.OverloadEpisodes,
-		OverallRegulation:        req.OverallRegulation,
+		OverallRegulation:        overallRegulation,
 		LoggedBy:                 loggedBy,
 	}
 	log.LogTime.String = req.LogTime
@@ -367,15 +372,24 @@ func (s *LogService) DeleteSensoryLog(ctx context.Context, id uuid.UUID) error {
 
 // Social Logs
 func (s *LogService) CreateSocialLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSocialLogRequest) (*models.SocialLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
+	}
+	// Handle level fields - treat 0 or out-of-range as NULL (check constraints require 1-5)
+	var eyeContactLevel *int
+	if req.EyeContactLevel != nil && *req.EyeContactLevel >= 1 && *req.EyeContactLevel <= 5 {
+		eyeContactLevel = req.EyeContactLevel
+	}
+	var socialEngagementLevel *int
+	if req.SocialEngagementLevel != nil && *req.SocialEngagementLevel >= 1 && *req.SocialEngagementLevel <= 5 {
+		socialEngagementLevel = req.SocialEngagementLevel
 	}
 	log := &models.SocialLog{
 		ChildID:                childID,
 		LogDate:                logDate,
-		EyeContactLevel:        req.EyeContactLevel,
-		SocialEngagementLevel:  req.SocialEngagementLevel,
+		EyeContactLevel:        eyeContactLevel,
+		SocialEngagementLevel:  socialEngagementLevel,
 		PeerInteractions:       req.PeerInteractions,
 		PositiveInteractions:   req.PositiveInteractions,
 		Conflicts:              req.Conflicts,
@@ -410,7 +424,7 @@ func (s *LogService) DeleteSocialLog(ctx context.Context, id uuid.UUID) error {
 
 // Therapy Logs
 func (s *LogService) CreateTherapyLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateTherapyLogRequest) (*models.TherapyLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -456,7 +470,7 @@ func (s *LogService) DeleteTherapyLog(ctx context.Context, id uuid.UUID) error {
 
 // Seizure Logs
 func (s *LogService) CreateSeizureLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateSeizureLogRequest) (*models.SeizureLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -503,7 +517,7 @@ func (s *LogService) DeleteSeizureLog(ctx context.Context, id uuid.UUID) error {
 
 // Health Event Logs
 func (s *LogService) CreateHealthEventLog(ctx context.Context, childID, loggedBy uuid.UUID, req *models.CreateHealthEventLogRequest) (*models.HealthEventLog, error) {
-	logDate := req.LogDate
+	logDate := req.LogDate.Time
 	if logDate.IsZero() {
 		logDate = time.Now()
 	}
@@ -556,4 +570,380 @@ func (s *LogService) DeleteHealthEventLog(ctx context.Context, id uuid.UUID) err
 // GetDatesWithLogs returns dates that have log entries for a child
 func (s *LogService) GetDatesWithLogs(ctx context.Context, childID uuid.UUID, limit int) ([]models.DateWithEntryCount, error) {
 	return s.logRepo.GetDatesWithLogs(ctx, childID, limit)
+}
+
+// DaySummaryData holds the score and details for a day
+type DaySummaryData struct {
+	Score   float64
+	HasData bool
+	Details string
+}
+
+// GetQuickSummary returns summary data for a category over a date range
+func (s *LogService) GetQuickSummary(ctx context.Context, childID uuid.UUID, category string, startDate, endDate time.Time) (map[string]DaySummaryData, error) {
+	result := make(map[string]DaySummaryData)
+
+	switch category {
+	case "behavior":
+		logs, err := s.logRepo.GetBehaviorLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		// Group by date and calculate scores
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			// Score calculation: mood (positive), energy (positive), anxiety (negative), meltdowns (negative), etc.
+			// Start with 50 (neutral) and adjust
+			score := 50.0
+			count := 0
+
+			if log.MoodLevel != nil && *log.MoodLevel > 0 {
+				score += float64(*log.MoodLevel-5) * 5 // -25 to +25
+				count++
+			}
+			if log.EnergyLevel != nil && *log.EnergyLevel > 0 {
+				score += float64(*log.EnergyLevel-5) * 3 // -15 to +15
+				count++
+			}
+			if log.AnxietyLevel != nil && *log.AnxietyLevel > 0 {
+				score -= float64(*log.AnxietyLevel-5) * 3 // anxiety is negative
+				count++
+			}
+			score -= float64(log.Meltdowns) * 10
+			score -= float64(log.AggressionIncidents) * 15
+			score -= float64(log.SelfInjuryIncidents) * 20
+
+			if count > 0 || log.Meltdowns > 0 || log.AggressionIncidents > 0 || log.SelfInjuryIncidents > 0 {
+				// Clamp between 0 and 100
+				if score < 0 {
+					score = 0
+				} else if score > 100 {
+					score = 100
+				}
+				// Average with existing if there are multiple logs per day
+				if existing.Score > 0 {
+					existing.Score = (existing.Score + score) / 2
+				} else {
+					existing.Score = score
+				}
+			}
+
+			result[dateKey] = existing
+		}
+
+	case "sleep":
+		logs, err := s.logRepo.GetSleepLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			score := 50.0
+			// Quality-based scoring
+			if log.SleepQuality.Valid {
+				switch log.SleepQuality.String {
+				case "excellent":
+					score = 100
+				case "good":
+					score = 75
+				case "fair":
+					score = 50
+				case "poor":
+					score = 25
+				case "very_poor":
+					score = 0
+				}
+			}
+			// Adjust for night wakings
+			score -= float64(log.NightWakings) * 10
+			// Adjust for nightmares/bed wetting
+			if log.Nightmares {
+				score -= 15
+			}
+			if log.BedWetting {
+				score -= 10
+			}
+
+			if score < 0 {
+				score = 0
+			}
+			existing.Score = score
+			result[dateKey] = existing
+		}
+
+	case "diet":
+		logs, err := s.logRepo.GetDietLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			score := 50.0
+			if log.AppetiteLevel.Valid {
+				switch log.AppetiteLevel.String {
+				case "excellent":
+					score = 100
+				case "good":
+					score = 80
+				case "normal":
+					score = 60
+				case "poor":
+					score = 30
+				case "none":
+					score = 10
+				}
+			}
+			if log.AllergicReaction {
+				score -= 30
+			}
+			if len(log.FoodsRefused) > 3 {
+				score -= 10
+			}
+
+			if score < 0 {
+				score = 0
+			}
+			if existing.Score > 0 {
+				existing.Score = (existing.Score + score) / 2
+			} else {
+				existing.Score = score
+			}
+			result[dateKey] = existing
+		}
+
+	case "bowel":
+		logs, err := s.logRepo.GetBowelLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			score := 70.0 // Having a bowel movement is generally positive
+			// Bristol scale: 3-4 is ideal
+			if log.BristolScale != nil {
+				bs := *log.BristolScale
+				if bs >= 3 && bs <= 4 {
+					score = 100
+				} else if bs == 2 || bs == 5 {
+					score = 70
+				} else {
+					score = 40
+				}
+			}
+			if log.HadAccident {
+				score -= 20
+			}
+			if log.BloodPresent {
+				score -= 40
+			}
+			if log.PainLevel != nil && *log.PainLevel > 0 {
+				score -= float64(*log.PainLevel) * 5
+			}
+
+			if score < 0 {
+				score = 0
+			}
+			existing.Score = score
+			result[dateKey] = existing
+		}
+
+	case "speech":
+		logs, err := s.logRepo.GetSpeechLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			score := 50.0
+			if log.VerbalOutputLevel != nil {
+				score = float64(*log.VerbalOutputLevel) * 10
+			}
+			// Bonus for new words, penalty for lost words
+			if len(log.NewWords) > 0 {
+				score += float64(len(log.NewWords)) * 10
+			}
+			if len(log.LostWords) > 0 {
+				score -= float64(len(log.LostWords)) * 15
+			}
+
+			if score < 0 {
+				score = 0
+			} else if score > 100 {
+				score = 100
+			}
+			existing.Score = score
+			result[dateKey] = existing
+		}
+
+	case "sensory":
+		logs, err := s.logRepo.GetSensoryLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			score := 50.0
+			if log.OverallRegulation != nil {
+				score = float64(*log.OverallRegulation) * 10
+			}
+			// More triggers = worse day
+			if len(log.OverloadTriggers) > 0 {
+				score -= float64(len(log.OverloadTriggers)) * 5
+			}
+
+			if score < 0 {
+				score = 0
+			} else if score > 100 {
+				score = 100
+			}
+			existing.Score = score
+			result[dateKey] = existing
+		}
+
+	case "social":
+		logs, err := s.logRepo.GetSocialLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			score := 50.0
+			if log.SocialEngagementLevel != nil {
+				score = float64(*log.SocialEngagementLevel) * 10
+			}
+			// Positive interactions vs conflicts
+			score += float64(log.PositiveInteractions) * 5
+			score -= float64(log.Conflicts) * 10
+
+			if score < 0 {
+				score = 0
+			} else if score > 100 {
+				score = 100
+			}
+			existing.Score = score
+			result[dateKey] = existing
+		}
+
+	case "therapy":
+		logs, err := s.logRepo.GetTherapyLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			// Attending therapy is positive, score based on duration and having goals
+			score := 70.0
+			if log.DurationMinutes != nil && *log.DurationMinutes > 0 {
+				// Longer sessions = more engagement
+				score = 60 + float64(*log.DurationMinutes)/60*20 // 60-80 for 0-60 min
+			}
+			// Having progress notes is positive
+			if log.ProgressNotes.Valid && log.ProgressNotes.String != "" {
+				score += 10
+			}
+
+			if score > 100 {
+				score = 100
+			}
+			existing.Score = score
+			result[dateKey] = existing
+		}
+
+	case "seizure":
+		logs, err := s.logRepo.GetSeizureLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			// Having seizures is concerning, score inversely
+			score := 100.0
+			if log.DurationSeconds != nil {
+				score -= float64(*log.DurationSeconds) / 60 * 20 // Lose 20 points per minute
+			}
+			// Rescue medication indicates more serious seizure
+			if log.RescueMedicationGiven {
+				score -= 30
+			}
+			// Called 911 indicates severe seizure
+			if log.Called911 {
+				score -= 40
+			}
+
+			if score < 0 {
+				score = 0
+			}
+			// Multiple seizures per day lower the score
+			if existing.Score > 0 {
+				existing.Score = (existing.Score + score) / 2
+			} else {
+				existing.Score = score
+			}
+			result[dateKey] = existing
+		}
+
+	case "health_event":
+		logs, err := s.logRepo.GetHealthEventLogs(ctx, childID, startDate, endDate)
+		if err != nil {
+			return nil, err
+		}
+		for _, log := range logs {
+			dateKey := log.LogDate.Format("2006-01-02")
+			existing := result[dateKey]
+			existing.HasData = true
+
+			// Health events are generally concerning
+			score := 50.0
+			// High fever indicates more serious event
+			if log.TemperatureF != nil && *log.TemperatureF >= 101.0 {
+				score -= 20
+			}
+			// Certain event types are more concerning
+			if log.EventType.Valid {
+				switch log.EventType.String {
+				case "injury", "emergency":
+					score -= 20
+				case "illness", "infection":
+					score -= 10
+				case "checkup", "vaccination":
+					score = 70 // Routine care is positive
+				}
+			}
+
+			existing.Score = score
+			result[dateKey] = existing
+		}
+
+	default:
+		// For unknown categories, return empty data
+	}
+
+	return result, nil
 }
