@@ -303,6 +303,34 @@ func (s *LogService) GetTodaysLogs(ctx context.Context, childID uuid.UUID) (*mod
 	return s.logRepo.GetDailyLogs(ctx, childID, time.Now())
 }
 
+// GetLogsForDateRange returns all logs for a date range (used for weekly view)
+func (s *LogService) GetLogsForDateRange(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) (*models.DailyLogPage, error) {
+	return s.logRepo.GetLogsForDateRange(ctx, childID, startDate, endDate)
+}
+
+// GetWeekBounds calculates the Monday-Sunday week bounds for a given date
+// Week starts Monday 00:00:00 and ends Sunday 23:59:59
+func (s *LogService) GetWeekBounds(date time.Time, loc *time.Location) (time.Time, time.Time) {
+	// Get the weekday (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+	weekday := int(date.Weekday())
+
+	// Calculate days since Monday (Monday = 0, Tuesday = 1, ..., Sunday = 6)
+	daysSinceMonday := weekday - 1
+	if weekday == 0 {
+		// Sunday is 6 days after Monday
+		daysSinceMonday = 6
+	}
+
+	// Get Monday at 00:00:00
+	monday := time.Date(date.Year(), date.Month(), date.Day()-daysSinceMonday, 0, 0, 0, 0, loc)
+
+	// Get Sunday at 23:59:59
+	sunday := monday.AddDate(0, 0, 6)
+	sunday = time.Date(sunday.Year(), sunday.Month(), sunday.Day(), 23, 59, 59, 999999999, loc)
+
+	return monday, sunday
+}
+
 // Date range helpers
 func (s *LogService) GetLastWeekRange() (time.Time, time.Time) {
 	now := time.Now()

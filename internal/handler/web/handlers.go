@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"carecompanion/internal/middleware"
+	"carecompanion/internal/models"
 	"carecompanion/internal/service"
 )
 
@@ -135,22 +136,45 @@ func (h *WebHandlers) DailyLogs(w http.ResponseWriter, r *http.Request) {
 		userTimezone = prefs.Timezone
 	}
 
-	dateStr := r.URL.Query().Get("date")
-	date := time.Now()
-	if dateStr != "" {
-		// Parse in user's timezone
-		loc, locErr := time.LoadLocation(userTimezone)
-		if locErr == nil {
-			date, _ = time.ParseInLocation("2006-01-02", dateStr, loc)
-		} else {
-			date, _ = time.ParseInLocation("2006-01-02", dateStr, time.Local)
-		}
+	loc, locErr := time.LoadLocation(userTimezone)
+	if locErr != nil {
+		loc = time.Local
 	}
 
-	logs, err := h.services.Log.GetDailyLogs(r.Context(), childID, date)
-	if err != nil {
-		renderError(w, "Failed to load logs", http.StatusInternalServerError)
-		return
+	dateStr := r.URL.Query().Get("date")
+	viewMode := r.URL.Query().Get("view")
+	if viewMode == "" {
+		viewMode = "daily"
+	}
+
+	date := time.Now().In(loc)
+	if dateStr != "" {
+		date, _ = time.ParseInLocation("2006-01-02", dateStr, loc)
+	}
+
+	var logs *models.DailyLogPage
+	var startDate, endDate time.Time
+
+	if viewMode == "weekly" {
+		// Calculate week bounds (Monday 00:00 to Sunday 23:59)
+		startDate, endDate = h.services.Log.GetWeekBounds(date, loc)
+		logs, err = h.services.Log.GetLogsForDateRange(r.Context(), childID, startDate, endDate)
+		if err != nil {
+			renderError(w, "Failed to load logs", http.StatusInternalServerError)
+			return
+		}
+		logs.ViewMode = "weekly"
+		logs.Date = startDate
+		logs.EndDate = endDate
+	} else {
+		logs, err = h.services.Log.GetDailyLogs(r.Context(), childID, date)
+		if err != nil {
+			renderError(w, "Failed to load logs", http.StatusInternalServerError)
+			return
+		}
+		logs.ViewMode = "daily"
+		startDate = date
+		endDate = date
 	}
 
 	dueMeds, err := h.services.Medication.GetDueMedications(r.Context(), childID, date)
@@ -160,7 +184,9 @@ func (h *WebHandlers) DailyLogs(w http.ResponseWriter, r *http.Request) {
 
 	data := map[string]interface{}{
 		"Child":          child,
-		"Date":           date,
+		"Date":           startDate,
+		"EndDate":        endDate,
+		"ViewMode":       viewMode,
 		"Logs":           logs,
 		"MedicationsDue": dueMeds,
 		"UserTimezone":   userTimezone,

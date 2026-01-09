@@ -813,8 +813,34 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Sleep (minutes)</label>
-                    <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" placeholder="e.g., 480">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Sleep</label>
+                    <div class="flex gap-2">
+                        <select name="sleep_hours" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                            <option value="">Hrs</option>
+                            <option value="0">0 hrs</option>
+                            <option value="1">1 hr</option>
+                            <option value="2">2 hrs</option>
+                            <option value="3">3 hrs</option>
+                            <option value="4">4 hrs</option>
+                            <option value="5">5 hrs</option>
+                            <option value="6">6 hrs</option>
+                            <option value="7">7 hrs</option>
+                            <option value="8">8 hrs</option>
+                            <option value="9">9 hrs</option>
+                            <option value="10">10 hrs</option>
+                            <option value="11">11 hrs</option>
+                            <option value="12">12 hrs</option>
+                            <option value="13">13 hrs</option>
+                            <option value="14">14 hrs</option>
+                        </select>
+                        <select name="sleep_minutes" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                            <option value="">Min</option>
+                            <option value="0">0 min</option>
+                            <option value="15">15 min</option>
+                            <option value="30">30 min</option>
+                            <option value="45">45 min</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div>
@@ -1491,11 +1517,14 @@ async function handleSubmit(e) {
             endpoint = 'diet';
             break;
         case 'sleep':
+            const sleepHours = formData.get('sleep_hours') ? parseInt(formData.get('sleep_hours')) : 0;
+            const sleepMins = formData.get('sleep_minutes') ? parseInt(formData.get('sleep_minutes')) : 0;
+            const totalSleepMins = (sleepHours > 0 || sleepMins > 0) ? (sleepHours * 60 + sleepMins) : null;
             data = {
                 bedtime: formData.get('bedtime') || null,
                 wake_time: formData.get('wake_time') || null,
                 sleep_quality: formData.get('sleep_quality'),
-                total_sleep_minutes: formData.get('total_sleep_minutes') ? parseInt(formData.get('total_sleep_minutes')) : null,
+                total_sleep_minutes: totalSleepMins,
                 night_wakings: parseInt(formData.get('night_wakings') || 0),
                 nightmares: formData.get('nightmares') === 'on',
                 bed_wetting: formData.get('bed_wetting') === 'on',

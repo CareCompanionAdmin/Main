@@ -176,6 +176,7 @@ type LogRepository interface {
 
 	// Daily log page
 	GetDailyLogs(ctx context.Context, childID uuid.UUID, date time.Time) (*models.DailyLogPage, error)
+	GetLogsForDateRange(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) (*models.DailyLogPage, error)
 
 	// Date listing
 	GetDatesWithLogs(ctx context.Context, childID uuid.UUID, limit int) ([]models.DateWithEntryCount, error)

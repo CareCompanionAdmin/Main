@@ -1,36 +1,50 @@
-# Environment
+# Environment and secrets
 .env
 .env.local
 .env.*.local
+*.pem
+*.key
+credentials.json
+secrets.json
 
 # Build artifacts
 bin/
 tmp/
+dist/
+build/
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+carecompanion
 
 # Test artifacts
 *.test
 *.out
+coverage.html
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 
 # OS files
 .DS_Store
 Thumbs.db
+ehthumbs.db
 
 # Transfers (data files)
 transfers/
 
 # Uploads
 uploads/
+
+# Logs
+logs/
+*.log
 
 # Debug/utility scripts
 cmd/addtofamily/
@@ -48,8 +62,17 @@ cmd/testdata/
 cmd/testdates/
 cmd/updatealert/
 cmd/verifydata/
+cmd/test_template/
 
 # Test data files
 testdata.md
 testdata.sql
+
+# Claude Code (keep commands for shared slash commands)
+.claude/settings.*
+.claude/plans/
+.claude/todos/
+
+# Go workspace
+go.work
 

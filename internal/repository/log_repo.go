@@ -41,13 +41,16 @@ func (r *logRepo) CreateBehaviorLog(ctx context.Context, log *models.BehaviorLog
 }
 
 func (r *logRepo) GetBehaviorLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.BehaviorLog, error) {
+	// Format dates as strings to avoid timezone conversion issues
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, log_time, time_scope, mood_level, energy_level, anxiety_level, interpersonal_behavior, meltdowns, stimming_episodes, stimming_level, aggression_incidents, self_injury_incidents, location, location_other, triggers, positive_behaviors, notes, logged_by, created_at, updated_at
 		FROM behavior_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -135,13 +138,15 @@ func (r *logRepo) CreateBowelLog(ctx context.Context, log *models.BowelLog) erro
 }
 
 func (r *logRepo) GetBowelLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.BowelLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, log_time, bristol_scale, had_accident, pain_level, blood_present, notes, logged_by, created_at
 		FROM bowel_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -217,13 +222,15 @@ func (r *logRepo) CreateSpeechLog(ctx context.Context, log *models.SpeechLog) er
 }
 
 func (r *logRepo) GetSpeechLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SpeechLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, verbal_output_level, clarity_level, new_words, lost_words, echolalia_level, communication_attempts, successful_communications, notes, logged_by, created_at
 		FROM speech_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -302,13 +309,15 @@ func (r *logRepo) CreateDietLog(ctx context.Context, log *models.DietLog) error 
 }
 
 func (r *logRepo) GetDietLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.DietLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, meal_type, meal_time, foods_eaten, foods_refused, appetite_level, water_intake_oz, supplements_taken, new_food_tried, new_food_acceptance, allergic_reaction, reaction_details, notes, logged_by, created_at
 		FROM diet_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -386,13 +395,15 @@ func (r *logRepo) CreateWeightLog(ctx context.Context, log *models.WeightLog) er
 }
 
 func (r *logRepo) GetWeightLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.WeightLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, weight_lbs, height_inches, notes, logged_by, created_at
 		FROM weight_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -464,13 +475,15 @@ func (r *logRepo) CreateSleepLog(ctx context.Context, log *models.SleepLog) erro
 }
 
 func (r *logRepo) GetSleepLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SleepLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, bedtime, wake_time, total_sleep_minutes, night_wakings, sleep_quality, took_sleep_aid, sleep_aid_name, nightmares, bed_wetting, notes, logged_by, created_at
 		FROM sleep_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -550,13 +563,15 @@ func (r *logRepo) CreateSensoryLog(ctx context.Context, log *models.SensoryLog) 
 }
 
 func (r *logRepo) GetSensoryLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SensoryLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, log_time, sensory_seeking_behaviors, sensory_avoiding_behaviors, overload_triggers, calming_strategies_used, overload_episodes, overall_regulation, notes, logged_by, created_at
 		FROM sensory_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -638,13 +653,15 @@ func (r *logRepo) CreateSocialLog(ctx context.Context, log *models.SocialLog) er
 }
 
 func (r *logRepo) GetSocialLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SocialLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, eye_contact_level, social_engagement_level, peer_interactions, positive_interactions, conflicts, parallel_play_minutes, cooperative_play_minutes, notes, logged_by, created_at
 		FROM social_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -725,13 +742,15 @@ func (r *logRepo) CreateTherapyLog(ctx context.Context, log *models.TherapyLog) 
 }
 
 func (r *logRepo) GetTherapyLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.TherapyLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, therapy_type, therapist_name, duration_minutes, goals_worked_on, progress_notes, homework_assigned, parent_notes, logged_by, created_at
 		FROM therapy_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -810,13 +829,15 @@ func (r *logRepo) CreateSeizureLog(ctx context.Context, log *models.SeizureLog) 
 }
 
 func (r *logRepo) GetSeizureLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.SeizureLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, log_time, seizure_type, duration_seconds, triggers, warning_signs, post_ictal_symptoms, rescue_medication_given, rescue_medication_name, called_911, notes, logged_by, created_at
 		FROM seizure_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -895,13 +916,15 @@ func (r *logRepo) CreateHealthEventLog(ctx context.Context, log *models.HealthEv
 }
 
 func (r *logRepo) GetHealthEventLogs(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.HealthEventLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
 	query := `
 		SELECT id, child_id, log_date, event_type, description, symptoms, temperature_f, provider_name, diagnosis, treatment, follow_up_date, notes, logged_by, created_at
 		FROM health_event_logs
-		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
 		ORDER BY log_date DESC, created_at DESC
 	`
-	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
 		return nil, err
 	}
@@ -1067,6 +1090,148 @@ func (r *logRepo) GetDailyLogs(ctx context.Context, childID uuid.UUID, date time
 	page.HealthEventLogs = healthEventLogs
 
 	return page, nil
+}
+
+// GetLogsForDateRange returns all logs for a child within a date range (for weekly view)
+func (r *logRepo) GetLogsForDateRange(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) (*models.DailyLogPage, error) {
+	// Get child first
+	childQuery := `
+		SELECT id, family_id, first_name, last_name, date_of_birth, gender, photo_url, notes, settings, is_active, created_at, updated_at
+		FROM children
+		WHERE id = $1
+	`
+	child := models.Child{}
+	err := r.db.QueryRowContext(ctx, childQuery, childID).Scan(
+		&child.ID, &child.FamilyID, &child.FirstName, &child.LastName,
+		&child.DateOfBirth, &child.Gender, &child.PhotoURL, &child.Notes,
+		&child.Settings, &child.IsActive, &child.CreatedAt, &child.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	page := &models.DailyLogPage{
+		Child:   child,
+		Date:    startDate,
+		EndDate: endDate,
+	}
+
+	// Get medication logs for date range
+	medLogs, err := r.getMedicationLogsForDateRange(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.MedicationLogs = medLogs
+
+	// Get behavior logs
+	behaviorLogs, err := r.GetBehaviorLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.BehaviorLogs = behaviorLogs
+
+	// Get bowel logs
+	bowelLogs, err := r.GetBowelLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.BowelLogs = bowelLogs
+
+	// Get speech logs
+	speechLogs, err := r.GetSpeechLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.SpeechLogs = speechLogs
+
+	// Get diet logs
+	dietLogs, err := r.GetDietLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.DietLogs = dietLogs
+
+	// Get weight logs
+	weightLogs, err := r.GetWeightLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.WeightLogs = weightLogs
+
+	// Get sleep logs
+	sleepLogs, err := r.GetSleepLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.SleepLogs = sleepLogs
+
+	// Get sensory logs
+	sensoryLogs, err := r.GetSensoryLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.SensoryLogs = sensoryLogs
+
+	// Get social logs
+	socialLogs, err := r.GetSocialLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.SocialLogs = socialLogs
+
+	// Get therapy logs
+	therapyLogs, err := r.GetTherapyLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.TherapyLogs = therapyLogs
+
+	// Get seizure logs
+	seizureLogs, err := r.GetSeizureLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.SeizureLogs = seizureLogs
+
+	// Get health event logs
+	healthEventLogs, err := r.GetHealthEventLogs(ctx, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	page.HealthEventLogs = healthEventLogs
+
+	return page, nil
+}
+
+func (r *logRepo) getMedicationLogsForDateRange(ctx context.Context, childID uuid.UUID, startDate, endDate time.Time) ([]models.MedicationLog, error) {
+	startStr := startDate.Format("2006-01-02")
+	endStr := endDate.Format("2006-01-02")
+	query := `
+		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
+		FROM medication_logs
+		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
+		ORDER BY log_date DESC, created_at DESC
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []models.MedicationLog
+	for rows.Next() {
+		var log models.MedicationLog
+		err := rows.Scan(
+			&log.ID, &log.MedicationID, &log.ChildID, &log.ScheduleID, &log.LogDate,
+			&log.ScheduledTime, &log.ActualTime, &log.Status, &log.DosageGiven,
+			&log.Notes, &log.LoggedBy, &log.CreatedAt, &log.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, rows.Err()
 }
 
 func (r *logRepo) getMedicationLogsForDate(ctx context.Context, childID uuid.UUID, date time.Time) ([]models.MedicationLog, error) {

@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: carecompanion
+    ports:
+      - "8090:8090"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=carecompanion
+      - DB_PASSWORD=carecompanion
+      - DB_NAME=carecompanion
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=dev-jwt-secret-change-in-production
+      - ENVIRONMENT=development
+      - PORT=8090
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    networks:
+      - carecompanion-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: carecompanion-postgres
+    environment:
+      - POSTGRES_USER=carecompanion
+      - POSTGRES_PASSWORD=carecompanion
+      - POSTGRES_DB=carecompanion
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carecompanion -d carecompanion"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - carecompanion-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: carecompanion-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - carecompanion-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  carecompanion-network:
+    driver: bridge

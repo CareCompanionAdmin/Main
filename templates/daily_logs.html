@@ -113,8 +113,13 @@
     </div>
 
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
+        {{if eq .ViewMode "weekly"}}
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Weekly Logs for {{.Child.FirstName}}</h1>
+        <p class="text-gray-500 dark:text-gray-400">{{.Date.Format "Mon, Jan 2"}} - {{.EndDate.Format "Mon, Jan 2, 2006"}}</p>
+        {{else}}
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Daily Logs for {{.Child.FirstName}}</h1>
         <p class="text-gray-500 dark:text-gray-400">{{.Date.Format "Monday, January 2, 2006"}}</p>
+        {{end}}
     </div>
 
     <!-- Medications Due -->
@@ -266,9 +271,13 @@
         </div>
     </div>
 
-    <!-- Today's Logs -->
+    <!-- Today's/This Week's Logs -->
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+        {{if eq .ViewMode "weekly"}}
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">This Week's Entries</h2>
+        {{else}}
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Today's Entries</h2>
+        {{end}}
 
         {{if or .Logs.BehaviorLogs .Logs.DietLogs .Logs.MedicationLogs .Logs.BowelLogs .Logs.SleepLogs .Logs.SpeechLogs .Logs.WeightLogs .Logs.SensoryLogs .Logs.SocialLogs .Logs.TherapyLogs .Logs.SeizureLogs .Logs.HealthEventLogs}}
         <div class="space-y-3">
@@ -276,7 +285,7 @@
             <div onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Behavior"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-mood="{{if .MoodLevel}}{{.MoodLevel}}{{else}}0{{end}}"
                 data-entry-energy="{{if .EnergyLevel}}{{.EnergyLevel}}{{else}}0{{end}}"
                 data-entry-anxiety="{{if .AnxietyLevel}}{{.AnxietyLevel}}{{else}}0{{end}}"
@@ -305,7 +314,7 @@
                         {{if gt .SelfInjuryIncidents 0}}Self-injury: {{.SelfInjuryIncidents}} {{end}}
                         {{if .Notes.Valid}}{{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -317,7 +326,7 @@
             <div onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Meal"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-mealtype="{{if .MealType.Valid}}{{.MealType.String}}{{end}}"
                 data-entry-foods="{{if .FoodsEaten}}{{range $i, $f := .FoodsEaten}}{{if $i}}, {{end}}{{$f}}{{end}}{{end}}"
                 data-entry-foodsrefused="{{if .FoodsRefused}}{{range $i, $f := .FoodsRefused}}{{if $i}}, {{end}}{{$f}}{{end}}{{end}}"
@@ -337,7 +346,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Meal{{if .MealType.Valid}}: {{.MealType.String}}{{end}}</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -349,7 +358,7 @@
             <div onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sleep"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-quality="{{if .SleepQuality.Valid}}{{.SleepQuality.String}}{{end}}"
                 data-entry-totalminutes="{{if .TotalSleepMinutes}}{{.TotalSleepMinutes}}{{else}}0{{end}}"
                 data-entry-nightwakings="{{.NightWakings}}"
@@ -368,7 +377,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Sleep</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{if .TotalSleepMinutes}} - {{.TotalSleepMinutes}} min{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -380,7 +389,7 @@
             <div onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Bowel Movement"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-bristolscale="{{if .BristolScale}}{{.BristolScale}}{{else}}0{{end}}"
                 data-entry-hadaccident="{{.HadAccident}}"
                 data-entry-painlevel="{{if .PainLevel}}{{.PainLevel}}{{else}}0{{end}}"
@@ -394,7 +403,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Bowel Movement</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -431,7 +440,7 @@
             <div onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Speech"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-verballevel="{{if .VerbalOutputLevel}}{{.VerbalOutputLevel}}{{else}}0{{end}}"
                 data-entry-claritylevel="{{if .ClarityLevel}}{{.ClarityLevel}}{{else}}0{{end}}"
                 data-entry-newwords="{{if .NewWords}}{{range $i, $w := .NewWords}}{{if $i}}, {{end}}{{$w}}{{end}}{{end}}"
@@ -448,7 +457,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Speech</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -460,7 +469,7 @@
             <div onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg cursor-pointer hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Weight"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-weightlbs="{{if .WeightLbs}}{{.WeightLbs}}{{else}}0{{end}}"
                 data-entry-heightinches="{{if .HeightInches}}{{.HeightInches}}{{else}}0{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
@@ -472,7 +481,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Weight</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -484,7 +493,7 @@
             <div onclick="showDetails('sensory', this)" class="flex items-start space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sensory"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-overloadepisodes="{{.OverloadEpisodes}}"
                 data-entry-overallregulation="{{if .OverallRegulation}}{{.OverallRegulation}}{{else}}0{{end}}"
                 data-entry-overloadtriggers="{{range $i, $v := .OverloadTriggers}}{{if $i}}, {{end}}{{$v}}{{end}}"
@@ -504,7 +513,7 @@
                         {{if .OverallRegulation}}{{if gt (deref .OverallRegulation) 0}}Regulation: {{deref .OverallRegulation}}/5 {{end}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -516,7 +525,7 @@
             <div onclick="showDetails('social', this)" class="flex items-start space-x-3 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Social"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-eyecontactlevel="{{if .EyeContactLevel}}{{.EyeContactLevel}}{{else}}0{{end}}"
                 data-entry-socialengagementlevel="{{if .SocialEngagementLevel}}{{.SocialEngagementLevel}}{{else}}0{{end}}"
                 data-entry-peerinteractions="{{.PeerInteractions}}"
@@ -537,7 +546,7 @@
                         {{if .SocialEngagementLevel}}Engagement: {{.SocialEngagementLevel}}/5 {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -549,7 +558,7 @@
             <div onclick="showDetails('therapy', this)" class="flex items-start space-x-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Therapy"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-therapytype="{{if .TherapyType.Valid}}{{.TherapyType.String}}{{end}}"
                 data-entry-therapistname="{{if .TherapistName.Valid}}{{.TherapistName.String}}{{end}}"
                 data-entry-durationminutes="{{if .DurationMinutes}}{{.DurationMinutes}}{{else}}0{{end}}"
@@ -568,7 +577,7 @@
                         {{if .TherapistName.Valid}}with {{.TherapistName.String}}{{end}}
                         {{if .ProgressNotes.Valid}} - {{.ProgressNotes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -580,7 +589,7 @@
             <div onclick="showDetails('seizure', this)" class="flex items-start space-x-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Seizure"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-seizuretype="{{if .SeizureType.Valid}}{{.SeizureType.String}}{{end}}"
                 data-entry-durationseconds="{{if .DurationSeconds}}{{.DurationSeconds}}{{else}}0{{end}}"
                 data-entry-triggers="{{range $i, $v := .Triggers}}{{if $i}}, {{end}}{{$v}}{{end}}"
@@ -601,7 +610,7 @@
                         {{if .DurationSeconds}}Duration: {{.DurationSeconds}}s {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -613,7 +622,7 @@
             <div onclick="showDetails('health_event', this)" class="flex items-start space-x-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Health Event"
-                data-entry-time="{{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
                 data-entry-eventtype="{{if .EventType.Valid}}{{.EventType.String}}{{end}}"
                 data-entry-description="{{if .Description.Valid}}{{.Description.String}}{{end}}"
                 data-entry-symptoms="{{range $i, $v := .Symptoms}}{{if $i}}, {{end}}{{$v}}{{end}}"
@@ -634,7 +643,7 @@
                         {{if .Description.Valid}}{{.Description.String}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -958,8 +967,34 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Sleep (minutes)</label>
-                    <input type="number" name="total_sleep_minutes" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 480">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Sleep</label>
+                    <div class="flex gap-2">
+                        <select name="sleep_hours" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                            <option value="">Hrs</option>
+                            <option value="0">0 hrs</option>
+                            <option value="1">1 hr</option>
+                            <option value="2">2 hrs</option>
+                            <option value="3">3 hrs</option>
+                            <option value="4">4 hrs</option>
+                            <option value="5">5 hrs</option>
+                            <option value="6">6 hrs</option>
+                            <option value="7">7 hrs</option>
+                            <option value="8">8 hrs</option>
+                            <option value="9">9 hrs</option>
+                            <option value="10">10 hrs</option>
+                            <option value="11">11 hrs</option>
+                            <option value="12">12 hrs</option>
+                            <option value="13">13 hrs</option>
+                            <option value="14">14 hrs</option>
+                        </select>
+                        <select name="sleep_minutes" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                            <option value="">Min</option>
+                            <option value="0">0 min</option>
+                            <option value="15">15 min</option>
+                            <option value="30">30 min</option>
+                            <option value="45">45 min</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             <div>
@@ -1645,7 +1680,13 @@ function editEntry(type, element) {
                 break;
             case 'sleep':
                 if (ds.entryQuality) form.querySelector('[name="sleep_quality"]').value = ds.entryQuality;
-                if (ds.entryTotalminutes && parseInt(ds.entryTotalminutes) > 0) form.querySelector('[name="total_sleep_minutes"]').value = ds.entryTotalminutes;
+                if (ds.entryTotalminutes && parseInt(ds.entryTotalminutes) > 0) {
+                    const totalMins = parseInt(ds.entryTotalminutes);
+                    const hours = Math.floor(totalMins / 60);
+                    const mins = Math.round((totalMins % 60) / 15) * 15; // Round to nearest 15
+                    form.querySelector('[name="sleep_hours"]').value = hours;
+                    form.querySelector('[name="sleep_minutes"]').value = mins;
+                }
                 form.querySelector('[name="night_wakings"]').value = ds.entryNightwakings || 0;
                 if (ds.entryBedtime) form.querySelector('[name="bedtime"]').value = ds.entryBedtime;
                 if (ds.entryWaketime) form.querySelector('[name="wake_time"]').value = ds.entryWaketime;
@@ -1835,11 +1876,14 @@ async function handleSubmit(e) {
             break;
         case 'sleep':
             const sleepDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const sleepHours = formData.get('sleep_hours') ? parseInt(formData.get('sleep_hours')) : 0;
+            const sleepMinutes = formData.get('sleep_minutes') ? parseInt(formData.get('sleep_minutes')) : 0;
+            const totalSleepMinutes = (sleepHours > 0 || sleepMinutes > 0) ? (sleepHours * 60 + sleepMinutes) : null;
             data = {
                 bedtime: formData.get('bedtime') || null,
                 wake_time: formData.get('wake_time') || null,
                 sleep_quality: formData.get('sleep_quality'),
-                total_sleep_minutes: formData.get('total_sleep_minutes') ? parseInt(formData.get('total_sleep_minutes')) : null,
+                total_sleep_minutes: totalSleepMinutes,
                 night_wakings: parseInt(formData.get('night_wakings') || 0),
                 nightmares: formData.get('nightmares') === 'on',
                 bed_wetting: formData.get('bed_wetting') === 'on',

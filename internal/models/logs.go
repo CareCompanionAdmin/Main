@@ -219,10 +219,12 @@ type HealthEventLog struct {
 	CreatedAt    time.Time   `json:"created_at"`
 }
 
-// Daily Log Page combines all logs for a day
+// Daily Log Page combines all logs for a day or date range
 type DailyLogPage struct {
 	Child           Child            `json:"child"`
 	Date            time.Time        `json:"date"`
+	EndDate         time.Time        `json:"end_date,omitempty"`  // For weekly view
+	ViewMode        string           `json:"view_mode,omitempty"` // "daily" or "weekly"
 	MedicationLogs  []MedicationLog  `json:"medication_logs"`
 	MedicationsDue  []MedicationDue  `json:"medications_due"`
 	BehaviorLogs    []BehaviorLog    `json:"behavior_logs"`
