@@ -57,6 +57,10 @@ Parameters:
       - cache.t3.small
     Description: ElastiCache node type
 
+  KeyPairName:
+    Type: String
+    Description: EC2 Key Pair name for SSH access
+
 Resources:
   # VPC
   VPC:
@@ -185,6 +189,16 @@ Resources:
           FromPort: 8090
           ToPort: 8090
           SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 67.11.201.221/32
+          Description: SSH from Office
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 193.186.4.225/32
+          Description: SSH from Home
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-ec2-sg'
@@ -199,6 +213,16 @@ Resources:
           FromPort: 5432
           ToPort: 5432
           SourceSecurityGroupId: !Ref EC2SecurityGroup
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 67.11.201.221/32
+          Description: DB access from Office (for migration)
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 193.186.4.225/32
+          Description: DB access from Home (for migration)
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-rds-sg'
@@ -236,8 +260,8 @@ Resources:
     Properties:
       DBSubnetGroupDescription: Subnet group for RDS
       SubnetIds:
-        - !Ref PrivateSubnetA
-        - !Ref PrivateSubnetB
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-db-subnet'
@@ -260,7 +284,7 @@ Resources:
       DBSubnetGroupName: !Ref DBSubnetGroup
       BackupRetentionPeriod: 7
       MultiAZ: false
-      PubliclyAccessible: false
+      PubliclyAccessible: true
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-db'
@@ -412,8 +436,9 @@ Resources:
     Properties:
       LaunchTemplateName: !Sub '${AWS::StackName}-template'
       LaunchTemplateData:
-        ImageId: ami-0c7217cdde317cfec  # Amazon Linux 2023 (us-east-1)
+        ImageId: ami-0c7217cdde317cfec  # Ubuntu 22.04 LTS (us-east-1)
         InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyPairName
         IamInstanceProfile:
           Arn: !GetAtt EC2InstanceProfile.Arn
         SecurityGroupIds:
@@ -421,8 +446,8 @@ Resources:
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            yum update -y
-            yum install -y docker
+            apt-get update -y
+            apt-get install -y docker.io awscli
             systemctl start docker
             systemctl enable docker
 
@@ -440,11 +465,14 @@ Resources:
               --name carecompanion \
               --restart always \
               -p 8090:8090 \
+              -e APP_PORT=8090 \
+              -e APP_ENV=${Environment} \
               -e DB_HOST=${RDSInstance.Endpoint.Address} \
               -e DB_PORT=5432 \
               -e DB_USER=carecompanion \
               -e DB_PASSWORD="$DB_PASSWORD" \
               -e DB_NAME=carecompanion \
+              -e DB_SSLMODE=require \
               -e REDIS_HOST=${RedisCluster.RedisEndpoint.Address} \
               -e REDIS_PORT=6379 \
               -e JWT_SECRET="$JWT_SECRET" \

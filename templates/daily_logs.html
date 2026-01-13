@@ -134,7 +134,7 @@
                     <p class="font-medium text-gray-900 dark:text-white">{{.Medication.Name}}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{.Schedule.TimeOfDay}}</p>
                 </div>
-                <button onclick="logMedication('{{.Schedule.ID}}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                <button onclick="logMedication('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                     Mark as Taken
                 </button>
             </div>
@@ -314,7 +314,7 @@
                         {{if gt .SelfInjuryIncidents 0}}Self-injury: {{.SelfInjuryIncidents}} {{end}}
                         {{if .Notes.Valid}}{{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -346,7 +346,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Meal{{if .MealType.Valid}}: {{.MealType.String}}{{end}}</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -377,7 +377,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Sleep</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{if .TotalSleepMinutes}} - {{.TotalSleepMinutes}} min{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -403,7 +403,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Bowel Movement</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -415,7 +415,9 @@
             <div onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Medication"
-                data-entry-time="{{if .ActualTime.Valid}}{{.ActualTime.String}}{{else}}{{.CreatedAt.Format "3:04 PM"}}{{end}}"
+                data-entry-name="{{.MedicationName}}"
+                data-entry-time="{{if .ActualTime.Valid}}{{.ActualTime.String}}{{end}}"
+                data-entry-created="{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}"
                 data-entry-status="{{.Status}}"
                 data-entry-actualtime="{{if .ActualTime.Valid}}{{.ActualTime.String}}{{end}}"
                 data-entry-dosagegiven="{{if .DosageGiven.Valid}}{{.DosageGiven.String}}{{end}}"
@@ -426,9 +428,13 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Medication</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Status: {{.Status}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{if .ActualTime.Valid}}{{.ActualTime.String}}{{else}}{{.CreatedAt.Format "3:04 PM"}}{{end}}</p>
+                    <p class="font-medium text-gray-900 dark:text-white">{{.MedicationName}}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if eq .Status "taken"}}✓ Taken{{else if eq .Status "missed"}}✗ Missed{{else if eq .Status "skipped"}}⊘ Skipped{{else}}{{.Status}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
+                    {{if .ActualTime.Valid}}
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 medication-time-local" data-time="{{.ActualTime.String}}">{{.ActualTime.String}}</p>
+                    {{else}}
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 medication-time" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    {{end}}
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -457,7 +463,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Speech</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -481,7 +487,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Weight</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -513,7 +519,7 @@
                         {{if .OverallRegulation}}{{if gt (deref .OverallRegulation) 0}}Regulation: {{deref .OverallRegulation}}/5 {{end}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -546,7 +552,7 @@
                         {{if .SocialEngagementLevel}}Engagement: {{.SocialEngagementLevel}}/5 {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -577,7 +583,7 @@
                         {{if .TherapistName.Valid}}with {{.TherapistName.String}}{{end}}
                         {{if .ProgressNotes.Valid}} - {{.ProgressNotes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -610,7 +616,7 @@
                         {{if .DurationSeconds}}Duration: {{.DurationSeconds}}s {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -643,7 +649,7 @@
                         {{if .Description.Valid}}{{.Description.String}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -739,6 +745,13 @@
 <script>
 const childId = '{{.Child.ID}}';
 const token = localStorage.getItem('access_token');
+
+// Helper function to get local date string (avoids UTC timezone issues)
+function getLocalDateString(date = new Date()) {
+    return date.getFullYear() + '-' +
+           String(date.getMonth() + 1).padStart(2, '0') + '-' +
+           String(date.getDate()).padStart(2, '0');
+}
 
 const formTemplates = {
     behavior: `
@@ -836,7 +849,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -932,7 +945,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1038,7 +1051,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1091,7 +1104,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1175,7 +1188,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1215,7 +1228,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1276,7 +1289,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1356,7 +1369,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1418,7 +1431,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1488,7 +1501,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1548,7 +1561,7 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Date</label>
-                    <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${new Date().toISOString().split('T')[0]}">
+                    <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
                 </div>
             </div>
             <div>
@@ -1832,7 +1845,7 @@ async function handleSubmit(e) {
 
     switch (currentLogType) {
         case 'behavior':
-            const behaviorDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const behaviorDate = formData.get('log_date') || getLocalDateString();
             data = {
                 mood_level: formData.get('mood_level') ? parseInt(formData.get('mood_level')) : null,
                 energy_level: formData.get('energy_level') ? parseInt(formData.get('energy_level')) : null,
@@ -1855,7 +1868,7 @@ async function handleSubmit(e) {
             endpoint = 'behavior';
             break;
         case 'diet':
-            const dietDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const dietDate = formData.get('log_date') || getLocalDateString();
             data = {
                 meal_type: formData.get('meal_type'),
                 appetite_level: formData.get('appetite_level'),
@@ -1875,7 +1888,7 @@ async function handleSubmit(e) {
             endpoint = 'diet';
             break;
         case 'sleep':
-            const sleepDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const sleepDate = formData.get('log_date') || getLocalDateString();
             const sleepHours = formData.get('sleep_hours') ? parseInt(formData.get('sleep_hours')) : 0;
             const sleepMinutes = formData.get('sleep_minutes') ? parseInt(formData.get('sleep_minutes')) : 0;
             const totalSleepMinutes = (sleepHours > 0 || sleepMinutes > 0) ? (sleepHours * 60 + sleepMinutes) : null;
@@ -1897,7 +1910,7 @@ async function handleSubmit(e) {
             endpoint = 'sleep';
             break;
         case 'bowel':
-            const bowelDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const bowelDate = formData.get('log_date') || getLocalDateString();
             data = {
                 bristol_scale: formData.get('bristol_scale') ? parseInt(formData.get('bristol_scale')) : null,
                 pain_level: formData.get('pain_level') ? parseInt(formData.get('pain_level')) : null,
@@ -1911,7 +1924,7 @@ async function handleSubmit(e) {
             endpoint = 'bowel';
             break;
         case 'speech':
-            const speechDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const speechDate = formData.get('log_date') || getLocalDateString();
             data = {
                 verbal_output_level: formData.get('verbal_output_level') ? parseInt(formData.get('verbal_output_level')) : null,
                 clarity_level: formData.get('clarity_level') ? parseInt(formData.get('clarity_level')) : null,
@@ -1928,7 +1941,7 @@ async function handleSubmit(e) {
             endpoint = 'speech';
             break;
         case 'weight':
-            const weightDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const weightDate = formData.get('log_date') || getLocalDateString();
             data = {
                 weight_lbs: formData.get('weight_lbs') ? parseFloat(formData.get('weight_lbs')) : null,
                 height_inches: formData.get('height_inches') ? parseFloat(formData.get('height_inches')) : null,
@@ -1940,7 +1953,7 @@ async function handleSubmit(e) {
             endpoint = 'weight';
             break;
         case 'sensory':
-            const sensoryDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const sensoryDate = formData.get('log_date') || getLocalDateString();
             data = {
                 overall_regulation: formData.get('overall_regulation') ? parseInt(formData.get('overall_regulation')) : null,
                 overload_episodes: formData.get('overload_episodes') ? parseInt(formData.get('overload_episodes')) : 0,
@@ -1955,7 +1968,7 @@ async function handleSubmit(e) {
             endpoint = 'sensory';
             break;
         case 'social':
-            const socialDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const socialDate = formData.get('log_date') || getLocalDateString();
             data = {
                 eye_contact_level: formData.get('eye_contact_level') ? parseInt(formData.get('eye_contact_level')) : null,
                 social_engagement_level: formData.get('social_engagement_level') ? parseInt(formData.get('social_engagement_level')) : null,
@@ -1972,7 +1985,7 @@ async function handleSubmit(e) {
             endpoint = 'social';
             break;
         case 'therapy':
-            const therapyDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const therapyDate = formData.get('log_date') || getLocalDateString();
             data = {
                 therapy_type: formData.get('therapy_type'),
                 therapist_name: formData.get('therapist_name') || null,
@@ -1987,7 +2000,7 @@ async function handleSubmit(e) {
             endpoint = 'therapy';
             break;
         case 'seizure':
-            const seizureDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const seizureDate = formData.get('log_date') || getLocalDateString();
             data = {
                 seizure_type: formData.get('seizure_type'),
                 duration_seconds: formData.get('duration_seconds') ? parseInt(formData.get('duration_seconds')) : null,
@@ -2004,7 +2017,7 @@ async function handleSubmit(e) {
             endpoint = 'seizure';
             break;
         case 'health':
-            const healthDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const healthDate = formData.get('log_date') || getLocalDateString();
             data = {
                 event_type: formData.get('event_type'),
                 description: formData.get('description'),
@@ -2083,7 +2096,16 @@ async function handleSubmit(e) {
     }
 }
 
-async function logMedication(scheduleId) {
+async function logMedication(medicationId, scheduleId) {
+    // Get the current viewing date from the page
+    const logDate = document.getElementById('log-date')?.value || '{{.Date.Format "2006-01-02"}}';
+
+    // Get current time in HH:MM format for actual_time
+    const now = new Date();
+    const actualTime = now.toTimeString().slice(0, 5); // "HH:MM"
+
+    console.log('logMedication called with:', { medicationId, scheduleId, logDate, actualTime });
+
     try {
         const response = await fetch(`/api/children/${childId}/medications/log`, {
             method: 'POST',
@@ -2091,13 +2113,22 @@ async function logMedication(scheduleId) {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
             },
-            body: JSON.stringify({ schedule_id: scheduleId, administered_at: new Date().toISOString() })
+            body: JSON.stringify({
+                medication_id: medicationId,
+                schedule_id: scheduleId,
+                log_date: logDate + 'T00:00:00Z',
+                status: 'taken',
+                actual_time: actualTime
+            })
         });
         if (response.ok) {
             location.reload();
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            alert('Failed to log medication: ' + (errorData.message || 'Unknown error'));
         }
     } catch (error) {
-        alert('Failed to log medication');
+        alert('Failed to log medication: ' + error.message);
     }
 }
 
@@ -2285,10 +2316,25 @@ function showDetails(type, element) {
             break;
         case 'medication':
             const status = ds.entryStatus || '';
+            const dosageGiven = ds.entryDosagegiven || '';
+            // Format the time: use actual_time (HH:MM) if available, else use created_at
+            let medTimeDisplay = 'Not recorded';
+            if (time) {
+                // Convert HH:MM to 12-hour format
+                const [hours, minutes] = time.split(':').map(Number);
+                const period = hours >= 12 ? 'PM' : 'AM';
+                const hour12 = hours % 12 || 12;
+                medTimeDisplay = `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+            } else if (ds.entryCreated) {
+                // Fall back to created_at time
+                const createdDate = new Date(ds.entryCreated);
+                medTimeDisplay = createdDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            }
             content = `
                 <div class="space-y-3">
-                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${medTimeDisplay}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Status:</span><span class="font-medium capitalize">${status}</span></div>
+                    ${dosageGiven ? `<div class="flex justify-between"><span class="text-gray-500">Dosage:</span><span class="font-medium">${dosageGiven}</span></div>` : ''}
                     ${notes ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes}</p></div>` : ''}
                 </div>
             `;
@@ -2567,6 +2613,21 @@ document.addEventListener('DOMContentLoaded', function() {
         document.documentElement.classList.remove('dark');
     }
 
+    // Convert UTC times to local time for all entry timestamps
+    document.querySelectorAll('.entry-time-utc').forEach(el => {
+        const utcStr = el.dataset.utc;
+        const dateStr = el.dataset.date;
+        if (utcStr) {
+            const utcDate = new Date(utcStr);
+            const localTime = utcDate.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            el.textContent = dateStr + ' ' + localTime;
+        }
+    });
+
     const urlParams = new URLSearchParams(window.location.search);
     const openType = urlParams.get('open');
     if (openType && formTemplates[openType]) {
@@ -2587,7 +2648,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateNavigationLabels();
 
     // Disable next button if we're on today's date
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const currentDate = document.getElementById('log-date').value;
     if (currentDate >= today) {
         document.getElementById('next-btn').classList.add('opacity-50', 'pointer-events-none');
@@ -2595,6 +2656,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load active alerts
     loadActiveAlerts();
+
+    // Convert UTC times to local time for medication logs (fallback when no actual_time)
+    document.querySelectorAll('.medication-time[data-utc]').forEach(el => {
+        const utcTime = el.dataset.utc;
+        if (utcTime) {
+            const date = new Date(utcTime);
+            el.textContent = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        }
+    });
+
+    // Format actual_time (HH:MM) to 12-hour format
+    document.querySelectorAll('.medication-time-local[data-time]').forEach(el => {
+        const timeStr = el.dataset.time;
+        if (timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const period = hours >= 12 ? 'PM' : 'AM';
+            const hour12 = hours % 12 || 12;
+            el.textContent = `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+        }
+    });
 });
 
 // View mode handling
@@ -2655,7 +2736,7 @@ function navigateDate(direction) {
         return;
     }
 
-    const dateStr = currentDate.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(currentDate);
     window.location.href = `?date=${dateStr}&view=${currentViewMode}`;
 }
 
@@ -2704,7 +2785,7 @@ function jumpToPreset(preset) {
             return;
     }
 
-    const dateStr = targetDate.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(targetDate);
     window.location.href = `?date=${dateStr}&view=${currentViewMode}`;
 }
 
@@ -2723,7 +2804,7 @@ async function loadRecentDatesWithData() {
             if (dates && dates.length > 0) {
                 listContainer.innerHTML = dates.slice(0, 14).map(dateInfo => {
                     const date = new Date(dateInfo.date);
-                    const dateStr = date.toISOString().split('T')[0];
+                    const dateStr = getLocalDateString(date);
                     const displayDate = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                     const isSelected = dateStr === currentDateStr;
                     return `
@@ -2753,7 +2834,7 @@ function generateFallbackDateList() {
     for (let i = 0; i < 14; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = getLocalDateString(date);
         const displayDate = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         const isSelected = dateStr === currentDateStr;
         dates.push(`
@@ -2798,7 +2879,7 @@ function renderHistoryCalendar() {
     // Days of the month
     for (let day = 1; day <= lastDay.getDate(); day++) {
         const date = new Date(year, month, day);
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = getLocalDateString(date);
         const isToday = date.getTime() === today.getTime();
         const isSelected = dateStr === currentDateStr;
         const isFuture = date > today;

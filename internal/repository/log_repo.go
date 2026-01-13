@@ -1207,10 +1207,11 @@ func (r *logRepo) getMedicationLogsForDateRange(ctx context.Context, childID uui
 	startStr := startDate.Format("2006-01-02")
 	endStr := endDate.Format("2006-01-02")
 	query := `
-		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
-		FROM medication_logs
-		WHERE child_id = $1 AND log_date >= $2 AND log_date <= $3
-		ORDER BY log_date DESC, created_at DESC
+		SELECT ml.id, ml.medication_id, COALESCE(m.name, 'Unknown'), ml.child_id, ml.schedule_id, ml.log_date, ml.scheduled_time::text, ml.actual_time::text, ml.status, ml.dosage_given, ml.notes, ml.logged_by, ml.created_at, ml.updated_at
+		FROM medication_logs ml
+		LEFT JOIN medications m ON ml.medication_id = m.id
+		WHERE ml.child_id = $1 AND ml.log_date >= $2 AND ml.log_date <= $3
+		ORDER BY ml.log_date DESC, ml.created_at DESC
 	`
 	rows, err := r.db.QueryContext(ctx, query, childID, startStr, endStr)
 	if err != nil {
@@ -1222,7 +1223,7 @@ func (r *logRepo) getMedicationLogsForDateRange(ctx context.Context, childID uui
 	for rows.Next() {
 		var log models.MedicationLog
 		err := rows.Scan(
-			&log.ID, &log.MedicationID, &log.ChildID, &log.ScheduleID, &log.LogDate,
+			&log.ID, &log.MedicationID, &log.MedicationName, &log.ChildID, &log.ScheduleID, &log.LogDate,
 			&log.ScheduledTime, &log.ActualTime, &log.Status, &log.DosageGiven,
 			&log.Notes, &log.LoggedBy, &log.CreatedAt, &log.UpdatedAt,
 		)
@@ -1236,10 +1237,11 @@ func (r *logRepo) getMedicationLogsForDateRange(ctx context.Context, childID uui
 
 func (r *logRepo) getMedicationLogsForDate(ctx context.Context, childID uuid.UUID, date time.Time) ([]models.MedicationLog, error) {
 	query := `
-		SELECT id, medication_id, child_id, schedule_id, log_date, scheduled_time::text, actual_time::text, status, dosage_given, notes, logged_by, created_at, updated_at
-		FROM medication_logs
-		WHERE child_id = $1 AND log_date = $2
-		ORDER BY created_at DESC
+		SELECT ml.id, ml.medication_id, COALESCE(m.name, 'Unknown'), ml.child_id, ml.schedule_id, ml.log_date, ml.scheduled_time::text, ml.actual_time::text, ml.status, ml.dosage_given, ml.notes, ml.logged_by, ml.created_at, ml.updated_at
+		FROM medication_logs ml
+		LEFT JOIN medications m ON ml.medication_id = m.id
+		WHERE ml.child_id = $1 AND ml.log_date = $2
+		ORDER BY ml.created_at DESC
 	`
 	rows, err := r.db.QueryContext(ctx, query, childID, date)
 	if err != nil {
@@ -1251,7 +1253,7 @@ func (r *logRepo) getMedicationLogsForDate(ctx context.Context, childID uuid.UUI
 	for rows.Next() {
 		var log models.MedicationLog
 		err := rows.Scan(
-			&log.ID, &log.MedicationID, &log.ChildID, &log.ScheduleID, &log.LogDate,
+			&log.ID, &log.MedicationID, &log.MedicationName, &log.ChildID, &log.ScheduleID, &log.LogDate,
 			&log.ScheduledTime, &log.ActualTime, &log.Status, &log.DosageGiven,
 			&log.Notes, &log.LoggedBy, &log.CreatedAt, &log.UpdatedAt,
 		)

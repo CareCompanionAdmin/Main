@@ -1,12 +1,14 @@
 package api
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/models"
@@ -325,13 +327,25 @@ func (h *MedicationHandler) Log(w http.ResponseWriter, r *http.Request) {
 
 	var req models.LogMedicationRequest
 	if err := decodeJSON(r, &req); err != nil {
-		respondBadRequest(w, "Invalid request body")
+		fmt.Printf("Error decoding medication log request: %v\n", err)
+		respondBadRequest(w, fmt.Sprintf("Invalid request body: %v", err))
+		return
+	}
+
+	// Validate required fields
+	if req.MedicationID == uuid.Nil {
+		respondBadRequest(w, "medication_id is required")
+		return
+	}
+	if req.Status == "" {
+		respondBadRequest(w, "status is required")
 		return
 	}
 
 	log, err := h.medService.LogMedication(r.Context(), childID, userID, &req)
 	if err != nil {
-		respondInternalError(w, "Failed to log medication")
+		fmt.Printf("Error logging medication: %v, request: %+v, childID: %v, userID: %v\n", err, req, childID, userID)
+		respondInternalError(w, fmt.Sprintf("Failed to log medication: %v", err))
 		return
 	}
 

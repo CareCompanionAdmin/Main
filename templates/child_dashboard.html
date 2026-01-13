@@ -165,6 +165,26 @@
                     </div>
                 </div>
 
+                <!-- Date Navigation -->
+                <div class="flex items-center justify-between mb-3">
+                    <button onclick="navigatePeriod(-1)" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Previous">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <span id="period-label" class="text-sm font-medium text-gray-700 dark:text-gray-300">Loading...</span>
+                        <button onclick="goToToday()" id="today-button" class="hidden px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors">
+                            Today
+                        </button>
+                    </div>
+                    <button onclick="navigatePeriod(1)" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Next">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+
                 <!-- Summary Display -->
                 <div id="quick-summary-content">
                     <!-- Weekly View (default) -->
@@ -217,7 +237,7 @@
                 {{if .Dashboard.MedicationsDue}}
                 <div class="space-y-3">
                     {{range .Dashboard.MedicationsDue}}
-                    <div id="med-row-{{.Medication.ID}}-{{.Schedule.ID}}" class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div id="med-row-{{.Medication.ID.String}}-{{.Schedule.ID.String}}" class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
                         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
@@ -233,12 +253,12 @@
                         </span>
                         {{else}}
                         <div class="flex space-x-2">
-                            <button data-med-id="{{.Medication.ID}}" data-schedule-id="{{.Schedule.ID}}" data-med-name="{{.Medication.Name}}" data-time-of-day="{{.Schedule.TimeOfDay}}" data-scheduled-time="{{if .Schedule.ScheduledTime.Valid}}{{.Schedule.ScheduledTime.String}}{{end}}" data-days-of-week="{{range $i, $d := .Schedule.DaysOfWeek}}{{if $i}},{{end}}{{$d}}{{end}}"
+                            <button data-med-id="{{.Medication.ID.String}}" data-schedule-id="{{.Schedule.ID.String}}" data-med-name="{{.Medication.Name}}" data-time-of-day="{{.Schedule.TimeOfDay}}" data-scheduled-time="{{if .Schedule.ScheduledTime.Valid}}{{.Schedule.ScheduledTime.String}}{{end}}" data-days-of-week="{{range $i, $d := .Schedule.DaysOfWeek}}{{if $i}},{{end}}{{$d}}{{end}}"
                                     onclick="openMedTakenModalFromButton(this)"
                                     class="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
                                 ✓ Taken
                             </button>
-                            <button onclick="logMedication('{{.Medication.ID}}', '{{.Schedule.ID}}', 'missed')"
+                            <button onclick="logMedication('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', 'missed')"
                                     class="px-3 py-1.5 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium">
                                 ✗ Missed
                             </button>
@@ -455,11 +475,20 @@
 const childId = '{{.Child.ID}}';
 const token = localStorage.getItem('access_token');
 
+// Helper function to get local date string (avoids UTC timezone issues)
+function getLocalDateString(date = new Date()) {
+    return date.getFullYear() + '-' +
+           String(date.getMonth() + 1).padStart(2, '0') + '-' +
+           String(date.getDate()).padStart(2, '0');
+}
+
 // Quick Summary functionality
 let currentTimeRange = 'weekly';
+let currentOffset = 0;
 
 function setTimeRange(range) {
     currentTimeRange = range;
+    currentOffset = 0; // Reset to current period when changing range
 
     // Update button styles
     ['daily', 'weekly', 'monthly'].forEach(r => {
@@ -482,11 +511,21 @@ function setTimeRange(range) {
     loadQuickSummary();
 }
 
+function navigatePeriod(direction) {
+    currentOffset += direction;
+    loadQuickSummary();
+}
+
+function goToToday() {
+    currentOffset = 0;
+    loadQuickSummary();
+}
+
 async function loadQuickSummary() {
     const category = document.getElementById('summary-category').value;
 
     try {
-        const response = await fetch(`/api/children/${childId}/logs/quick-summary?category=${category}&range=${currentTimeRange}`, {
+        const response = await fetch(`/api/children/${childId}/logs/quick-summary?category=${category}&range=${currentTimeRange}&offset=${currentOffset}`, {
             headers: {
                 'Authorization': 'Bearer ' + token
             }
@@ -496,6 +535,17 @@ async function loadQuickSummary() {
 
         const data = await response.json();
         renderQuickSummary(data);
+
+        // Update period label
+        document.getElementById('period-label').textContent = data.period_label;
+
+        // Show/hide Today button based on offset
+        const todayBtn = document.getElementById('today-button');
+        if (currentOffset !== 0) {
+            todayBtn.classList.remove('hidden');
+        } else {
+            todayBtn.classList.add('hidden');
+        }
     } catch (error) {
         console.error('Error loading quick summary:', error);
     }
@@ -518,7 +568,7 @@ function renderQuickSummary(data) {
 
         container.innerHTML = data.days.map((day, i) => {
             const { src, alt } = getMoodImage(day.score, day.has_data);
-            const isToday = day.date === new Date().toISOString().split('T')[0];
+            const isToday = day.date === getLocalDateString();
             const todayClass = isToday ? 'font-bold text-indigo-600' : 'text-gray-500';
             const todayBorder = isToday ? 'ring-[5px] ring-indigo-500 ring-offset-2' : '';
 
@@ -544,7 +594,8 @@ function renderQuickSummary(data) {
         const container = document.getElementById('monthly-grid');
 
         // Get the first day of the month to calculate padding
-        const firstDay = new Date(data.days[0].date);
+        // Parse date as local time by appending T00:00:00 to avoid UTC conversion issues
+        const firstDay = new Date(data.days[0].date + 'T00:00:00');
         const startPadding = firstDay.getDay();
 
         let html = '';
@@ -557,8 +608,12 @@ function renderQuickSummary(data) {
         // Add day cells
         data.days.forEach(day => {
             const { src, alt } = getMoodImage(day.score, day.has_data);
-            const dayNum = new Date(day.date).getDate();
-            const isToday = day.date === new Date().toISOString().split('T')[0];
+            // Parse date parts directly to avoid timezone issues
+            const dateParts = day.date.split('-');
+            const dayNum = parseInt(dateParts[2], 10);
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const isToday = day.date === todayStr;
             const todayClass = isToday ? 'font-bold text-indigo-600' : 'text-gray-400';
             const todayBorder = isToday ? 'ring-[3px] ring-indigo-500' : '';
 
@@ -682,7 +737,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -778,7 +833,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -884,7 +939,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -937,7 +992,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1003,7 +1058,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1043,7 +1098,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1104,7 +1159,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1184,7 +1239,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1246,7 +1301,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1312,7 +1367,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1390,7 +1445,7 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
@@ -1492,7 +1547,7 @@ async function handleSubmit(e) {
                 positive_behaviors: formData.get('positive_behaviors') ? formData.get('positive_behaviors').split(',').map(b => b.trim()).filter(b => b) : [],
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
-                log_date: (formData.get('log_date') || new Date().toISOString().split('T')[0]) + 'T00:00:00Z',
+                log_date: (formData.get('log_date') || getLocalDateString()) + 'T00:00:00Z',
                 log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'behavior';
@@ -1511,7 +1566,7 @@ async function handleSubmit(e) {
                 reaction_details: formData.get('reaction_details') || null,
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
-                log_date: (formData.get('log_date') || new Date().toISOString().split('T')[0]) + 'T00:00:00Z',
+                log_date: (formData.get('log_date') || getLocalDateString()) + 'T00:00:00Z',
                 log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'diet';
@@ -1532,7 +1587,7 @@ async function handleSubmit(e) {
                 sleep_aid_name: formData.get('sleep_aid_name') || null,
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
-                log_date: (formData.get('log_date') || new Date().toISOString().split('T')[0]) + 'T00:00:00Z',
+                log_date: (formData.get('log_date') || getLocalDateString()) + 'T00:00:00Z',
                 log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'sleep';
@@ -1545,7 +1600,7 @@ async function handleSubmit(e) {
                 blood_present: formData.get('blood_present') === 'on',
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
-                log_date: (formData.get('log_date') || new Date().toISOString().split('T')[0]) + 'T00:00:00Z',
+                log_date: (formData.get('log_date') || getLocalDateString()) + 'T00:00:00Z',
                 log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'bowel';
@@ -1561,7 +1616,7 @@ async function handleSubmit(e) {
                 successful_communications: formData.get('successful_communications') ? parseInt(formData.get('successful_communications')) : null,
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
-                log_date: (formData.get('log_date') || new Date().toISOString().split('T')[0]) + 'T00:00:00Z',
+                log_date: (formData.get('log_date') || getLocalDateString()) + 'T00:00:00Z',
                 log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'speech';
@@ -1572,13 +1627,13 @@ async function handleSubmit(e) {
                 height_inches: formData.get('height_inches') ? parseFloat(formData.get('height_inches')) : null,
                 notes: formData.get('notes'),
                 time_scope: formData.get('time_scope') || 'day',
-                log_date: (formData.get('log_date') || new Date().toISOString().split('T')[0]) + 'T00:00:00Z',
+                log_date: (formData.get('log_date') || getLocalDateString()) + 'T00:00:00Z',
                 log_time: formData.get('time_scope') === 'momentary' ? formData.get('log_time') : null
             };
             endpoint = 'weight';
             break;
         case 'sensory':
-            const sensoryDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const sensoryDate = formData.get('log_date') || getLocalDateString();
             data = {
                 overall_regulation: formData.get('overall_regulation') ? parseInt(formData.get('overall_regulation')) : null,
                 overload_episodes: formData.get('overload_episodes') ? parseInt(formData.get('overload_episodes')) : 0,
@@ -1593,7 +1648,7 @@ async function handleSubmit(e) {
             endpoint = 'sensory';
             break;
         case 'social':
-            const socialDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const socialDate = formData.get('log_date') || getLocalDateString();
             data = {
                 eye_contact_level: formData.get('eye_contact_level') ? parseInt(formData.get('eye_contact_level')) : null,
                 social_engagement_level: formData.get('social_engagement_level') ? parseInt(formData.get('social_engagement_level')) : null,
@@ -1610,7 +1665,7 @@ async function handleSubmit(e) {
             endpoint = 'social';
             break;
         case 'therapy':
-            const therapyDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const therapyDate = formData.get('log_date') || getLocalDateString();
             data = {
                 therapy_type: formData.get('therapy_type'),
                 therapist_name: formData.get('therapist_name') || null,
@@ -1625,7 +1680,7 @@ async function handleSubmit(e) {
             endpoint = 'therapy';
             break;
         case 'seizure':
-            const seizureDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const seizureDate = formData.get('log_date') || getLocalDateString();
             data = {
                 seizure_type: formData.get('seizure_type'),
                 duration_seconds: formData.get('duration_seconds') ? parseInt(formData.get('duration_seconds')) : null,
@@ -1642,7 +1697,7 @@ async function handleSubmit(e) {
             endpoint = 'seizure';
             break;
         case 'health':
-            const healthDate = formData.get('log_date') || new Date().toISOString().split('T')[0];
+            const healthDate = formData.get('log_date') || getLocalDateString();
             const followUpDateVal = formData.get('follow_up_date');
             data = {
                 event_type: formData.get('event_type'),
@@ -1906,14 +1961,16 @@ function openMedTakenModal(medicationId, scheduleId, medName, timeOfDay, schedul
     // Set modal content
     document.getElementById('med-taken-name').textContent = medName + ' - ' + timeOfDay + (scheduledTime ? ' (' + scheduledTime + ')' : '');
 
-    // Set default date/time to now
+    // Set default date/time to now (use local date, not UTC)
     const now = new Date();
-    document.getElementById('med-taken-date').value = now.toISOString().split('T')[0];
+    const localDateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    document.getElementById('med-taken-date').value = localDateStr;
     document.getElementById('med-taken-time').value = now.toTimeString().slice(0, 5);
 
-    // Set min date based on earliest allowed
+    // Set min date based on earliest allowed (use local date)
     const earliestDate = new Date(currentMedModal.earliestAllowed);
-    document.getElementById('med-taken-date').min = earliestDate.toISOString().split('T')[0];
+    const earliestLocalDateStr = earliestDate.getFullYear() + '-' + String(earliestDate.getMonth() + 1).padStart(2, '0') + '-' + String(earliestDate.getDate()).padStart(2, '0');
+    document.getElementById('med-taken-date').min = earliestLocalDateStr;
 
     // Show hint about earliest allowed time
     const hintEl = document.getElementById('med-taken-hint');
@@ -2019,34 +2076,49 @@ function confirmMedTaken(option) {
             return;
         }
 
-        // Validate not in the future
-        if (logDate > new Date()) {
+        // Validate not in the future (allow 1 minute buffer for same-minute entries)
+        const nowPlusBuffer = new Date(Date.now() + 60000); // 1 minute buffer
+        if (logDate > nowPlusBuffer) {
             document.getElementById('med-taken-error').textContent = 'Cannot log medication for a future time.';
             document.getElementById('med-taken-error').classList.remove('hidden');
             return;
         }
     }
 
+    // Save values before closing modal (closeMedTakenModal resets currentMedModal)
+    const medicationId = currentMedModal.medicationId;
+    const scheduleId = currentMedModal.scheduleId;
+
     // Close modal and log the medication
     closeMedTakenModal();
-    logMedication(currentMedModal.medicationId, currentMedModal.scheduleId, 'taken', logDate);
+    logMedication(medicationId, scheduleId, 'taken', logDate);
 }
 
 // Log medication as taken or skipped
 async function logMedication(medicationId, scheduleId, status, logDate = null) {
     try {
+        const dateToUse = logDate || new Date();
+        // Extract HH:MM for actual_time
+        const actualTime = dateToUse.toTimeString().slice(0, 5);
+
+        const requestBody = {
+            medication_id: medicationId,
+            schedule_id: scheduleId || null,
+            status: status,
+            log_date: dateToUse.toISOString(),
+            actual_time: actualTime
+        };
+
+        // Debug logging
+        console.log('Logging medication with:', requestBody);
+
         const response = await fetch(`/api/children/${childId}/medications/log`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({
-                medication_id: medicationId,
-                schedule_id: scheduleId || null,
-                status: status,
-                log_date: (logDate || new Date()).toISOString()
-            })
+            body: JSON.stringify(requestBody)
         });
 
         if (response.ok) {
@@ -2084,7 +2156,8 @@ async function logMedication(medicationId, scheduleId, status, logDate = null) {
             showSuccessMessage(status === 'taken' ? 'Medication marked as taken!' : 'Medication marked as skipped');
         } else {
             const errorData = await response.json().catch(() => ({}));
-            alert('Failed to log medication: ' + (errorData.error || 'Unknown error'));
+            // Show the specific message if available, otherwise fall back to error
+            alert('Failed to log medication: ' + (errorData.message || errorData.error || 'Unknown error'));
         }
     } catch (error) {
         alert('An error occurred: ' + error.message);

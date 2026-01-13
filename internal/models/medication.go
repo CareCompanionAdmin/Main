@@ -48,19 +48,20 @@ type MedicationSchedule struct {
 }
 
 type MedicationLog struct {
-	ID            uuid.UUID  `json:"id"`
-	MedicationID  uuid.UUID  `json:"medication_id"`
-	ChildID       uuid.UUID  `json:"child_id"`
-	ScheduleID    NullUUID   `json:"schedule_id,omitempty"`
-	LogDate       time.Time  `json:"log_date"`
-	ScheduledTime NullString `json:"scheduled_time,omitempty"`
-	ActualTime    NullString `json:"actual_time,omitempty"`
-	Status        LogStatus  `json:"status"`
-	DosageGiven   NullString `json:"dosage_given,omitempty"`
-	Notes         NullString `json:"notes,omitempty"`
-	LoggedBy      uuid.UUID  `json:"logged_by"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	ID             uuid.UUID  `json:"id"`
+	MedicationID   uuid.UUID  `json:"medication_id"`
+	MedicationName string     `json:"medication_name,omitempty"`
+	ChildID        uuid.UUID  `json:"child_id"`
+	ScheduleID     NullUUID   `json:"schedule_id,omitempty"`
+	LogDate        time.Time  `json:"log_date"`
+	ScheduledTime  NullString `json:"scheduled_time,omitempty"`
+	ActualTime     NullString `json:"actual_time,omitempty"`
+	Status         LogStatus  `json:"status"`
+	DosageGiven    NullString `json:"dosage_given,omitempty"`
+	Notes          NullString `json:"notes,omitempty"`
+	LoggedBy       uuid.UUID  `json:"logged_by"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 type MedicationDue struct {

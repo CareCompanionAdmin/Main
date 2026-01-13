@@ -18,6 +18,10 @@ build/
 *.so
 *.dylib
 carecompanion
+carecomp
+
+# Database backups
+backups/
 
 # Test artifacts
 *.test

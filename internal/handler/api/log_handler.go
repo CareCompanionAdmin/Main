@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	stdlog "log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"carecompanion/internal/middleware"
@@ -1379,9 +1381,13 @@ func (h *LogHandler) DeleteHealthEventLog(w http.ResponseWriter, r *http.Request
 
 // QuickSummaryResponse represents the response for quick summary
 type QuickSummaryResponse struct {
-	Category  string            `json:"category"`
-	TimeRange string            `json:"time_range"`
-	Days      []DaySummary      `json:"days"`
+	Category    string       `json:"category"`
+	TimeRange   string       `json:"time_range"`
+	Days        []DaySummary `json:"days"`
+	PeriodStart string       `json:"period_start"`
+	PeriodEnd   string       `json:"period_end"`
+	PeriodLabel string       `json:"period_label"`
+	Offset      int          `json:"offset"`
 }
 
 type DaySummary struct {
@@ -1416,24 +1422,38 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 		timeRange = "weekly"
 	}
 
+	// Parse offset parameter (negative = past, positive = future)
+	offset := 0
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if o, err := strconv.Atoi(offsetStr); err == nil {
+			offset = o
+		}
+	}
+
 	// Calculate date range
 	now := time.Now()
 	var startDate, endDate time.Time
 	var days []DaySummary
+	var periodLabel string
 
 	switch timeRange {
 	case "daily":
-		startDate = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		// Apply offset (each offset unit = 1 day)
+		baseDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		startDate = baseDate.AddDate(0, 0, offset)
 		endDate = startDate.Add(24 * time.Hour)
 		days = make([]DaySummary, 1)
 		days[0] = DaySummary{
 			Date:      startDate.Format("2006-01-02"),
 			DayOfWeek: startDate.Weekday().String(),
 		}
+		// Format: "Monday, Jan 13, 2026"
+		periodLabel = startDate.Format("Monday, Jan 2, 2006")
 	case "weekly":
-		// Start from Sunday of current week
+		// Start from Sunday of current week, then apply offset (each offset unit = 1 week)
 		daysUntilSunday := int(now.Weekday())
-		startDate = time.Date(now.Year(), now.Month(), now.Day()-daysUntilSunday, 0, 0, 0, 0, now.Location())
+		baseDate := time.Date(now.Year(), now.Month(), now.Day()-daysUntilSunday, 0, 0, 0, 0, now.Location())
+		startDate = baseDate.AddDate(0, 0, offset*7)
 		endDate = startDate.Add(7 * 24 * time.Hour)
 		days = make([]DaySummary, 7)
 		for i := 0; i < 7; i++ {
@@ -1443,8 +1463,19 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 				DayOfWeek: d.Weekday().String()[:3],
 			}
 		}
+		// Format: "Jan 5 - 11, 2026" or "Dec 29, 2025 - Jan 4, 2026"
+		endDisplay := endDate.AddDate(0, 0, -1) // Last day of week
+		if startDate.Month() == endDisplay.Month() {
+			periodLabel = fmt.Sprintf("%s %d - %d, %d", startDate.Format("Jan"), startDate.Day(), endDisplay.Day(), startDate.Year())
+		} else if startDate.Year() == endDisplay.Year() {
+			periodLabel = fmt.Sprintf("%s %d - %s %d, %d", startDate.Format("Jan"), startDate.Day(), endDisplay.Format("Jan"), endDisplay.Day(), startDate.Year())
+		} else {
+			periodLabel = fmt.Sprintf("%s %d, %d - %s %d, %d", startDate.Format("Jan"), startDate.Day(), startDate.Year(), endDisplay.Format("Jan"), endDisplay.Day(), endDisplay.Year())
+		}
 	case "monthly":
-		startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		// Apply offset (each offset unit = 1 month)
+		baseDate := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		startDate = baseDate.AddDate(0, offset, 0)
 		endDate = startDate.AddDate(0, 1, 0)
 		numDays := int(endDate.Sub(startDate).Hours() / 24)
 		days = make([]DaySummary, numDays)
@@ -1455,6 +1486,8 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 				DayOfWeek: d.Weekday().String()[:3],
 			}
 		}
+		// Format: "January 2026"
+		periodLabel = startDate.Format("January 2006")
 	default:
 		respondBadRequest(w, "Invalid time range")
 		return
@@ -1478,9 +1511,13 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := QuickSummaryResponse{
-		Category:  category,
-		TimeRange: timeRange,
-		Days:      days,
+		Category:    category,
+		TimeRange:   timeRange,
+		Days:        days,
+		PeriodStart: startDate.Format("2006-01-02"),
+		PeriodEnd:   endDate.AddDate(0, 0, -1).Format("2006-01-02"),
+		PeriodLabel: periodLabel,
+		Offset:      offset,
 	}
 
 	respondOK(w, response)
