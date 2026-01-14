@@ -15,12 +15,13 @@ import (
 type contextKey string
 
 const (
-	UserIDKey     contextKey = "userID"
-	EmailKey      contextKey = "email"
-	FamilyIDKey   contextKey = "familyID"
-	RoleKey       contextKey = "role"
-	FirstNameKey  contextKey = "firstName"
-	AuthClaimsKey contextKey = "authClaims"
+	UserIDKey      contextKey = "userID"
+	EmailKey       contextKey = "email"
+	FamilyIDKey    contextKey = "familyID"
+	RoleKey        contextKey = "role"
+	SystemRoleKey  contextKey = "systemRole"
+	FirstNameKey   contextKey = "firstName"
+	AuthClaimsKey  contextKey = "authClaims"
 )
 
 // AuthMiddleware validates JWT tokens and sets user context
@@ -58,6 +59,7 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 			ctx = context.WithValue(ctx, EmailKey, claims.Email)
 			ctx = context.WithValue(ctx, FamilyIDKey, claims.FamilyID)
 			ctx = context.WithValue(ctx, RoleKey, claims.Role)
+			ctx = context.WithValue(ctx, SystemRoleKey, claims.SystemRole)
 			ctx = context.WithValue(ctx, FirstNameKey, claims.FirstName)
 			ctx = context.WithValue(ctx, AuthClaimsKey, claims)
 
@@ -89,6 +91,7 @@ func OptionalAuthMiddleware(authService *service.AuthService) func(http.Handler)
 						ctx = context.WithValue(ctx, EmailKey, claims.Email)
 						ctx = context.WithValue(ctx, FamilyIDKey, claims.FamilyID)
 						ctx = context.WithValue(ctx, RoleKey, claims.Role)
+						ctx = context.WithValue(ctx, SystemRoleKey, claims.SystemRole)
 						ctx = context.WithValue(ctx, FirstNameKey, claims.FirstName)
 						ctx = context.WithValue(ctx, AuthClaimsKey, claims)
 						r = r.WithContext(ctx)
@@ -163,6 +166,17 @@ func GetRole(ctx context.Context) models.FamilyRole {
 		return role
 	}
 	return ""
+}
+
+func GetSystemRole(ctx context.Context) models.SystemRole {
+	if role, ok := ctx.Value(SystemRoleKey).(models.SystemRole); ok {
+		return role
+	}
+	return ""
+}
+
+func HasSystemRole(ctx context.Context) bool {
+	return GetSystemRole(ctx) != ""
 }
 
 func GetFirstName(ctx context.Context) string {

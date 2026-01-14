@@ -1,0 +1,107 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Marketing Dashboard</h1>
+    <span class="text-sm text-gray-500">Last updated: {{if .Data}}{{.Data.CachedAt.Format "Jan 2, 2006 3:04 PM"}}{{end}}</span>
+</div>
+
+<!-- Hero Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+        <p class="text-blue-100 text-sm uppercase tracking-wider">Total Users</p>
+        <p class="text-4xl font-bold mt-2">{{if .Data}}{{.Data.TotalUsers}}{{else}}0{{end}}</p>
+        <p class="text-blue-100 text-sm mt-2">
+            {{if .Data}}+{{.Data.NewUsersThisWeek}} this week{{end}}
+        </p>
+    </div>
+
+    <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+        <p class="text-purple-100 text-sm uppercase tracking-wider">Total Families</p>
+        <p class="text-4xl font-bold mt-2">{{if .Data}}{{.Data.TotalFamilies}}{{else}}0{{end}}</p>
+        <p class="text-purple-100 text-sm mt-2">Tracking health data</p>
+    </div>
+
+    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+        <p class="text-green-100 text-sm uppercase tracking-wider">Data Entries</p>
+        <p class="text-4xl font-bold mt-2">{{if .Data}}{{.Data.TotalEntries}}{{else}}0{{end}}</p>
+        <p class="text-green-100 text-sm mt-2">
+            {{if .Data}}{{printf "%.1f" .Data.AvgEntriesPerDay}}/day average{{end}}
+        </p>
+    </div>
+</div>
+
+<!-- Engagement Stats -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">User Engagement</h2>
+        <div class="space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Active Users (24h)</span>
+                <span class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.ActiveUsers24h}}{{else}}0{{end}}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Active Users (7d)</span>
+                <span class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.ActiveUsers7d}}{{else}}0{{end}}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Entries This Week</span>
+                <span class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.EntriesThisWeek}}{{else}}0{{end}}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Growth Metrics</h2>
+        <div class="space-y-4">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">New Users (This Week)</span>
+                <span class="text-2xl font-bold text-green-600">+{{if .Data}}{{.Data.NewUsersThisWeek}}{{else}}0{{end}}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">New Users (Last Week)</span>
+                <span class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.NewUsersLastWeek}}{{else}}0{{end}}</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">Week-over-Week Growth</span>
+                <span class="text-2xl font-bold {{if .Data}}{{if gt .Data.UserGrowthPct 0.0}}text-green-600{{else}}text-red-600{{end}}{{end}}">
+                    {{if .Data}}{{printf "%.1f" .Data.UserGrowthPct}}%{{else}}0%{{end}}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics for Marketing -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Key Marketing Metrics</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <p class="text-3xl font-bold text-indigo-600">{{if .Data}}{{printf "%.1f" .Data.AvgEntriesPerDay}}{{else}}0{{end}}</p>
+            <p class="text-sm text-gray-500 mt-1">Avg. Entries/Day</p>
+        </div>
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <p class="text-3xl font-bold text-indigo-600">
+                {{if and .Data (gt .Data.TotalUsers 0)}}{{printf "%.1f" (divf (float64 .Data.ActiveUsers7d) (float64 .Data.TotalUsers) | mulf 100)}}%{{else}}0%{{end}}
+            </p>
+            <p class="text-sm text-gray-500 mt-1">Weekly Active Rate</p>
+        </div>
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <p class="text-3xl font-bold text-indigo-600">
+                {{if and .Data (gt .Data.TotalFamilies 0)}}{{printf "%.1f" (divf (float64 .Data.TotalEntries) (float64 .Data.TotalFamilies))}}{{else}}0{{end}}
+            </p>
+            <p class="text-sm text-gray-500 mt-1">Entries/Family</p>
+        </div>
+        <div class="text-center p-4 bg-gray-50 rounded">
+            <p class="text-3xl font-bold text-indigo-600">
+                {{if and .Data (gt .Data.TotalFamilies 0)}}{{printf "%.1f" (divf (float64 .Data.TotalUsers) (float64 .Data.TotalFamilies))}}{{else}}0{{end}}
+            </p>
+            <p class="text-sm text-gray-500 mt-1">Users/Family</p>
+        </div>
+    </div>
+</div>
+
+<div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded">
+    <p class="text-sm text-blue-800">
+        <strong>Note:</strong> All metrics shown are aggregates. No individual patient data is accessible through this dashboard.
+    </p>
+</div>
+{{end}}

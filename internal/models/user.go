@@ -16,10 +16,39 @@ type User struct {
 	Timezone        NullString `json:"timezone,omitempty"`
 	TimeFormat      NullString `json:"time_format,omitempty"` // 12h or 24h
 	Status          UserStatus `json:"status"`
+	SystemRole      NullString `json:"system_role,omitempty"` // super_admin, support, marketing (NULL for regular users)
 	EmailVerifiedAt NullTime   `json:"email_verified_at,omitempty"`
 	LastLoginAt     NullTime   `json:"last_login_at,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+// HasSystemRole checks if user has any system admin role
+func (u *User) HasSystemRole() bool {
+	return u.SystemRole.Valid && u.SystemRole.String != ""
+}
+
+// GetSystemRole returns the system role if set
+func (u *User) GetSystemRole() SystemRole {
+	if u.SystemRole.Valid {
+		return SystemRole(u.SystemRole.String)
+	}
+	return ""
+}
+
+// IsSuperAdmin checks if user is a super admin
+func (u *User) IsSuperAdmin() bool {
+	return u.SystemRole.Valid && SystemRole(u.SystemRole.String) == SystemRoleSuperAdmin
+}
+
+// IsSupport checks if user is a support admin
+func (u *User) IsSupport() bool {
+	return u.SystemRole.Valid && SystemRole(u.SystemRole.String) == SystemRoleSupport
+}
+
+// IsMarketing checks if user is a marketing admin
+func (u *User) IsMarketing() bool {
+	return u.SystemRole.Valid && SystemRole(u.SystemRole.String) == SystemRoleMarketing
 }
 
 func (u *User) IsEmailVerified() bool {

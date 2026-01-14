@@ -18,6 +18,7 @@ import (
 
 	"carecompanion/internal/config"
 	"carecompanion/internal/database"
+	"carecompanion/internal/handler/admin"
 	"carecompanion/internal/handler/api"
 	"carecompanion/internal/handler/web"
 	"carecompanion/internal/middleware"
@@ -71,9 +72,13 @@ func main() {
 	// Create router
 	r := chi.NewRouter()
 
+	// Initialize error tracker
+	errorTracker := middleware.NewErrorTracker(db.DB)
+
 	// Global middleware
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
+	r.Use(errorTracker.Middleware) // Track errors and response times
 	r.Use(middleware.LoggingMiddleware)
 	r.Use(middleware.RecoverMiddleware)
 	r.Use(middleware.SecurityHeaders)
@@ -94,6 +99,30 @@ func main() {
 
 	// Web routes
 	web.SetupRoutes(r, webHandlers, services.Auth)
+
+	// Admin portal routes
+	adminHandler := admin.NewHandler(repos.Admin, services.Auth)
+
+	// Initialize CloudWatch service for system metrics (production only)
+	if cfg.App.Env == "production" {
+		cwService, err := service.NewCloudWatchService(
+			"carecompanion-asg",                                         // ASG name
+			"carecompanion-db",                                          // RDS instance identifier
+			"us-east-1",                                                 // Region
+		)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize CloudWatch service: %v", err)
+		} else {
+			adminHandler.SetCloudWatchService(cwService)
+			log.Println("CloudWatch service initialized for metrics collection")
+		}
+	}
+
+	r.Route("/api/admin", func(r chi.Router) {
+		r.Use(middleware.ContentTypeJSON)
+		r.Mount("/", adminHandler.Routes())
+	})
+	r.Mount("/admin", adminHandler.UIRoutes())
 
 	// File transfer utility (keep for development)
 	r.Get("/filextfer", handleFileTransfer)

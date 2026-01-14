@@ -306,6 +306,24 @@ const (
 	FamilyRoleMedicalProvider FamilyRole = "medical_provider"
 )
 
+// SystemRole represents system-level admin roles (separate from family roles)
+type SystemRole string
+
+const (
+	SystemRoleSuperAdmin SystemRole = "super_admin"
+	SystemRoleSupport    SystemRole = "support"
+	SystemRoleMarketing  SystemRole = "marketing"
+)
+
+// IsValidSystemRole checks if a string is a valid system role
+func IsValidSystemRole(role string) bool {
+	switch SystemRole(role) {
+	case SystemRoleSuperAdmin, SystemRoleSupport, SystemRoleMarketing:
+		return true
+	}
+	return false
+}
+
 type MedicationFrequency string
 
 const (

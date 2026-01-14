@@ -1,0 +1,96 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-gray-800 mb-6">System Settings</h1>
+
+<div class="space-y-6">
+    <!-- Maintenance Mode -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Maintenance Mode</h2>
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600">When enabled, users will see a maintenance message.</p>
+                {{if .Data.maintenance_mode}}
+                <p class="text-sm mt-1">
+                    Status:
+                    {{if .Data.maintenance_mode.enabled}}
+                    <span class="text-red-600 font-medium">ENABLED</span>
+                    {{else}}
+                    <span class="text-green-600 font-medium">DISABLED</span>
+                    {{end}}
+                </p>
+                {{end}}
+            </div>
+            <button onclick="toggleMaintenance()" class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200">
+                Toggle Maintenance
+            </button>
+        </div>
+    </div>
+
+    <!-- Registration -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">User Registration</h2>
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600">Control whether new users can register.</p>
+                {{if .Data.registration_enabled}}
+                <p class="text-sm mt-1">
+                    Status:
+                    {{if .Data.registration_enabled.enabled}}
+                    <span class="text-green-600 font-medium">ENABLED</span>
+                    {{else}}
+                    <span class="text-red-600 font-medium">DISABLED</span>
+                    {{end}}
+                </p>
+                {{end}}
+            </div>
+            <button onclick="toggleRegistration()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                Toggle Registration
+            </button>
+        </div>
+    </div>
+
+    <!-- Metrics Cache -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Metrics Cache</h2>
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600">Control how often marketing metrics are refreshed.</p>
+                {{if .Data.metrics_cache_ttl}}
+                <p class="text-sm mt-1">Current TTL: {{.Data.metrics_cache_ttl.seconds}} seconds</p>
+                {{end}}
+            </div>
+            <button onclick="refreshMetrics()" class="px-4 py-2 bg-green-100 text-green-700 rounded hover:bg-green-200">
+                Refresh Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Raw Settings -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">All Settings (JSON)</h2>
+        <pre class="bg-gray-50 p-4 rounded text-sm overflow-auto max-h-64">{{range $key, $value := .Data}}"{{$key}}": {{$value}}
+{{end}}</pre>
+    </div>
+</div>
+
+<script>
+async function toggleMaintenance() {
+    const msg = prompt('Maintenance message (leave blank to disable):');
+    const enabled = msg !== null && msg !== '';
+    await apiCall('POST', '/api/admin/super/maintenance', { enabled, message: msg || '' });
+    location.reload();
+}
+
+async function toggleRegistration() {
+    const resp = await fetch('/api/admin/super/settings');
+    const settings = await resp.json();
+    const currentEnabled = settings.registration_enabled?.enabled ?? true;
+    await apiCall('PUT', '/api/admin/super/settings/registration_enabled', { enabled: !currentEnabled });
+    location.reload();
+}
+
+async function refreshMetrics() {
+    await apiCall('POST', '/api/admin/super/metrics/refresh');
+    alert('Metrics refreshed!');
+}
+</script>
+{{end}}

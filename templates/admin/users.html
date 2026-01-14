@@ -1,0 +1,88 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
+</div>
+
+<!-- Search -->
+<div class="bg-white rounded-lg shadow p-4 mb-6">
+    <form method="GET" action="/admin/users" class="flex space-x-3">
+        <input type="text" name="q" value="{{.Data.query}}" placeholder="Search by name or email..."
+               class="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500">
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Search</button>
+    </form>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Families</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {{range .Data.users}}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{.FirstName}} {{.LastName}}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{.Email}}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs rounded-full
+                        {{if eq .Status "active"}}bg-green-100 text-green-800
+                        {{else if eq .Status "suspended"}}bg-red-100 text-red-800
+                        {{else}}bg-gray-100 text-gray-800{{end}}">
+                        {{.Status}}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{.FamilyCount}}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{if .LastLoginAt.Valid}}{{.LastLoginAt.Time.Format "Jan 2, 2006"}}{{else}}-{{end}}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <button onclick="resetPassword('{{.ID}}')" class="text-blue-600 hover:text-blue-900 mr-2">Reset Password</button>
+                    {{if eq .Status "active"}}
+                    <button onclick="suspendUser('{{.ID}}')" class="text-red-600 hover:text-red-900">Suspend</button>
+                    {{else}}
+                    <button onclick="activateUser('{{.ID}}')" class="text-green-600 hover:text-green-900">Activate</button>
+                    {{end}}
+                </td>
+            </tr>
+            {{else}}
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">No users found</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<p class="text-sm text-gray-500 mt-4">Total: {{.Data.total}} users</p>
+
+<script>
+async function resetPassword(id) {
+    if (confirm('Reset password for this user? A temporary password will be generated.')) {
+        const result = await apiCall('POST', '/api/admin/support/users/' + id + '/reset-password');
+        alert('Temporary password: ' + result.temp_password + '\n\nUser must change password on next login.');
+    }
+}
+
+async function suspendUser(id) {
+    if (confirm('Suspend this user?')) {
+        await apiCall('PUT', '/api/admin/support/users/' + id + '/status', { status: 'suspended' });
+        location.reload();
+    }
+}
+
+async function activateUser(id) {
+    if (confirm('Activate this user?')) {
+        await apiCall('PUT', '/api/admin/support/users/' + id + '/status', { status: 'active' });
+        location.reload();
+    }
+}
+</script>
+{{end}}

@@ -46,11 +46,42 @@ func NewAuthService(
 
 type AuthClaims struct {
 	jwt.RegisteredClaims
-	UserID    uuid.UUID        `json:"user_id"`
-	Email     string           `json:"email"`
-	FamilyID  uuid.UUID        `json:"family_id,omitempty"`
-	Role      models.FamilyRole `json:"role,omitempty"`
-	FirstName string           `json:"first_name"`
+	UserID     uuid.UUID          `json:"user_id"`
+	Email      string             `json:"email"`
+	FamilyID   uuid.UUID          `json:"family_id,omitempty"`
+	Role       models.FamilyRole  `json:"role,omitempty"`
+	SystemRole models.SystemRole  `json:"system_role,omitempty"` // super_admin, support, marketing
+	FirstName  string             `json:"first_name"`
+}
+
+// HasSystemRole checks if the claims have a system admin role
+func (c *AuthClaims) HasSystemRole() bool {
+	return c.SystemRole != ""
+}
+
+// IsSuperAdmin checks if the claims have super_admin role
+func (c *AuthClaims) IsSuperAdmin() bool {
+	return c.SystemRole == models.SystemRoleSuperAdmin
+}
+
+// IsSupport checks if the claims have support role
+func (c *AuthClaims) IsSupport() bool {
+	return c.SystemRole == models.SystemRoleSupport
+}
+
+// IsMarketing checks if the claims have marketing role
+func (c *AuthClaims) IsMarketing() bool {
+	return c.SystemRole == models.SystemRoleMarketing
+}
+
+// HasAnySystemRole checks if claims have any of the given system roles
+func (c *AuthClaims) HasAnySystemRole(roles ...models.SystemRole) bool {
+	for _, role := range roles {
+		if c.SystemRole == role {
+			return true
+		}
+	}
+	return false
 }
 
 type TokenPair struct {
@@ -241,6 +272,12 @@ func (s *AuthService) generateTokens(user *models.User, familyID uuid.UUID, role
 	accessExpiry := now.Add(s.jwtConfig.AccessExpiry)
 	refreshExpiry := now.Add(s.jwtConfig.RefreshExpiry)
 
+	// Get system role if present
+	var systemRole models.SystemRole
+	if user.HasSystemRole() {
+		systemRole = user.GetSystemRole()
+	}
+
 	// Access token claims
 	accessClaims := &AuthClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -249,11 +286,12 @@ func (s *AuthService) generateTokens(user *models.User, familyID uuid.UUID, role
 			ExpiresAt: jwt.NewNumericDate(accessExpiry),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
-		UserID:    user.ID,
-		Email:     user.Email,
-		FamilyID:  familyID,
-		Role:      role,
-		FirstName: user.FirstName,
+		UserID:     user.ID,
+		Email:      user.Email,
+		FamilyID:   familyID,
+		Role:       role,
+		SystemRole: systemRole,
+		FirstName:  user.FirstName,
 	}
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
@@ -270,9 +308,10 @@ func (s *AuthService) generateTokens(user *models.User, familyID uuid.UUID, role
 			ExpiresAt: jwt.NewNumericDate(refreshExpiry),
 			IssuedAt:  jwt.NewNumericDate(now),
 		},
-		UserID:   user.ID,
-		FamilyID: familyID,
-		Role:     role,
+		UserID:     user.ID,
+		FamilyID:   familyID,
+		Role:       role,
+		SystemRole: systemRole,
 	}
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)

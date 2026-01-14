@@ -1,0 +1,178 @@
+{{define "content"}}
+<h1 class="text-2xl font-bold text-gray-800 mb-6">Dashboard</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Users -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-blue-100 rounded-full">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Total Users</p>
+                <p class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.TotalUsers}}{{else}}0{{end}}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Users (24h) -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-green-100 rounded-full">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Active (24h)</p>
+                <p class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.ActiveUsers24h}}{{else}}0{{end}}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Families -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-purple-100 rounded-full">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Total Families</p>
+                <p class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.TotalFamilies}}{{else}}0{{end}}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entries This Week -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-yellow-100 rounded-full">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Entries (7d)</p>
+                <p class="text-2xl font-bold text-gray-800">{{if .Data}}{{.Data.EntriesThisWeek}}{{else}}0{{end}}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{if eq .CurrentUser.SystemRole "super_admin"}}
+<!-- System Health (Super Admin Only) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- CPU Utilization -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-indigo-100 rounded-full">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">CPU Utilization</p>
+                <p class="text-2xl font-bold {{if .Data}}{{if gt .Data.CPUUtilization 80.0}}text-red-600{{else if gt .Data.CPUUtilization 60.0}}text-yellow-600{{else}}text-green-600{{end}}{{else}}text-gray-800{{end}}">
+                    {{if .Data}}{{printf "%.1f" .Data.CPUUtilization}}%{{else}}0%{{end}}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DB Storage Utilization -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-cyan-100 rounded-full">
+                <svg class="w-6 h-6 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">DB Storage</p>
+                <p class="text-2xl font-bold {{if .Data}}{{if gt .Data.DBStorageUtilization 80.0}}text-red-600{{else if gt .Data.DBStorageUtilization 60.0}}text-yellow-600{{else}}text-green-600{{end}}{{else}}text-gray-800{{end}}">
+                    {{if .Data}}{{printf "%.1f" .Data.DBStorageUtilization}}%{{else}}0%{{end}}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avg Query Response Time -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-orange-100 rounded-full">
+                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Avg Response</p>
+                <p class="text-2xl font-bold {{if .Data}}{{if gt .Data.AvgResponseTimeMs 500.0}}text-red-600{{else if gt .Data.AvgResponseTimeMs 200.0}}text-yellow-600{{else}}text-green-600{{end}}{{else}}text-gray-800{{end}}">
+                    {{if .Data}}{{printf "%.0f" .Data.AvgResponseTimeMs}}ms{{else}}0ms{{end}}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Count -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm text-gray-500">Errors (24h)</p>
+                <p class="text-2xl font-bold {{if .Data}}{{if gt .Data.ErrorCount24h 10}}text-red-600{{else if gt .Data.ErrorCount24h 0}}text-yellow-600{{else}}text-green-600{{end}}{{else}}text-gray-800{{end}}">
+                    {{if .Data}}{{.Data.ErrorCount24h}}{{else}}0{{end}}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+<!-- Quick Actions -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+    <div class="flex flex-wrap gap-3">
+        {{if or (eq .CurrentUser.SystemRole "super_admin") (eq .CurrentUser.SystemRole "support")}}
+        <a href="/admin/tickets" class="px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">View Tickets</a>
+        <a href="/admin/users" class="px-4 py-2 bg-green-100 text-green-700 rounded hover:bg-green-200">Manage Users</a>
+        {{end}}
+        {{if eq .CurrentUser.SystemRole "super_admin"}}
+        <a href="/admin/admins" class="px-4 py-2 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Admin Users</a>
+        <a href="/admin/settings" class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200">System Settings</a>
+        {{end}}
+    </div>
+</div>
+
+<!-- System Info -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">System Information</h2>
+    <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+            <span class="text-gray-500">New Users (This Week):</span>
+            <span class="font-medium ml-2">{{if .Data}}{{.Data.NewUsersThisWeek}}{{else}}0{{end}}</span>
+        </div>
+        <div>
+            <span class="text-gray-500">User Growth:</span>
+            <span class="font-medium ml-2 {{if .Data}}{{if gt .Data.UserGrowthPct 0.0}}text-green-600{{else}}text-red-600{{end}}{{end}}">
+                {{if .Data}}{{printf "%.1f" .Data.UserGrowthPct}}%{{else}}0%{{end}}
+            </span>
+        </div>
+        <div>
+            <span class="text-gray-500">Total Entries:</span>
+            <span class="font-medium ml-2">{{if .Data}}{{.Data.TotalEntries}}{{else}}0{{end}}</span>
+        </div>
+        <div>
+            <span class="text-gray-500">Avg. Entries/Day:</span>
+            <span class="font-medium ml-2">{{if .Data}}{{printf "%.1f" .Data.AvgEntriesPerDay}}{{else}}0{{end}}</span>
+        </div>
+    </div>
+</div>
+{{end}}

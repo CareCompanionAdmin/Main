@@ -814,6 +814,7 @@ const formTemplates = {
                         <option value="">Select location...</option>
                         <option value="home">Home</option>
                         <option value="school">School</option>
+                        <option value="therapy">Therapy</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
@@ -827,7 +828,7 @@ const formTemplates = {
                 <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Positive Behaviors</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Behaviors</label>
                 <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
             </div>
             <div>
@@ -2240,7 +2241,7 @@ function showDetails(type, element) {
                     <div class="flex justify-between"><span class="text-gray-500">Self-injury Incidents:</span><span class="font-medium">${selfInjury}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Location:</span><span class="font-medium capitalize">${displayLocation || 'Not recorded'}</span></div>
                     <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Triggers:</span><p class="text-gray-900">${triggers || 'None'}</p></div>
-                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Positive Behaviors:</span><p class="text-gray-900">${positiveBehaviors || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Behaviors:</span><p class="text-gray-900">${positiveBehaviors || 'None'}</p></div>
                     <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
