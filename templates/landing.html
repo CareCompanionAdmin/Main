@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareCompanion - Care Management for Autism Families</title>
+    <meta name="description" content="CareCompanion helps families caring for autistic children track daily life, discover patterns with AI, and coordinate care with providers. 30 days free.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="CareCompanion - Finally, One Place for Everything">
+    <meta property="og:description" content="Track daily life, discover patterns with AI, and get your whole care team on the same page.">
+    <meta property="og:image" content="/static/images/mattyfullbody_clear.png">
+    <meta property="og:type" content="website">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81' },
+                        secondary: { 500: '#10b981', 600: '#059669' },
+                        accent: { 500: '#f59e0b', 600: '#d97706' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        html { scroll-behavior: smooth; }
+        .gradient-text { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    </style>
+</head>
+<body class="bg-white text-gray-800">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-2">
+                    <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="h-10 w-auto">
+                    <span class="text-xl font-bold text-primary-600">CareCompanion</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-600 hover:text-primary-600 transition">Features</a>
+                    <a href="#how-it-works" class="text-gray-600 hover:text-primary-600 transition">How It Works</a>
+                    <a href="#pricing" class="text-gray-600 hover:text-primary-600 transition">Pricing</a>
+                    <a href="#faq" class="text-gray-600 hover:text-primary-600 transition">FAQ</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/login" class="text-gray-600 hover:text-primary-600 transition font-medium">Log In</a>
+                    <a href="/register" class="bg-primary-600 text-white px-5 py-2 rounded-lg hover:bg-primary-700 transition font-medium shadow-sm">Start Free Trial</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Section 1: Hero -->
+    <section class="pt-24 pb-16 bg-gradient-to-b from-primary-50 to-white overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="text-center lg:text-left">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                        Finally, <span class="gradient-text">One Place</span> for Everything
+                    </h1>
+                    <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                        CareCompanion brings order to the chaos of caring for your autistic child.
+                        Track daily life, discover patterns with AI, and get your whole care team on the same page.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                        <a href="/register" class="bg-primary-600 text-white px-8 py-4 rounded-xl hover:bg-primary-700 transition font-semibold text-lg shadow-lg hover:shadow-xl">
+                            Start Your Free Trial
+                        </a>
+                        <a href="#how-it-works" class="border-2 border-primary-600 text-primary-600 px-8 py-4 rounded-xl hover:bg-primary-50 transition font-semibold text-lg">
+                            See How It Works
+                        </a>
+                    </div>
+                    <p class="mt-4 text-gray-500 text-sm">30 days free, no credit card required</p>
+                </div>
+                <div class="relative flex justify-center lg:justify-end">
+                    <div class="relative">
+                        <div class="absolute -inset-4 bg-gradient-to-r from-primary-200 to-purple-200 rounded-full blur-3xl opacity-30"></div>
+                        <img src="/static/images/mattyfullbody_clear.png" alt="Matty - Your Care Companion" class="relative h-80 lg:h-96 w-auto animate-float drop-shadow-2xl">
+                    </div>
+                    <div class="absolute top-4 right-0 bg-white rounded-2xl shadow-xl p-4 max-w-xs hidden lg:block">
+                        <p class="text-sm font-medium text-gray-800">"Hi! I'm Matty. Let me show you how we can help your family thrive."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Ribbon -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="text-center">
+                        <div class="text-3xl lg:text-4xl font-bold text-primary-600">1 in 31</div>
+                        <div class="text-gray-600 mt-1">Children diagnosed with autism</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl lg:text-4xl font-bold text-primary-600">72.5%</div>
+                        <div class="text-gray-600 mt-1">Of mothers experience depression</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl lg:text-4xl font-bold text-primary-600">$17K+</div>
+                        <div class="text-gray-600 mt-1">Annual out-of-pocket costs</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl lg:text-4xl font-bold text-primary-600">$1.4M</div>
+                        <div class="text-gray-600 mt-1">Lifetime cost per individual</div>
+                    </div>
+                </div>
+                <p class="text-center text-gray-500 mt-6 text-sm">You're not alone. CareCompanion is here to help.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Pain Points -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">We Understand the Daily Struggle</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Caring for an autistic child is more than a full-time job. You deserve tools that actually help.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Pain Point 1 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Overwhelming Daily Chaos</h3>
+                    <p class="text-gray-600">Tracking medications, behaviors, sleep, meals, therapy appointments... the mental load never ends.</p>
+                </div>
+
+                <!-- Pain Point 2 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Isolation & Burnout</h3>
+                    <p class="text-gray-600">80% of autism parents report anxiety. You're exhausted, and it feels like no one truly understands.</p>
+                </div>
+
+                <!-- Pain Point 3 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Difficulty with Providers</h3>
+                    <p class="text-gray-600">Appointments are short. Explaining everything that happened is impossible. Important details get lost.</p>
+                </div>
+
+                <!-- Pain Point 4 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Can't See the Patterns</h3>
+                    <p class="text-gray-600">Why did today's meltdown happen? What triggers work? In daily chaos, patterns stay hidden.</p>
+                </div>
+
+                <!-- Pain Point 5 -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition md:col-span-2 lg:col-span-1">
+                    <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Your Mental Health Matters Too</h3>
+                    <p class="text-gray-600">Caregiving takes a toll. You deserve support and tools that lighten the load, not add to it.</p>
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <p class="text-xl text-gray-700 font-medium">What if there was a better way?</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Collaborative Care Network (DIFFERENTIATOR) -->
+    <section class="py-20 bg-white" id="features">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-block bg-secondary-500/10 text-secondary-600 px-4 py-1 rounded-full text-sm font-medium mb-4">Key Differentiator</div>
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">Your Complete Care Team, Connected</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Everyone on the same page. No more repeating your child's history at every appointment.</p>
+            </div>
+
+            <!-- Hub Diagram -->
+            <div class="relative max-w-4xl mx-auto">
+                <!-- Center Hub -->
+                <div class="flex justify-center mb-8">
+                    <div class="bg-gradient-to-br from-primary-500 to-purple-600 rounded-full w-32 h-32 flex items-center justify-center shadow-2xl">
+                        <div class="text-center text-white">
+                            <svg class="w-10 h-10 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            <span class="text-sm font-semibold">Your Child</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Three Role Cards -->
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Parents -->
+                    <div class="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 border-2 border-primary-200 hover:shadow-lg transition">
+                        <div class="w-14 h-14 bg-primary-600 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-primary-800 mb-3">Parents</h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start"><svg class="w-5 h-5 text-primary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Full access to all features</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-primary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Manage child profiles</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-primary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>View all AI insights</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-primary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Control team permissions</li>
+                        </ul>
+                    </div>
+
+                    <!-- Caregivers -->
+                    <div class="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-2xl p-6 border-2 border-secondary-200 hover:shadow-lg transition">
+                        <div class="w-14 h-14 bg-secondary-600 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-secondary-800 mb-3">Caregivers</h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start"><svg class="w-5 h-5 text-secondary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Grandparents, nannies, teachers</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-secondary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Log entries during their time</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-secondary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>View child data & routines</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-secondary-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Stay informed & connected</li>
+                        </ul>
+                    </div>
+
+                    <!-- Medical Providers -->
+                    <div class="bg-gradient-to-br from-accent-50 to-amber-100 rounded-2xl p-6 border-2 border-accent-200 hover:shadow-lg transition">
+                        <div class="w-14 h-14 bg-accent-500 rounded-xl flex items-center justify-center mb-4 shadow-lg">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-amber-800 mb-3">Medical Providers</h3>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start"><svg class="w-5 h-5 text-accent-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Receive validated data</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-accent-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>View longitudinal patterns</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-accent-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Clinical-grade reports</li>
+                            <li class="flex items-start"><svg class="w-5 h-5 text-accent-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Validate treatment insights</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Feature Highlights -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">Everything You Need in One Place</h2>
+                <p class="text-xl text-gray-600">Powerful tools designed specifically for autism care management</p>
+            </div>
+
+            <div class="space-y-16">
+                <!-- Feature 1: Daily Tracking -->
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <div class="inline-block bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-medium mb-4">Comprehensive Tracking</div>
+                        <h3 class="text-2xl lg:text-3xl font-bold mb-4">10+ Specialized Log Types</h3>
+                        <p class="text-lg text-gray-600 mb-6">Track every aspect of your child's day with forms designed specifically for autism care needs.</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex items-center text-gray-700"><svg class="w-5 h-5 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Behavior & Mood</div>
+                            <div class="flex items-center text-gray-700"><svg class="w-5 h-5 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Sleep Quality</div>
+                            <div class="flex items-center text-gray-700"><svg class="w-5 h-5 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Diet & Nutrition</div>
+                            <div class="flex items-center text-gray-700"><svg class="w-5 h-5 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Speech & Communication</div>
+                            <div class="flex items-center text-gray-700"><svg class="w-5 h-5 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Sensory Experiences</div>
+                            <div class="flex items-center text-gray-700"><svg class="w-5 h-5 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Therapy Sessions</div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4 pb-4 border-b">
+                            <span class="font-semibold text-gray-800">Today's Logs</span>
+                            <span class="text-sm text-gray-500">January 14, 2026</span>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg"><span class="flex items-center"><span class="w-3 h-3 bg-green-500 rounded-full mr-3"></span>Sleep Log</span><span class="text-green-600 text-sm">8.5 hrs - Good</span></div>
+                            <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg"><span class="flex items-center"><span class="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>Behavior Log</span><span class="text-blue-600 text-sm">Mood: 4/5</span></div>
+                            <div class="flex items-center justify-between p-3 bg-amber-50 rounded-lg"><span class="flex items-center"><span class="w-3 h-3 bg-amber-500 rounded-full mr-3"></span>Diet Log</span><span class="text-amber-600 text-sm">3 meals logged</span></div>
+                            <div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg"><span class="flex items-center"><span class="w-3 h-3 bg-purple-500 rounded-full mr-3"></span>Therapy Log</span><span class="text-purple-600 text-sm">OT - 45 min</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 2: Medication Management -->
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 lg:order-1 bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="font-semibold text-gray-800">Medications</span>
+                            <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">FDA Verified</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="p-4 border border-gray-200 rounded-xl">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <div class="font-semibold">Medication A</div>
+                                        <div class="text-sm text-gray-500">10mg - Morning & Evening</div>
+                                    </div>
+                                    <span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">92% Adherence</span>
+                                </div>
+                                <div class="flex space-x-2 mt-3">
+                                    <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">Next: 6:00 PM</span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start">
+                                <svg class="w-5 h-5 text-amber-600 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                                <div class="text-sm"><span class="font-medium text-amber-800">Interaction Alert:</span> <span class="text-amber-700">Check timing with Medication B</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="order-1 lg:order-2">
+                        <div class="inline-block bg-secondary-100 text-secondary-700 px-3 py-1 rounded-full text-sm font-medium mb-4">Smart Medication</div>
+                        <h3 class="text-2xl lg:text-3xl font-bold mb-4">FDA Database Integration</h3>
+                        <p class="text-lg text-gray-600 mb-6">Never miss a dose. Get drug interaction alerts. Track adherence automatically.</p>
+                        <ul class="space-y-3">
+                            <li class="flex items-start"><svg class="w-6 h-6 text-secondary-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span class="text-gray-700">Scheduled dose reminders</span></li>
+                            <li class="flex items-start"><svg class="w-6 h-6 text-secondary-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span class="text-gray-700">Drug interaction warnings</span></li>
+                            <li class="flex items-start"><svg class="w-6 h-6 text-secondary-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span class="text-gray-700">Adherence tracking & reports</span></li>
+                            <li class="flex items-start"><svg class="w-6 h-6 text-secondary-600 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span class="text-gray-700">PRN (as-needed) logging</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: How It Works -->
+    <section class="py-20 bg-white" id="how-it-works">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">Get Started in Minutes</h2>
+                <p class="text-xl text-gray-600">Four simple steps to better care coordination</p>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-primary-600">1</span>
+                    </div>
+                    <div class="w-14 h-14 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Create Your Family</h3>
+                    <p class="text-gray-600">Set up your account and add your children in minutes</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-primary-600">2</span>
+                    </div>
+                    <div class="w-14 h-14 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Start Logging</h3>
+                    <p class="text-gray-600">Track behaviors, meals, sleep, and more with simple forms</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-primary-600">3</span>
+                    </div>
+                    <div class="w-14 h-14 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Discover Patterns</h3>
+                    <p class="text-gray-600">Our AI finds correlations and alerts you to important trends</p>
+                </div>
+
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-bold text-primary-600">4</span>
+                    </div>
+                    <div class="w-14 h-14 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Share with Your Team</h3>
+                    <p class="text-gray-600">Invite caregivers and share reports with providers</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 6: AI Intelligence Engine (DIFFERENTIATOR) -->
+    <section class="py-20 bg-gradient-to-br from-primary-900 via-primary-800 to-purple-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">Powered by AI</div>
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">Intelligence That Learns Your Child</h2>
+                <p class="text-xl text-primary-100 max-w-3xl mx-auto">Our three-tier AI system combines global medical knowledge with patterns from similar children and your child's unique history.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Three Tier Visual -->
+                <div class="space-y-4">
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-6 border border-white/20">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Tier 1: Global Medical Knowledge</h4>
+                                <p class="text-primary-200 text-sm">Evidence-based insights from FDA & clinical research</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-6 border border-white/20">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Tier 2: Cohort Patterns</h4>
+                                <p class="text-primary-200 text-sm">What works for children with similar profiles</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/10 backdrop-blur rounded-xl p-6 border border-white/20">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mr-4">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Tier 3: Your Child's Unique Patterns</h4>
+                                <p class="text-primary-200 text-sm">Personalized insights that learn and improve over time</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example Insight -->
+                <div>
+                    <div class="bg-white rounded-2xl p-6 shadow-2xl text-gray-800">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">Pattern Discovered</span>
+                            <span class="text-gray-400 text-sm">2 hours ago</span>
+                        </div>
+                        <h4 class="text-lg font-bold mb-2">"Poor sleep quality correlates with increased anxiety the next day"</h4>
+                        <div class="flex flex-wrap gap-3 mb-4">
+                            <span class="bg-green-100 text-green-700 text-sm px-3 py-1 rounded-full">Confidence: 87%</span>
+                            <span class="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full">Confirmed 15 times</span>
+                            <span class="bg-amber-100 text-amber-700 text-sm px-3 py-1 rounded-full">Time lag: 8-12 hrs</span>
+                        </div>
+                        <p class="text-gray-600 text-sm">Based on 45 data points over the last 30 days. Consider prioritizing sleep hygiene on nights before important activities.</p>
+                    </div>
+
+                    <div class="mt-8 grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold">1,000+</div>
+                            <div class="text-primary-200 text-sm">Patterns detected daily</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold">94%</div>
+                            <div class="text-primary-200 text-sm">Accuracy rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <p class="text-xl text-primary-100 font-medium">"The more you log, the smarter it gets. Real AI that understands your child."</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 7: Testimonials -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">Trusted by Families Like Yours</h2>
+                <p class="text-xl text-gray-600">See what parents and providers are saying</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="text-amber-400 flex">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 mb-6">"Before CareCompanion, I was drowning in notebooks and spreadsheets. Now everything is in one place, and I can actually see what's working for my son."</p>
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-primary-600 font-semibold">JM</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Jennifer M.</div>
+                            <div class="text-gray-500 text-sm">Mother of Thomas (Age 7)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="text-amber-400 flex">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 mb-6">"As a grandmother helping with care, I love that I can see what happened during the day and continue tracking seamlessly. We're finally all on the same page."</p>
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-secondary-600 font-semibold">ML</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Margaret L.</div>
+                            <div class="text-gray-500 text-sm">Grandmother & Caregiver</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="text-amber-400 flex">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 mb-6">"My patients' families come to appointments with real data now. It's transformed how we work together on treatment plans. I wish all my families used this."</p>
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-accent-100 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-accent-600 font-semibold">AC</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Dr. Amanda Chen</div>
+                            <div class="text-gray-500 text-sm">Pediatric Neurologist</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 8: Pricing -->
+    <section class="py-20 bg-white" id="pricing">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+                <p class="text-xl text-gray-600">Start free, upgrade when you're ready</p>
+            </div>
+
+            <!-- Trial Banner -->
+            <div class="max-w-2xl mx-auto mb-12">
+                <div class="bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl p-6 text-white text-center">
+                    <div class="text-2xl font-bold mb-2">30 Days Free + 50% Off Next Month</div>
+                    <p class="text-primary-100">No credit card required to start. Cancel anytime.</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Essential Plan -->
+                <div class="bg-white rounded-2xl p-8 border-2 border-gray-200 hover:border-primary-300 transition">
+                    <h3 class="text-2xl font-bold mb-2">Essential</h3>
+                    <p class="text-gray-600 mb-6">Perfect for single-child families</p>
+                    <div class="mb-6">
+                        <span class="text-4xl font-bold">$9.99</span>
+                        <span class="text-gray-500">/month</span>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>1 child profile</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>All 10+ log types</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>AI pattern detection</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>3 family members</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Medication tracking</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Email support</li>
+                    </ul>
+                    <a href="/register" class="block w-full text-center bg-gray-100 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-200 transition">Start Free Trial</a>
+                </div>
+
+                <!-- Family Plan -->
+                <div class="bg-white rounded-2xl p-8 border-2 border-primary-500 relative shadow-xl">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-primary-600 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Family</h3>
+                    <p class="text-gray-600 mb-6">For families with multiple children</p>
+                    <div class="mb-6">
+                        <span class="text-4xl font-bold">$14.99</span>
+                        <span class="text-gray-500">/month</span>
+                    </div>
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg><strong>Unlimited</strong> child profiles</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>All 10+ log types</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>AI pattern detection</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg><strong>Unlimited</strong> family members</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Provider sharing & reports</li>
+                        <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Priority support</li>
+                    </ul>
+                    <a href="/register" class="block w-full text-center bg-primary-600 text-white py-3 rounded-xl font-semibold hover:bg-primary-700 transition shadow-lg">Start Free Trial</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 9: For Medical Providers -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="inline-block bg-accent-100 text-accent-700 px-3 py-1 rounded-full text-sm font-medium mb-4">For Healthcare Providers</div>
+                    <h2 class="text-3xl lg:text-4xl font-bold mb-6">Better Data Means Better Care</h2>
+                    <p class="text-lg text-gray-600 mb-8">When your patients' families use CareCompanion, you get the longitudinal data you need to make informed treatment decisions.</p>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start"><svg class="w-6 h-6 text-accent-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>Structured, validated data</strong> - Not just parent narratives, but quantified metrics</span></li>
+                        <li class="flex items-start"><svg class="w-6 h-6 text-accent-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>Longitudinal patterns</strong> - See trends over weeks and months, not just point-in-time snapshots</span></li>
+                        <li class="flex items-start"><svg class="w-6 h-6 text-accent-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>Clinical-grade reports</strong> - Exportable summaries designed for medical review</span></li>
+                        <li class="flex items-start"><svg class="w-6 h-6 text-accent-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>Validate treatment insights</strong> - Confirm or refute pattern hypotheses with clinical expertise</span></li>
+                    </ul>
+                    <a href="/register?role=provider" class="inline-block bg-accent-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-accent-600 transition shadow-lg">Request Provider Access</a>
+                </div>
+                <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-accent-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        </div>
+                        <h4 class="text-lg font-bold">Sample Clinical Report</h4>
+                    </div>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Report Period</span><span class="font-medium">Last 30 days</span></div>
+                        <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Total Log Entries</span><span class="font-medium">127 entries</span></div>
+                        <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Patterns Detected</span><span class="font-medium">8 correlations</span></div>
+                        <div class="flex justify-between py-2 border-b"><span class="text-gray-600">Medication Adherence</span><span class="font-medium text-green-600">94%</span></div>
+                        <div class="flex justify-between py-2"><span class="text-gray-600">Sleep Quality Trend</span><span class="font-medium text-amber-600">Improving</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 10: FAQ -->
+    <section class="py-20 bg-white" id="faq">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+            </div>
+
+            <div class="space-y-4">
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        Is my data secure?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">Yes. CareCompanion uses enterprise-grade encryption, secure authentication with optional two-factor authentication, and follows healthcare data privacy best practices. Your family's data is never sold or shared.</p>
+                </details>
+
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        How long does it take to set up?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">Most families are tracking within 5 minutes. Create an account, add your child's profile, and start logging. The AI begins learning your child's patterns immediately.</p>
+                </details>
+
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        Can multiple caregivers use the same account?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">Absolutely. Invite parents, grandparents, nannies, teachers, and even therapists to collaborate on care. Each person gets their own login with appropriate permissions.</p>
+                </details>
+
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        What if my child doesn't have an official diagnosis?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">CareCompanion is helpful for any child with complex care needs. Many families use it while seeking diagnosis or for related conditions like ADHD, sensory processing differences, or developmental delays.</p>
+                </details>
+
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        How does the AI pattern detection work?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">Our AI analyzes your logged data to find correlations between factors (like sleep quality and next-day behavior). It combines global medical knowledge, patterns from similar children, and your child's unique history. The more you log, the smarter it gets.</p>
+                </details>
+
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        Can I share data with my child's doctor?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">Yes. Export detailed reports for appointments, or grant viewing access to providers directly in the app. Many doctors appreciate receiving structured data rather than trying to reconstruct events from memory.</p>
+                </details>
+
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        What if I need to cancel?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">Cancel anytime from your account settings with no questions asked. Your data remains available for export for 30 days after cancellation.</p>
+                </details>
+
+                <details class="bg-gray-50 rounded-xl p-6 group">
+                    <summary class="font-semibold cursor-pointer list-none flex justify-between items-center">
+                        Is there a mobile app?
+                        <svg class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-4 text-gray-600">CareCompanion is a responsive web app that works beautifully on any device - phone, tablet, or computer. Simply visit the website from any browser. No app download required.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 11: Final CTA -->
+    <section class="py-20 bg-gradient-to-b from-primary-50 to-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="text-center lg:text-left">
+                    <h2 class="text-3xl lg:text-4xl font-bold mb-6">Ready to Bring Calm to the Chaos?</h2>
+                    <p class="text-xl text-gray-600 mb-8">Join thousands of families who've found a better way to manage care. Start your free trial today.</p>
+                    <a href="/register" class="inline-block bg-primary-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-primary-700 transition shadow-lg hover:shadow-xl">Start Your Free 30-Day Trial</a>
+                    <p class="mt-4 text-gray-500">No credit card required. Cancel anytime.</p>
+
+                    <!-- Trust Indicators -->
+                    <div class="flex flex-wrap justify-center lg:justify-start gap-6 mt-8">
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            Secure & Private
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            HIPAA-Aware
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+                            Made by Special Needs Parents
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center">
+                    <div class="relative">
+                        <div class="absolute -inset-4 bg-gradient-to-r from-primary-200 to-purple-200 rounded-full blur-3xl opacity-30"></div>
+                        <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="relative h-72 lg:h-80 w-auto animate-float drop-shadow-2xl">
+                        <div class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-xl p-4 whitespace-nowrap">
+                            <p class="font-medium text-gray-800">"Let's do this together!"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="h-8 w-auto">
+                        <span class="text-white font-bold">CareCompanion</span>
+                    </div>
+                    <p class="text-sm">Helping families caring for autistic children track, understand, and thrive.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#features" class="hover:text-white transition">Features</a></li>
+                        <li><a href="#pricing" class="hover:text-white transition">Pricing</a></li>
+                        <li><a href="#faq" class="hover:text-white transition">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white transition">About Us</a></li>
+                        <li><a href="#" class="hover:text-white transition">Contact</a></li>
+                        <li><a href="#" class="hover:text-white transition">Blog</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/privacy" class="hover:text-white transition">Privacy Policy</a></li>
+                        <li><a href="/terms" class="hover:text-white transition">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
+                <p>&copy; 2025 CareCompanion. All rights reserved. Made with love for special needs families.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -21,11 +21,23 @@ func NewWebHandlers(services *service.Services) *WebHandlers {
 	return &WebHandlers{services: services}
 }
 
-// Home renders the home page
+// Landing renders the marketing landing page for non-authenticated users
+func (h *WebHandlers) Landing(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	if claims != nil {
+		// Logged-in users go to dashboard
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	renderTemplate(w, "landing", nil)
+}
+
+// Home renders the home page (redirects appropriately)
 func (h *WebHandlers) Home(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetAuthClaims(r.Context())
 	if claims == nil {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -41,6 +53,16 @@ func (h *WebHandlers) Login(w http.ResponseWriter, r *http.Request) {
 // Register renders the register page
 func (h *WebHandlers) Register(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "register", nil)
+}
+
+// Privacy renders the privacy policy page
+func (h *WebHandlers) Privacy(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "privacy", nil)
+}
+
+// Terms renders the terms of service page
+func (h *WebHandlers) Terms(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "terms", nil)
 }
 
 // Dashboard renders the main dashboard

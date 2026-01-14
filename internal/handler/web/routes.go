@@ -12,9 +12,11 @@ func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthS
 	// Public routes
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.OptionalAuthMiddleware(authService))
-		r.Get("/", handlers.Home)
+		r.Get("/", handlers.Landing)
 		r.Get("/login", handlers.Login)
 		r.Get("/register", handlers.Register)
+		r.Get("/privacy", handlers.Privacy)
+		r.Get("/terms", handlers.Terms)
 	})
 
 	// Protected routes
