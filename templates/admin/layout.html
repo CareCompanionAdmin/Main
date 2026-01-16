@@ -40,7 +40,10 @@
                 {{if or (eq .CurrentUser.SystemRole "super_admin") (eq .CurrentUser.SystemRole "support")}}
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Support</h3>
-                    <a href="/admin/tickets" class="block px-3 py-2 rounded hover:bg-gray-100">Tickets</a>
+                    <a href="/admin/tickets" class="block px-3 py-2 rounded hover:bg-gray-100 flex items-center justify-between">
+                        <span>Tickets</span>
+                        <span id="ticket-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </a>
                     <a href="/admin/users" class="block px-3 py-2 rounded hover:bg-gray-100">Users</a>
                     <a href="/admin/families" class="block px-3 py-2 rounded hover:bg-gray-100">Families</a>
                 </div>
@@ -50,13 +53,31 @@
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Marketing</h3>
                     <a href="/admin/marketing" class="block px-3 py-2 rounded hover:bg-gray-100">Metrics Dashboard</a>
-                    {{if eq .CurrentUser.SystemRole "marketing"}}
+                    <a href="/admin/materials" class="block px-3 py-2 rounded hover:bg-gray-100">Copy & Materials</a>
+                    {{if eq .CurrentUser.SystemRole "super_admin"}}
+                    <a href="/admin/promo-codes" class="block px-3 py-2 rounded hover:bg-gray-100">Promo Codes</a>
+                    {{else}}
                     <a href="/admin/marketing/tickets" class="block px-3 py-2 rounded hover:bg-gray-100">Tickets <span class="text-xs text-gray-400">(Read Only)</span></a>
+                    <a href="/admin/promo-codes" class="block px-3 py-2 rounded hover:bg-gray-100">Promo Codes <span class="text-xs text-gray-400">(Read Only)</span></a>
                     {{end}}
                 </div>
                 {{end}}
 
                 {{if eq .CurrentUser.SystemRole "super_admin"}}
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System</h3>
+                    <a href="/admin/status" class="block px-3 py-2 rounded hover:bg-gray-100">Infrastructure Status</a>
+                    <a href="/admin/errors" class="block px-3 py-2 rounded hover:bg-gray-100 flex items-center justify-between">
+                        <span>Error Logs</span>
+                        <span id="error-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                    </a>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Finance</h3>
+                    <a href="/admin/financials" class="block px-3 py-2 rounded hover:bg-gray-100">Financials</a>
+                </div>
+
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Administration</h3>
                     <a href="/admin/admins" class="block px-3 py-2 rounded hover:bg-gray-100">Admin Users</a>
@@ -104,6 +125,52 @@
                 throw err;
             }
         }
+
+        // Check for open tickets and update badge
+        async function checkOpenTickets() {
+            try {
+                const response = await fetch('/api/admin/support/tickets/open-count', { credentials: 'same-origin' });
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('ticket-badge');
+                    if (badge) {
+                        if (data.open_count > 0) {
+                            badge.textContent = data.open_count;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Check for unacknowledged errors and update badge
+        async function checkUnacknowledgedErrors() {
+            try {
+                const response = await fetch('/api/admin/super/errors/unacknowledged-count', { credentials: 'same-origin' });
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('error-badge');
+                    if (badge) {
+                        if (data.unacknowledged_count > 0) {
+                            badge.textContent = data.unacknowledged_count;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Poll for open tickets and unacknowledged errors on page load and every 30 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            checkOpenTickets();
+            checkUnacknowledgedErrors();
+            setInterval(checkOpenTickets, 30000);
+            setInterval(checkUnacknowledgedErrors, 30000);
+        });
     </script>
 </body>
 </html>

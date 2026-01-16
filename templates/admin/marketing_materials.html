@@ -1,0 +1,762 @@
+{{define "content"}}
+<div class="max-w-7xl mx-auto">
+    <!-- Hero Banner with Gradient -->
+    <div class="relative bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 rounded-2xl p-8 mb-8 overflow-hidden">
+        <div class="absolute right-0 top-0 h-full opacity-20">
+            <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="h-full object-contain object-right">
+        </div>
+        <div class="relative z-10">
+            <h1 class="text-3xl font-bold text-white mb-2">Marketing Materials Center</h1>
+            <p class="text-indigo-100 text-lg">Brand assets, style guides, and marketing collateral - all in one place</p>
+        </div>
+        {{if eq .CurrentUser.SystemRole "super_admin"}}
+        <div class="relative z-10 mt-4 flex space-x-3">
+            <button onclick="regenerateAllAssets()" class="px-4 py-2 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors">
+                Regenerate All Assets
+            </button>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="border-b border-gray-200 mb-6">
+        <nav class="-mb-px flex space-x-8" id="material-tabs">
+            <button onclick="switchTab('style-guide')" class="tab-btn active py-4 px-1 border-b-2 border-indigo-500 font-medium text-indigo-600" data-tab="style-guide">
+                Style Guide
+            </button>
+            <button onclick="switchTab('brochures')" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="brochures">
+                Brochures
+            </button>
+            <button onclick="switchTab('logos')" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="logos">
+                Logos
+            </button>
+            <button onclick="switchTab('social')" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="social">
+                Social Media
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="tab-content">
+        <!-- Style Guide Tab -->
+        <div id="tab-style-guide" class="tab-panel">
+            <!-- Brand Identity Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-900">Brand Identity</h2>
+                    {{if eq .CurrentUser.SystemRole "super_admin"}}
+                    <button onclick="openBrandEditModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        Edit Brand Config
+                    </button>
+                    {{end}}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Application Name & Tagline</h3>
+                        <p class="text-2xl font-bold text-indigo-600 mb-2" id="brand-app-name">CareCompanion</p>
+                        <p class="text-lg text-gray-600 italic" id="brand-tagline">"Finally, One Place for Everything"</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Mission Statement</h3>
+                        <p class="text-gray-600" id="brand-mission">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Color Palette Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Color Palette</h2>
+
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Primary Colors</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <div class="color-swatch-card">
+                        <div id="color-primary" class="h-24 rounded-t-lg bg-indigo-600"></div>
+                        <div class="p-3 bg-gray-50 rounded-b-lg">
+                            <p class="font-medium text-gray-800">Primary</p>
+                            <p class="text-sm text-gray-500 cursor-pointer hover:text-indigo-600" onclick="copyToClipboard(this.textContent)" id="hex-primary">#4F46E5</p>
+                        </div>
+                    </div>
+                    <div class="color-swatch-card">
+                        <div id="color-primary-light" class="h-24 rounded-t-lg bg-indigo-400"></div>
+                        <div class="p-3 bg-gray-50 rounded-b-lg">
+                            <p class="font-medium text-gray-800">Primary Light</p>
+                            <p class="text-sm text-gray-500 cursor-pointer hover:text-indigo-600" onclick="copyToClipboard(this.textContent)" id="hex-primary-light">#6366F1</p>
+                        </div>
+                    </div>
+                    <div class="color-swatch-card">
+                        <div id="color-primary-dark" class="h-24 rounded-t-lg bg-indigo-800"></div>
+                        <div class="p-3 bg-gray-50 rounded-b-lg">
+                            <p class="font-medium text-gray-800">Primary Dark</p>
+                            <p class="text-sm text-gray-500 cursor-pointer hover:text-indigo-600" onclick="copyToClipboard(this.textContent)" id="hex-primary-dark">#4338CA</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Secondary & Accent Colors</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="color-swatch-card">
+                        <div id="color-secondary" class="h-20 rounded-t-lg bg-emerald-500"></div>
+                        <div class="p-3 bg-gray-50 rounded-b-lg">
+                            <p class="font-medium text-gray-800 text-sm">Secondary</p>
+                            <p class="text-xs text-gray-500 cursor-pointer hover:text-indigo-600" onclick="copyToClipboard(this.textContent)" id="hex-secondary">#10B981</p>
+                        </div>
+                    </div>
+                    <div class="color-swatch-card">
+                        <div id="color-secondary-dark" class="h-20 rounded-t-lg bg-emerald-600"></div>
+                        <div class="p-3 bg-gray-50 rounded-b-lg">
+                            <p class="font-medium text-gray-800 text-sm">Secondary Dark</p>
+                            <p class="text-xs text-gray-500 cursor-pointer hover:text-indigo-600" onclick="copyToClipboard(this.textContent)" id="hex-secondary-dark">#059669</p>
+                        </div>
+                    </div>
+                    <div class="color-swatch-card">
+                        <div id="color-accent" class="h-20 rounded-t-lg bg-amber-500"></div>
+                        <div class="p-3 bg-gray-50 rounded-b-lg">
+                            <p class="font-medium text-gray-800 text-sm">Accent</p>
+                            <p class="text-xs text-gray-500 cursor-pointer hover:text-indigo-600" onclick="copyToClipboard(this.textContent)" id="hex-accent">#F59E0B</p>
+                        </div>
+                    </div>
+                    <div class="color-swatch-card">
+                        <div id="color-accent-dark" class="h-20 rounded-t-lg bg-amber-600"></div>
+                        <div class="p-3 bg-gray-50 rounded-b-lg">
+                            <p class="font-medium text-gray-800 text-sm">Accent Dark</p>
+                            <p class="text-xs text-gray-500 cursor-pointer hover:text-indigo-600" onclick="copyToClipboard(this.textContent)" id="hex-accent-dark">#D97706</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typography Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Typography</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Heading Font: <span id="font-heading" class="text-indigo-600">Inter</span></h3>
+                        <p class="text-sm text-gray-500 mb-4">Use for headlines, titles, and prominent text</p>
+                        <p class="text-4xl font-bold text-gray-900">Aa Bb Cc 123</p>
+                        <p class="text-2xl font-bold text-gray-700 mt-2">The quick brown fox</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Body Font: <span id="font-body" class="text-indigo-600">Inter</span></h3>
+                        <p class="text-sm text-gray-500 mb-4">Use for body copy, descriptions, and general text</p>
+                        <p class="text-base text-gray-700">Aa Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz</p>
+                        <p class="text-base text-gray-700 mt-2">0123456789</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voice & Tone Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Voice & Tone</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Brand Voice</h3>
+                        <div id="brand-voice" class="text-gray-600 whitespace-pre-line">Loading...</div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-3">Writing Guidelines</h3>
+                        <div id="writing-guidelines" class="text-gray-600 whitespace-pre-line">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Style Guide -->
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold">Download Complete Style Guide</h3>
+                        <p class="text-indigo-100">Get the full brand style guide as a PDF document</p>
+                    </div>
+                    <a href="/api/admin/marketing/materials/style-guide" class="px-6 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-indigo-50 transition-colors">
+                        Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brochures Tab -->
+        <div id="tab-brochures" class="tab-panel hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Single Page Brochure -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="h-64 bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+                        <div class="text-center text-white">
+                            <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-lg font-semibold">Single Page</p>
+                            <p class="text-sm text-indigo-200">8.5" x 11"</p>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Single Page Brochure</h3>
+                        <p class="text-gray-600 mb-4">A one-page overview of CareCompanion featuring key features, statistics, and call-to-action.</p>
+                        <div class="flex space-x-3">
+                            <a href="/api/admin/marketing/materials/brochure?type=single" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-center font-medium hover:bg-indigo-700">
+                                Download PDF
+                            </a>
+                            {{if eq .CurrentUser.SystemRole "super_admin"}}
+                            <button onclick="regenerateAsset('single-page-brochure')" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Regenerate
+                            </button>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tri-Fold Brochure -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="h-64 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                        <div class="text-center text-white">
+                            <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                            </svg>
+                            <p class="text-lg font-semibold">Tri-Fold</p>
+                            <p class="text-sm text-emerald-200">11" x 8.5" (landscape)</p>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Tri-Fold Brochure</h3>
+                        <p class="text-gray-600 mb-4">A comprehensive tri-fold brochure with detailed information about challenges, solutions, and how to get started.</p>
+                        <div class="flex space-x-3">
+                            <a href="/api/admin/marketing/materials/brochure?type=trifold" class="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-center font-medium hover:bg-emerald-700">
+                                Download PDF
+                            </a>
+                            {{if eq .CurrentUser.SystemRole "super_admin"}}
+                            <button onclick="regenerateAsset('tri-fold-brochure')" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                Regenerate
+                            </button>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logos Tab -->
+        <div id="tab-logos" class="tab-panel hidden">
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Logo Variants</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Primary Logo -->
+                    <div class="border rounded-xl p-6">
+                        <div class="h-32 bg-indigo-600 rounded-lg flex items-center justify-center mb-4">
+                            <span class="text-5xl font-bold text-white">C</span>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Primary Logo</h3>
+                        <p class="text-sm text-gray-600 mb-4">Use on light backgrounds</p>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="/api/admin/marketing/materials/logo?variant=primary&format=svg" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">SVG</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=primary&format=png&size=64" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">64px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=primary&format=png&size=128" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">128px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=primary&format=png&size=256" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">256px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=primary&format=png&size=512" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">512px</a>
+                        </div>
+                    </div>
+
+                    <!-- White Logo -->
+                    <div class="border rounded-xl p-6">
+                        <div class="h-32 bg-gray-800 rounded-lg flex items-center justify-center mb-4">
+                            <span class="text-5xl font-bold text-white">C</span>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">White Logo</h3>
+                        <p class="text-sm text-gray-600 mb-4">Use on dark backgrounds</p>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="/api/admin/marketing/materials/logo?variant=white&format=svg" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">SVG</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=white&format=png&size=64" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">64px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=white&format=png&size=128" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">128px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=white&format=png&size=256" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">256px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=white&format=png&size=512" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">512px</a>
+                        </div>
+                    </div>
+
+                    <!-- Dark Logo -->
+                    <div class="border rounded-xl p-6">
+                        <div class="h-32 bg-indigo-900 rounded-lg flex items-center justify-center mb-4">
+                            <span class="text-5xl font-bold text-white">C</span>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Dark Logo</h3>
+                        <p class="text-sm text-gray-600 mb-4">Alternative dark variant</p>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="/api/admin/marketing/materials/logo?variant=dark&format=svg" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">SVG</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=dark&format=png&size=64" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">64px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=dark&format=png&size=128" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">128px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=dark&format=png&size=256" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">256px</a>
+                            <a href="/api/admin/marketing/materials/logo?variant=dark&format=png&size=512" class="px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200">512px</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mascot -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Brand Mascot: Matty</h2>
+                <div class="flex items-start space-x-8">
+                    <div class="w-48 h-64 bg-gradient-to-b from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                        <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="h-56 object-contain">
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Usage Guidelines</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Use Matty to add a friendly, approachable feel to materials</li>
+                            <li>Maintain clear space around the mascot</li>
+                            <li>Do not distort, recolor, or modify the mascot</li>
+                            <li>Position Matty at the right side of compositions when possible</li>
+                        </ul>
+                        <div class="mt-4">
+                            <a href="/static/images/mattyfullbody_clear.png" download class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                Download Mascot PNG
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Media Tab -->
+        <div id="tab-social" class="tab-panel hidden">
+            <!-- Platform Templates -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Social Media Templates</h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="social-templates">
+                    <!-- Templates will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Custom Graphic Generator -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Generate Custom Graphic</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <form id="social-graphic-form">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Platform</label>
+                                <select id="social-platform" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Select a platform...</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Headline</label>
+                                <input type="text" id="social-headline" maxlength="80" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter headline...">
+                                <p class="text-xs text-gray-500 mt-1"><span id="headline-count">0</span>/80 characters</p>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Body Text (optional)</label>
+                                <textarea id="social-body" rows="3" maxlength="250" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter body text..."></textarea>
+                                <p class="text-xs text-gray-500 mt-1"><span id="body-count">0</span>/250 characters</p>
+                            </div>
+                            <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">
+                                Generate Graphic
+                            </button>
+                        </form>
+                    </div>
+                    <div>
+                        <div class="bg-gray-100 rounded-xl h-64 flex items-center justify-center" id="social-preview">
+                            <div class="text-center text-gray-400">
+                                <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p>Preview will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Brand Edit Modal -->
+{{if eq .CurrentUser.SystemRole "super_admin"}}
+<div id="brand-edit-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-10 mx-auto p-6 border w-full max-w-3xl shadow-lg rounded-xl bg-white mb-10">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-900">Edit Brand Configuration</h3>
+            <button onclick="closeBrandEditModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <form id="brand-edit-form" class="space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">App Name</label>
+                    <input type="text" name="appName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tagline</label>
+                    <input type="text" name="tagline" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Mission Statement</label>
+                <textarea name="missionStatement" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            </div>
+
+            <div class="border-t pt-4">
+                <h4 class="font-semibold text-gray-800 mb-3">Colors</h4>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Primary</label>
+                        <input type="color" name="primaryColor" class="w-full h-10 rounded border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Primary Light</label>
+                        <input type="color" name="primaryLight" class="w-full h-10 rounded border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Primary Dark</label>
+                        <input type="color" name="primaryDark" class="w-full h-10 rounded border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Secondary</label>
+                        <input type="color" name="secondaryColor" class="w-full h-10 rounded border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Accent</label>
+                        <input type="color" name="accentColor" class="w-full h-10 rounded border">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                <h4 class="font-semibold text-gray-800 mb-3">Voice & Tone</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Brand Voice</label>
+                        <textarea name="brandVoice" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Writing Guidelines</label>
+                        <textarea name="writingGuidelines" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeBrandEditModal()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{{end}}
+
+<script>
+let brandConfig = null;
+let socialTemplates = [];
+
+// Tab switching
+function switchTab(tabName) {
+    // Hide all panels
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    // Remove active state from all buttons
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-indigo-500', 'text-indigo-600');
+        b.classList.add('border-transparent', 'text-gray-500');
+    });
+    // Show selected panel
+    document.getElementById('tab-' + tabName).classList.remove('hidden');
+    // Add active state to selected button
+    const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+    activeBtn.classList.remove('border-transparent', 'text-gray-500');
+    activeBtn.classList.add('border-indigo-500', 'text-indigo-600');
+}
+
+// Copy to clipboard
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copied: ' + text);
+    });
+}
+
+// Load brand config and materials data
+async function loadMaterialsData() {
+    try {
+        const response = await fetch('/api/admin/marketing/materials', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Failed to load materials');
+        const data = await response.json();
+
+        brandConfig = data.brandConfig;
+        socialTemplates = data.socialTemplates || [];
+
+        updateBrandDisplay();
+        populateSocialTemplates();
+    } catch (err) {
+        console.error('Error loading materials:', err);
+    }
+}
+
+// Update brand display
+function updateBrandDisplay() {
+    if (!brandConfig) return;
+
+    document.getElementById('brand-app-name').textContent = brandConfig.appName;
+    document.getElementById('brand-tagline').textContent = '"' + brandConfig.tagline + '"';
+    document.getElementById('brand-mission').textContent = brandConfig.missionStatement;
+    document.getElementById('brand-voice').textContent = brandConfig.brandVoice;
+    document.getElementById('writing-guidelines').textContent = brandConfig.writingGuidelines;
+    document.getElementById('font-heading').textContent = brandConfig.headingFont;
+    document.getElementById('font-body').textContent = brandConfig.bodyFont;
+
+    // Update color swatches
+    updateColorSwatch('primary', brandConfig.primaryColor);
+    updateColorSwatch('primary-light', brandConfig.primaryLight);
+    updateColorSwatch('primary-dark', brandConfig.primaryDark);
+    updateColorSwatch('secondary', brandConfig.secondaryColor);
+    updateColorSwatch('secondary-dark', brandConfig.secondaryDark);
+    updateColorSwatch('accent', brandConfig.accentColor);
+    updateColorSwatch('accent-dark', brandConfig.accentDark);
+}
+
+function updateColorSwatch(name, color) {
+    const swatch = document.getElementById('color-' + name);
+    const hex = document.getElementById('hex-' + name);
+    if (swatch) swatch.style.backgroundColor = color;
+    if (hex) hex.textContent = color;
+}
+
+// Populate social templates
+function populateSocialTemplates() {
+    const container = document.getElementById('social-templates');
+    const select = document.getElementById('social-platform');
+
+    container.innerHTML = '';
+    select.innerHTML = '<option value="">Select a platform...</option>';
+
+    const platforms = {};
+    socialTemplates.forEach(t => {
+        if (!platforms[t.platform]) platforms[t.platform] = [];
+        platforms[t.platform].push(t);
+    });
+
+    Object.keys(platforms).forEach(platform => {
+        const option = document.createElement('option');
+        option.value = platform;
+        option.textContent = platform.charAt(0).toUpperCase() + platform.slice(1);
+        select.appendChild(option);
+
+        platforms[platform].forEach(t => {
+            const card = document.createElement('div');
+            card.className = 'border rounded-lg p-4 hover:border-indigo-300 cursor-pointer';
+            card.innerHTML = `
+                <div class="aspect-video bg-gradient-to-br from-indigo-500 to-purple-600 rounded mb-3 flex items-center justify-center">
+                    <span class="text-white text-xs">${t.widthPx} x ${t.heightPx}</span>
+                </div>
+                <h4 class="font-medium text-gray-900 text-sm">${t.name}</h4>
+                <p class="text-xs text-gray-500">${t.platform} ${t.templateType}</p>
+            `;
+            container.appendChild(card);
+        });
+    });
+}
+
+// Brand edit modal
+function openBrandEditModal() {
+    if (!brandConfig) return;
+
+    const form = document.getElementById('brand-edit-form');
+    form.appName.value = brandConfig.appName;
+    form.tagline.value = brandConfig.tagline;
+    form.missionStatement.value = brandConfig.missionStatement;
+    form.primaryColor.value = brandConfig.primaryColor;
+    form.primaryLight.value = brandConfig.primaryLight;
+    form.primaryDark.value = brandConfig.primaryDark;
+    form.secondaryColor.value = brandConfig.secondaryColor;
+    form.accentColor.value = brandConfig.accentColor;
+    form.brandVoice.value = brandConfig.brandVoice;
+    form.writingGuidelines.value = brandConfig.writingGuidelines;
+
+    document.getElementById('brand-edit-modal').classList.remove('hidden');
+}
+
+function closeBrandEditModal() {
+    document.getElementById('brand-edit-modal').classList.add('hidden');
+}
+
+// Handle brand edit form submit
+document.addEventListener('DOMContentLoaded', function() {
+    loadMaterialsData();
+
+    const brandForm = document.getElementById('brand-edit-form');
+    if (brandForm) {
+        brandForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(brandForm);
+            const data = {
+                appName: formData.get('appName'),
+                tagline: formData.get('tagline'),
+                missionStatement: formData.get('missionStatement'),
+                primaryColor: formData.get('primaryColor'),
+                primaryLight: formData.get('primaryLight'),
+                primaryDark: formData.get('primaryDark'),
+                secondaryColor: formData.get('secondaryColor'),
+                secondaryDark: brandConfig.secondaryDark,
+                accentColor: formData.get('accentColor'),
+                accentDark: brandConfig.accentDark,
+                headingFont: brandConfig.headingFont,
+                bodyFont: brandConfig.bodyFont,
+                brandVoice: formData.get('brandVoice'),
+                writingGuidelines: formData.get('writingGuidelines'),
+                websiteUrl: brandConfig.websiteUrl,
+                supportEmail: brandConfig.supportEmail,
+                contactPhone: brandConfig.contactPhone,
+                facebookUrl: brandConfig.facebookUrl,
+                twitterUrl: brandConfig.twitterUrl,
+                instagramUrl: brandConfig.instagramUrl,
+                linkedinUrl: brandConfig.linkedinUrl,
+                copyrightText: brandConfig.copyrightText,
+                disclaimerText: brandConfig.disclaimerText
+            };
+
+            try {
+                const response = await fetch('/api/admin/super/materials/brand-config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) throw new Error('Failed to update');
+
+                brandConfig = await response.json();
+                updateBrandDisplay();
+                closeBrandEditModal();
+                alert('Brand configuration updated successfully!');
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        });
+    }
+
+    // Character counters
+    const headlineInput = document.getElementById('social-headline');
+    const bodyInput = document.getElementById('social-body');
+
+    if (headlineInput) {
+        headlineInput.addEventListener('input', function() {
+            document.getElementById('headline-count').textContent = this.value.length;
+        });
+    }
+
+    if (bodyInput) {
+        bodyInput.addEventListener('input', function() {
+            document.getElementById('body-count').textContent = this.value.length;
+        });
+    }
+
+    // Social graphic form
+    const socialForm = document.getElementById('social-graphic-form');
+    if (socialForm) {
+        socialForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const platform = document.getElementById('social-platform').value;
+            const headline = document.getElementById('social-headline').value;
+            const body = document.getElementById('social-body').value;
+
+            if (!platform || !headline) {
+                alert('Please select a platform and enter a headline');
+                return;
+            }
+
+            // Find the template
+            const template = socialTemplates.find(t => t.platform === platform && t.templateType === 'post');
+            if (!template) {
+                alert('Template not found');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/marketing/materials/social-graphic', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        templateId: template.id,
+                        headline: headline,
+                        body: body
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to generate graphic');
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                // Show preview
+                const preview = document.getElementById('social-preview');
+                preview.innerHTML = `<img src="${url}" alt="Generated graphic" class="max-w-full max-h-full object-contain rounded-lg">`;
+
+                // Auto-download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'social_graphic.png';
+                a.click();
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        });
+    }
+});
+
+// Regenerate asset
+async function regenerateAsset(type) {
+    if (!confirm('Regenerate this asset? This will update the file.')) return;
+
+    try {
+        const response = await fetch('/api/admin/super/materials/regenerate/' + type, {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) throw new Error('Failed to regenerate');
+
+        alert('Asset regenerated successfully!');
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+// Regenerate all assets
+async function regenerateAllAssets() {
+    if (!confirm('Regenerate ALL marketing assets? This may take a moment.')) return;
+
+    try {
+        const response = await fetch('/api/admin/super/materials/regenerate-all', {
+            method: 'POST',
+            credentials: 'same-origin'
+        });
+
+        if (!response.ok) throw new Error('Failed to regenerate');
+
+        alert('All assets regenerated successfully!');
+        loadMaterialsData();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+// ESC to close modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeBrandEditModal();
+    }
+});
+</script>
+
+<style>
+.color-swatch-card {
+    @apply rounded-lg overflow-hidden shadow-sm border border-gray-200;
+}
+</style>
+{{end}}

@@ -20,6 +20,7 @@ type Handlers struct {
 	Insight      *InsightHandler
 	Chat         *ChatHandler
 	Transparency *TransparencyHandler
+	Support      *SupportHandler
 }
 
 // NewHandlers creates all API handlers
@@ -35,6 +36,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Insight:      NewInsightHandler(services.Insight, services.Child),
 		Chat:         NewChatHandler(services.Chat, services.Family, &cfg.Storage),
 		Transparency: NewTransparencyHandler(services.Transparency),
+		Support:      NewSupportHandler(services.UserSupport),
 	}
 }
 
@@ -285,5 +287,18 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		// User display preferences (timezone, theme)
 		r.Get("/users/me/preferences", handlers.Family.GetUserPreferences)
 		r.Put("/users/me/preferences", handlers.Family.UpdateUserPreferences)
+
+		// Support ticket routes (user-facing)
+		r.Route("/support", func(r chi.Router) {
+			r.Get("/tickets", handlers.Support.ListTickets)
+			r.Post("/tickets", handlers.Support.CreateTicket)
+			r.Get("/unread", handlers.Support.GetUnread)
+
+			r.Route("/tickets/{ticketID}", func(r chi.Router) {
+				r.Get("/", handlers.Support.GetTicket)
+				r.Post("/messages", handlers.Support.AddMessage)
+				r.Post("/read", handlers.Support.MarkRead)
+			})
+		})
 	})
 }

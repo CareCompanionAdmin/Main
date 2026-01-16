@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -139,6 +140,7 @@ type AdminRepository interface {
 	CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority string) (*SupportTicket, error)
 	GetTickets(ctx context.Context, status string, page, limit int) ([]SupportTicket, int, error)
 	GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTicket, error)
+	GetOpenTicketCount(ctx context.Context) (int, error)
 	UpdateTicketStatus(ctx context.Context, id uuid.UUID, status string) error
 	AssignTicket(ctx context.Context, ticketID, assigneeID uuid.UUID) error
 	ResolveTicket(ctx context.Context, ticketID, resolverID uuid.UUID) error
@@ -158,6 +160,38 @@ type AdminRepository interface {
 	// Audit log
 	LogAction(ctx context.Context, adminID uuid.UUID, action, targetType string, targetID uuid.UUID, details map[string]interface{}, ip, userAgent string) error
 	GetAuditLog(ctx context.Context, adminID uuid.UUID, action string, page, limit int) ([]AuditEntry, int, error)
+
+	// Error Log Management
+	GetErrorLogs(ctx context.Context, page, limit int, errorType string, acknowledged *bool, sources []models.ErrorSource, includeNoise bool) ([]models.ErrorLogView, int, error)
+	GetErrorLogByID(ctx context.Context, id uuid.UUID) (*models.ErrorLogView, error)
+	AcknowledgeErrorLog(ctx context.Context, id, acknowledgedBy uuid.UUID, notes string) error
+	AcknowledgeErrorLogsBulk(ctx context.Context, ids []uuid.UUID, acknowledgedBy uuid.UUID, notes string) error
+	DeleteErrorLog(ctx context.Context, id, deletedBy uuid.UUID) error
+	DeleteErrorLogsBulk(ctx context.Context, ids []uuid.UUID, deletedBy uuid.UUID) error
+	CreateTicketFromError(ctx context.Context, errorID, adminID uuid.UUID, priority, notes string) (*SupportTicket, error)
+	GetUnacknowledgedErrorCount(ctx context.Context) (int, error)
+	GetErrorLogSourceCounts(ctx context.Context) (map[models.ErrorSource]int, error)
+	CleanupExpiredErrorLogs(ctx context.Context) (int, error)
+
+	// Promo Code Management
+	ListPromoCodes(ctx context.Context, page, limit int, activeOnly bool, search string) ([]models.PromoCode, int, error)
+	GetPromoCodeByID(ctx context.Context, id uuid.UUID) (*models.PromoCode, error)
+	GetPromoCodeByCode(ctx context.Context, code string) (*models.PromoCode, error)
+	CreatePromoCode(ctx context.Context, promo *models.PromoCode) (*models.PromoCode, error)
+	UpdatePromoCode(ctx context.Context, promo *models.PromoCode) error
+	DeactivatePromoCode(ctx context.Context, id, deactivatedBy uuid.UUID, reason string) error
+	GetPromoCodeUsages(ctx context.Context, promoCodeID uuid.UUID, page, limit int) ([]models.PromoCodeUsage, int, error)
+
+	// Subscription Plan Management
+	ListSubscriptionPlans(ctx context.Context, activeOnly bool) ([]models.SubscriptionPlan, error)
+	GetSubscriptionPlanByID(ctx context.Context, id uuid.UUID) (*models.SubscriptionPlan, error)
+
+	// Financial Management
+	GetFinancialOverview(ctx context.Context) (*models.FinancialOverview, error)
+	GetExpectedRevenueCalendar(ctx context.Context, startDate, endDate time.Time) ([]models.ExpectedRevenueDay, error)
+	GetRecentPayments(ctx context.Context, page, limit int) ([]models.Payment, int, error)
+	GetRecentSubscriptions(ctx context.Context, page, limit int) ([]models.UserSubscription, int, error)
+	GetDailyRevenueSnapshots(ctx context.Context, startDate, endDate time.Time) ([]models.DailyRevenueSnapshot, error)
 }
 
 // adminRepo implements AdminRepository
@@ -835,4 +869,915 @@ func (r *adminRepo) GetAuditLog(ctx context.Context, adminID uuid.UUID, action s
 		entries = append(entries, e)
 	}
 	return entries, total, rows.Err()
+}
+
+// GetOpenTicketCount returns the count of open tickets needing attention
+func (r *adminRepo) GetOpenTicketCount(ctx context.Context) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM support_tickets WHERE status = 'open'`
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	return count, err
+}
+
+// ============================================================================
+// ERROR LOG MANAGEMENT
+// ============================================================================
+
+// GetErrorLogs returns filtered error logs with pagination
+// By default (when sources is empty), only returns 'user' and 'infrastructure' errors
+func (r *adminRepo) GetErrorLogs(ctx context.Context, page, limit int, errorType string, acknowledged *bool, sources []models.ErrorSource, includeNoise bool) ([]models.ErrorLogView, int, error) {
+	offset := (page - 1) * limit
+
+	// Build WHERE clause
+	where := "WHERE e.is_deleted = FALSE"
+	args := []interface{}{}
+	argNum := 1
+
+	// Source filtering - default to user + infrastructure if not specified
+	if len(sources) == 0 && !includeNoise {
+		// Default view: only user and infrastructure errors
+		where += " AND e.error_source IN ('user', 'infrastructure')"
+	} else if len(sources) > 0 {
+		// Custom source filter
+		placeholders := ""
+		for i, src := range sources {
+			if i > 0 {
+				placeholders += ","
+			}
+			placeholders += "$" + itoa(argNum)
+			args = append(args, string(src))
+			argNum++
+		}
+		where += " AND e.error_source IN (" + placeholders + ")"
+	}
+	// If includeNoise is true and sources is empty, show all sources
+
+	if errorType != "" {
+		where += " AND e.error_type = $" + itoa(argNum)
+		args = append(args, errorType)
+		argNum++
+	}
+
+	if acknowledged != nil {
+		if *acknowledged {
+			where += " AND e.acknowledged_at IS NOT NULL"
+		} else {
+			where += " AND e.acknowledged_at IS NULL"
+		}
+	}
+
+	// Count total
+	countSQL := "SELECT COUNT(*) FROM error_logs e " + where
+	var total int
+	if err := r.db.QueryRowContext(ctx, countSQL, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Get logs with new columns
+	query := `
+		SELECT e.id, e.error_type, COALESCE(e.status_code, 0), COALESCE(e.method, ''),
+		       COALESCE(e.path, ''), COALESCE(e.error_message, ''), e.stack_trace, e.user_id, e.request_id,
+		       e.user_agent, e.ip_address, e.created_at,
+		       COALESCE(e.error_source, 'unknown'), COALESCE(e.is_noise, false), e.auto_delete_at,
+		       e.acknowledged_at, e.acknowledged_by, e.acknowledged_notes,
+		       COALESCE(e.is_deleted, false), e.deleted_at, e.deleted_by,
+		       COALESCE(u.email, '') as acknowledged_by_email,
+		       COALESCE(u.first_name || ' ' || u.last_name, '') as acknowledged_by_name,
+		       COALESCE(eu.email, '') as user_email
+		FROM error_logs e
+		LEFT JOIN users u ON e.acknowledged_by = u.id
+		LEFT JOIN users eu ON e.user_id = eu.id
+		` + where + `
+		ORDER BY e.created_at DESC
+		LIMIT $` + itoa(argNum) + ` OFFSET $` + itoa(argNum+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var logs []models.ErrorLogView
+	for rows.Next() {
+		var log models.ErrorLogView
+		if err := rows.Scan(
+			&log.ID, &log.ErrorType, &log.StatusCode, &log.Method, &log.Path,
+			&log.Message, &log.StackTrace, &log.UserID, &log.RequestID,
+			&log.UserAgent, &log.IPAddress, &log.CreatedAt,
+			&log.ErrorSource, &log.IsNoise, &log.AutoDeleteAt,
+			&log.AcknowledgedAt, &log.AcknowledgedBy, &log.AcknowledgedNotes,
+			&log.IsDeleted, &log.DeletedAt, &log.DeletedBy,
+			&log.AcknowledgedByEmail, &log.AcknowledgedByName, &log.UserEmail,
+		); err != nil {
+			return nil, 0, err
+		}
+		logs = append(logs, log)
+	}
+	return logs, total, rows.Err()
+}
+
+// GetErrorLogSourceCounts returns counts of errors by source for the filter UI
+func (r *adminRepo) GetErrorLogSourceCounts(ctx context.Context) (map[models.ErrorSource]int, error) {
+	query := `
+		SELECT COALESCE(error_source, 'unknown'), COUNT(*)
+		FROM error_logs
+		WHERE is_deleted = FALSE
+		GROUP BY error_source
+	`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	counts := make(map[models.ErrorSource]int)
+	for rows.Next() {
+		var source string
+		var count int
+		if err := rows.Scan(&source, &count); err != nil {
+			return nil, err
+		}
+		counts[models.ErrorSource(source)] = count
+	}
+	return counts, rows.Err()
+}
+
+// CleanupExpiredErrorLogs soft-deletes error logs past their auto_delete_at date
+func (r *adminRepo) CleanupExpiredErrorLogs(ctx context.Context) (int, error) {
+	query := `
+		UPDATE error_logs
+		SET is_deleted = TRUE, deleted_at = NOW()
+		WHERE auto_delete_at < NOW()
+		  AND is_deleted = FALSE
+		  AND acknowledged_at IS NULL
+	`
+	result, err := r.db.ExecContext(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	count, _ := result.RowsAffected()
+	return int(count), nil
+}
+
+func (r *adminRepo) GetErrorLogByID(ctx context.Context, id uuid.UUID) (*models.ErrorLogView, error) {
+	query := `
+		SELECT e.id, e.error_type, COALESCE(e.status_code, 0), COALESCE(e.method, ''),
+		       COALESCE(e.path, ''), COALESCE(e.error_message, ''), e.stack_trace, e.user_id, e.request_id,
+		       e.user_agent, e.ip_address, e.created_at,
+		       COALESCE(e.error_source, 'unknown'), COALESCE(e.is_noise, false), e.auto_delete_at,
+		       e.acknowledged_at, e.acknowledged_by, e.acknowledged_notes,
+		       COALESCE(e.is_deleted, false), e.deleted_at, e.deleted_by,
+		       COALESCE(u.email, '') as acknowledged_by_email,
+		       COALESCE(u.first_name || ' ' || u.last_name, '') as acknowledged_by_name,
+		       COALESCE(eu.email, '') as user_email
+		FROM error_logs e
+		LEFT JOIN users u ON e.acknowledged_by = u.id
+		LEFT JOIN users eu ON e.user_id = eu.id
+		WHERE e.id = $1
+	`
+	log := &models.ErrorLogView{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&log.ID, &log.ErrorType, &log.StatusCode, &log.Method, &log.Path,
+		&log.Message, &log.StackTrace, &log.UserID, &log.RequestID,
+		&log.UserAgent, &log.IPAddress, &log.CreatedAt,
+		&log.ErrorSource, &log.IsNoise, &log.AutoDeleteAt,
+		&log.AcknowledgedAt, &log.AcknowledgedBy, &log.AcknowledgedNotes,
+		&log.IsDeleted, &log.DeletedAt, &log.DeletedBy,
+		&log.AcknowledgedByEmail, &log.AcknowledgedByName, &log.UserEmail,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return log, nil
+}
+
+func (r *adminRepo) AcknowledgeErrorLog(ctx context.Context, id, acknowledgedBy uuid.UUID, notes string) error {
+	query := `
+		UPDATE error_logs
+		SET acknowledged_at = NOW(), acknowledged_by = $2, acknowledged_notes = $3
+		WHERE id = $1 AND acknowledged_at IS NULL
+	`
+	_, err := r.db.ExecContext(ctx, query, id, acknowledgedBy, notes)
+	return err
+}
+
+func (r *adminRepo) AcknowledgeErrorLogsBulk(ctx context.Context, ids []uuid.UUID, acknowledgedBy uuid.UUID, notes string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// Build placeholders
+	placeholders := ""
+	args := []interface{}{}
+	for i, id := range ids {
+		if i > 0 {
+			placeholders += ","
+		}
+		placeholders += "$" + itoa(i+1)
+		args = append(args, id)
+	}
+
+	query := `
+		UPDATE error_logs
+		SET acknowledged_at = NOW(), acknowledged_by = $` + itoa(len(ids)+1) + `, acknowledged_notes = $` + itoa(len(ids)+2) + `
+		WHERE id IN (` + placeholders + `) AND acknowledged_at IS NULL
+	`
+	args = append(args, acknowledgedBy, notes)
+	_, err := r.db.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (r *adminRepo) DeleteErrorLog(ctx context.Context, id, deletedBy uuid.UUID) error {
+	query := `
+		UPDATE error_logs
+		SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $2
+		WHERE id = $1
+	`
+	_, err := r.db.ExecContext(ctx, query, id, deletedBy)
+	return err
+}
+
+func (r *adminRepo) DeleteErrorLogsBulk(ctx context.Context, ids []uuid.UUID, deletedBy uuid.UUID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// Build placeholders
+	placeholders := ""
+	args := []interface{}{}
+	for i, id := range ids {
+		if i > 0 {
+			placeholders += ","
+		}
+		placeholders += "$" + itoa(i+1)
+		args = append(args, id)
+	}
+
+	query := `
+		UPDATE error_logs
+		SET is_deleted = TRUE, deleted_at = NOW(), deleted_by = $` + itoa(len(ids)+1) + `
+		WHERE id IN (` + placeholders + `)
+	`
+	args = append(args, deletedBy)
+	_, err := r.db.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (r *adminRepo) CreateTicketFromError(ctx context.Context, errorID, adminID uuid.UUID, priority, notes string) (*SupportTicket, error) {
+	// Get the error log
+	errorLog, err := r.GetErrorLogByID(ctx, errorID)
+	if err != nil {
+		return nil, err
+	}
+	if errorLog == nil {
+		return nil, sql.ErrNoRows
+	}
+
+	// Create subject and description from error
+	subject := "Error: " + errorLog.ErrorType + " - " + errorLog.Path
+	if len(subject) > 200 {
+		subject = subject[:197] + "..."
+	}
+
+	description := "Auto-generated from error log:\n\n"
+	description += "Error Type: " + errorLog.ErrorType + "\n"
+	description += "Status Code: " + itoa(errorLog.StatusCode) + "\n"
+	description += "Method: " + errorLog.Method + "\n"
+	description += "Path: " + errorLog.Path + "\n"
+	description += "Message: " + errorLog.Message + "\n"
+	description += "Time: " + errorLog.CreatedAt.Format(time.RFC3339) + "\n"
+	if notes != "" {
+		description += "\nAdmin Notes: " + notes
+	}
+
+	if priority == "" {
+		priority = "medium"
+	}
+
+	// Create the ticket (assigned to the admin who created it)
+	ticket, err := r.CreateTicket(ctx, uuid.Nil, subject, description, priority)
+	if err != nil {
+		return nil, err
+	}
+
+	// Assign to the admin
+	if err := r.AssignTicket(ctx, ticket.ID, adminID); err != nil {
+		return nil, err
+	}
+
+	// Mark error as acknowledged
+	_ = r.AcknowledgeErrorLog(ctx, errorID, adminID, "Ticket created: "+ticket.ID.String())
+
+	return r.GetTicketByID(ctx, ticket.ID)
+}
+
+func (r *adminRepo) GetUnacknowledgedErrorCount(ctx context.Context) (int, error) {
+	var count int
+	// Only count user and infrastructure errors (not scanner noise, anonymous, or unknown)
+	query := `SELECT COUNT(*) FROM error_logs
+		WHERE acknowledged_at IS NULL
+		AND is_deleted = FALSE
+		AND error_source IN ('user', 'infrastructure')`
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	return count, err
+}
+
+// ============================================================================
+// PROMO CODE MANAGEMENT
+// ============================================================================
+
+func (r *adminRepo) ListPromoCodes(ctx context.Context, page, limit int, activeOnly bool, search string) ([]models.PromoCode, int, error) {
+	offset := (page - 1) * limit
+
+	where := "WHERE 1=1"
+	args := []interface{}{}
+	argNum := 1
+
+	if activeOnly {
+		where += " AND is_active = TRUE AND (expires_at IS NULL OR expires_at > NOW())"
+	}
+
+	if search != "" {
+		where += " AND (UPPER(code) LIKE UPPER($" + itoa(argNum) + ") OR UPPER(name) LIKE UPPER($" + itoa(argNum) + "))"
+		args = append(args, "%"+search+"%")
+		argNum++
+	}
+
+	// Count
+	countSQL := "SELECT COUNT(*) FROM promo_codes " + where
+	var total int
+	if err := r.db.QueryRowContext(ctx, countSQL, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	// Get promo codes
+	query := `
+		SELECT p.id, p.code, p.name, p.description,
+		       p.discount_type, p.discount_value, p.max_discount_cents, p.applies_to,
+		       p.applies_to_plans, p.applies_to_billing_intervals, p.minimum_purchase_cents,
+		       p.new_users_only, p.existing_users_only, p.specific_user_ids, p.specific_email_domains,
+		       p.max_total_uses, p.max_uses_per_user, p.current_total_uses,
+		       p.starts_at, p.expires_at, p.duration_months,
+		       p.is_stackable, p.stackable_with_codes,
+		       p.campaign_name, p.campaign_source, p.affiliate_id,
+		       p.total_discount_given_cents, p.total_revenue_attributed_cents,
+		       p.is_active, p.deactivated_at, p.deactivated_by, p.deactivation_reason,
+		       p.created_by, p.created_at, p.updated_at,
+		       COALESCE(u.email, '') as created_by_email
+		FROM promo_codes p
+		LEFT JOIN users u ON p.created_by = u.id
+		` + where + `
+		ORDER BY p.created_at DESC
+		LIMIT $` + itoa(argNum) + ` OFFSET $` + itoa(argNum+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var promos []models.PromoCode
+	for rows.Next() {
+		var p models.PromoCode
+		if err := rows.Scan(
+			&p.ID, &p.Code, &p.Name, &p.Description,
+			&p.DiscountType, &p.DiscountValue, &p.MaxDiscountCents, &p.AppliesTo,
+			&p.AppliesToPlans, &p.AppliesToBillingIntervals, &p.MinimumPurchaseCents,
+			&p.NewUsersOnly, &p.ExistingUsersOnly, &p.SpecificUserIDs, &p.SpecificEmailDomains,
+			&p.MaxTotalUses, &p.MaxUsesPerUser, &p.CurrentTotalUses,
+			&p.StartsAt, &p.ExpiresAt, &p.DurationMonths,
+			&p.IsStackable, &p.StackableWithCodes,
+			&p.CampaignName, &p.CampaignSource, &p.AffiliateID,
+			&p.TotalDiscountGivenCents, &p.TotalRevenueAttributedCents,
+			&p.IsActive, &p.DeactivatedAt, &p.DeactivatedBy, &p.DeactivationReason,
+			&p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
+			&p.CreatedByEmail,
+		); err != nil {
+			return nil, 0, err
+		}
+		promos = append(promos, p)
+	}
+	return promos, total, rows.Err()
+}
+
+func (r *adminRepo) GetPromoCodeByID(ctx context.Context, id uuid.UUID) (*models.PromoCode, error) {
+	query := `
+		SELECT p.id, p.code, p.name, p.description,
+		       p.discount_type, p.discount_value, p.max_discount_cents, p.applies_to,
+		       p.applies_to_plans, p.applies_to_billing_intervals, p.minimum_purchase_cents,
+		       p.new_users_only, p.existing_users_only, p.specific_user_ids, p.specific_email_domains,
+		       p.max_total_uses, p.max_uses_per_user, p.current_total_uses,
+		       p.starts_at, p.expires_at, p.duration_months,
+		       p.is_stackable, p.stackable_with_codes,
+		       p.campaign_name, p.campaign_source, p.affiliate_id,
+		       p.total_discount_given_cents, p.total_revenue_attributed_cents,
+		       p.is_active, p.deactivated_at, p.deactivated_by, p.deactivation_reason,
+		       p.created_by, p.created_at, p.updated_at,
+		       COALESCE(u.email, '') as created_by_email
+		FROM promo_codes p
+		LEFT JOIN users u ON p.created_by = u.id
+		WHERE p.id = $1
+	`
+	p := &models.PromoCode{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&p.ID, &p.Code, &p.Name, &p.Description,
+		&p.DiscountType, &p.DiscountValue, &p.MaxDiscountCents, &p.AppliesTo,
+		&p.AppliesToPlans, &p.AppliesToBillingIntervals, &p.MinimumPurchaseCents,
+		&p.NewUsersOnly, &p.ExistingUsersOnly, &p.SpecificUserIDs, &p.SpecificEmailDomains,
+		&p.MaxTotalUses, &p.MaxUsesPerUser, &p.CurrentTotalUses,
+		&p.StartsAt, &p.ExpiresAt, &p.DurationMonths,
+		&p.IsStackable, &p.StackableWithCodes,
+		&p.CampaignName, &p.CampaignSource, &p.AffiliateID,
+		&p.TotalDiscountGivenCents, &p.TotalRevenueAttributedCents,
+		&p.IsActive, &p.DeactivatedAt, &p.DeactivatedBy, &p.DeactivationReason,
+		&p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
+		&p.CreatedByEmail,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *adminRepo) GetPromoCodeByCode(ctx context.Context, code string) (*models.PromoCode, error) {
+	query := `
+		SELECT p.id, p.code, p.name, p.description,
+		       p.discount_type, p.discount_value, p.max_discount_cents, p.applies_to,
+		       p.applies_to_plans, p.applies_to_billing_intervals, p.minimum_purchase_cents,
+		       p.new_users_only, p.existing_users_only, p.specific_user_ids, p.specific_email_domains,
+		       p.max_total_uses, p.max_uses_per_user, p.current_total_uses,
+		       p.starts_at, p.expires_at, p.duration_months,
+		       p.is_stackable, p.stackable_with_codes,
+		       p.campaign_name, p.campaign_source, p.affiliate_id,
+		       p.total_discount_given_cents, p.total_revenue_attributed_cents,
+		       p.is_active, p.deactivated_at, p.deactivated_by, p.deactivation_reason,
+		       p.created_by, p.created_at, p.updated_at,
+		       COALESCE(u.email, '') as created_by_email
+		FROM promo_codes p
+		LEFT JOIN users u ON p.created_by = u.id
+		WHERE UPPER(p.code) = UPPER($1)
+	`
+	p := &models.PromoCode{}
+	err := r.db.QueryRowContext(ctx, query, code).Scan(
+		&p.ID, &p.Code, &p.Name, &p.Description,
+		&p.DiscountType, &p.DiscountValue, &p.MaxDiscountCents, &p.AppliesTo,
+		&p.AppliesToPlans, &p.AppliesToBillingIntervals, &p.MinimumPurchaseCents,
+		&p.NewUsersOnly, &p.ExistingUsersOnly, &p.SpecificUserIDs, &p.SpecificEmailDomains,
+		&p.MaxTotalUses, &p.MaxUsesPerUser, &p.CurrentTotalUses,
+		&p.StartsAt, &p.ExpiresAt, &p.DurationMonths,
+		&p.IsStackable, &p.StackableWithCodes,
+		&p.CampaignName, &p.CampaignSource, &p.AffiliateID,
+		&p.TotalDiscountGivenCents, &p.TotalRevenueAttributedCents,
+		&p.IsActive, &p.DeactivatedAt, &p.DeactivatedBy, &p.DeactivationReason,
+		&p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
+		&p.CreatedByEmail,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+func (r *adminRepo) CreatePromoCode(ctx context.Context, promo *models.PromoCode) (*models.PromoCode, error) {
+	promo.ID = uuid.New()
+	promo.CreatedAt = time.Now()
+	promo.UpdatedAt = promo.CreatedAt
+	promo.CurrentTotalUses = 0
+	promo.TotalDiscountGivenCents = 0
+	promo.TotalRevenueAttributedCents = 0
+	promo.IsActive = true
+
+	query := `
+		INSERT INTO promo_codes (
+			id, code, name, description,
+			discount_type, discount_value, max_discount_cents, applies_to,
+			applies_to_plans, applies_to_billing_intervals, minimum_purchase_cents,
+			new_users_only, existing_users_only, specific_user_ids, specific_email_domains,
+			max_total_uses, max_uses_per_user, current_total_uses,
+			starts_at, expires_at, duration_months,
+			is_stackable, stackable_with_codes,
+			campaign_name, campaign_source, affiliate_id,
+			total_discount_given_cents, total_revenue_attributed_cents,
+			is_active, created_by, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4,
+			$5, $6, $7, $8,
+			$9, $10, $11,
+			$12, $13, $14, $15,
+			$16, $17, $18,
+			$19, $20, $21,
+			$22, $23,
+			$24, $25, $26,
+			$27, $28,
+			$29, $30, $31, $32
+		) RETURNING id
+	`
+
+	err := r.db.QueryRowContext(ctx, query,
+		promo.ID, promo.Code, promo.Name, promo.Description,
+		promo.DiscountType, promo.DiscountValue, promo.MaxDiscountCents, promo.AppliesTo,
+		promo.AppliesToPlans, promo.AppliesToBillingIntervals, promo.MinimumPurchaseCents,
+		promo.NewUsersOnly, promo.ExistingUsersOnly, promo.SpecificUserIDs, promo.SpecificEmailDomains,
+		promo.MaxTotalUses, promo.MaxUsesPerUser, promo.CurrentTotalUses,
+		promo.StartsAt, promo.ExpiresAt, promo.DurationMonths,
+		promo.IsStackable, promo.StackableWithCodes,
+		promo.CampaignName, promo.CampaignSource, promo.AffiliateID,
+		promo.TotalDiscountGivenCents, promo.TotalRevenueAttributedCents,
+		promo.IsActive, promo.CreatedBy, promo.CreatedAt, promo.UpdatedAt,
+	).Scan(&promo.ID)
+
+	if err != nil {
+		return nil, err
+	}
+	return r.GetPromoCodeByID(ctx, promo.ID)
+}
+
+func (r *adminRepo) UpdatePromoCode(ctx context.Context, promo *models.PromoCode) error {
+	promo.UpdatedAt = time.Now()
+
+	query := `
+		UPDATE promo_codes SET
+			code = $2, name = $3, description = $4,
+			discount_type = $5, discount_value = $6, max_discount_cents = $7, applies_to = $8,
+			applies_to_plans = $9, applies_to_billing_intervals = $10, minimum_purchase_cents = $11,
+			new_users_only = $12, existing_users_only = $13, specific_user_ids = $14, specific_email_domains = $15,
+			max_total_uses = $16, max_uses_per_user = $17,
+			starts_at = $18, expires_at = $19, duration_months = $20,
+			is_stackable = $21, stackable_with_codes = $22,
+			campaign_name = $23, campaign_source = $24,
+			updated_at = $25
+		WHERE id = $1
+	`
+
+	_, err := r.db.ExecContext(ctx, query,
+		promo.ID, promo.Code, promo.Name, promo.Description,
+		promo.DiscountType, promo.DiscountValue, promo.MaxDiscountCents, promo.AppliesTo,
+		promo.AppliesToPlans, promo.AppliesToBillingIntervals, promo.MinimumPurchaseCents,
+		promo.NewUsersOnly, promo.ExistingUsersOnly, promo.SpecificUserIDs, promo.SpecificEmailDomains,
+		promo.MaxTotalUses, promo.MaxUsesPerUser,
+		promo.StartsAt, promo.ExpiresAt, promo.DurationMonths,
+		promo.IsStackable, promo.StackableWithCodes,
+		promo.CampaignName, promo.CampaignSource,
+		promo.UpdatedAt,
+	)
+	return err
+}
+
+func (r *adminRepo) DeactivatePromoCode(ctx context.Context, id, deactivatedBy uuid.UUID, reason string) error {
+	query := `
+		UPDATE promo_codes
+		SET is_active = FALSE, deactivated_at = NOW(), deactivated_by = $2, deactivation_reason = $3, updated_at = NOW()
+		WHERE id = $1
+	`
+	_, err := r.db.ExecContext(ctx, query, id, deactivatedBy, reason)
+	return err
+}
+
+func (r *adminRepo) GetPromoCodeUsages(ctx context.Context, promoCodeID uuid.UUID, page, limit int) ([]models.PromoCodeUsage, int, error) {
+	offset := (page - 1) * limit
+
+	// Count
+	var total int
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM promo_code_usages WHERE promo_code_id = $1", promoCodeID).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
+		SELECT pu.id, pu.promo_code_id, pu.user_id, pu.subscription_id, pu.payment_id,
+		       pu.discount_applied_cents, pu.used_at,
+		       COALESCE(pc.code, '') as promo_code,
+		       COALESCE(u.email, '') as user_email,
+		       COALESCE(u.first_name || ' ' || u.last_name, '') as user_name
+		FROM promo_code_usages pu
+		LEFT JOIN promo_codes pc ON pu.promo_code_id = pc.id
+		LEFT JOIN users u ON pu.user_id = u.id
+		WHERE pu.promo_code_id = $1
+		ORDER BY pu.used_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, promoCodeID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var usages []models.PromoCodeUsage
+	for rows.Next() {
+		var u models.PromoCodeUsage
+		if err := rows.Scan(
+			&u.ID, &u.PromoCodeID, &u.UserID, &u.SubscriptionID, &u.PaymentID,
+			&u.DiscountAppliedCents, &u.UsedAt,
+			&u.PromoCode, &u.UserEmail, &u.UserName,
+		); err != nil {
+			return nil, 0, err
+		}
+		usages = append(usages, u)
+	}
+	return usages, total, rows.Err()
+}
+
+// ============================================================================
+// SUBSCRIPTION PLAN MANAGEMENT
+// ============================================================================
+
+func (r *adminRepo) ListSubscriptionPlans(ctx context.Context, activeOnly bool) ([]models.SubscriptionPlan, error) {
+	query := `
+		SELECT id, name, description, price_cents, billing_interval, features,
+		       max_children, max_family_members, is_active,
+		       stripe_price_id, stripe_product_id, created_at, updated_at
+		FROM subscription_plans
+	`
+	if activeOnly {
+		query += " WHERE is_active = TRUE"
+	}
+	query += " ORDER BY price_cents ASC"
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var plans []models.SubscriptionPlan
+	for rows.Next() {
+		var p models.SubscriptionPlan
+		if err := rows.Scan(
+			&p.ID, &p.Name, &p.Description, &p.PriceCents, &p.BillingInterval, &p.Features,
+			&p.MaxChildren, &p.MaxFamilyMembers, &p.IsActive,
+			&p.StripePriceID, &p.StripeProductID, &p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		plans = append(plans, p)
+	}
+	return plans, rows.Err()
+}
+
+func (r *adminRepo) GetSubscriptionPlanByID(ctx context.Context, id uuid.UUID) (*models.SubscriptionPlan, error) {
+	query := `
+		SELECT id, name, description, price_cents, billing_interval, features,
+		       max_children, max_family_members, is_active,
+		       stripe_price_id, stripe_product_id, created_at, updated_at
+		FROM subscription_plans
+		WHERE id = $1
+	`
+	p := &models.SubscriptionPlan{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&p.ID, &p.Name, &p.Description, &p.PriceCents, &p.BillingInterval, &p.Features,
+		&p.MaxChildren, &p.MaxFamilyMembers, &p.IsActive,
+		&p.StripePriceID, &p.StripeProductID, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return p, nil
+}
+
+// ============================================================================
+// FINANCIAL MANAGEMENT
+// ============================================================================
+
+func (r *adminRepo) GetFinancialOverview(ctx context.Context) (*models.FinancialOverview, error) {
+	overview := &models.FinancialOverview{}
+
+	// Last 24 hours
+	r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*), COALESCE(SUM(amount_cents), 0)
+		FROM payments
+		WHERE status = 'succeeded' AND created_at > NOW() - INTERVAL '24 hours'
+	`).Scan(&overview.LicensesBought24h, &overview.Revenue24hCents)
+
+	// Month to date
+	r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(amount_cents), 0)
+		FROM payments
+		WHERE status = 'succeeded' AND created_at >= DATE_TRUNC('month', NOW())
+	`).Scan(&overview.RevenueMTDCents)
+
+	r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM user_subscriptions
+		WHERE created_at >= DATE_TRUNC('month', NOW()) AND status = 'active'
+	`).Scan(&overview.NewSubscriptionsMTD)
+
+	r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM user_subscriptions
+		WHERE cancelled_at >= DATE_TRUNC('month', NOW())
+	`).Scan(&overview.ChurnedSubscriptionsMTD)
+
+	// Year to date
+	r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(amount_cents), 0)
+		FROM payments
+		WHERE status = 'succeeded' AND created_at >= DATE_TRUNC('year', NOW())
+	`).Scan(&overview.RevenueYTDCents)
+
+	r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*)
+		FROM user_subscriptions
+		WHERE status = 'active'
+	`).Scan(&overview.TotalActiveSubscriptions)
+
+	// Subscriptions by plan
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT sp.id, sp.name, COUNT(us.id) as count,
+		       CASE
+		           WHEN sp.billing_interval = 'monthly' THEN COALESCE(SUM(sp.price_cents), 0)
+		           WHEN sp.billing_interval = 'yearly' THEN COALESCE(SUM(sp.price_cents), 0) / 12
+		           ELSE 0
+		       END as mrr_cents
+		FROM subscription_plans sp
+		LEFT JOIN user_subscriptions us ON sp.id = us.plan_id AND us.status = 'active'
+		GROUP BY sp.id, sp.name, sp.billing_interval
+		ORDER BY sp.price_cents ASC
+	`)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var psc models.PlanSubscriptionCount
+			if err := rows.Scan(&psc.PlanID, &psc.PlanName, &psc.Count, &psc.MRRCents); err == nil {
+				overview.SubscriptionsByPlan = append(overview.SubscriptionsByPlan, psc)
+			}
+		}
+	}
+
+	// Total discounts YTD
+	r.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(discount_amount_cents), 0)
+		FROM payments
+		WHERE created_at >= DATE_TRUNC('year', NOW())
+	`).Scan(&overview.TotalDiscountsYTDCents)
+
+	return overview, nil
+}
+
+func (r *adminRepo) GetExpectedRevenueCalendar(ctx context.Context, startDate, endDate time.Time) ([]models.ExpectedRevenueDay, error) {
+	query := `
+		SELECT expected_date, SUM(expected_amount_cents) as amount_cents, COUNT(*) as renewal_count
+		FROM expected_revenue_calendar
+		WHERE expected_date >= $1 AND expected_date <= $2
+		GROUP BY expected_date
+		ORDER BY expected_date ASC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var days []models.ExpectedRevenueDay
+	for rows.Next() {
+		var d models.ExpectedRevenueDay
+		if err := rows.Scan(&d.Date, &d.AmountCents, &d.RenewalCount); err != nil {
+			return nil, err
+		}
+		days = append(days, d)
+	}
+	return days, rows.Err()
+}
+
+func (r *adminRepo) GetRecentPayments(ctx context.Context, page, limit int) ([]models.Payment, int, error) {
+	offset := (page - 1) * limit
+
+	var total int
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM payments").Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
+		SELECT p.id, p.subscription_id, p.user_id, p.payment_type, p.amount_cents, p.currency,
+		       p.status, p.payment_method, p.stripe_payment_intent_id, p.stripe_invoice_id,
+		       p.description, p.promo_code_id, p.discount_amount_cents, p.refund_amount_cents,
+		       p.refunded_at, p.failure_reason, p.metadata, p.created_at, p.updated_at,
+		       COALESCE(u.email, '') as user_email,
+		       COALESCE(u.first_name || ' ' || u.last_name, '') as user_name,
+		       COALESCE(pc.code, '') as promo_code,
+		       COALESCE(sp.name, '') as plan_name
+		FROM payments p
+		LEFT JOIN users u ON p.user_id = u.id
+		LEFT JOIN promo_codes pc ON p.promo_code_id = pc.id
+		LEFT JOIN user_subscriptions us ON p.subscription_id = us.id
+		LEFT JOIN subscription_plans sp ON us.plan_id = sp.id
+		ORDER BY p.created_at DESC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var payments []models.Payment
+	for rows.Next() {
+		var p models.Payment
+		if err := rows.Scan(
+			&p.ID, &p.SubscriptionID, &p.UserID, &p.PaymentType, &p.AmountCents, &p.Currency,
+			&p.Status, &p.PaymentMethod, &p.StripePaymentIntentID, &p.StripeInvoiceID,
+			&p.Description, &p.PromoCodeID, &p.DiscountAmountCents, &p.RefundAmountCents,
+			&p.RefundedAt, &p.FailureReason, &p.Metadata, &p.CreatedAt, &p.UpdatedAt,
+			&p.UserEmail, &p.UserName, &p.PromoCode, &p.PlanName,
+		); err != nil {
+			return nil, 0, err
+		}
+		payments = append(payments, p)
+	}
+	return payments, total, rows.Err()
+}
+
+func (r *adminRepo) GetRecentSubscriptions(ctx context.Context, page, limit int) ([]models.UserSubscription, int, error) {
+	offset := (page - 1) * limit
+
+	var total int
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM user_subscriptions").Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
+		SELECT s.id, s.user_id, s.plan_id, s.status, s.current_period_start, s.current_period_end,
+		       s.trial_end, s.cancelled_at, s.cancel_at_period_end,
+		       s.stripe_subscription_id, s.stripe_customer_id, s.promo_code_id,
+		       s.created_at, s.updated_at,
+		       COALESCE(sp.name, '') as plan_name,
+		       COALESCE(u.email, '') as user_email,
+		       COALESCE(u.first_name || ' ' || u.last_name, '') as user_name
+		FROM user_subscriptions s
+		LEFT JOIN subscription_plans sp ON s.plan_id = sp.id
+		LEFT JOIN users u ON s.user_id = u.id
+		ORDER BY s.created_at DESC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var subs []models.UserSubscription
+	for rows.Next() {
+		var s models.UserSubscription
+		if err := rows.Scan(
+			&s.ID, &s.UserID, &s.PlanID, &s.Status, &s.CurrentPeriodStart, &s.CurrentPeriodEnd,
+			&s.TrialEnd, &s.CancelledAt, &s.CancelAtPeriodEnd,
+			&s.StripeSubscriptionID, &s.StripeCustomerID, &s.PromoCodeID,
+			&s.CreatedAt, &s.UpdatedAt,
+			&s.PlanName, &s.UserEmail, &s.UserName,
+		); err != nil {
+			return nil, 0, err
+		}
+		subs = append(subs, s)
+	}
+	return subs, total, rows.Err()
+}
+
+func (r *adminRepo) GetDailyRevenueSnapshots(ctx context.Context, startDate, endDate time.Time) ([]models.DailyRevenueSnapshot, error) {
+	query := `
+		SELECT id, snapshot_date, total_revenue_cents, new_subscriptions, cancelled_subscriptions,
+		       upgrades, downgrades, refunds_cents, promo_discounts_cents, calculated_at
+		FROM daily_revenue_snapshots
+		WHERE snapshot_date >= $1 AND snapshot_date <= $2
+		ORDER BY snapshot_date ASC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var snapshots []models.DailyRevenueSnapshot
+	for rows.Next() {
+		var s models.DailyRevenueSnapshot
+		if err := rows.Scan(
+			&s.ID, &s.SnapshotDate, &s.TotalRevenueCents, &s.NewSubscriptions, &s.CancelledSubscriptions,
+			&s.Upgrades, &s.Downgrades, &s.RefundsCents, &s.PromoDiscountsCents, &s.CalculatedAt,
+		); err != nil {
+			return nil, err
+		}
+		snapshots = append(snapshots, s)
+	}
+	return snapshots, rows.Err()
+}
+
+// itoa is a helper function for building dynamic queries
+func itoa(n int) string {
+	return strconv.Itoa(n)
 }

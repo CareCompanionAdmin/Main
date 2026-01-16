@@ -1,0 +1,636 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Promo Codes</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage promotional codes for CareCompanion subscriptions</p>
+        </div>
+        {{if eq .CurrentUser.SystemRole "super_admin"}}
+        <a href="/admin/promo-codes/new" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            <span>Create New Code</span>
+        </a>
+        {{end}}
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">Active Codes</div>
+            <div class="text-2xl font-bold text-green-600" id="stat-active">-</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">Total Uses (All Time)</div>
+            <div class="text-2xl font-bold text-indigo-600" id="stat-uses">-</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">Total Discounts Given</div>
+            <div class="text-2xl font-bold text-blue-600" id="stat-discounts">-</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-sm font-medium text-gray-500">Revenue Attributed</div>
+            <div class="text-2xl font-bold text-emerald-600" id="stat-revenue">-</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <div class="relative">
+                    <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Search by code or name..."
+                           class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                           oninput="debounceSearch()">
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <select id="status-filter" class="border rounded-lg px-3 py-2" onchange="loadPromoCodes()">
+                    <option value="">All Status</option>
+                    <option value="active">Active Only</option>
+                    <option value="inactive">Inactive Only</option>
+                    <option value="expired">Expired Only</option>
+                </select>
+                <select id="type-filter" class="border rounded-lg px-3 py-2" onchange="loadPromoCodes()">
+                    <option value="">All Types</option>
+                    <option value="percentage">Percentage Off</option>
+                    <option value="fixed_amount">Fixed Amount</option>
+                    <option value="free_trial_days">Free Trial Days</option>
+                    <option value="free_months">Free Months</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promo Codes Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Benefit</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Period</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="promo-tbody" class="bg-white divide-y divide-gray-200">
+                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                    <div class="flex flex-col items-center">
+                        <svg class="animate-spin h-8 w-8 text-indigo-500 mb-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading promo codes...
+                    </div>
+                </td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-between items-center bg-white rounded-lg shadow px-4 py-3">
+        <span id="showing-text" class="text-sm text-gray-500">Showing 0 of 0</span>
+        <div class="flex items-center space-x-2">
+            <button id="prev-btn" onclick="prevPage()" class="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <span id="page-info" class="text-sm text-gray-600">Page 1</span>
+            <button id="next-btn" onclick="nextPage()" class="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="fixed inset-4 md:inset-10 lg:inset-20 bg-white rounded-lg shadow-xl overflow-auto">
+        <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold" id="modal-title">Promo Code Details</h2>
+                <p class="text-sm text-gray-500" id="modal-subtitle"></p>
+            </div>
+            <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-full">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div id="modal-content" class="p-6"></div>
+    </div>
+</div>
+
+<!-- Deactivate Modal -->
+<div id="deactivate-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center space-x-3 mb-4">
+            <div class="p-2 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h2 class="text-xl font-bold">Deactivate Promo Code</h2>
+        </div>
+        <input type="hidden" id="deactivate-id">
+        <p class="text-gray-600 mb-4">Are you sure you want to deactivate this promo code? Users will no longer be able to use it.</p>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+            <textarea id="deactivate-reason" class="w-full border rounded-lg p-3 h-24 focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Why is this code being deactivated?"></textarea>
+        </div>
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeDeactivateModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+            <button onclick="submitDeactivate()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Deactivate</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const isSuperAdmin = '{{.CurrentUser.SystemRole}}' === 'super_admin';
+    let currentPage = 1;
+    const limit = 25;
+    let totalCodes = 0;
+    let allCodes = [];
+    let searchTimeout;
+
+    // Benefit type colors and labels
+    const benefitTypes = {
+        'percentage': { label: 'Percentage Off', color: 'bg-blue-100 text-blue-800', icon: '%' },
+        'fixed_amount': { label: 'Fixed Amount', color: 'bg-green-100 text-green-800', icon: '$' },
+        'free_trial_days': { label: 'Free Trial', color: 'bg-purple-100 text-purple-800', icon: 'T' },
+        'free_months': { label: 'Free Months', color: 'bg-amber-100 text-amber-800', icon: 'M' }
+    };
+
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadPromoCodes, 300);
+    }
+
+    async function loadPromoCodes() {
+        const search = document.getElementById('search-input').value;
+        const statusFilter = document.getElementById('status-filter').value;
+        const typeFilter = document.getElementById('type-filter').value;
+
+        let url = `/api/admin/${isSuperAdmin ? 'super' : 'marketing'}/promo-codes?page=${currentPage}&limit=${limit}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+        if (statusFilter === 'active') url += `&active_only=true`;
+
+        try {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            const data = await response.json();
+            allCodes = data.promo_codes || [];
+            totalCodes = data.total;
+
+            // Apply client-side filters
+            let filteredCodes = allCodes;
+            if (typeFilter) {
+                filteredCodes = filteredCodes.filter(c => c.discount_type === typeFilter);
+            }
+            if (statusFilter === 'inactive') {
+                filteredCodes = filteredCodes.filter(c => !c.is_active);
+            }
+            if (statusFilter === 'expired') {
+                filteredCodes = filteredCodes.filter(c => c.expires_at && new Date(c.expires_at) < new Date());
+            }
+
+            renderPromoCodes(filteredCodes);
+            updatePagination();
+            updateStats(allCodes);
+        } catch (err) {
+            console.error('Error loading promo codes:', err);
+            document.getElementById('promo-tbody').innerHTML = `
+                <tr><td colspan="7" class="px-4 py-8 text-center text-red-500">
+                    Failed to load promo codes. Please try again.
+                </td></tr>
+            `;
+        }
+    }
+
+    function updateStats(codes) {
+        const activeCodes = codes.filter(c => c.is_active && (!c.expires_at || new Date(c.expires_at) >= new Date()));
+        const totalUses = codes.reduce((sum, c) => sum + (c.current_total_uses || 0), 0);
+        const totalDiscounts = codes.reduce((sum, c) => sum + (c.total_discount_given_cents || 0), 0);
+        const totalRevenue = codes.reduce((sum, c) => sum + (c.total_revenue_attributed_cents || 0), 0);
+
+        document.getElementById('stat-active').textContent = activeCodes.length;
+        document.getElementById('stat-uses').textContent = totalUses.toLocaleString();
+        document.getElementById('stat-discounts').textContent = '$' + (totalDiscounts / 100).toFixed(2);
+        document.getElementById('stat-revenue').textContent = '$' + (totalRevenue / 100).toFixed(2);
+    }
+
+    function formatBenefit(code) {
+        const type = benefitTypes[code.discount_type] || { label: code.discount_type, color: 'bg-gray-100 text-gray-800', icon: '?' };
+        let value = '';
+
+        switch (code.discount_type) {
+            case 'percentage':
+                value = code.discount_value + '% off';
+                break;
+            case 'fixed_amount':
+                value = '$' + (code.discount_value / 100).toFixed(2) + ' off';
+                break;
+            case 'free_trial_days':
+                value = code.discount_value + ' day' + (code.discount_value !== 1 ? 's' : '') + ' free';
+                break;
+            case 'free_months':
+                value = code.discount_value + ' month' + (code.discount_value !== 1 ? 's' : '') + ' free';
+                break;
+            default:
+                value = code.discount_value;
+        }
+
+        return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${type.color}">
+            <span class="w-4 h-4 mr-1 flex items-center justify-center bg-white bg-opacity-50 rounded-full text-xs font-bold">${type.icon}</span>
+            ${value}
+        </span>`;
+    }
+
+    function formatUsage(code) {
+        const current = code.current_total_uses || 0;
+        const max = code.max_total_uses;
+        const perUser = code.max_uses_per_user || 1;
+
+        if (max) {
+            const pct = Math.min((current / max) * 100, 100);
+            return `
+                <div class="flex flex-col">
+                    <span class="text-sm font-medium">${current} / ${max}</span>
+                    <div class="w-20 h-1.5 bg-gray-200 rounded-full mt-1">
+                        <div class="h-full ${pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-yellow-500' : 'bg-green-500'} rounded-full" style="width: ${pct}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+        return `<span class="text-sm">${current} uses</span>`;
+    }
+
+    function formatStatus(code) {
+        const now = new Date();
+        const isExpired = code.expires_at && new Date(code.expires_at) < now;
+        const notStarted = new Date(code.starts_at) > now;
+
+        if (!code.is_active) {
+            return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactive</span>';
+        }
+        if (isExpired) {
+            return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Expired</span>';
+        }
+        if (notStarted) {
+            return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Scheduled</span>';
+        }
+        return '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>';
+    }
+
+    function formatValidPeriod(code) {
+        const startDate = new Date(code.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const endDate = code.expires_at
+            ? new Date(code.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : 'No expiry';
+        return `<div class="text-sm"><div>${startDate}</div><div class="text-gray-400">to ${endDate}</div></div>`;
+    }
+
+    function renderPromoCodes(codes) {
+        const tbody = document.getElementById('promo-tbody');
+
+        if (!codes || codes.length === 0) {
+            tbody.innerHTML = `
+                <tr><td colspan="7" class="px-4 py-12 text-center">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-1">No promo codes found</h3>
+                        <p class="text-gray-500 mb-4">Get started by creating your first promotional code.</p>
+                        ${isSuperAdmin ? '<a href="/admin/promo-codes/new" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Create Promo Code</a>' : ''}
+                    </div>
+                </td></tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = codes.map(c => `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-4">
+                    <div class="flex items-center">
+                        <code class="px-2 py-1 bg-gray-100 rounded font-mono font-bold text-indigo-600">${c.code}</code>
+                        <button onclick="copyCode('${c.code}')" class="ml-2 p-1 hover:bg-gray-200 rounded" title="Copy code">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+                <td class="px-4 py-4">
+                    <div class="font-medium text-gray-900">${c.name}</div>
+                    ${c.description ? `<div class="text-sm text-gray-500 truncate max-w-xs">${c.description}</div>` : ''}
+                </td>
+                <td class="px-4 py-4">${formatBenefit(c)}</td>
+                <td class="px-4 py-4">${formatUsage(c)}</td>
+                <td class="px-4 py-4">${formatValidPeriod(c)}</td>
+                <td class="px-4 py-4">${formatStatus(c)}</td>
+                <td class="px-4 py-4">
+                    <div class="flex items-center space-x-2">
+                        <button onclick="viewCode('${c.id}')" class="p-1 hover:bg-blue-100 rounded text-blue-600" title="View details">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                        ${isSuperAdmin && c.is_active ? `
+                            <a href="/admin/promo-codes/${c.id}/edit" class="p-1 hover:bg-indigo-100 rounded text-indigo-600" title="Edit">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                            </a>
+                            <button onclick="showDeactivateModal('${c.id}')" class="p-1 hover:bg-red-100 rounded text-red-600" title="Deactivate">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                </svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function copyCode(code) {
+        navigator.clipboard.writeText(code);
+        // Show brief toast
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        toast.textContent = 'Code copied!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    function updatePagination() {
+        const start = (currentPage - 1) * limit + 1;
+        const end = Math.min(currentPage * limit, totalCodes);
+        const totalPages = Math.ceil(totalCodes / limit);
+
+        document.getElementById('showing-text').textContent = `Showing ${totalCodes > 0 ? start : 0}-${end} of ${totalCodes} codes`;
+        document.getElementById('page-info').textContent = `Page ${currentPage}${totalPages > 1 ? ' of ' + totalPages : ''}`;
+        document.getElementById('prev-btn').disabled = currentPage <= 1;
+        document.getElementById('next-btn').disabled = currentPage * limit >= totalCodes;
+    }
+
+    function prevPage() { currentPage--; loadPromoCodes(); }
+    function nextPage() { currentPage++; loadPromoCodes(); }
+
+    async function viewCode(id) {
+        try {
+            const response = await fetch(`/api/admin/${isSuperAdmin ? 'super' : 'marketing'}/promo-codes/${id}`, { credentials: 'same-origin' });
+            const code = await response.json();
+
+            document.getElementById('modal-title').innerHTML = `<code class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-mono">${code.code}</code>`;
+            document.getElementById('modal-subtitle').textContent = code.name;
+
+            const type = benefitTypes[code.discount_type] || { label: code.discount_type, color: 'bg-gray-100 text-gray-800' };
+            const isActive = code.is_active && (!code.expires_at || new Date(code.expires_at) >= new Date());
+
+            document.getElementById('modal-content').innerHTML = `
+                <!-- Status Banner -->
+                <div class="mb-6 p-4 rounded-lg ${isActive ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            ${isActive
+                                ? '<span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span><span class="font-medium text-green-700">Active & Ready to Use</span>'
+                                : '<span class="w-3 h-3 bg-gray-400 rounded-full"></span><span class="font-medium text-gray-600">Inactive</span>'
+                            }
+                        </div>
+                        ${formatBenefit(code)}
+                    </div>
+                </div>
+
+                <!-- Main Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Usage</h3>
+                        <div class="text-2xl font-bold">${code.current_total_uses || 0}${code.max_total_uses ? ' / ' + code.max_total_uses : ''}</div>
+                        <div class="text-sm text-gray-500">${code.max_uses_per_user || 1} per user</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Discounts Given</h3>
+                        <div class="text-2xl font-bold text-blue-600">$${((code.total_discount_given_cents || 0) / 100).toFixed(2)}</div>
+                        <div class="text-sm text-gray-500">Total savings provided</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase mb-2">Revenue Attributed</h3>
+                        <div class="text-2xl font-bold text-green-600">$${((code.total_revenue_attributed_cents || 0) / 100).toFixed(2)}</div>
+                        <div class="text-sm text-gray-500">From customers using code</div>
+                    </div>
+                </div>
+
+                <!-- Details Section -->
+                <div class="border-t pt-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Details</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Applies To</div>
+                            <div class="mt-1 capitalize">${code.applies_to || 'Both'}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Duration</div>
+                            <div class="mt-1">${code.duration_months === null || code.duration_months === undefined ? 'First payment only' : (code.duration_months === -1 ? 'Forever' : code.duration_months + ' months')}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Start Date</div>
+                            <div class="mt-1">${new Date(code.starts_at).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Expiry Date</div>
+                            <div class="mt-1">${code.expires_at ? new Date(code.expires_at).toLocaleDateString() : 'Never'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Restrictions Section -->
+                <div class="border-t pt-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Restrictions</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Minimum Purchase</div>
+                            <div class="mt-1">$${((code.minimum_purchase_cents || 0) / 100).toFixed(2)}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">User Eligibility</div>
+                            <div class="mt-1">${code.new_users_only ? 'New users only' : (code.existing_users_only ? 'Existing users only' : 'All users')}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Stackable</div>
+                            <div class="mt-1">${code.is_stackable ? 'Yes' : 'No'}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Email Domains</div>
+                            <div class="mt-1">${code.specific_email_domains && code.specific_email_domains.length ? code.specific_email_domains.join(', ') : 'Any'}</div>
+                        </div>
+                    </div>
+                </div>
+
+                ${code.description ? `
+                <div class="border-t pt-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Description</h3>
+                    <p class="text-gray-600">${code.description}</p>
+                </div>
+                ` : ''}
+
+                ${code.campaign_name ? `
+                <div class="border-t pt-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Campaign</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Campaign Name</div>
+                            <div class="mt-1">${code.campaign_name}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Source</div>
+                            <div class="mt-1 capitalize">${code.campaign_source || 'N/A'}</div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Metadata -->
+                <div class="border-t pt-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Metadata</h3>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Created</div>
+                            <div class="mt-1">${new Date(code.created_at).toLocaleString()}</div>
+                            <div class="text-gray-500">${code.created_by_email || 'System'}</div>
+                        </div>
+                        ${!code.is_active && code.deactivated_at ? `
+                        <div>
+                            <div class="text-xs font-semibold text-gray-500 uppercase">Deactivated</div>
+                            <div class="mt-1">${new Date(code.deactivated_at).toLocaleString()}</div>
+                            <div class="text-gray-500">${code.deactivation_reason || 'No reason provided'}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Usage History -->
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold mb-4">Recent Usage History</h3>
+                    <div id="usage-list">
+                        <div class="flex items-center justify-center py-4">
+                            <svg class="animate-spin h-5 w-5 text-indigo-500 mr-2" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Loading usage history...
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+            loadUsages(id);
+        } catch (err) {
+            alert('Failed to load promo code details');
+        }
+    }
+
+    async function loadUsages(id) {
+        try {
+            const response = await fetch(`/api/admin/${isSuperAdmin ? 'super' : 'marketing'}/promo-codes/${id}/usages?limit=10`, { credentials: 'same-origin' });
+            const data = await response.json();
+
+            const usageList = document.getElementById('usage-list');
+            if (data.usages && data.usages.length > 0) {
+                usageList.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Discount Applied</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${data.usages.map(u => `
+                                <tr>
+                                    <td class="px-4 py-3 text-sm">${new Date(u.used_at).toLocaleString()}</td>
+                                    <td class="px-4 py-3 text-sm">${u.user_email || u.user_name || 'N/A'}</td>
+                                    <td class="px-4 py-3 text-sm font-medium text-green-600">-$${(u.discount_applied_cents / 100).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <p class="text-sm text-gray-500 mt-3">${data.total} total usages</p>
+                `;
+            } else {
+                usageList.innerHTML = `
+                    <div class="text-center py-6 text-gray-500">
+                        <svg class="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        <p>No usage history yet</p>
+                    </div>
+                `;
+            }
+        } catch (err) {
+            document.getElementById('usage-list').innerHTML = '<p class="text-red-500 text-center py-4">Failed to load usage history</p>';
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('detail-modal').classList.add('hidden');
+    }
+
+    function showDeactivateModal(id) {
+        document.getElementById('deactivate-id').value = id;
+        document.getElementById('deactivate-reason').value = '';
+        document.getElementById('deactivate-modal').classList.remove('hidden');
+    }
+
+    function closeDeactivateModal() {
+        document.getElementById('deactivate-modal').classList.add('hidden');
+    }
+
+    async function submitDeactivate() {
+        const id = document.getElementById('deactivate-id').value;
+        const reason = document.getElementById('deactivate-reason').value;
+
+        try {
+            const response = await fetch(`/api/admin/super/promo-codes/${id}/deactivate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ reason })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to deactivate');
+            }
+
+            closeDeactivateModal();
+            loadPromoCodes();
+        } catch (err) {
+            alert('Failed to deactivate promo code');
+        }
+    }
+
+    // Close modals with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeDeactivateModal();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadPromoCodes);
+</script>
+{{end}}

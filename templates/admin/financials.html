@@ -1,0 +1,332 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">Financials</h1>
+        <div class="flex items-center space-x-2">
+            <button onclick="showReportModal()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                Generate Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500 uppercase">Last 24 Hours</h3>
+            <p class="text-3xl font-bold text-gray-900" id="revenue-24h">$0</p>
+            <p class="text-sm text-gray-500"><span id="licenses-24h">0</span> licenses</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500 uppercase">Month to Date</h3>
+            <p class="text-3xl font-bold text-gray-900" id="revenue-mtd">$0</p>
+            <p class="text-sm text-gray-500">
+                <span class="text-green-600">+<span id="new-subs-mtd">0</span></span> /
+                <span class="text-red-600">-<span id="churned-mtd">0</span></span> subscriptions
+            </p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500 uppercase">Year to Date</h3>
+            <p class="text-3xl font-bold text-gray-900" id="revenue-ytd">$0</p>
+            <p class="text-sm text-gray-500"><span id="discounts-ytd">$0</span> in discounts</p>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-sm text-gray-500 uppercase">Active Subscriptions</h3>
+            <p class="text-3xl font-bold text-indigo-600" id="active-subs">0</p>
+            <p class="text-sm text-gray-500">Total active</p>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Subscriptions by Plan -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Subscriptions by Plan</h2>
+            <table class="min-w-full">
+                <thead>
+                    <tr class="text-left text-sm text-gray-500">
+                        <th class="pb-2">Plan</th>
+                        <th class="pb-2">Count</th>
+                        <th class="pb-2">MRR</th>
+                    </tr>
+                </thead>
+                <tbody id="plans-tbody">
+                    <tr><td colspan="3" class="py-4 text-center text-gray-500">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Revenue Calendar Preview -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Expected Revenue (Next 30 Days)</h2>
+            <div id="calendar-preview" class="space-y-2">
+                <p class="text-gray-500">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+            <h2 class="text-lg font-semibold">Recent Payments</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Promo</th>
+                    </tr>
+                </thead>
+                <tbody id="payments-tbody" class="bg-white divide-y divide-gray-200">
+                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Subscriptions -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b">
+            <h2 class="text-lg font-semibold">Recent Subscriptions</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period End</th>
+                    </tr>
+                </thead>
+                <tbody id="subscriptions-tbody" class="bg-white divide-y divide-gray-200">
+                    <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div id="report-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="fixed inset-x-4 top-1/4 md:inset-x-1/3 bg-white rounded-lg shadow-xl p-6">
+        <h2 class="text-xl font-bold mb-4">Generate Financial Report</h2>
+        <form onsubmit="downloadReport(event)">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Report Type</label>
+                    <select id="report-type" class="w-full border rounded p-2">
+                        <option value="revenue">Revenue Summary</option>
+                        <option value="payments">All Payments</option>
+                        <option value="subscriptions">All Subscriptions</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Format</label>
+                    <select id="report-format" class="w-full border rounded p-2">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Start Date</label>
+                        <input type="date" id="report-start" class="w-full border rounded p-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">End Date</label>
+                        <input type="date" id="report-end" class="w-full border rounded p-2">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 mt-6">
+                <button type="button" onclick="closeReportModal()" class="px-4 py-2 border rounded">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Download</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function formatCurrency(cents) {
+        return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    async function loadOverview() {
+        try {
+            const response = await fetch('/api/admin/super/financials/overview', { credentials: 'same-origin' });
+            const data = await response.json();
+
+            document.getElementById('revenue-24h').textContent = formatCurrency(data.revenue_24h_cents);
+            document.getElementById('licenses-24h').textContent = data.licenses_bought_24h;
+            document.getElementById('revenue-mtd').textContent = formatCurrency(data.revenue_mtd_cents);
+            document.getElementById('new-subs-mtd').textContent = data.new_subscriptions_mtd;
+            document.getElementById('churned-mtd').textContent = data.churned_subscriptions_mtd;
+            document.getElementById('revenue-ytd').textContent = formatCurrency(data.revenue_ytd_cents);
+            document.getElementById('discounts-ytd').textContent = formatCurrency(data.total_discounts_ytd_cents);
+            document.getElementById('active-subs').textContent = data.total_active_subscriptions;
+
+            // Render plans table
+            const plansTbody = document.getElementById('plans-tbody');
+            if (data.subscriptions_by_plan && data.subscriptions_by_plan.length > 0) {
+                plansTbody.innerHTML = data.subscriptions_by_plan.map(p => `
+                    <tr>
+                        <td class="py-2">${p.plan_name}</td>
+                        <td class="py-2">${p.count}</td>
+                        <td class="py-2">${formatCurrency(p.mrr_cents)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                plansTbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500">No subscription data</td></tr>';
+            }
+        } catch (err) {
+            console.error('Error loading overview:', err);
+        }
+    }
+
+    async function loadCalendar() {
+        try {
+            const today = new Date();
+            const endDate = new Date(today);
+            endDate.setDate(endDate.getDate() + 30);
+
+            const response = await fetch(`/api/admin/super/financials/calendar?start_date=${today.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}`, { credentials: 'same-origin' });
+            const data = await response.json();
+
+            const preview = document.getElementById('calendar-preview');
+            if (data.days && data.days.length > 0) {
+                let totalExpected = 0;
+                let totalRenewals = 0;
+                data.days.forEach(d => {
+                    totalExpected += d.amount_cents;
+                    totalRenewals += d.renewal_count;
+                });
+                preview.innerHTML = `
+                    <div class="text-3xl font-bold text-green-600">${formatCurrency(totalExpected)}</div>
+                    <p class="text-sm text-gray-500">${totalRenewals} renewals expected</p>
+                    <div class="mt-4 space-y-1 max-h-48 overflow-auto">
+                        ${data.days.slice(0, 10).map(d => `
+                            <div class="flex justify-between text-sm">
+                                <span>${new Date(d.date).toLocaleDateString()}</span>
+                                <span>${formatCurrency(d.amount_cents)} (${d.renewal_count})</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                preview.innerHTML = '<p class="text-gray-500">No expected renewals in the next 30 days</p>';
+            }
+        } catch (err) {
+            console.error('Error loading calendar:', err);
+        }
+    }
+
+    async function loadPayments() {
+        try {
+            const response = await fetch('/api/admin/super/financials/payments?limit=10', { credentials: 'same-origin' });
+            const data = await response.json();
+
+            const tbody = document.getElementById('payments-tbody');
+            if (data.payments && data.payments.length > 0) {
+                tbody.innerHTML = data.payments.map(p => {
+                    const statusColors = {
+                        'succeeded': 'bg-green-100 text-green-800',
+                        'pending': 'bg-yellow-100 text-yellow-800',
+                        'failed': 'bg-red-100 text-red-800',
+                        'refunded': 'bg-gray-100 text-gray-800'
+                    };
+                    return `
+                        <tr>
+                            <td class="px-4 py-3 text-sm">${new Date(p.created_at).toLocaleDateString()}</td>
+                            <td class="px-4 py-3 text-sm">${p.user_email || 'N/A'}</td>
+                            <td class="px-4 py-3 text-sm">${p.plan_name || p.payment_type}</td>
+                            <td class="px-4 py-3 text-sm font-medium">${formatCurrency(p.amount_cents)}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs rounded ${statusColors[p.status] || 'bg-gray-100'}">${p.status}</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">${p.promo_code || '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No payments yet</td></tr>';
+            }
+        } catch (err) {
+            console.error('Error loading payments:', err);
+        }
+    }
+
+    async function loadSubscriptions() {
+        try {
+            const response = await fetch('/api/admin/super/financials/subscriptions?limit=10', { credentials: 'same-origin' });
+            const data = await response.json();
+
+            const tbody = document.getElementById('subscriptions-tbody');
+            if (data.subscriptions && data.subscriptions.length > 0) {
+                tbody.innerHTML = data.subscriptions.map(s => {
+                    const statusColors = {
+                        'active': 'bg-green-100 text-green-800',
+                        'trialing': 'bg-blue-100 text-blue-800',
+                        'cancelled': 'bg-red-100 text-red-800',
+                        'expired': 'bg-gray-100 text-gray-800',
+                        'past_due': 'bg-yellow-100 text-yellow-800'
+                    };
+                    return `
+                        <tr>
+                            <td class="px-4 py-3 text-sm">${new Date(s.created_at).toLocaleDateString()}</td>
+                            <td class="px-4 py-3 text-sm">${s.user_email || 'N/A'}</td>
+                            <td class="px-4 py-3 text-sm">${s.plan_name || 'N/A'}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs rounded ${statusColors[s.status] || 'bg-gray-100'}">${s.status}</span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">${new Date(s.current_period_end).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">No subscriptions yet</td></tr>';
+            }
+        } catch (err) {
+            console.error('Error loading subscriptions:', err);
+        }
+    }
+
+    function showReportModal() {
+        // Set default dates
+        const today = new Date();
+        const yearStart = new Date(today.getFullYear(), 0, 1);
+        document.getElementById('report-start').value = yearStart.toISOString().split('T')[0];
+        document.getElementById('report-end').value = today.toISOString().split('T')[0];
+        document.getElementById('report-modal').classList.remove('hidden');
+    }
+
+    function closeReportModal() {
+        document.getElementById('report-modal').classList.add('hidden');
+    }
+
+    function downloadReport(e) {
+        e.preventDefault();
+        const type = document.getElementById('report-type').value;
+        const format = document.getElementById('report-format').value;
+        const start = document.getElementById('report-start').value;
+        const end = document.getElementById('report-end').value;
+
+        const url = `/api/admin/super/financials/report?type=${type}&format=${format}&start_date=${start}&end_date=${end}`;
+        window.open(url, '_blank');
+        closeReportModal();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadOverview();
+        loadCalendar();
+        loadPayments();
+        loadSubscriptions();
+    });
+</script>
+{{end}}

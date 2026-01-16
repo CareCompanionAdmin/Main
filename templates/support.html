@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - CareCompanion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
+
+<!-- Navigation -->
+<nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <a href="/dashboard" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">CareCompanion</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="text-gray-700 dark:text-gray-300">Hello, {{.FirstName}}</span>
+                <a href="/chat" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 relative" title="Family Chat">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </a>
+                <a href="/support" class="text-indigo-600 dark:text-indigo-400 relative" title="Support">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <span id="support-badge" class="{{if not .HasUnread}}hidden{{end}} absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>
+                </a>
+                <a href="/settings" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" title="Settings">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </a>
+                <button onclick="logout()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" title="Logout">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+{{template "mascot" .}}
+
+<main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex gap-6 h-[calc(100vh-12rem)]">
+        <!-- Ticket List -->
+        <div class="w-80 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 overflow-hidden flex flex-col">
+            <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
+                <h2 class="font-semibold text-gray-900 dark:text-white">Support Tickets</h2>
+                <button onclick="showNewTicket()" class="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="ticket-list" class="flex-1 overflow-y-auto">
+                {{if .Tickets}}
+                {{range .Tickets}}
+                <div class="p-4 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ticket-item" data-ticket-id="{{.ID}}" onclick="selectTicket('{{.ID}}')">
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-medium text-gray-900 dark:text-white truncate">{{.Subject}}</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                    {{if eq .Status "open"}}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                    {{else if eq .Status "in_progress"}}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                    {{else if eq .Status "resolved"}}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
+                                    {{else}}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{{end}}">
+                                    {{.Status}}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <p>No support tickets yet</p>
+                    <button onclick="showNewTicket()" class="mt-4 text-indigo-600 hover:text-indigo-700">Create a ticket</button>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Ticket Detail Area -->
+        <div class="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 overflow-hidden flex flex-col">
+            <div id="ticket-header" class="p-4 border-b dark:border-gray-700 hidden">
+                <h2 id="ticket-subject" class="font-semibold text-gray-900 dark:text-white"></h2>
+                <div class="flex items-center gap-4 mt-1">
+                    <span id="ticket-status" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"></span>
+                    <span id="ticket-created" class="text-sm text-gray-500 dark:text-gray-400"></span>
+                </div>
+            </div>
+            <div id="message-area" class="flex-1 overflow-y-auto p-4">
+                <div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    <div class="text-center">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <p>Select a ticket to view messages</p>
+                        <p class="text-sm mt-2">or <button onclick="showNewTicket()" class="text-indigo-600 hover:text-indigo-700">create a new ticket</button></p>
+                    </div>
+                </div>
+            </div>
+            <div id="reply-area" class="p-4 border-t dark:border-gray-700 hidden">
+                <form id="reply-form" class="flex gap-2">
+                    <textarea id="reply-input" placeholder="Type your reply..." rows="2" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"></textarea>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 self-end">
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- New Ticket Modal -->
+<div id="new-ticket-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full mx-4">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Create Support Ticket</h2>
+        <form id="new-ticket-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                <input type="text" name="subject" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Brief description of your issue">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea name="description" required rows="4" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Please describe your issue in detail"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                <select name="priority" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="low">Low</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+            <div class="flex space-x-4 pt-2">
+                <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    Create Ticket
+                </button>
+                <button type="button" onclick="hideNewTicket()" class="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const userID = '{{.UserID}}';
+let currentTicketID = null;
+
+function showNewTicket() {
+    document.getElementById('new-ticket-form').reset();
+    document.getElementById('new-ticket-modal').classList.remove('hidden');
+}
+
+function hideNewTicket() {
+    document.getElementById('new-ticket-modal').classList.add('hidden');
+}
+
+async function selectTicket(ticketID) {
+    currentTicketID = ticketID;
+
+    // Update UI
+    document.querySelectorAll('.ticket-item').forEach(el => el.classList.remove('bg-indigo-50', 'dark:bg-indigo-900/30'));
+    document.querySelector(`[data-ticket-id="${ticketID}"]`)?.classList.add('bg-indigo-50', 'dark:bg-indigo-900/30');
+
+    document.getElementById('ticket-header').classList.remove('hidden');
+    document.getElementById('reply-area').classList.remove('hidden');
+
+    try {
+        const response = await fetch(`/api/support/tickets/${ticketID}`, { credentials: 'include' });
+        if (!response.ok) throw new Error('Failed to load ticket');
+
+        const data = await response.json();
+        const ticket = data.ticket;
+        const messages = data.messages || [];
+
+        // Update header
+        document.getElementById('ticket-subject').textContent = ticket.subject;
+
+        const statusEl = document.getElementById('ticket-status');
+        statusEl.textContent = ticket.status;
+        statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ';
+        if (ticket.status === 'open') {
+            statusEl.className += 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        } else if (ticket.status === 'in_progress') {
+            statusEl.className += 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+        } else {
+            statusEl.className += 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+        }
+
+        document.getElementById('ticket-created').textContent = 'Created ' + new Date(ticket.created_at).toLocaleDateString();
+
+        // Render messages
+        const messageArea = document.getElementById('message-area');
+        let html = `
+            <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Original Description</p>
+                <p class="text-gray-900 dark:text-white whitespace-pre-wrap">${escapeHtml(ticket.description)}</p>
+            </div>
+        `;
+
+        if (messages.length > 0) {
+            html += '<div class="space-y-4">';
+            messages.forEach(msg => {
+                const isUser = msg.sender_id === ticket.user_id;
+                const time = new Date(msg.created_at).toLocaleString();
+                html += `
+                    <div class="${isUser ? 'text-right' : ''}">
+                        <div class="inline-block max-w-[80%] ${isUser ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'} rounded-lg px-4 py-2">
+                            ${!isUser ? `<p class="text-xs font-medium ${isUser ? 'text-indigo-200' : 'text-indigo-600 dark:text-indigo-400'} mb-1">${escapeHtml(msg.sender_name || 'Support')}</p>` : ''}
+                            <p class="whitespace-pre-wrap">${escapeHtml(msg.message)}</p>
+                            <p class="text-xs ${isUser ? 'text-indigo-200' : 'text-gray-400'} mt-1">${time}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        } else {
+            html += '<p class="text-center text-gray-500 dark:text-gray-400 mt-4">No replies yet. Our support team will respond soon.</p>';
+        }
+
+        messageArea.innerHTML = html;
+        messageArea.scrollTop = messageArea.scrollHeight;
+
+        // Hide badge after viewing
+        document.getElementById('support-badge').classList.add('hidden');
+
+    } catch (error) {
+        console.error('Error loading ticket:', error);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+document.getElementById('reply-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!currentTicketID) return;
+
+    const input = document.getElementById('reply-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    try {
+        const response = await fetch(`/api/support/tickets/${currentTicketID}/messages`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify({ message: message })
+        });
+
+        if (response.ok) {
+            input.value = '';
+            selectTicket(currentTicketID); // Refresh
+        } else {
+            const err = await response.json();
+            alert(err.error || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        alert('An error occurred');
+    }
+});
+
+document.getElementById('new-ticket-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = {
+        subject: formData.get('subject'),
+        description: formData.get('description'),
+        priority: formData.get('priority')
+    };
+
+    try {
+        const response = await fetch('/api/support/tickets', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            location.reload();
+        } else {
+            const err = await response.json();
+            alert(err.error || 'Failed to create ticket');
+        }
+    } catch (error) {
+        console.error('Error creating ticket:', error);
+        alert('An error occurred');
+    }
+});
+
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {}
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/api/auth/refresh;';
+    window.location.href = '/login';
+}
+
+// Check for unread support messages periodically
+async function checkSupportUnread() {
+    try {
+        const response = await fetch('/api/support/unread', { credentials: 'include' });
+        if (response.ok) {
+            const data = await response.json();
+            const badge = document.getElementById('support-badge');
+            if (badge) {
+                badge.classList.toggle('hidden', !data.has_unread);
+            }
+        }
+    } catch (e) {}
+}
+
+// Poll for unread messages every 60 seconds
+setInterval(checkSupportUnread, 60000);
+</script>
+</body>
+</html>

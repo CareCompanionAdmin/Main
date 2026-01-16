@@ -26,6 +26,7 @@ func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthS
 		r.Get("/dashboard", handlers.Dashboard)
 		r.Get("/settings", handlers.Settings)
 		r.Get("/chat", handlers.Chat)
+		r.Get("/support", handlers.Support)
 		r.Get("/family/new", handlers.NewFamily)
 		r.Get("/child/new", handlers.NewChild)
 

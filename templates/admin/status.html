@@ -1,0 +1,815 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">Infrastructure Status</h1>
+        <div class="flex items-center space-x-4">
+            <span id="last-updated" class="text-sm text-gray-500">Last updated: --</span>
+            <div class="flex items-center space-x-2">
+                <label class="text-sm text-gray-600">
+                    <input type="checkbox" id="auto-refresh" checked class="mr-1">
+                    Auto-refresh (30s)
+                </label>
+                <button onclick="refreshStatus()" id="refresh-btn" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center">
+                    <svg id="refresh-icon" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Health -->
+    <div id="overall-health" class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold">Overall Health</h2>
+                <p id="health-summary" class="text-gray-600">Loading...</p>
+            </div>
+            <div id="health-indicator" class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                <span class="text-2xl">--</span>
+            </div>
+        </div>
+        <div class="mt-4 flex space-x-4">
+            <span id="alert-count" class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium hidden cursor-pointer hover:bg-red-200" onclick="scrollToAlerts()">0 Alerts</span>
+            <span id="warning-count" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium hidden cursor-pointer hover:bg-yellow-200" onclick="scrollToAlerts()">0 Warnings</span>
+        </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div id="alerts-section" class="hidden">
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    Active Alerts & Recommendations
+                </h2>
+            </div>
+            <div id="alerts-list" class="divide-y divide-gray-200">
+                <!-- Alerts will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto Scaling Group Section -->
+    <div id="asg-section" class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-semibold flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+                Auto Scaling Group
+                <span id="asg-name" class="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded">--</span>
+            </h2>
+            <span id="asg-capacity-badge" class="px-3 py-1 rounded-full text-sm font-medium">--</span>
+        </div>
+
+        <!-- Capacity Visualization -->
+        <div class="mb-6">
+            <div class="flex justify-between text-sm mb-2">
+                <span>Capacity</span>
+                <span id="asg-capacity-text">-- / -- instances</span>
+            </div>
+            <div class="relative h-8 bg-gray-200 rounded-lg overflow-hidden">
+                <!-- Min marker -->
+                <div id="asg-min-marker" class="absolute top-0 h-full w-0.5 bg-yellow-500 z-10" style="left: 0%"></div>
+                <!-- Current capacity bar -->
+                <div id="asg-capacity-bar" class="absolute top-0 left-0 h-full bg-indigo-600 transition-all duration-500" style="width: 0%"></div>
+                <!-- Labels inside bar -->
+                <div class="absolute inset-0 flex items-center justify-between px-3 text-xs font-medium">
+                    <span class="text-white z-20" id="asg-bar-label">0 instances</span>
+                </div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Min: <span id="asg-min">--</span></span>
+                <span>Max: <span id="asg-max">--</span></span>
+            </div>
+        </div>
+
+        <!-- Instance Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-green-50 rounded-lg p-4 text-center border border-green-200">
+                <span class="text-3xl font-bold text-green-700" id="asg-in-service">--</span>
+                <p class="text-sm text-green-600">In Service</p>
+            </div>
+            <div class="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200">
+                <span class="text-3xl font-bold text-yellow-700" id="asg-pending">0</span>
+                <p class="text-sm text-yellow-600">Pending</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-4 text-center border border-red-200">
+                <span class="text-3xl font-bold text-red-700" id="asg-terminating">0</span>
+                <p class="text-sm text-red-600">Terminating</p>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
+                <span class="text-3xl font-bold text-blue-700" id="asg-headroom">--%</span>
+                <p class="text-sm text-blue-600">Scaling Headroom</p>
+            </div>
+        </div>
+
+        <!-- Scaling Policies & Instances Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Scaling Policies -->
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Scaling Policies</h3>
+                <div id="asg-policies" class="space-y-3">
+                    <p class="text-gray-500 text-sm">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Instance List -->
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Instances</h3>
+                <div id="asg-instances" class="space-y-2 max-h-48 overflow-y-auto">
+                    <p class="text-gray-500 text-sm">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="mt-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Recent Scaling Activity</h3>
+            <div id="asg-activities" class="space-y-2 max-h-40 overflow-y-auto">
+                <p class="text-gray-500 text-sm">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Compute -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <span class="w-3 h-3 rounded-full mr-2" id="compute-status-dot"></span>
+                Compute Metrics
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-sm">
+                        <span>CPU Utilization (Avg)</span>
+                        <span id="compute-cpu" class="font-medium">--</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div id="compute-cpu-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm">
+                        <span>Memory Utilization</span>
+                        <span id="compute-memory" class="font-medium">--</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div id="compute-memory-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <p id="compute-message" class="text-sm text-gray-500 mt-2"></p>
+            </div>
+        </div>
+
+        <!-- Database -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <span class="w-3 h-3 rounded-full mr-2" id="db-status-dot"></span>
+                Database (RDS PostgreSQL)
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-sm">
+                        <span>CPU Utilization</span>
+                        <span id="db-cpu" class="font-medium">--</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div id="db-cpu-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm">
+                        <span>Storage (<span id="db-storage-used">--</span> / <span id="db-storage-total">--</span> GB)</span>
+                        <span id="db-storage" class="font-medium">--</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div id="db-storage-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm">
+                        <span>Connections</span>
+                        <span><span id="db-connections" class="font-medium">--</span> / <span id="db-max-connections">--</span></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div id="db-connections-bar" class="h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                    <div>
+                        <div class="text-sm">
+                            <span class="text-gray-600">Read IOPS:</span>
+                            <span id="db-read-iops" class="font-medium">--</span>
+                        </div>
+                        <div class="text-sm">
+                            <span class="text-gray-600">Read Latency:</span>
+                            <span id="db-read-latency" class="font-medium">--</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-sm">
+                            <span class="text-gray-600">Write IOPS:</span>
+                            <span id="db-write-iops" class="font-medium">--</span>
+                        </div>
+                        <div class="text-sm">
+                            <span class="text-gray-600">Write Latency:</span>
+                            <span id="db-write-latency" class="font-medium">--</span>
+                        </div>
+                    </div>
+                </div>
+                <p id="db-message" class="text-sm text-gray-500 mt-2"></p>
+            </div>
+        </div>
+
+        <!-- Application -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <span class="w-3 h-3 rounded-full mr-2" id="app-status-dot"></span>
+                Application Performance
+            </h3>
+            <div class="space-y-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <span class="text-2xl font-bold text-gray-900" id="app-requests">--</span>
+                        <p class="text-xs text-gray-500">Requests/min</p>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-2xl font-bold text-gray-900" id="app-response-time">--</span>
+                        <p class="text-xs text-gray-500">Avg Response (ms)</p>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-2xl font-bold" id="app-active-sessions">--</span>
+                        <p class="text-xs text-gray-500">Active Sessions</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                    <div class="text-sm">
+                        <span class="text-gray-600">P95 Response:</span>
+                        <span id="app-p95" class="font-medium">--</span>
+                    </div>
+                    <div class="text-sm">
+                        <span class="text-gray-600">P99 Response:</span>
+                        <span id="app-p99" class="font-medium">--</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm">
+                        <span>Error Rate</span>
+                        <span id="app-error-rate" class="font-medium">--</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div id="app-error-bar" class="bg-red-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Errors (last 5 min)</span>
+                    <span id="app-errors-5m" class="px-2 py-1 rounded text-sm font-medium">--</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Success Rate</span>
+                    <span id="app-success-rate" class="text-green-600 font-medium">--</span>
+                </div>
+                <p id="app-message" class="text-sm text-gray-500 mt-2"></p>
+            </div>
+        </div>
+
+        <!-- Cache -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <span class="w-3 h-3 rounded-full mr-2" id="cache-status-dot"></span>
+                Cache (ElastiCache Redis)
+            </h3>
+            <div id="cache-content" class="space-y-4">
+                <div id="cache-available" class="hidden">
+                    <div>
+                        <div class="flex justify-between text-sm">
+                            <span>Memory (<span id="cache-memory-used">--</span> / <span id="cache-memory-total">--</span> MB)</span>
+                            <span id="cache-memory" class="font-medium">--</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div id="cache-memory-bar" class="bg-purple-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div class="text-center">
+                            <span class="text-2xl font-bold text-green-600" id="cache-hit-rate">--</span>
+                            <p class="text-xs text-gray-500">Hit Rate</p>
+                        </div>
+                        <div class="text-center">
+                            <span class="text-2xl font-bold text-gray-900" id="cache-connections">--</span>
+                            <p class="text-xs text-gray-500">Connections</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4 pt-2 border-t border-gray-100">
+                        <div class="text-sm">
+                            <span class="text-gray-600">Total Keys:</span>
+                            <span id="cache-keys-total" class="font-medium">--</span>
+                        </div>
+                        <div class="text-sm">
+                            <span class="text-gray-600">Expiring Keys:</span>
+                            <span id="cache-keys-expiring" class="font-medium">--</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-sm text-gray-600">Evicted Keys</span>
+                        <span id="cache-evictions" class="font-medium">--</span>
+                    </div>
+                </div>
+                <div id="cache-unavailable" class="text-center py-8">
+                    <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                    </svg>
+                    <p class="text-gray-500">Cache monitoring not configured</p>
+                    <p class="text-xs text-gray-400 mt-1">ElastiCache cluster may not be available</p>
+                </div>
+            </div>
+            <p id="cache-message" class="text-sm text-gray-500 mt-2"></p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="/admin/errors" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-8 h-8 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-sm font-medium">View Error Logs</span>
+            </a>
+            <a href="/admin/tickets" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-8 h-8 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                </svg>
+                <span class="text-sm font-medium">Support Tickets</span>
+            </a>
+            <a href="/admin/financials" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-8 h-8 text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-sm font-medium">Financials</span>
+            </a>
+            <a href="https://console.aws.amazon.com/cloudwatch" target="_blank" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <svg class="w-8 h-8 text-orange-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                </svg>
+                <span class="text-sm font-medium">AWS CloudWatch</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const statusColors = {
+        'healthy': 'bg-green-500',
+        'degraded': 'bg-yellow-500',
+        'critical': 'bg-red-500',
+        'unknown': 'bg-gray-400'
+    };
+
+    const barColors = {
+        low: 'bg-green-500',
+        medium: 'bg-yellow-500',
+        high: 'bg-red-500'
+    };
+
+    const capacityColors = {
+        'at_min': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'At Minimum' },
+        'scaling': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Scaling' },
+        'optimal': { bg: 'bg-green-100', text: 'text-green-800', label: 'Optimal' },
+        'at_max': { bg: 'bg-red-100', text: 'text-red-800', label: 'At Maximum' }
+    };
+
+    let autoRefreshInterval = null;
+
+    function getBarColor(value, warningThreshold = 70, criticalThreshold = 90) {
+        if (value >= criticalThreshold) return barColors.high;
+        if (value >= warningThreshold) return barColors.medium;
+        return barColors.low;
+    }
+
+    async function loadStatus() {
+        try {
+            const response = await fetch('/api/admin/super/status', { credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Failed to fetch status');
+            const data = await response.json();
+            updateUI(data);
+        } catch (err) {
+            console.error('Error loading status:', err);
+            document.getElementById('health-summary').textContent = 'Error loading status: ' + err.message;
+        }
+    }
+
+    async function refreshStatus() {
+        const btn = document.getElementById('refresh-btn');
+        const icon = document.getElementById('refresh-icon');
+        btn.disabled = true;
+        icon.classList.add('animate-spin');
+
+        try {
+            const response = await fetch('/api/admin/super/status/refresh', {
+                method: 'POST',
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error('Failed to refresh status');
+            const data = await response.json();
+            updateUI(data);
+        } catch (err) {
+            console.error('Error refreshing status:', err);
+            alert('Failed to refresh status: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            icon.classList.remove('animate-spin');
+        }
+    }
+
+    function scrollToAlerts() {
+        document.getElementById('alerts-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateUI(data) {
+        // Update timestamp
+        document.getElementById('last-updated').textContent = 'Last updated: ' + new Date(data.last_updated).toLocaleTimeString();
+
+        // Overall health
+        document.getElementById('health-summary').textContent = data.health_summary;
+        const indicator = document.getElementById('health-indicator');
+        indicator.className = 'w-16 h-16 rounded-full flex items-center justify-center text-white ' + (statusColors[data.overall_health] || 'bg-gray-200');
+        indicator.querySelector('span').textContent = data.overall_health === 'healthy' ? '✓' : data.overall_health === 'critical' ? '!' : '⚠';
+
+        // Alert/Warning counts
+        const alertBadge = document.getElementById('alert-count');
+        const warningBadge = document.getElementById('warning-count');
+        if (data.alert_count > 0) {
+            alertBadge.textContent = data.alert_count + ' Alert' + (data.alert_count > 1 ? 's' : '');
+            alertBadge.classList.remove('hidden');
+        } else {
+            alertBadge.classList.add('hidden');
+        }
+        if (data.warning_count > 0) {
+            warningBadge.textContent = data.warning_count + ' Warning' + (data.warning_count > 1 ? 's' : '');
+            warningBadge.classList.remove('hidden');
+        } else {
+            warningBadge.classList.add('hidden');
+        }
+
+        // Alerts section
+        updateAlerts(data.alerts || []);
+
+        // ASG Section
+        updateASG(data.asg);
+
+        // Compute
+        updateStatusDot('compute-status-dot', data.compute.status);
+        document.getElementById('compute-cpu').textContent = data.compute.cpu_utilization.toFixed(1) + '%';
+        const cpuBar = document.getElementById('compute-cpu-bar');
+        cpuBar.style.width = data.compute.cpu_utilization + '%';
+        cpuBar.className = 'h-2 rounded-full transition-all duration-500 ' + getBarColor(data.compute.cpu_utilization);
+
+        document.getElementById('compute-memory').textContent = data.compute.memory_utilization.toFixed(1) + '%';
+        const memBar = document.getElementById('compute-memory-bar');
+        memBar.style.width = data.compute.memory_utilization + '%';
+        memBar.className = 'h-2 rounded-full transition-all duration-500 ' + getBarColor(data.compute.memory_utilization);
+
+        document.getElementById('compute-message').textContent = data.compute.status_message || '';
+
+        // Database
+        updateStatusDot('db-status-dot', data.database.status);
+        document.getElementById('db-cpu').textContent = data.database.cpu_utilization.toFixed(1) + '%';
+        const dbCpuBar = document.getElementById('db-cpu-bar');
+        dbCpuBar.style.width = data.database.cpu_utilization + '%';
+        dbCpuBar.className = 'h-2 rounded-full transition-all duration-500 ' + getBarColor(data.database.cpu_utilization);
+
+        document.getElementById('db-storage').textContent = data.database.storage_utilization.toFixed(1) + '%';
+        const dbStorageBar = document.getElementById('db-storage-bar');
+        dbStorageBar.style.width = data.database.storage_utilization + '%';
+        dbStorageBar.className = 'h-2 rounded-full transition-all duration-500 ' + getBarColor(data.database.storage_utilization, 75, 90);
+
+        document.getElementById('db-storage-used').textContent = data.database.storage_used_gb.toFixed(1);
+        document.getElementById('db-storage-total').textContent = data.database.storage_total_gb.toFixed(1);
+        document.getElementById('db-connections').textContent = data.database.connections_active;
+        document.getElementById('db-max-connections').textContent = data.database.connections_max || '--';
+
+        const connPct = data.database.connections_max > 0 ? (data.database.connections_active / data.database.connections_max) * 100 : 0;
+        const dbConnBar = document.getElementById('db-connections-bar');
+        dbConnBar.style.width = connPct + '%';
+        dbConnBar.className = 'h-2 rounded-full transition-all duration-500 ' + getBarColor(connPct, 60, 80);
+
+        document.getElementById('db-read-iops').textContent = (data.database.read_iops || 0).toFixed(0);
+        document.getElementById('db-write-iops').textContent = (data.database.write_iops || 0).toFixed(0);
+        document.getElementById('db-read-latency').textContent = ((data.database.read_latency_ms || 0)).toFixed(2) + 'ms';
+        document.getElementById('db-write-latency').textContent = ((data.database.write_latency_ms || 0)).toFixed(2) + 'ms';
+        document.getElementById('db-message').textContent = data.database.status_message || '';
+
+        // Application
+        updateStatusDot('app-status-dot', data.application.status);
+        document.getElementById('app-requests').textContent = data.application.requests_per_minute.toFixed(0);
+        document.getElementById('app-response-time').textContent = data.application.average_response_time_ms.toFixed(0);
+        document.getElementById('app-active-sessions').textContent = data.application.active_sessions || 0;
+        document.getElementById('app-p95').textContent = (data.application.p95_response_time_ms || 0).toFixed(0) + 'ms';
+        document.getElementById('app-p99').textContent = (data.application.p99_response_time_ms || 0).toFixed(0) + 'ms';
+
+        document.getElementById('app-error-rate').textContent = data.application.error_rate.toFixed(2) + '%';
+        const errorBar = document.getElementById('app-error-bar');
+        errorBar.style.width = Math.min(data.application.error_rate * 10, 100) + '%';
+
+        const errors5m = document.getElementById('app-errors-5m');
+        errors5m.textContent = data.application.error_count_5m;
+        errors5m.className = data.application.error_count_5m > 10 ? 'px-2 py-1 rounded text-sm font-medium bg-red-100 text-red-800' :
+                            data.application.error_count_5m > 0 ? 'px-2 py-1 rounded text-sm font-medium bg-yellow-100 text-yellow-800' :
+                            'px-2 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+
+        document.getElementById('app-success-rate').textContent = (data.application.success_rate || 0).toFixed(2) + '%';
+        document.getElementById('app-message').textContent = data.application.status_message || '';
+
+        // Cache
+        updateStatusDot('cache-status-dot', data.cache.status);
+        if (data.cache.available) {
+            document.getElementById('cache-available').classList.remove('hidden');
+            document.getElementById('cache-unavailable').classList.add('hidden');
+
+            document.getElementById('cache-memory').textContent = data.cache.memory_utilization.toFixed(1) + '%';
+            const cacheMemBar = document.getElementById('cache-memory-bar');
+            cacheMemBar.style.width = data.cache.memory_utilization + '%';
+            cacheMemBar.className = 'h-2 rounded-full transition-all duration-500 ' + getBarColor(data.cache.memory_utilization);
+
+            document.getElementById('cache-memory-used').textContent = (data.cache.memory_used_mb || 0).toFixed(1);
+            document.getElementById('cache-memory-total').textContent = (data.cache.memory_total_mb || 0).toFixed(1);
+            document.getElementById('cache-hit-rate').textContent = (data.cache.hit_rate || 0).toFixed(1) + '%';
+            document.getElementById('cache-hit-rate').className = data.cache.hit_rate >= 90 ? 'text-2xl font-bold text-green-600' :
+                                                                   data.cache.hit_rate >= 70 ? 'text-2xl font-bold text-yellow-600' :
+                                                                   'text-2xl font-bold text-red-600';
+            document.getElementById('cache-connections').textContent = data.cache.connections_active || 0;
+            document.getElementById('cache-keys-total').textContent = formatNumber(data.cache.keys_total || 0);
+            document.getElementById('cache-keys-expiring').textContent = formatNumber(data.cache.keys_expiring || 0);
+            document.getElementById('cache-evictions').textContent = formatNumber(data.cache.evicted_keys || 0);
+        } else {
+            document.getElementById('cache-available').classList.add('hidden');
+            document.getElementById('cache-unavailable').classList.remove('hidden');
+        }
+        document.getElementById('cache-message').textContent = data.cache.status_message || '';
+    }
+
+    function updateASG(asg) {
+        const section = document.getElementById('asg-section');
+        if (!asg) {
+            section.innerHTML = '<p class="text-center text-gray-500 py-8">ASG data not available</p>';
+            return;
+        }
+
+        // ASG Name
+        document.getElementById('asg-name').textContent = asg.name || 'Unknown';
+
+        // Capacity badge
+        const badge = document.getElementById('asg-capacity-badge');
+        const capColors = capacityColors[asg.capacity_status] || capacityColors.optimal;
+        badge.className = 'px-3 py-1 rounded-full text-sm font-medium ' + capColors.bg + ' ' + capColors.text;
+        badge.textContent = capColors.label;
+
+        // Capacity bar
+        const capacityPct = asg.max_size > 0 ? (asg.current_capacity / asg.max_size) * 100 : 0;
+        const minPct = asg.max_size > 0 ? (asg.min_size / asg.max_size) * 100 : 0;
+
+        document.getElementById('asg-capacity-text').textContent = asg.current_capacity + ' / ' + asg.max_size + ' instances';
+        document.getElementById('asg-capacity-bar').style.width = capacityPct + '%';
+        document.getElementById('asg-min-marker').style.left = minPct + '%';
+        document.getElementById('asg-bar-label').textContent = asg.current_capacity + ' instance' + (asg.current_capacity !== 1 ? 's' : '');
+
+        // Color the bar based on capacity status
+        const barEl = document.getElementById('asg-capacity-bar');
+        if (asg.capacity_status === 'at_max') {
+            barEl.className = 'absolute top-0 left-0 h-full bg-red-500 transition-all duration-500';
+        } else if (asg.capacity_status === 'at_min') {
+            barEl.className = 'absolute top-0 left-0 h-full bg-yellow-500 transition-all duration-500';
+        } else if (asg.capacity_status === 'scaling') {
+            barEl.className = 'absolute top-0 left-0 h-full bg-blue-500 transition-all duration-500';
+        } else {
+            barEl.className = 'absolute top-0 left-0 h-full bg-green-500 transition-all duration-500';
+        }
+
+        document.getElementById('asg-min').textContent = asg.min_size;
+        document.getElementById('asg-max').textContent = asg.max_size;
+
+        // Instance counts
+        document.getElementById('asg-in-service').textContent = asg.in_service_count;
+        document.getElementById('asg-pending').textContent = asg.pending_count;
+        document.getElementById('asg-terminating').textContent = asg.terminating_count;
+        document.getElementById('asg-headroom').textContent = (asg.scaling_headroom || 0).toFixed(0) + '%';
+
+        // Scaling policies
+        const policiesEl = document.getElementById('asg-policies');
+        if (asg.scaling_policies && asg.scaling_policies.length > 0) {
+            policiesEl.innerHTML = asg.scaling_policies.map(p => {
+                const pctOfTarget = p.target_value > 0 ? (p.current_value / p.target_value) * 100 : 0;
+                const statusColor = pctOfTarget >= 90 ? 'text-red-600' : pctOfTarget >= 70 ? 'text-yellow-600' : 'text-green-600';
+                return `
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-medium text-sm">${escapeHtml(p.policy_name)}</span>
+                            <span class="text-xs px-2 py-0.5 bg-gray-200 rounded">${escapeHtml(p.policy_type)}</span>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span class="text-xs uppercase text-gray-500">${escapeHtml(p.metric_type || 'N/A')}</span>
+                        </div>
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span>Current: <span class="${statusColor} font-medium">${p.current_value.toFixed(1)}%</span></span>
+                                <span>Target: ${p.target_value.toFixed(0)}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all duration-500 ${getBarColor(pctOfTarget, 70, 90)}" style="width: ${Math.min(pctOfTarget, 100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            policiesEl.innerHTML = '<p class="text-gray-500 text-sm">No scaling policies configured</p>';
+        }
+
+        // Instances
+        const instancesEl = document.getElementById('asg-instances');
+        if (asg.instances && asg.instances.length > 0) {
+            instancesEl.innerHTML = asg.instances.map(inst => {
+                const healthColor = inst.health_status === 'Healthy' ? 'text-green-600' : 'text-red-600';
+                const stateColor = inst.lifecycle_state === 'InService' ? 'bg-green-100 text-green-800' :
+                                   inst.lifecycle_state.includes('Pending') ? 'bg-yellow-100 text-yellow-800' :
+                                   inst.lifecycle_state.includes('Terminating') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
+
+                // Find target health for this instance
+                let targetHealthHtml = '';
+                if (asg.target_health) {
+                    const th = asg.target_health.find(t => t.instance_id === inst.instance_id);
+                    if (th) {
+                        const thColor = th.health_state === 'healthy' ? 'text-green-600' : 'text-red-600';
+                        targetHealthHtml = `<span class="text-xs ${thColor}">LB: ${th.health_state}</span>`;
+                    }
+                }
+
+                return `
+                    <div class="bg-gray-50 rounded p-2 flex items-center justify-between">
+                        <div>
+                            <span class="text-sm font-mono">${escapeHtml(inst.instance_id)}</span>
+                            <div class="text-xs text-gray-500">${escapeHtml(inst.availability_zone)}</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${targetHealthHtml}
+                            <span class="text-xs ${healthColor}">${escapeHtml(inst.health_status)}</span>
+                            <span class="px-2 py-0.5 rounded text-xs ${stateColor}">${escapeHtml(inst.lifecycle_state)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            instancesEl.innerHTML = '<p class="text-gray-500 text-sm">No instances</p>';
+        }
+
+        // Recent activities
+        const activitiesEl = document.getElementById('asg-activities');
+        if (asg.recent_activities && asg.recent_activities.length > 0) {
+            activitiesEl.innerHTML = asg.recent_activities.slice(0, 5).map(act => {
+                const statusColor = act.status_code === 'Successful' ? 'bg-green-100 text-green-800' :
+                                   act.status_code === 'Failed' ? 'bg-red-100 text-red-800' :
+                                   'bg-blue-100 text-blue-800';
+                return `
+                    <div class="bg-gray-50 rounded p-2 text-sm">
+                        <div class="flex justify-between items-start">
+                            <span class="font-medium">${escapeHtml(act.description)}</span>
+                            <span class="px-2 py-0.5 rounded text-xs ${statusColor}">${escapeHtml(act.status_code)}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${formatTime(act.start_time)}</div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            activitiesEl.innerHTML = '<p class="text-gray-500 text-sm">No recent activity</p>';
+        }
+    }
+
+    function updateAlerts(alerts) {
+        const section = document.getElementById('alerts-section');
+        const list = document.getElementById('alerts-list');
+
+        if (!alerts || alerts.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+
+        section.classList.remove('hidden');
+        list.innerHTML = '';
+
+        // Sort alerts by severity (critical first)
+        const severityOrder = { 'critical': 0, 'degraded': 1, 'healthy': 2 };
+        alerts.sort((a, b) => (severityOrder[a.severity] || 3) - (severityOrder[b.severity] || 3));
+
+        alerts.forEach(alert => {
+            const severityColors = {
+                'critical': { bg: 'bg-red-50', border: 'border-red-200', icon: 'text-red-500', badge: 'bg-red-100 text-red-800' },
+                'degraded': { bg: 'bg-yellow-50', border: 'border-yellow-200', icon: 'text-yellow-500', badge: 'bg-yellow-100 text-yellow-800' },
+                'healthy': { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-500', badge: 'bg-blue-100 text-blue-800' }
+            };
+            const colors = severityColors[alert.severity] || severityColors.healthy;
+
+            const html = `
+                <div class="p-4 ${colors.bg} border-l-4 ${colors.border}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 ${colors.icon} mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                ${alert.severity === 'critical' ?
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>' :
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                                }
+                            </svg>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-semibold text-gray-900">${escapeHtml(alert.title)}</h4>
+                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full ${colors.badge}">${alert.component}</span>
+                                </div>
+                                <p class="text-sm text-gray-700">${escapeHtml(alert.description)}</p>
+                                <div class="mt-2 flex flex-wrap gap-4 text-xs">
+                                    <span class="text-gray-600">
+                                        <strong>Current:</strong> ${escapeHtml(alert.current_value)}
+                                    </span>
+                                    <span class="text-gray-600">
+                                        <strong>Threshold:</strong> ${escapeHtml(alert.threshold)}
+                                    </span>
+                                </div>
+                                <div class="mt-3 p-3 bg-white rounded border border-gray-200">
+                                    <p class="text-sm font-medium text-gray-900 mb-1">Recommended Action:</p>
+                                    <pre class="text-sm text-gray-700 whitespace-pre-wrap">${escapeHtml(alert.recommendation)}</pre>
+                                    ${alert.documentation_url ? `
+                                        <a href="${escapeHtml(alert.documentation_url)}" target="_blank" class="inline-flex items-center mt-2 text-sm text-indigo-600 hover:text-indigo-800">
+                                            View Documentation
+                                            <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                            </svg>
+                                        </a>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-500 ml-4 flex-shrink-0">${formatTime(alert.detected_at)}</span>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    function updateStatusDot(id, status) {
+        const dot = document.getElementById(id);
+        dot.className = 'w-3 h-3 rounded-full mr-2 ' + (statusColors[status] || 'bg-gray-400');
+    }
+
+    function formatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toString();
+    }
+
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function setupAutoRefresh() {
+        const checkbox = document.getElementById('auto-refresh');
+
+        if (checkbox.checked) {
+            autoRefreshInterval = setInterval(loadStatus, 30000);
+        }
+
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                autoRefreshInterval = setInterval(loadStatus, 30000);
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+            }
+        });
+    }
+
+    // Load on page load and setup auto-refresh
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStatus();
+        setupAutoRefresh();
+    });
+</script>
+{{end}}

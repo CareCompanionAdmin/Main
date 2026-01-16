@@ -338,7 +338,9 @@ type Repositories struct {
 	Cohort       CohortRepository
 	Chat         ChatRepository
 	Transparency *TransparencyRepository
-	Admin        AdminRepository // Admin portal (PHI-isolated)
+	Admin        AdminRepository       // Admin portal (PHI-isolated)
+	UserSupport  UserSupportRepository // User-facing support tickets
+	Marketing    MarketingRepository   // Marketing materials center
 }
 
 // NewRepositories creates all repository implementations
@@ -356,5 +358,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Chat:         NewChatRepo(db),
 		Transparency: NewTransparencyRepository(db),
 		Admin:        NewAdminRepo(db),
+		UserSupport:  NewUserSupportRepo(db),
+		Marketing:    NewMarketingRepo(db),
 	}
 }

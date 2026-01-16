@@ -1,0 +1,416 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Error Logs</h1>
+            <p class="text-sm text-gray-500 mt-1">Showing errors from logged-in users and infrastructure by default</p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <select id="filter-source" class="border rounded px-3 py-2" onchange="loadErrors()">
+                <option value="">User & Infrastructure (Default)</option>
+                <option value="user">User Errors Only</option>
+                <option value="infrastructure">Infrastructure Only</option>
+                <option value="all">All Sources (Include Noise)</option>
+                <option value="scanner">Scanner Probes</option>
+                <option value="anonymous">Anonymous Users</option>
+            </select>
+            <select id="filter-type" class="border rounded px-3 py-2" onchange="loadErrors()">
+                <option value="">All Types</option>
+                <option value="server_error">Server Errors</option>
+                <option value="client_error">Client Errors</option>
+                <option value="validation_error">Validation Errors</option>
+                <option value="auth_error">Auth Errors</option>
+            </select>
+            <select id="filter-acknowledged" class="border rounded px-3 py-2" onchange="loadErrors()">
+                <option value="">All Status</option>
+                <option value="false">Unacknowledged</option>
+                <option value="true">Acknowledged</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Source Stats -->
+    <div id="source-stats" class="grid grid-cols-5 gap-4">
+        <div class="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-blue-50" onclick="filterBySource('user')">
+            <div class="text-2xl font-bold text-blue-600" id="count-user">0</div>
+            <div class="text-sm text-gray-500">User Errors</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-red-50" onclick="filterBySource('infrastructure')">
+            <div class="text-2xl font-bold text-red-600" id="count-infrastructure">0</div>
+            <div class="text-sm text-gray-500">Infrastructure</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-yellow-50" onclick="filterBySource('anonymous')">
+            <div class="text-2xl font-bold text-yellow-600" id="count-anonymous">0</div>
+            <div class="text-sm text-gray-500">Anonymous</div>
+            <div class="text-xs text-gray-400">Auto-delete: 30 days</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-gray-50" onclick="filterBySource('scanner')">
+            <div class="text-2xl font-bold text-gray-400" id="count-scanner">0</div>
+            <div class="text-sm text-gray-500">Scanner Noise</div>
+            <div class="text-xs text-gray-400">Auto-delete: 7 days</div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-purple-50" onclick="filterBySource('unknown')">
+            <div class="text-2xl font-bold text-purple-600" id="count-unknown">0</div>
+            <div class="text-sm text-gray-500">Unknown</div>
+            <div class="text-xs text-gray-400">Auto-delete: 30 days</div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div id="bulk-actions" class="hidden bg-indigo-50 p-4 rounded-lg flex items-center justify-between">
+        <span><span id="selected-count">0</span> items selected</span>
+        <div class="space-x-2">
+            <button onclick="bulkAcknowledge()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                Acknowledge Selected
+            </button>
+            <button onclick="bulkDelete()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                Delete Selected
+            </button>
+            <button onclick="clearSelection()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                Clear Selection
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Logs Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">
+                        <input type="checkbox" id="select-all" onchange="toggleSelectAll()">
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Path</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="errors-tbody" class="bg-white divide-y divide-gray-200">
+                <tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-between items-center">
+        <span id="showing-text" class="text-sm text-gray-500">Showing 0 of 0</span>
+        <div class="space-x-2">
+            <button id="prev-btn" onclick="prevPage()" class="px-4 py-2 border rounded disabled:opacity-50" disabled>Previous</button>
+            <button id="next-btn" onclick="nextPage()" class="px-4 py-2 border rounded disabled:opacity-50" disabled>Next</button>
+        </div>
+    </div>
+</div>
+
+<!-- Error Detail Modal -->
+<div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="fixed inset-4 md:inset-20 bg-white rounded-lg shadow-xl overflow-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-xl font-bold">Error Details</h2>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Acknowledge Modal -->
+<div id="ack-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="fixed inset-x-4 top-1/4 md:inset-x-1/3 bg-white rounded-lg shadow-xl p-6">
+        <h2 class="text-xl font-bold mb-4">Acknowledge Error</h2>
+        <input type="hidden" id="ack-error-id">
+        <textarea id="ack-notes" class="w-full border rounded p-2 h-24" placeholder="Notes (optional)"></textarea>
+        <div class="flex justify-end space-x-2 mt-4">
+            <button onclick="closeAckModal()" class="px-4 py-2 border rounded">Cancel</button>
+            <button onclick="submitAcknowledge()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Acknowledge</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    const limit = 25;
+    let totalErrors = 0;
+    let selectedIds = new Set();
+
+    const sourceColors = {
+        'user': 'bg-blue-100 text-blue-800',
+        'infrastructure': 'bg-red-100 text-red-800',
+        'scanner': 'bg-gray-100 text-gray-600',
+        'anonymous': 'bg-yellow-100 text-yellow-800',
+        'unknown': 'bg-purple-100 text-purple-800'
+    };
+
+    const sourceLabels = {
+        'user': 'User',
+        'infrastructure': 'Infra',
+        'scanner': 'Scanner',
+        'anonymous': 'Anon',
+        'unknown': 'Unknown'
+    };
+
+    function filterBySource(source) {
+        document.getElementById('filter-source').value = source;
+        loadErrors();
+    }
+
+    async function loadErrors() {
+        const sourceFilter = document.getElementById('filter-source').value;
+        const type = document.getElementById('filter-type').value;
+        const ack = document.getElementById('filter-acknowledged').value;
+
+        let url = `/api/admin/super/errors?page=${currentPage}&limit=${limit}`;
+
+        // Handle source filtering
+        if (sourceFilter === 'all') {
+            url += '&include_noise=true';
+        } else if (sourceFilter) {
+            url += `&source=${sourceFilter}`;
+        }
+        // If sourceFilter is empty, use default (user + infrastructure)
+
+        if (type) url += `&error_type=${type}`;
+        if (ack !== '') url += `&acknowledged=${ack}`;
+
+        try {
+            const response = await fetch(url, { credentials: 'same-origin' });
+            const data = await response.json();
+            totalErrors = data.total;
+            renderErrors(data.logs || []);
+            updatePagination();
+            updateSourceCounts(data.source_counts || {});
+        } catch (err) {
+            console.error('Error loading errors:', err);
+            document.getElementById('errors-tbody').innerHTML =
+                '<tr><td colspan="8" class="px-4 py-8 text-center text-red-500">Failed to load errors</td></tr>';
+        }
+    }
+
+    function updateSourceCounts(counts) {
+        document.getElementById('count-user').textContent = counts.user || 0;
+        document.getElementById('count-infrastructure').textContent = counts.infrastructure || 0;
+        document.getElementById('count-scanner').textContent = counts.scanner || 0;
+        document.getElementById('count-anonymous').textContent = counts.anonymous || 0;
+        document.getElementById('count-unknown').textContent = counts.unknown || 0;
+    }
+
+    function renderErrors(errors) {
+        const tbody = document.getElementById('errors-tbody');
+        if (!errors || errors.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">No errors found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = errors.map(e => {
+            const statusClass = e.status_code >= 500 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800';
+            const sourceClass = sourceColors[e.error_source] || 'bg-gray-100 text-gray-800';
+            const sourceLabel = sourceLabels[e.error_source] || e.error_source;
+            const truncatedMsg = e.message && e.message.length > 50 ? e.message.substring(0, 50) + '...' : (e.message || '');
+            const time = new Date(e.created_at).toLocaleString();
+            const rowClass = e.is_noise ? 'bg-gray-50 opacity-75' : (e.acknowledged_at ? 'bg-green-50' : '');
+
+            return `
+                <tr class="${rowClass}">
+                    <td class="px-4 py-3">
+                        <input type="checkbox" value="${e.id}" onchange="toggleSelect('${e.id}')" ${selectedIds.has(e.id) ? 'checked' : ''}>
+                    </td>
+                    <td class="px-4 py-3 text-sm">${time}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 text-xs rounded ${sourceClass}">${sourceLabel}</span>
+                        ${e.user_email ? `<div class="text-xs text-gray-500 mt-1">${e.user_email}</div>` : ''}
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 text-xs rounded ${statusClass}">${e.error_type}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="${statusClass} px-2 py-1 rounded text-xs">${e.status_code}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm font-mono text-xs">${e.method} ${e.path}</td>
+                    <td class="px-4 py-3 text-sm" title="${e.message || ''}">${truncatedMsg}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex space-x-2">
+                            <button onclick="viewError('${e.id}')" class="text-blue-600 hover:text-blue-800 text-sm">View</button>
+                            ${!e.acknowledged_at ? `<button onclick="showAckModal('${e.id}')" class="text-green-600 hover:text-green-800 text-sm">Ack</button>` : ''}
+                            <button onclick="createTicket('${e.id}')" class="text-purple-600 hover:text-purple-800 text-sm">Ticket</button>
+                            <button onclick="deleteError('${e.id}')" class="text-red-600 hover:text-red-800 text-sm">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function updatePagination() {
+        const start = (currentPage - 1) * limit + 1;
+        const end = Math.min(currentPage * limit, totalErrors);
+        document.getElementById('showing-text').textContent = `Showing ${totalErrors > 0 ? start : 0}-${end} of ${totalErrors}`;
+        document.getElementById('prev-btn').disabled = currentPage <= 1;
+        document.getElementById('next-btn').disabled = currentPage * limit >= totalErrors;
+    }
+
+    function prevPage() { currentPage--; loadErrors(); }
+    function nextPage() { currentPage++; loadErrors(); }
+
+    function toggleSelect(id) {
+        if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+        } else {
+            selectedIds.add(id);
+        }
+        updateBulkActions();
+    }
+
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('#errors-tbody input[type="checkbox"]');
+        const selectAll = document.getElementById('select-all').checked;
+        checkboxes.forEach(cb => {
+            if (selectAll) selectedIds.add(cb.value);
+            else selectedIds.delete(cb.value);
+            cb.checked = selectAll;
+        });
+        updateBulkActions();
+    }
+
+    function clearSelection() {
+        selectedIds.clear();
+        document.querySelectorAll('#errors-tbody input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.getElementById('select-all').checked = false;
+        updateBulkActions();
+    }
+
+    function updateBulkActions() {
+        const bulkDiv = document.getElementById('bulk-actions');
+        document.getElementById('selected-count').textContent = selectedIds.size;
+        if (selectedIds.size > 0) {
+            bulkDiv.classList.remove('hidden');
+        } else {
+            bulkDiv.classList.add('hidden');
+        }
+    }
+
+    async function viewError(id) {
+        try {
+            const response = await fetch(`/api/admin/super/errors/${id}`, { credentials: 'same-origin' });
+            const error = await response.json();
+
+            const sourceClass = sourceColors[error.error_source] || 'bg-gray-100 text-gray-800';
+            const sourceLabel = sourceLabels[error.error_source] || error.error_source;
+
+            document.getElementById('modal-content').innerHTML = `
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><strong>Type:</strong> ${error.error_type}</div>
+                    <div><strong>Status Code:</strong> ${error.status_code}</div>
+                    <div><strong>Method:</strong> ${error.method}</div>
+                    <div><strong>Path:</strong> ${error.path}</div>
+                    <div><strong>Time:</strong> ${new Date(error.created_at).toLocaleString()}</div>
+                    <div><strong>Request ID:</strong> ${error.request_id || 'N/A'}</div>
+                    <div><strong>User:</strong> ${error.user_email || 'Anonymous'}</div>
+                    <div><strong>IP:</strong> ${error.ip_address || 'N/A'}</div>
+                    <div><strong>Source:</strong> <span class="px-2 py-1 text-xs rounded ${sourceClass}">${sourceLabel}</span></div>
+                    <div><strong>Is Noise:</strong> ${error.is_noise ? 'Yes' : 'No'}</div>
+                </div>
+                ${error.auto_delete_at ? `
+                <div class="bg-yellow-50 p-3 rounded mb-4">
+                    <strong>Scheduled for auto-deletion:</strong> ${new Date(error.auto_delete_at).toLocaleString()}
+                </div>
+                ` : ''}
+                <div class="mb-4">
+                    <strong>Message:</strong>
+                    <div class="bg-gray-100 p-3 rounded mt-1 font-mono text-sm">${error.message || 'No message'}</div>
+                </div>
+                ${error.stack_trace ? `
+                <div class="mb-4">
+                    <strong>Stack Trace:</strong>
+                    <pre class="bg-gray-900 text-green-400 p-3 rounded mt-1 text-xs overflow-auto max-h-64">${error.stack_trace}</pre>
+                </div>
+                ` : ''}
+                ${error.acknowledged_at ? `
+                <div class="bg-green-50 p-3 rounded mt-4">
+                    <strong>Acknowledged:</strong> ${new Date(error.acknowledged_at).toLocaleString()} by ${error.acknowledged_by_name || error.acknowledged_by_email}
+                    ${error.acknowledged_notes ? `<div class="mt-2 text-sm">${error.acknowledged_notes}</div>` : ''}
+                </div>
+                ` : ''}
+            `;
+            document.getElementById('error-modal').classList.remove('hidden');
+        } catch (err) {
+            alert('Failed to load error details');
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('error-modal').classList.add('hidden');
+    }
+
+    function showAckModal(id) {
+        document.getElementById('ack-error-id').value = id;
+        document.getElementById('ack-notes').value = '';
+        document.getElementById('ack-modal').classList.remove('hidden');
+    }
+
+    function closeAckModal() {
+        document.getElementById('ack-modal').classList.add('hidden');
+    }
+
+    async function submitAcknowledge() {
+        const id = document.getElementById('ack-error-id').value;
+        const notes = document.getElementById('ack-notes').value;
+
+        try {
+            await apiCall('POST', `/api/admin/super/errors/${id}/acknowledge`, { notes });
+            closeAckModal();
+            loadErrors();
+        } catch (err) {}
+    }
+
+    async function bulkAcknowledge() {
+        const notes = prompt('Enter notes for acknowledgement (optional):');
+        if (notes === null) return;
+
+        try {
+            await apiCall('POST', '/api/admin/super/errors/acknowledge-bulk', {
+                ids: Array.from(selectedIds),
+                notes
+            });
+            clearSelection();
+            loadErrors();
+        } catch (err) {}
+    }
+
+    async function deleteError(id) {
+        if (!confirm('Are you sure you want to delete this error?')) return;
+        try {
+            await apiCall('DELETE', `/api/admin/super/errors/${id}`, null);
+            loadErrors();
+        } catch (err) {}
+    }
+
+    async function bulkDelete() {
+        if (!confirm(`Are you sure you want to delete ${selectedIds.size} errors?`)) return;
+        try {
+            await apiCall('POST', '/api/admin/super/errors/delete-bulk', {
+                ids: Array.from(selectedIds)
+            });
+            clearSelection();
+            loadErrors();
+        } catch (err) {}
+    }
+
+    async function createTicket(id) {
+        const priority = prompt('Priority (low, normal, high, urgent):', 'normal');
+        if (!priority) return;
+
+        try {
+            const result = await apiCall('POST', `/api/admin/super/errors/${id}/create-ticket`, { priority });
+            alert('Ticket created: ' + result.id);
+            loadErrors();
+        } catch (err) {}
+    }
+
+    document.addEventListener('DOMContentLoaded', loadErrors);
+</script>
+{{end}}

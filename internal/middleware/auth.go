@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 
@@ -28,12 +29,25 @@ const (
 func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Debug: Log all cookies for API routes (only for admin API paths)
+			if strings.HasPrefix(r.URL.Path, "/api/admin") {
+				cookies := r.Cookies()
+				log.Printf("Auth debug [%s]: %d cookies received, X-Forwarded-Proto=%s",
+					r.URL.Path, len(cookies), r.Header.Get("X-Forwarded-Proto"))
+				for _, c := range cookies {
+					log.Printf("  Cookie: %s (len=%d)", c.Name, len(c.Value))
+				}
+			}
+
 			// Get token from header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				// Try cookie for web requests
 				cookie, err := r.Cookie("access_token")
 				if err != nil {
+					if strings.HasPrefix(r.URL.Path, "/api/admin") {
+						log.Printf("Auth debug [%s]: No access_token cookie found, err=%v", r.URL.Path, err)
+					}
 					http.Error(w, "Unauthorized", http.StatusUnauthorized)
 					return
 				}
@@ -50,6 +64,9 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 			// Validate token
 			claims, err := authService.ValidateToken(parts[1])
 			if err != nil {
+				if strings.HasPrefix(r.URL.Path, "/api/admin") {
+					log.Printf("Auth debug [%s]: Token validation failed: %v", r.URL.Path, err)
+				}
 				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 				return
 			}

@@ -293,6 +293,17 @@ func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) GetOpenTicketCount(w http.ResponseWriter, r *http.Request) {
+	count, err := h.adminRepo.GetOpenTicketCount(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to get ticket count: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	respondJSON(w, map[string]interface{}{
+		"open_count": count,
+	})
+}
+
 type CreateTicketRequest struct {
 	UserID      string `json:"user_id,omitempty"`
 	Subject     string `json:"subject"`

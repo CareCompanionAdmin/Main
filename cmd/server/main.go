@@ -113,10 +113,20 @@ func main() {
 		if err != nil {
 			log.Printf("Warning: Failed to initialize CloudWatch service: %v", err)
 		} else {
+			// Configure ALB for target health monitoring (full ARNs required for ELB API)
+			cwService.SetALBConfig(
+				"app/carecompanion-alb/ec4daecf3b14c818",                                                                        // ALB suffix for CloudWatch metrics
+				"arn:aws:elasticloadbalancing:us-east-1:943431294725:targetgroup/carecompanion-tg/bade3e56ae036ce7",             // Full Target group ARN for ELB API
+			)
 			adminHandler.SetCloudWatchService(cwService)
 			log.Println("CloudWatch service initialized for metrics collection")
 		}
 	}
+
+	// Initialize Marketing service for material generation
+	marketingService := service.NewMarketingService(repos.Marketing, "static/marketing")
+	adminHandler.SetMarketingService(marketingService)
+	log.Println("Marketing service initialized")
 
 	r.Route("/api/admin", func(r chi.Router) {
 		r.Use(middleware.ContentTypeJSON)

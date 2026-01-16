@@ -42,6 +42,39 @@ var templateFuncs = template.FuncMap{
 	"float64": func(i int) float64 {
 		return float64(i)
 	},
+	"join": func(items []string, sep string) string {
+		if items == nil {
+			return ""
+		}
+		result := ""
+		for i, item := range items {
+			if i > 0 {
+				result += sep
+			}
+			result += item
+		}
+		return result
+	},
+	"formatDateTime": func(t interface{}) string {
+		if t == nil {
+			return ""
+		}
+		// Handle time.Time
+		if tm, ok := t.(time.Time); ok {
+			if tm.IsZero() {
+				return ""
+			}
+			return tm.Format("2006-01-02T15:04")
+		}
+		// Handle *time.Time
+		if tm, ok := t.(*time.Time); ok {
+			if tm == nil || tm.IsZero() {
+				return ""
+			}
+			return tm.Format("2006-01-02T15:04")
+		}
+		return ""
+	},
 }
 
 // parseTemplates loads admin templates with custom functions
@@ -95,12 +128,14 @@ func (h *Handler) AdminLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set cookie - use "/" path to cover both /admin UI and /api/admin API routes
+	// Check if request is over HTTPS (direct TLS or via proxy like CloudFront/ALB)
+	isSecure := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    tokens.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
+		Secure:   isSecure,
 		SameSite: http.SameSiteLaxMode,
 		Expires:  time.Now().Add(15 * time.Minute),
 	})
@@ -355,5 +390,198 @@ func (h *Handler) MarketingDashboardPage(w http.ResponseWriter, r *http.Request)
 		Title:       "Marketing Dashboard",
 		CurrentUser: currentUser,
 		Data:        metrics,
+	})
+}
+
+// MaterialsPage renders the marketing materials center page
+func (h *Handler) MaterialsPage(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	currentUser := AdminUser{
+		ID:         claims.UserID,
+		Email:      claims.Email,
+		FirstName:  claims.FirstName,
+		SystemRole: string(claims.SystemRole),
+	}
+
+	tmpl, err := parseTemplates("layout.html", "marketing_materials.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
+		Title:       "Marketing Materials",
+		CurrentUser: currentUser,
+	})
+}
+
+// StatusPage renders the infrastructure status page
+func (h *Handler) StatusPage(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	currentUser := AdminUser{
+		ID:         claims.UserID,
+		Email:      claims.Email,
+		FirstName:  claims.FirstName,
+		SystemRole: string(claims.SystemRole),
+	}
+
+	tmpl, err := parseTemplates("layout.html", "status.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
+		Title:       "Infrastructure Status",
+		CurrentUser: currentUser,
+	})
+}
+
+// ErrorsPage renders the error logs page
+func (h *Handler) ErrorsPage(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	currentUser := AdminUser{
+		ID:         claims.UserID,
+		Email:      claims.Email,
+		FirstName:  claims.FirstName,
+		SystemRole: string(claims.SystemRole),
+	}
+
+	tmpl, err := parseTemplates("layout.html", "errors.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
+		Title:       "Error Logs",
+		CurrentUser: currentUser,
+	})
+}
+
+// FinancialsPage renders the financials dashboard page
+func (h *Handler) FinancialsPage(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	currentUser := AdminUser{
+		ID:         claims.UserID,
+		Email:      claims.Email,
+		FirstName:  claims.FirstName,
+		SystemRole: string(claims.SystemRole),
+	}
+
+	tmpl, err := parseTemplates("layout.html", "financials.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
+		Title:       "Financials",
+		CurrentUser: currentUser,
+	})
+}
+
+// PromoCodesPage renders the promo codes list page
+func (h *Handler) PromoCodesPage(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	currentUser := AdminUser{
+		ID:         claims.UserID,
+		Email:      claims.Email,
+		FirstName:  claims.FirstName,
+		SystemRole: string(claims.SystemRole),
+	}
+
+	// Get subscription plans for display/filtering
+	plans, _ := h.adminRepo.ListSubscriptionPlans(r.Context(), true)
+
+	tmpl, err := parseTemplates("layout.html", "promo_codes.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
+		Title:       "Promo Codes",
+		CurrentUser: currentUser,
+		Data: map[string]interface{}{
+			"plans": plans,
+		},
+	})
+}
+
+// PromoCodeNewPage renders the new promo code form page
+func (h *Handler) PromoCodeNewPage(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	currentUser := AdminUser{
+		ID:         claims.UserID,
+		Email:      claims.Email,
+		FirstName:  claims.FirstName,
+		SystemRole: string(claims.SystemRole),
+	}
+
+	// Get subscription plans for the form
+	plans, _ := h.adminRepo.ListSubscriptionPlans(r.Context(), true)
+
+	tmpl, err := parseTemplates("layout.html", "promo_code_form.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
+		Title:       "Create Promo Code",
+		CurrentUser: currentUser,
+		Data: map[string]interface{}{
+			"plans":  plans,
+			"isNew":  true,
+			"action": "/api/admin/super/promo-codes",
+		},
+	})
+}
+
+// PromoCodeEditPage renders the edit promo code form page
+func (h *Handler) PromoCodeEditPage(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	currentUser := AdminUser{
+		ID:         claims.UserID,
+		Email:      claims.Email,
+		FirstName:  claims.FirstName,
+		SystemRole: string(claims.SystemRole),
+	}
+
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid promo code ID", http.StatusBadRequest)
+		return
+	}
+
+	promo, err := h.adminRepo.GetPromoCodeByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Failed to fetch promo code: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if promo == nil {
+		http.Error(w, "Promo code not found", http.StatusNotFound)
+		return
+	}
+
+	// Get subscription plans for the form
+	plans, _ := h.adminRepo.ListSubscriptionPlans(r.Context(), true)
+
+	tmpl, err := parseTemplates("layout.html", "promo_code_form.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
+		Title:       "Edit Promo Code",
+		CurrentUser: currentUser,
+		Data: map[string]interface{}{
+			"promo":  promo,
+			"plans":  plans,
+			"isNew":  false,
+			"action": "/api/admin/super/promo-codes/" + id.String(),
+		},
 	})
 }

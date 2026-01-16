@@ -24,6 +24,7 @@ type Services struct {
 	AlertIntelligence *AlertIntelligenceService
 	RealtimeDetection *RealtimeDetectionService
 	Transparency      *TransparencyService
+	UserSupport       *UserSupportService
 }
 
 // NewServices creates all services with their dependencies
@@ -52,5 +53,6 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		AlertIntelligence: NewAlertIntelligenceService(repos.Alert, repos.Correlation, repos.Insight),
 		RealtimeDetection: NewRealtimeDetectionService(repos.Correlation, repos.Alert, repos.Child, repos.Medication, alertService),
 		Transparency:      transparencyService,
+		UserSupport:       NewUserSupportService(repos.UserSupport),
 	}
 }

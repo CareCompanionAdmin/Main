@@ -441,3 +441,27 @@ func (h *WebHandlers) Chat(w http.ResponseWriter, r *http.Request) {
 
 	renderTemplate(w, "chat", data)
 }
+
+// Support renders the support ticket page
+func (h *WebHandlers) Support(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	firstName := middleware.GetFirstName(r.Context())
+
+	// Get user's tickets
+	tickets, err := h.services.UserSupport.GetTickets(r.Context(), userID)
+	if err != nil {
+		tickets = nil
+	}
+
+	// Check for unread messages
+	hasUnread, _ := h.services.UserSupport.HasUnreadSupportMessages(r.Context(), userID)
+
+	data := map[string]interface{}{
+		"UserID":    userID,
+		"FirstName": firstName,
+		"Tickets":   tickets,
+		"HasUnread": hasUnread,
+	}
+
+	renderTemplate(w, "support", data)
+}
