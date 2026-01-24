@@ -128,6 +128,19 @@ func main() {
 	adminHandler.SetMarketingService(marketingService)
 	log.Println("Marketing service initialized")
 
+	// Initialize Development Mode service for SSH access control
+	// The SSH key can be provided via:
+	// 1. SSH_PRIVATE_KEY environment variable (recommended for production)
+	// 2. A file path passed as the 4th argument
+	devModeService := service.NewDevModeService(
+		repos.DevMode,
+		"sg-0dcbf363b7127e05d", // Security Group ID
+		"us-east-1",            // AWS Region
+		"",                     // PEM key path - empty means use SSH_PRIVATE_KEY env var
+	)
+	adminHandler.SetDevModeService(devModeService)
+	log.Println("Development Mode service initialized")
+
 	r.Route("/api/admin", func(r chi.Router) {
 		r.Use(middleware.ContentTypeJSON)
 		r.Mount("/", adminHandler.Routes())

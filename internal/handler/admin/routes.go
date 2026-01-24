@@ -85,6 +85,14 @@ func (h *Handler) Routes() chi.Router {
 		r.Put("/promo-codes/{id}", h.UpdatePromoCode)
 		r.Post("/promo-codes/{id}/deactivate", h.DeactivatePromoCode)
 		r.Get("/promo-codes/{id}/usages", h.GetPromoCodeUsages)
+
+		// Development Mode (SSH access control)
+		r.Post("/dev-mode/toggle", h.DevModeToggle)
+		r.Post("/dev-mode/kill-session", h.DevModeKillSession)
+		r.Get("/dev-mode/sessions", h.DevModeSessions)
+		r.Get("/dev-mode/pem-key", h.DevModeGetPEMKey)
+		r.Get("/dev-mode/pem-download", h.DevModeDownloadPEM)
+		r.Get("/dev-mode/ppk-download", h.DevModeDownloadPPK)
 	})
 
 	// Support routes
@@ -174,6 +182,9 @@ func (h *Handler) UIRoutes() chi.Router {
 			// Promo code create/edit (super_admin only)
 			r.Get("/promo-codes/new", h.PromoCodeNewPage)
 			r.Get("/promo-codes/{id}/edit", h.PromoCodeEditPage)
+
+			// Development Mode page
+			r.Get("/development", h.DevelopmentPage)
 		})
 
 		// Support pages

@@ -26,7 +26,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 FROM alpine:3.19
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata
+# - aws-cli: For managing security group rules in dev mode
+# - putty: For converting PEM to PPK format
+# - curl: For fetching EC2 instance metadata
+RUN apk add --no-cache ca-certificates tzdata aws-cli putty curl
 
 # Create non-root user
 RUN addgroup -g 1001 -S carecompanion && \

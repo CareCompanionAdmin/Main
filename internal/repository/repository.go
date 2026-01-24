@@ -341,6 +341,7 @@ type Repositories struct {
 	Admin        AdminRepository       // Admin portal (PHI-isolated)
 	UserSupport  UserSupportRepository // User-facing support tickets
 	Marketing    MarketingRepository   // Marketing materials center
+	DevMode      DevModeRepository     // Development mode SSH control
 }
 
 // NewRepositories creates all repository implementations
@@ -360,5 +361,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Admin:        NewAdminRepo(db),
 		UserSupport:  NewUserSupportRepo(db),
 		Marketing:    NewMarketingRepo(db),
+		DevMode:      NewDevModeRepo(db),
 	}
 }

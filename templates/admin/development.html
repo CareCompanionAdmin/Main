@@ -1,0 +1,341 @@
+{{define "content"}}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Development Mode</h1>
+            <p class="text-gray-500">Control SSH access to infrastructure servers</p>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {{if .SuccessMsg}}
+    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+        {{.SuccessMsg}}
+    </div>
+    {{end}}
+
+    {{if .ErrorMsg}}
+    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        {{.ErrorMsg}}
+    </div>
+    {{end}}
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Status Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Current Status</h2>
+
+            {{if .Status}}
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                    {{if .Status.IsEnabled}}
+                    <span class="flex h-4 w-4 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+                    </span>
+                    <span class="text-lg font-medium text-green-600">Development Mode ENABLED</span>
+                    {{else}}
+                    <span class="inline-flex rounded-full h-4 w-4 bg-gray-400"></span>
+                    <span class="text-lg font-medium text-gray-600">Development Mode Disabled</span>
+                    {{end}}
+                </div>
+
+                {{if .Status.IsEnabled}}
+                <div class="bg-green-50 rounded-lg p-4 space-y-2">
+                    <p class="text-sm">
+                        <span class="font-medium text-gray-700">Allowed IP:</span>
+                        <span class="text-green-700 font-mono">{{.Status.AllowedIP}}</span>
+                    </p>
+                    {{if .Status.EnabledBy}}
+                    <p class="text-sm">
+                        <span class="font-medium text-gray-700">Enabled by:</span>
+                        <span class="text-gray-600">{{.Status.EnabledBy}}</span>
+                    </p>
+                    {{end}}
+                    {{if .Status.EnabledAt}}
+                    <p class="text-sm">
+                        <span class="font-medium text-gray-700">Since:</span>
+                        <span class="text-gray-600">{{.Status.EnabledAt}}</span>
+                    </p>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <p class="text-gray-500">Unable to retrieve status</p>
+            {{end}}
+        </div>
+
+        <!-- Configuration Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Configuration</h2>
+
+            {{if and .Status .Status.IsEnabled}}
+            <!-- Disable Form -->
+            <form action="/api/admin/super/dev-mode/toggle" method="POST" onsubmit="return confirm('Are you sure you want to disable development mode? This will terminate all SSH sessions.')">
+                <input type="hidden" name="action" value="disable">
+                <p class="text-sm text-gray-600 mb-4">
+                    Development mode is currently active. Disabling will revoke SSH access and terminate all active sessions.
+                </p>
+                <button type="submit" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                    Disable Development Mode
+                </button>
+            </form>
+            {{else}}
+            <!-- Enable Form -->
+            <form action="/api/admin/super/dev-mode/toggle" method="POST">
+                <input type="hidden" name="action" value="enable">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">IP Address to Allow</label>
+                        <input type="text" name="allowed_ip"
+                               placeholder="e.g., 203.0.113.50"
+                               pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                               required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-xs text-gray-500 mt-1">Enter your public IP address. This IP will be granted SSH access.</p>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                        Enable Development Mode
+                    </button>
+                </div>
+            </form>
+            {{end}}
+        </div>
+
+        <!-- SSH Key Access Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">SSH Key Access</h2>
+
+            {{if .HasPEMKey}}
+            <div class="space-y-4">
+                <p class="text-sm text-gray-600">
+                    Download the SSH private key to connect to the servers.
+                </p>
+
+                {{if .InstanceIP}}
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-sm font-medium text-gray-700">Server IP:</p>
+                    <code class="text-sm font-mono text-indigo-600">{{.InstanceIP}}</code>
+                </div>
+                {{end}}
+
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-sm font-medium text-gray-700 mb-2">SSH Command:</p>
+                    <code class="text-xs font-mono text-gray-600 break-all">ssh -i carecompanion-key.pem ubuntu@{{if .InstanceIP}}{{.InstanceIP}}{{else}}[server-ip]{{end}}</code>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="copyPEMKey()" class="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        Copy
+                    </button>
+                    <a href="/api/admin/super/dev-mode/pem-download" class="flex items-center justify-center px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        .pem
+                    </a>
+                    <a href="/api/admin/super/dev-mode/ppk-download" class="flex items-center justify-center px-3 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 transition">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        .ppk
+                    </a>
+                </div>
+                <p class="text-xs text-gray-500">
+                    .pem for Linux/Mac/OpenSSH | .ppk for PuTTY/Windows
+                </p>
+            </div>
+            {{else}}
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p class="text-sm text-yellow-700">
+                    SSH private key not configured. The key must be available on the server or set via the SSH_PRIVATE_KEY environment variable.
+                </p>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Active Sessions Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Active SSH Sessions</h2>
+                <button onclick="refreshSessions()" class="text-sm text-indigo-600 hover:text-indigo-800">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+
+            <div id="sessions-container">
+                {{if .Sessions}}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">TTY</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Login</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {{range .Sessions}}
+                            <tr>
+                                <td class="px-3 py-2 text-sm text-gray-900">{{.Username}}</td>
+                                <td class="px-3 py-2 text-sm font-mono text-gray-600">{{.TTY}}</td>
+                                <td class="px-3 py-2 text-sm font-mono text-gray-600">{{if .SourceIP}}{{.SourceIP}}{{else}}-{{end}}</td>
+                                <td class="px-3 py-2 text-sm text-gray-600">{{.LoginTime}}</td>
+                                <td class="px-3 py-2">
+                                    <form action="/api/admin/super/dev-mode/kill-session" method="POST" style="display:inline" onsubmit="return confirm('Kill this session?')">
+                                        <input type="hidden" name="tty" value="{{.TTY}}">
+                                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm">Kill</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+                {{else}}
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <p>No active SSH sessions</p>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Card -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Start Guide</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                    <span class="flex items-center justify-center w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold">1</span>
+                    <span class="font-medium text-gray-900">Enable Dev Mode</span>
+                </div>
+                <p class="text-sm text-gray-600 pl-8">Enter your public IP address and click Enable. This opens SSH port 22 in the AWS security group for your IP only.</p>
+            </div>
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                    <span class="flex items-center justify-center w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold">2</span>
+                    <span class="font-medium text-gray-900">Download SSH Key</span>
+                </div>
+                <p class="text-sm text-gray-600 pl-8">Download the .pem file (Linux/Mac) or .ppk file (Windows/PuTTY). Set permissions: <code class="bg-gray-100 px-1 rounded">chmod 600 key.pem</code></p>
+            </div>
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                    <span class="flex items-center justify-center w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full text-sm font-bold">3</span>
+                    <span class="font-medium text-gray-900">Connect via SSH</span>
+                </div>
+                <p class="text-sm text-gray-600 pl-8">Use the SSH command shown above. When done, disable dev mode to revoke access and terminate sessions.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Card -->
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div class="flex items-start space-x-3">
+            <svg class="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div>
+                <h3 class="font-medium text-amber-800">Security Notice</h3>
+                <p class="text-sm text-amber-700 mt-1">
+                    Development mode opens SSH access to production servers. Always disable when not actively using.
+                    Only one IP address can be whitelisted at a time. Disabling will terminate all active SSH sessions.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function copyPEMKey() {
+    try {
+        const response = await fetch('/api/admin/super/dev-mode/pem-key');
+        if (!response.ok) throw new Error('Failed to fetch key');
+        const text = await response.text();
+        await navigator.clipboard.writeText(text);
+        alert('SSH key copied to clipboard!');
+    } catch (err) {
+        alert('Failed to copy key: ' + err.message);
+    }
+}
+
+async function refreshSessions() {
+    try {
+        const response = await fetch('/api/admin/super/dev-mode/sessions');
+        if (!response.ok) throw new Error('Failed to fetch sessions');
+        const sessions = await response.json();
+
+        const container = document.getElementById('sessions-container');
+        if (!sessions || sessions.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <p>No active SSH sessions</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = `
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">TTY</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Login</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+        `;
+
+        sessions.forEach(session => {
+            html += `
+                <tr>
+                    <td class="px-3 py-2 text-sm text-gray-900">${session.username}</td>
+                    <td class="px-3 py-2 text-sm font-mono text-gray-600">${session.tty}</td>
+                    <td class="px-3 py-2 text-sm font-mono text-gray-600">${session.sourceIp || '-'}</td>
+                    <td class="px-3 py-2 text-sm text-gray-600">${session.loginTime}</td>
+                    <td class="px-3 py-2">
+                        <form action="/api/admin/super/dev-mode/kill-session" method="POST" style="display:inline" onsubmit="return confirm('Kill this session?')">
+                            <input type="hidden" name="tty" value="${session.tty}">
+                            <button type="submit" class="text-red-600 hover:text-red-800 text-sm">Kill</button>
+                        </form>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = html;
+    } catch (err) {
+        console.error('Failed to refresh sessions:', err);
+    }
+}
+
+// Auto-refresh sessions every 30 seconds
+setInterval(refreshSessions, 30000);
+</script>
+{{end}}
