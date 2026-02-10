@@ -16,6 +16,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Generate git log for version log page (git available in builder only)
+RUN git log --format="%H|%ai|%s" > git-log.txt
+
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' \
@@ -47,6 +50,9 @@ COPY --from=builder /app/static ./static
 
 # Copy migrations (if running migrations from container)
 COPY --from=builder /app/migrations ./migrations
+
+# Copy git log for version log page
+COPY --from=builder /app/git-log.txt ./git-log.txt
 
 # Create uploads directory
 RUN mkdir -p /app/uploads && chown -R carecompanion:carecompanion /app

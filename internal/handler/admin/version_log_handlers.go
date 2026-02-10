@@ -75,16 +75,25 @@ func parseCommitMessage(msg string) (entryType, title string) {
 	return "Update", msg
 }
 
-// getGitLog runs git log and parses the output into CommitEntry slices
+// getGitLog gets commit history from live git (dev) or git-log.txt (prod)
 func getGitLog() ([]CommitEntry, error) {
-	cmd := exec.Command("git", "log", "--format=%H|%ai|%s")
-	out, err := cmd.Output()
+	// Try live git first (works in dev where git is available)
+	out, err := exec.Command("git", "log", "--format=%H|%ai|%s").Output()
 	if err != nil {
-		return nil, fmt.Errorf("git log failed: %w", err)
+		// Fall back to static git-log.txt (generated at Docker build time)
+		out, err = os.ReadFile("git-log.txt")
+		if err != nil {
+			return nil, fmt.Errorf("no git log available: git command failed and git-log.txt not found")
+		}
 	}
 
+	return parseGitLogOutput(string(out))
+}
+
+// parseGitLogOutput parses "hash|date|message" lines into CommitEntry slices
+func parseGitLogOutput(data string) ([]CommitEntry, error) {
 	var commits []CommitEntry
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	lines := strings.Split(strings.TrimSpace(data), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
