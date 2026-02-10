@@ -1,6 +1,8 @@
 package service
 
 import (
+	"database/sql"
+
 	"carecompanion/internal/config"
 	"carecompanion/internal/database"
 	"carecompanion/internal/repository"
@@ -25,11 +27,15 @@ type Services struct {
 	RealtimeDetection *RealtimeDetectionService
 	Transparency      *TransparencyService
 	UserSupport       *UserSupportService
+	Billing           *BillingService
+	Email             *EmailService
+	PasswordReset     *PasswordResetService
 }
 
 // NewServices creates all services with their dependencies
-func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *config.Config) *Services {
+func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *config.Config, db *sql.DB) *Services {
 	// Create services in dependency order
+	emailService := NewEmailService(&cfg.SMTP)
 	alertService := NewAlertService(repos.Alert, repos.Child)
 	insightService := NewInsightService(repos.Insight, repos.Correlation, repos.Child)
 	cohortService := NewCohortService(repos.Cohort, repos.Child, repos.Insight)
@@ -37,7 +43,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	transparencyService := NewTransparencyService(repos.Transparency, repos.Alert, repos.Child)
 
 	return &Services{
-		Auth:              NewAuthService(repos.User, repos.Family, redis, &cfg.JWT),
+		Auth:              NewAuthService(repos.User, repos.Family, redis, &cfg.JWT, emailService, cfg.App.URL),
 		User:              NewUserService(repos.User, repos.Family),
 		Family:            NewFamilyService(repos.Family, repos.Child),
 		Child:             NewChildService(repos.Child, repos.Family),
@@ -54,5 +60,8 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		RealtimeDetection: NewRealtimeDetectionService(repos.Correlation, repos.Alert, repos.Child, repos.Medication, alertService),
 		Transparency:      transparencyService,
 		UserSupport:       NewUserSupportService(repos.UserSupport),
+		Billing:           NewBillingService(repos.Billing, repos.Child),
+		Email:             emailService,
+		PasswordReset:     NewPasswordResetService(db, repos.User, emailService, cfg.App.URL),
 	}
 }

@@ -39,6 +39,8 @@ type FamilyRepository interface {
 
 	// Invitation operations
 	CreateInvitation(ctx context.Context, familyID uuid.UUID, email, firstName, lastName string, role models.FamilyRole) error
+	GetPendingInvitations(ctx context.Context, email string) ([]models.FamilyInvitation, error)
+	AcceptInvitation(ctx context.Context, invitationID uuid.UUID) error
 }
 
 // ChildRepository handles child data operations
@@ -342,6 +344,7 @@ type Repositories struct {
 	UserSupport  UserSupportRepository // User-facing support tickets
 	Marketing    MarketingRepository   // Marketing materials center
 	DevMode      DevModeRepository     // Development mode SSH control
+	Billing      BillingRepository     // Family-based billing
 }
 
 // NewRepositories creates all repository implementations
@@ -362,5 +365,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		UserSupport:  NewUserSupportRepo(db),
 		Marketing:    NewMarketingRepo(db),
 		DevMode:      NewDevModeRepo(db),
+		Billing:      NewBillingRepo(db),
 	}
 }

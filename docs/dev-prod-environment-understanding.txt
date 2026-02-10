@@ -1,0 +1,114 @@
+CareCompanion Dev/Prod Environment Understanding
+=================================================
+Date: January 28, 2026
+For: Bryan (bryan@bluebonnettech.com)
+
+This document addresses the 11 points about the dev/prod environment setup.
+
+---
+
+Point 1: "Dev and prod are now running on two separate servers"
+PARTIALLY CORRECT. The dev environment and production environment use separate
+infrastructure, but with nuance:
+- The dev server (98.88.131.147) runs the dev app with local Docker containers
+  for Postgres and Redis
+- Production runs on EC2 instances behind an ALB, with RDS and ElastiCache
+- The dev server is also the deployment trigger point (docker build/push/ASG
+  refresh happen from here)
+- They are logically separated, not just physically separated
+
+Point 2: "The dev database is a replica of the prod database"
+PARTIALLY CORRECT. The dev database is a point-in-time COPY of the production
+database, not a live replica. This means:
+- It was a snapshot taken at the time of setup
+- It does NOT automatically sync with production
+- Over time, dev and prod databases will diverge as you test features in dev
+  and users create data in prod
+- If you need a fresh copy, you'd need to re-run the pg_dump/restore process
+
+Point 3: "Code changes I ask you to make will take place in the dev environment"
+CORRECT. Per the CLAUDE.md rules:
+- All code changes, testing, and iteration happen in dev first
+- The dev app runs on localhost:8090 with local Postgres and Redis
+- Code is edited on the dev server and tested with `./scripts/dev.sh`
+- Production is never modified directly without explicit deployment
+
+Point 4: "I can see and interact with the dev environment at a URL to verify changes"
+CORRECT. The dev environment is accessible at:
+  http://98.88.131.147:8090
+This is a live running instance you can interact with in your browser to verify
+changes before deploying to production.
+
+Point 5: "Once I'm satisfied, I can tell you to deploy and changes go to prod"
+CORRECT. The deployment workflow is:
+1. You verify changes at http://98.88.131.147:8090
+2. You tell Claude to deploy
+3. Claude runs ./scripts/deploy.sh which:
+   a. Builds a Docker image (requires typing DEPLOY to confirm)
+   b. Pushes to ECR (requires typing DEPLOY to confirm)
+   c. Triggers ASG instance refresh (requires typing DEPLOY to confirm)
+4. New EC2 instances launch with the updated image
+5. ALB routes traffic to new instances (zero-downtime)
+
+Point 6: "The dev URL is mycarecompanion.net:8090 or similar"
+INCORRECT. The dev URL is:
+  http://98.88.131.147:8090
+It uses the dev server's IP address, not the domain name. The domain
+mycarecompanion.net points to the production ALB and should never be used
+for dev access.
+
+Point 7: "Production remains at mycarecompanion.net"
+CORRECT. Production is at:
+  https://www.mycarecompanion.net
+This routes through the ALB to the EC2 auto-scaling group running the
+production Docker image.
+
+Point 8: "Database changes sync automatically between dev and prod"
+INCORRECT. There is NO automatic database sync. Dev and prod databases are
+completely independent:
+- Dev database: localhost:5432 (Docker container on dev server)
+- Prod database: carecompanion-db.cns7qg5iujxu.us-east-1.rds.amazonaws.com
+- Changes to dev DB stay in dev
+- Changes to prod DB stay in prod
+- SQL migrations must be run separately against each database
+- When deploying, you need to explicitly run new migrations against prod
+
+Point 9: "There is an automated testing/review process"
+INCORRECT. Currently there is no automated testing or CI/CD pipeline. The
+process is manual:
+1. Make code changes
+2. Test locally with `./scripts/dev.sh` (hot-reload via air)
+3. Manually verify at http://98.88.131.147:8090
+4. Run `go build` to verify compilation
+5. Deploy via `./scripts/deploy.sh` with manual DEPLOY confirmations
+Future enhancements could include:
+- Automated tests (go test)
+- CI/CD pipeline (GitHub Actions)
+- Pre-deployment health checks
+
+Point 10: "All changes are tracked in a changelog"
+PARTIALLY CORRECT. Changes are tracked in multiple places, but there is no
+single comprehensive changelog:
+- Git tracks all code changes with commit history
+- deploy.sh logs deployment actions to deployments.log with timestamps
+- However, there is no auto-generated changelog or release notes system
+- For a complete history, you'd check: git log + deployments.log
+
+Point 11: "The deploy script has safety confirmations to prevent accidental prod changes"
+CORRECT. The deploy.sh script has a 3-stage confirmation system:
+1. Before Docker build: Must type DEPLOY
+2. Before ECR push: Must type DEPLOY
+3. Before ASG instance refresh: Must type DEPLOY
+Each stage shows a red warning banner indicating it's a PRODUCTION ACTION
+affecting https://www.mycarecompanion.net. Any response other than exactly
+"DEPLOY" aborts the process. All actions are logged to deployments.log.
+This can be disabled post-beta by setting CARECOMPANION_SKIP_DEPLOY_CONFIRM=1.
+
+---
+
+SUMMARY OF CORRECTIONS:
+- Point 2: Dev DB is a snapshot copy, not a live replica
+- Point 6: Dev URL is http://98.88.131.147:8090, not mycarecompanion.net:8090
+- Point 8: No automatic DB sync between dev and prod
+- Point 9: No automated testing/review process (manual workflow)
+- Point 10: Partial tracking via git + deploy log, but no formal changelog

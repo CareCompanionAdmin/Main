@@ -1571,13 +1571,13 @@ func (r *adminRepo) GetFinancialOverview(ctx context.Context) (*models.Financial
 
 	r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
-		FROM user_subscriptions
+		FROM family_subscriptions
 		WHERE created_at >= DATE_TRUNC('month', NOW()) AND status = 'active'
 	`).Scan(&overview.NewSubscriptionsMTD)
 
 	r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
-		FROM user_subscriptions
+		FROM family_subscriptions
 		WHERE cancelled_at >= DATE_TRUNC('month', NOW())
 	`).Scan(&overview.ChurnedSubscriptionsMTD)
 
@@ -1590,20 +1590,21 @@ func (r *adminRepo) GetFinancialOverview(ctx context.Context) (*models.Financial
 
 	r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*)
-		FROM user_subscriptions
+		FROM family_subscriptions
 		WHERE status = 'active'
 	`).Scan(&overview.TotalActiveSubscriptions)
 
-	// Subscriptions by plan
+	// Subscriptions by plan (using family_subscriptions)
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT sp.id, sp.name, COUNT(us.id) as count,
+		SELECT sp.id, sp.name, COUNT(fs.id) as count,
 		       CASE
 		           WHEN sp.billing_interval = 'monthly' THEN COALESCE(SUM(sp.price_cents), 0)
 		           WHEN sp.billing_interval = 'yearly' THEN COALESCE(SUM(sp.price_cents), 0) / 12
 		           ELSE 0
 		       END as mrr_cents
 		FROM subscription_plans sp
-		LEFT JOIN user_subscriptions us ON sp.id = us.plan_id AND us.status = 'active'
+		LEFT JOIN family_subscriptions fs ON sp.id = fs.plan_id AND fs.status = 'active'
+		WHERE sp.is_active = TRUE
 		GROUP BY sp.id, sp.name, sp.billing_interval
 		ORDER BY sp.price_cents ASC
 	`)

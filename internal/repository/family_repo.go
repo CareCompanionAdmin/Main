@@ -253,3 +253,37 @@ func (r *familyRepo) CreateInvitation(ctx context.Context, familyID uuid.UUID, e
 	_, err := r.db.ExecContext(ctx, query, familyID, email, firstName, lastName, role)
 	return err
 }
+
+func (r *familyRepo) GetPendingInvitations(ctx context.Context, email string) ([]models.FamilyInvitation, error) {
+	query := `
+		SELECT id, family_id, email, first_name, last_name, role, status, created_at, expires_at
+		FROM family_invitations
+		WHERE email = $1 AND status = 'pending' AND expires_at > NOW()
+		ORDER BY created_at ASC
+	`
+	rows, err := r.db.QueryContext(ctx, query, email)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invitations []models.FamilyInvitation
+	for rows.Next() {
+		var inv models.FamilyInvitation
+		err := rows.Scan(
+			&inv.ID, &inv.FamilyID, &inv.Email, &inv.FirstName, &inv.LastName,
+			&inv.Role, &inv.Status, &inv.CreatedAt, &inv.ExpiresAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		invitations = append(invitations, inv)
+	}
+	return invitations, rows.Err()
+}
+
+func (r *familyRepo) AcceptInvitation(ctx context.Context, invitationID uuid.UUID) error {
+	query := `UPDATE family_invitations SET status = 'accepted' WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, invitationID)
+	return err
+}

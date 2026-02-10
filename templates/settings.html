@@ -29,7 +29,8 @@
             <div class="flex items-center">
                 <a href="/dashboard" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">CareCompanion</a>
             </div>
-            <div class="flex items-center space-x-4">
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-4">
                 <a href="/dashboard" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" title="Dashboard">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
@@ -46,10 +47,82 @@
                     </svg>
                     <span id="support-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>
                 </a>
+                <button onclick="openHelpModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" title="Help">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                <a href="/settings" class="text-indigo-600 dark:text-indigo-400" title="Settings">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </a>
                 <button onclick="logout()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
+                </button>
+            </div>
+            <!-- Mobile Navigation -->
+            <div class="flex md:hidden items-center space-x-1">
+                <a href="/dashboard" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Dashboard">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </a>
+                <a href="/chat" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Family Chat">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </a>
+                <a href="/support" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative" title="Support">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <span id="support-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>
+                </a>
+                <button onclick="openHelpModal()" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Help">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                <a href="/settings" class="p-2 text-indigo-600 dark:text-indigo-400" title="Settings">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </a>
+                <button onclick="toggleSettingsMobileMenu()" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" id="settings-mobile-menu-btn">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="settings-menu-icon-open">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                    <svg class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="settings-menu-icon-close">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Mobile Menu -->
+    <div id="settings-mobile-menu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700">
+        <div class="px-4 py-3 space-y-1">
+            <a href="/dashboard" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Dashboard
+            </a>
+            <a href="/chat" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                Family Chat
+            </a>
+            <a href="/support" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Support
+            </a>
+            <div class="border-t dark:border-gray-700 pt-2 mt-2">
+                <button onclick="logout()" class="w-full flex items-center px-3 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Logout
                 </button>
             </div>
         </div>
@@ -69,7 +142,7 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 transition-colors">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile</h2>
             <form id="profile-form" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
                         <input type="text" name="first_name" value="{{.User.FirstName}}"
@@ -116,6 +189,68 @@
             </div>
         </div>
         {{end}}
+
+        <!-- Subscription & Billing -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 transition-colors">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Subscription & Billing</h2>
+            <div id="billing-loading" class="animate-pulse">
+                <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mb-3"></div>
+                <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-3"></div>
+                <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
+            </div>
+            <div id="billing-content" class="hidden space-y-4">
+                <!-- Plan Info -->
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Current Plan</p>
+                        <p id="billing-plan-name" class="text-xl font-semibold text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Monthly Price</p>
+                        <p id="billing-price" class="text-xl font-semibold text-indigo-600 dark:text-indigo-400">-</p>
+                    </div>
+                </div>
+
+                <!-- Status & Expiration -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                        <p id="billing-status" class="font-medium text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Valid Until</p>
+                        <p id="billing-expiration" class="font-medium text-gray-900 dark:text-white">-</p>
+                    </div>
+                </div>
+
+                <!-- Child Usage -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Children</p>
+                        <p id="billing-child-count" class="text-sm font-medium text-gray-900 dark:text-white">-</p>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div id="billing-child-progress" class="bg-indigo-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Upgrade Prompt (shown when at limit) -->
+                <div id="billing-upgrade-prompt" class="hidden p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-amber-800 dark:text-amber-200">You've reached your child limit</p>
+                            <p class="text-sm text-amber-700 dark:text-amber-300 mt-1">Upgrade to the Family plan for unlimited children at just $15/month.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="billing-error" class="hidden text-center py-4">
+                <p class="text-gray-500 dark:text-gray-400">Unable to load billing information</p>
+            </div>
+        </div>
 
         <!-- Children Management -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 transition-colors">
@@ -277,7 +412,7 @@
                     </select>
                     <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Wait this long after a change before asking questions</p>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quiet Start Time</label>
                         <input type="time" id="pref-quiet-start" name="interrogative_quiet_start" value="21:00"
@@ -634,6 +769,27 @@
 <script>
 const token = localStorage.getItem('access_token');
 
+// Mobile menu toggle
+function toggleSettingsMobileMenu() {
+    const menu = document.getElementById('settings-mobile-menu');
+    const openIcon = document.getElementById('settings-menu-icon-open');
+    const closeIcon = document.getElementById('settings-menu-icon-close');
+
+    menu.classList.toggle('hidden');
+    openIcon.classList.toggle('hidden');
+    closeIcon.classList.toggle('hidden');
+}
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('settings-mobile-menu');
+    const menuBtn = document.getElementById('settings-mobile-menu-btn');
+
+    if (menu && menuBtn && !menu.classList.contains('hidden') && !menu.contains(event.target) && !menuBtn.contains(event.target)) {
+        toggleSettingsMobileMenu();
+    }
+});
+
 function showMessage(type, message) {
     const div = document.getElementById(type + '-message');
     div.textContent = message;
@@ -743,12 +899,89 @@ let currentMembers = [];
 let foundUserEmail = null;
 let currentChildren = [];
 
-// Load family info, children, and members on page load
+// Load family info, children, members, and billing on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadFamilyInfo();
     loadChildren();
     loadFamilyMembers();
+    loadBillingInfo();
 });
+
+// Billing Management
+async function loadBillingInfo() {
+    try {
+        const response = await fetch('/api/family/billing', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        document.getElementById('billing-loading').classList.add('hidden');
+
+        if (response.ok) {
+            const data = await response.json();
+            displayBillingInfo(data);
+        } else {
+            document.getElementById('billing-error').classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Failed to load billing info:', error);
+        document.getElementById('billing-loading').classList.add('hidden');
+        document.getElementById('billing-error').classList.remove('hidden');
+    }
+}
+
+function displayBillingInfo(data) {
+    document.getElementById('billing-content').classList.remove('hidden');
+
+    // Plan name and price
+    document.getElementById('billing-plan-name').textContent = data.plan_name || 'Unknown';
+    document.getElementById('billing-price').textContent = data.price_display || '$0';
+
+    // Status with color coding
+    const statusEl = document.getElementById('billing-status');
+    const status = data.status || 'unknown';
+    statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+    if (status === 'active') {
+        statusEl.classList.add('text-green-600', 'dark:text-green-400');
+    } else if (status === 'expired' || status === 'cancelled') {
+        statusEl.classList.add('text-red-600', 'dark:text-red-400');
+    } else {
+        statusEl.classList.add('text-yellow-600', 'dark:text-yellow-400');
+    }
+
+    // Expiration date
+    document.getElementById('billing-expiration').textContent = data.expiration_display || '-';
+
+    // Child usage
+    const childCount = data.child_count || 0;
+    const maxChildren = data.max_children;
+    const childLimitDisplay = data.child_limit_display || '0';
+
+    document.getElementById('billing-child-count').textContent =
+        `${childCount} / ${childLimitDisplay}`;
+
+    // Progress bar
+    const progressEl = document.getElementById('billing-child-progress');
+    if (maxChildren === -1) {
+        // Unlimited - show a subtle indicator
+        progressEl.style.width = Math.min(childCount * 10, 100) + '%';
+        progressEl.classList.add('bg-green-600');
+        progressEl.classList.remove('bg-indigo-600', 'bg-red-600');
+    } else if (childCount >= maxChildren) {
+        progressEl.style.width = '100%';
+        progressEl.classList.add('bg-red-600');
+        progressEl.classList.remove('bg-indigo-600', 'bg-green-600');
+    } else {
+        progressEl.style.width = ((childCount / maxChildren) * 100) + '%';
+        progressEl.classList.remove('bg-red-600', 'bg-green-600');
+        progressEl.classList.add('bg-indigo-600');
+    }
+
+    // Show upgrade prompt if at limit on Single Child plan
+    if (!data.can_add_more_children && maxChildren !== -1) {
+        document.getElementById('billing-upgrade-prompt').classList.remove('hidden');
+    }
+}
 
 async function loadFamilyInfo() {
     try {

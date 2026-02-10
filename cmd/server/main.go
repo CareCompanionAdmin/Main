@@ -55,7 +55,7 @@ func main() {
 	repos := repository.NewRepositories(db.DB)
 
 	// Initialize services
-	services := service.NewServices(repos, redis, cfg)
+	services := service.NewServices(repos, redis, cfg, db.DB)
 
 	// Initialize handlers
 	apiHandlers := api.NewHandlers(services, cfg)

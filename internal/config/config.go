@@ -15,6 +15,7 @@ type Config struct {
 	JWT         JWTConfig
 	Correlation CorrelationConfig
 	Storage     StorageConfig
+	SMTP        SMTPConfig
 }
 
 type StorageConfig struct {
@@ -61,6 +62,16 @@ type CorrelationConfig struct {
 	BatchSize           int
 }
 
+type SMTPConfig struct {
+	Enabled     bool
+	Host        string
+	Port        string
+	Username    string
+	Password    string
+	FromAddress string
+	FromName    string
+}
+
 func Load() (*Config, error) {
 	godotenv.Load()
 
@@ -102,6 +113,15 @@ func Load() (*Config, error) {
 		Storage: StorageConfig{
 			UploadDir:   getEnv("STORAGE_UPLOAD_DIR", "./uploads"),
 			MaxFileSize: int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10*1024*1024)), // 10MB default
+		},
+		SMTP: SMTPConfig{
+			Enabled:     getEnvBool("SMTP_ENABLED", false),
+			Host:        getEnv("SMTP_HOST", "smtp.office365.com"),
+			Port:        getEnv("SMTP_PORT", "587"),
+			Username:    getEnv("SMTP_USERNAME", ""),
+			Password:    getEnv("SMTP_PASSWORD", ""),
+			FromAddress: getEnv("SMTP_FROM_ADDRESS", "notifications@mycarecompanion.net"),
+			FromName:    getEnv("SMTP_FROM_NAME", "CareCompanion"),
 		},
 	}
 

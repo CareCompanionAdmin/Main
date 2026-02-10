@@ -88,6 +88,19 @@ type FamilyMembership struct {
 	Family *Family `json:"family,omitempty"`
 }
 
+// FamilyInvitation represents a pending invitation to join a family
+type FamilyInvitation struct {
+	ID        uuid.UUID  `json:"id"`
+	FamilyID  uuid.UUID  `json:"family_id"`
+	Email     string     `json:"email"`
+	FirstName string     `json:"first_name"`
+	LastName  string     `json:"last_name"`
+	Role      FamilyRole `json:"role"`
+	Status    string     `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	ExpiresAt time.Time  `json:"expires_at"`
+}
+
 type FamilyWithRole struct {
 	FamilyID   uuid.UUID  `json:"family_id"`
 	FamilyName string     `json:"family_name"`

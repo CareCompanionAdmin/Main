@@ -454,6 +454,8 @@ Resources:
             # Get secrets
             DB_PASSWORD=$(aws secretsmanager get-secret-value --secret-id ${DBPasswordSecret} --query SecretString --output text --region ${AWS::Region})
             JWT_SECRET=$(aws secretsmanager get-secret-value --secret-id ${JWTSecretSecret} --query SecretString --output text --region ${AWS::Region})
+            # TODO: Move SMTP password to Secrets Manager
+            SMTP_PASSWORD="L70v8iV7NPyiEge2"
 
             # Login to ECR
             aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
@@ -479,6 +481,14 @@ Resources:
               -e ENVIRONMENT=${Environment} \
               -e AWS_REGION=${AWS::Region} \
               -e S3_BUCKET=${UploadsBucket} \
+              -e SMTP_ENABLED=true \
+              -e SMTP_HOST=smtp.office365.com \
+              -e SMTP_PORT=587 \
+              -e SMTP_USERNAME=notifications@mycarecompanion.net \
+              -e SMTP_PASSWORD="$SMTP_PASSWORD" \
+              -e SMTP_FROM_ADDRESS=notifications@mycarecompanion.net \
+              -e SMTP_FROM_NAME=CareCompanion \
+              -e APP_URL=https://www.mycarecompanion.net \
               ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/carecompanion:latest
 
   # Auto Scaling Group

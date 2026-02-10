@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,10 +25,12 @@ var (
 )
 
 type AuthService struct {
-	userRepo   repository.UserRepository
-	familyRepo repository.FamilyRepository
-	redis      *database.Redis
-	jwtConfig  *config.JWTConfig
+	userRepo     repository.UserRepository
+	familyRepo   repository.FamilyRepository
+	redis        *database.Redis
+	jwtConfig    *config.JWTConfig
+	emailService *EmailService
+	appURL       string
 }
 
 func NewAuthService(
@@ -35,12 +38,16 @@ func NewAuthService(
 	familyRepo repository.FamilyRepository,
 	redis *database.Redis,
 	jwtConfig *config.JWTConfig,
+	emailService *EmailService,
+	appURL string,
 ) *AuthService {
 	return &AuthService{
-		userRepo:   userRepo,
-		familyRepo: familyRepo,
-		redis:      redis,
-		jwtConfig:  jwtConfig,
+		userRepo:     userRepo,
+		familyRepo:   familyRepo,
+		redis:        redis,
+		jwtConfig:    jwtConfig,
+		emailService: emailService,
+		appURL:       appURL,
 	}
 }
 
@@ -157,6 +164,35 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*mode
 			return nil, nil, err
 		}
 	}
+
+	// Check for pending family invitations and accept them
+	invitations, invErr := s.familyRepo.GetPendingInvitations(ctx, req.Email)
+	if invErr == nil && len(invitations) > 0 {
+		for _, inv := range invitations {
+			membership := &models.FamilyMembership{
+				FamilyID: inv.FamilyID,
+				UserID:   user.ID,
+				Role:     inv.Role,
+			}
+			if addErr := s.familyRepo.AddMember(ctx, membership); addErr != nil {
+				log.Printf("[AUTH] Failed to auto-add user %s to family %s: %v", user.Email, inv.FamilyID, addErr)
+				continue
+			}
+			s.familyRepo.AcceptInvitation(ctx, inv.ID)
+			// Use the first invited family as the default if no family was created
+			if familyID == uuid.Nil {
+				familyID = inv.FamilyID
+			}
+			log.Printf("[AUTH] Auto-accepted invitation for %s to family %s", user.Email, inv.FamilyID)
+		}
+	}
+
+	// Send welcome email (async, don't block registration)
+	go func() {
+		if err := s.emailService.SendWelcomeEmail(user.Email, user.FirstName, s.appURL); err != nil {
+			log.Printf("[EMAIL] Failed to send welcome email to %s: %v", user.Email, err)
+		}
+	}()
 
 	// Generate tokens
 	tokens, err := s.generateTokens(user, familyID, models.FamilyRoleParent)

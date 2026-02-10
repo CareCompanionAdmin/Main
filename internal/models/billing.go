@@ -275,3 +275,52 @@ type PlanSubscriptionCount struct {
 	Count    int       `json:"count"`
 	MRRCents int64     `json:"mrr_cents"` // Monthly Recurring Revenue
 }
+
+// ============================================================================
+// Family Subscriptions (Family-Based Billing)
+// ============================================================================
+
+// FamilySubscription represents a subscription tied to a family rather than a user
+type FamilySubscription struct {
+	ID                   uuid.UUID          `json:"id"`
+	FamilyID             uuid.UUID          `json:"family_id"`
+	PlanID               uuid.UUID          `json:"plan_id"`
+	Status               SubscriptionStatus `json:"status"`
+	CurrentPeriodStart   time.Time          `json:"current_period_start"`
+	CurrentPeriodEnd     time.Time          `json:"current_period_end"`
+	TrialEnd             NullTime           `json:"trial_end,omitempty"`
+	CancelledAt          NullTime           `json:"cancelled_at,omitempty"`
+	CancelAtPeriodEnd    bool               `json:"cancel_at_period_end"`
+	StripeSubscriptionID NullString         `json:"stripe_subscription_id,omitempty"`
+	StripeCustomerID     NullString         `json:"stripe_customer_id,omitempty"`
+	PromoCodeID          NullUUID           `json:"promo_code_id,omitempty"`
+	CreatedAt            time.Time          `json:"created_at"`
+	UpdatedAt            time.Time          `json:"updated_at"`
+	// Populated fields from JOINs
+	PlanName   string `json:"plan_name,omitempty"`
+	FamilyName string `json:"family_name,omitempty"`
+}
+
+// FamilyBillingInfo is the response struct for the settings page billing section
+type FamilyBillingInfo struct {
+	// Subscription details
+	SubscriptionID     uuid.UUID          `json:"subscription_id"`
+	Status             SubscriptionStatus `json:"status"`
+	CurrentPeriodStart time.Time          `json:"current_period_start"`
+	CurrentPeriodEnd   time.Time          `json:"current_period_end"`
+
+	// Plan details
+	PlanID       uuid.UUID `json:"plan_id"`
+	PlanName     string    `json:"plan_name"`
+	PriceCents   int       `json:"price_cents"`
+	MaxChildren  int       `json:"max_children"` // -1 means unlimited
+
+	// Child usage
+	ChildCount         int  `json:"child_count"`
+	CanAddMoreChildren bool `json:"can_add_more_children"`
+
+	// Display helpers
+	PriceDisplay      string `json:"price_display"`       // e.g., "$15"
+	ChildLimitDisplay string `json:"child_limit_display"` // e.g., "Unlimited" or "1"
+	ExpirationDisplay string `json:"expiration_display"`  // e.g., "12/31/2026"
+}

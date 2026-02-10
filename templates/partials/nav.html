@@ -1,136 +1,140 @@
 {{define "nav"}}
-<nav class="bg-white shadow-sm border-b">
+<nav class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
+                <a href="/dashboard" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">CareCompanion</a>
             </div>
-            <div class="flex items-center space-x-4">
-                <span class="text-gray-700">Hello, {{.FirstName}}</span>
-                <a href="/chat" class="text-gray-500 hover:text-gray-700 relative" title="Family Chat">
+
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-4">
+                <span class="text-gray-700 dark:text-gray-300">Hello, {{.FirstName}}</span>
+                <a href="/dashboard" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Dashboard">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                </a>
+                <a href="/chat" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative" title="Family Chat">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                     <span id="chat-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center"></span>
                 </a>
-                <a href="/settings" class="text-gray-500 hover:text-gray-700" title="Settings">
+                <a href="/support" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative" title="Support">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <span id="support-badge-desktop" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">!</span>
+                </a>
+                <button onclick="openHelpModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Help">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                <a href="/settings" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Settings">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </a>
-                <button onclick="logout()" class="text-gray-500 hover:text-gray-700">
+                <button onclick="logout()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Logout">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                     </svg>
+                </button>
+            </div>
+
+            <!-- Mobile Navigation Toggle -->
+            <div class="flex md:hidden items-center space-x-2">
+                <button onclick="openHelpModal()" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Help">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                <button onclick="toggleMobileMenu()" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Menu" aria-label="Toggle menu" id="mobile-menu-btn">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="menu-icon-open">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                    <svg class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="menu-icon-close">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white dark:bg-gray-800 border-t dark:border-gray-700">
+        <div class="px-4 py-3 space-y-1">
+            <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border-b dark:border-gray-700">
+                Hello, {{.FirstName}}
+            </div>
+            <a href="/dashboard" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                Dashboard
+            </a>
+            <a href="/chat" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                Family Chat
+                <span id="chat-badge-mobile" class="hidden ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5"></span>
+            </a>
+            <a href="/support" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+                Support
+                <span id="support-badge-mobile" class="hidden ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">!</span>
+            </a>
+            <button onclick="openHelpModal(); toggleMobileMenu();" class="w-full flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Help
+            </button>
+            <a href="/settings" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Settings
+            </a>
+            <div class="border-t dark:border-gray-700 pt-2 mt-2">
+                <button onclick="logout()" class="w-full flex items-center px-3 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    Logout
                 </button>
             </div>
         </div>
     </div>
 </nav>
 
-<!-- Help Mascot - Fixed position, right side of screen -->
-<div id="helpMascot" class="fixed right-4 top-24 flex flex-col items-center cursor-pointer group z-40" onclick="openHelpModal()">
-    <span class="text-sm text-gray-500 group-hover:text-indigo-600 font-medium mb-2">Need Help?</span>
-    <img src="/static/images/mattyfullbody_clear.png" alt="Help Mascot" class="h-44 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-lg">
-</div>
-
-<!-- Help Modal -->
-<div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
-        <div class="p-6 border-b flex items-center justify-between">
-            <div class="flex items-center">
-                <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="w-12 h-12 mr-3">
-                <h2 class="text-xl font-bold text-gray-900">How can I help you?</h2>
-            </div>
-            <button onclick="closeHelpModal()" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-        <div class="p-4 border-b">
-            <div class="relative">
-                <input type="text" id="helpSearchInput" placeholder="Search for help topics..."
-                       class="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                       oninput="searchHelp(this.value)">
-                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-            </div>
-        </div>
-        <div id="helpContent" class="flex-1 overflow-y-auto p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="helpTopics">
-                <div class="help-topic p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors" onclick="showHelpTopic('dashboard')">
-                    <div class="flex items-center mb-2">
-                        <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
-                        </svg>
-                        <h3 class="font-semibold text-gray-900">Dashboard</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">Learn about the family dashboard and child cards</p>
-                </div>
-                <div class="help-topic p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors" onclick="showHelpTopic('logs')">
-                    <div class="flex items-center mb-2">
-                        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                        </svg>
-                        <h3 class="font-semibold text-gray-900">Daily Logs</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">Track behaviors, sleep, diet, and more</p>
-                </div>
-                <div class="help-topic p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors" onclick="showHelpTopic('medications')">
-                    <div class="flex items-center mb-2">
-                        <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
-                        </svg>
-                        <h3 class="font-semibold text-gray-900">Medications</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">Manage medications and track doses</p>
-                </div>
-                <div class="help-topic p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors" onclick="showHelpTopic('alerts')">
-                    <div class="flex items-center mb-2">
-                        <svg class="w-5 h-5 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                        <h3 class="font-semibold text-gray-900">Alerts & Insights</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">Understanding pattern alerts and AI insights</p>
-                </div>
-                <div class="help-topic p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors" onclick="showHelpTopic('chat')">
-                    <div class="flex items-center mb-2">
-                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
-                        <h3 class="font-semibold text-gray-900">Family Chat</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">Communicate with family members and caregivers</p>
-                </div>
-                <div class="help-topic p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors" onclick="showHelpTopic('settings')">
-                    <div class="flex items-center mb-2">
-                        <svg class="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        </svg>
-                        <h3 class="font-semibold text-gray-900">Settings</h3>
-                    </div>
-                    <p class="text-sm text-gray-600">Profile, family management, and preferences</p>
-                </div>
-            </div>
-            <div id="helpTopicDetail" class="hidden">
-                <button onclick="showHelpTopics()" class="flex items-center text-indigo-600 hover:text-indigo-800 mb-4">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                    Back to topics
-                </button>
-                <div id="helpTopicContent"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    const openIcon = document.getElementById('menu-icon-open');
+    const closeIcon = document.getElementById('menu-icon-close');
+
+    menu.classList.toggle('hidden');
+    openIcon.classList.toggle('hidden');
+    closeIcon.classList.toggle('hidden');
+}
+
+// Close mobile menu when clicking outside
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('mobile-menu');
+    const menuBtn = document.getElementById('mobile-menu-btn');
+
+    if (menu && !menu.classList.contains('hidden') && !menu.contains(event.target) && !menuBtn.contains(event.target)) {
+        toggleMobileMenu();
+    }
+});
+
 async function logout() {
     try {
         await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
@@ -141,167 +145,5 @@ async function logout() {
     document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/api/auth/refresh;';
     window.location.href = '/login';
 }
-
-// Help Modal Functions
-const helpTopicData = {
-    dashboard: {
-        title: 'Dashboard',
-        content: `
-            <div class="space-y-4">
-                <p class="text-gray-700">The Family Dashboard is your central hub for managing your children's care.</p>
-                <h4 class="font-semibold text-gray-900">Key Features:</h4>
-                <ul class="list-disc list-inside space-y-2 text-gray-600">
-                    <li><strong>Child Cards</strong> - Each child has a card showing their name and quick actions</li>
-                    <li><strong>View Dashboard</strong> - See detailed health metrics and patterns for each child</li>
-                    <li><strong>Daily Logs</strong> - Quick access to log daily activities and observations</li>
-                    <li><strong>Switch Family</strong> - If you belong to multiple families, easily switch between them</li>
-                </ul>
-            </div>
-        `
-    },
-    logs: {
-        title: 'Daily Logs',
-        content: `
-            <div class="space-y-4">
-                <p class="text-gray-700">Daily Logs help you track various aspects of your child's day.</p>
-                <h4 class="font-semibold text-gray-900">Log Types:</h4>
-                <ul class="list-disc list-inside space-y-2 text-gray-600">
-                    <li><strong>Behavior</strong> - Track behaviors with intensity levels</li>
-                    <li><strong>Sleep</strong> - Record sleep duration and quality</li>
-                    <li><strong>Diet</strong> - Log meals and eating patterns</li>
-                    <li><strong>Bowel</strong> - Track bowel movements</li>
-                    <li><strong>Speech</strong> - Note speech progress and communication</li>
-                    <li><strong>Sensory</strong> - Record sensory sensitivities</li>
-                    <li><strong>Social</strong> - Track social interactions</li>
-                    <li><strong>Therapy</strong> - Log therapy sessions</li>
-                </ul>
-            </div>
-        `
-    },
-    medications: {
-        title: 'Medications',
-        content: `
-            <div class="space-y-4">
-                <p class="text-gray-700">Manage all medications and track dosing schedules.</p>
-                <h4 class="font-semibold text-gray-900">Features:</h4>
-                <ul class="list-disc list-inside space-y-2 text-gray-600">
-                    <li><strong>Add Medications</strong> - Search our FDA-approved database</li>
-                    <li><strong>Set Schedules</strong> - Configure dosing times</li>
-                    <li><strong>Log Doses</strong> - Track when medications are given</li>
-                    <li><strong>Interaction Checking</strong> - Automatic drug interaction alerts</li>
-                    <li><strong>Pill Identification</strong> - Camera-based pill lookup</li>
-                </ul>
-            </div>
-        `
-    },
-    alerts: {
-        title: 'Alerts & Insights',
-        content: `
-            <div class="space-y-4">
-                <p class="text-gray-700">CareCompanion uses AI to analyze patterns and provide insights.</p>
-                <h4 class="font-semibold text-gray-900">Alert Types:</h4>
-                <ul class="list-disc list-inside space-y-2 text-gray-600">
-                    <li><strong class="text-red-600">Critical</strong> - Needs immediate attention</li>
-                    <li><strong class="text-amber-600">Warning</strong> - Important pattern noticed</li>
-                    <li><strong class="text-blue-600">Info</strong> - Helpful observation</li>
-                </ul>
-            </div>
-        `
-    },
-    chat: {
-        title: 'Family Chat',
-        content: `
-            <div class="space-y-4">
-                <p class="text-gray-700">Communicate securely with family members and caregivers.</p>
-                <h4 class="font-semibold text-gray-900">Features:</h4>
-                <ul class="list-disc list-inside space-y-2 text-gray-600">
-                    <li><strong>Create Threads</strong> - Start conversations about specific topics</li>
-                    <li><strong>File Sharing</strong> - Attach images and documents</li>
-                    <li><strong>Participant Management</strong> - Add or remove members from threads</li>
-                </ul>
-            </div>
-        `
-    },
-    settings: {
-        title: 'Settings',
-        content: `
-            <div class="space-y-4">
-                <p class="text-gray-700">Manage your profile and family settings.</p>
-                <h4 class="font-semibold text-gray-900">Sections:</h4>
-                <ul class="list-disc list-inside space-y-2 text-gray-600">
-                    <li><strong>Profile</strong> - Update your name and contact information</li>
-                    <li><strong>Your Families</strong> - See which families you belong to</li>
-                    <li><strong>Family Members</strong> - Add, edit, or remove members</li>
-                    <li><strong>Password</strong> - Change your account password</li>
-                </ul>
-            </div>
-        `
-    }
-};
-
-function openHelpModal() {
-    document.getElementById('helpModal').classList.remove('hidden');
-    document.getElementById('helpSearchInput').value = '';
-    showHelpTopics();
-}
-
-function closeHelpModal() {
-    document.getElementById('helpModal').classList.add('hidden');
-}
-
-function showHelpTopics() {
-    document.getElementById('helpTopics').classList.remove('hidden');
-    document.getElementById('helpTopicDetail').classList.add('hidden');
-    document.querySelectorAll('.help-topic').forEach(topic => {
-        topic.style.display = '';
-    });
-}
-
-function showHelpTopic(topicId) {
-    const topic = helpTopicData[topicId];
-    if (!topic) return;
-    document.getElementById('helpTopics').classList.add('hidden');
-    document.getElementById('helpTopicDetail').classList.remove('hidden');
-    document.getElementById('helpTopicContent').innerHTML = `
-        <h3 class="text-xl font-bold text-gray-900 mb-4">${topic.title}</h3>
-        ${topic.content}
-    `;
-}
-
-function searchHelp(query) {
-    const lowerQuery = query.toLowerCase().trim();
-    if (!lowerQuery) {
-        showHelpTopics();
-        return;
-    }
-    document.getElementById('helpTopics').classList.remove('hidden');
-    document.getElementById('helpTopicDetail').classList.add('hidden');
-    document.querySelectorAll('.help-topic').forEach(topic => {
-        const title = topic.querySelector('h3').textContent.toLowerCase();
-        const description = topic.querySelector('p').textContent.toLowerCase();
-        const topicId = topic.getAttribute('onclick').match(/'([^']+)'/)[1];
-        const content = helpTopicData[topicId]?.content.toLowerCase() || '';
-        if (title.includes(lowerQuery) || description.includes(lowerQuery) || content.includes(lowerQuery)) {
-            topic.style.display = '';
-        } else {
-            topic.style.display = 'none';
-        }
-    });
-}
-
-// Close help modal on click outside
-document.addEventListener('click', function(event) {
-    const helpModal = document.getElementById('helpModal');
-    if (event.target === helpModal) {
-        closeHelpModal();
-    }
-});
-
-// Close help modal with Escape key
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        closeHelpModal();
-    }
-});
 </script>
 {{end}}

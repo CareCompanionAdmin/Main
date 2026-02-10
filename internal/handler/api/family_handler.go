@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,12 +14,16 @@ import (
 type FamilyHandler struct {
 	familyService *service.FamilyService
 	userService   *service.UserService
+	emailService  *service.EmailService
+	appURL        string
 }
 
-func NewFamilyHandler(familyService *service.FamilyService, userService *service.UserService) *FamilyHandler {
+func NewFamilyHandler(familyService *service.FamilyService, userService *service.UserService, emailService *service.EmailService, appURL string) *FamilyHandler {
 	return &FamilyHandler{
 		familyService: familyService,
 		userService:   userService,
+		emailService:  emailService,
+		appURL:        appURL,
 	}
 }
 
@@ -111,9 +116,28 @@ func (h *FamilyHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 				respondInternalError(w, "Failed to create invitation")
 				return
 			}
+
+			// Send invitation email
+			claims := middleware.GetAuthClaims(r.Context())
+			inviterName := claims.FirstName
+			family, _ := h.familyService.GetByID(r.Context(), familyID)
+			familyName := "your family"
+			if family != nil {
+				familyName = family.Name
+			}
+			inviteeName := req.FirstName
+			if inviteeName == "" {
+				inviteeName = "there"
+			}
+			go func() {
+				if err := h.emailService.SendFamilyInvitationEmail(req.Email, inviteeName, familyName, inviterName, h.appURL); err != nil {
+					log.Printf("[EMAIL] Failed to send invitation email to %s: %v", req.Email, err)
+				}
+			}()
+
 			respondCreated(w, map[string]interface{}{
 				"success": true,
-				"message": "Invitation created. They will be added when they register.",
+				"message": "Invitation created and email sent. They will be added when they register.",
 			})
 			return
 		}
@@ -137,6 +161,18 @@ func (h *FamilyHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 		respondInternalError(w, "Failed to add member")
 		return
 	}
+
+	// Send notification email to the added member
+	family, _ := h.familyService.GetByID(r.Context(), familyID)
+	familyName := "a family"
+	if family != nil {
+		familyName = family.Name
+	}
+	go func() {
+		if err := h.emailService.SendFamilyMemberAddedEmail(user.Email, user.FirstName, familyName, string(role), h.appURL); err != nil {
+			log.Printf("[EMAIL] Failed to send member-added email to %s: %v", user.Email, err)
+		}
+	}()
 
 	respondCreated(w, map[string]interface{}{
 		"success": true,

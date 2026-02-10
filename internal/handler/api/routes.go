@@ -10,17 +10,19 @@ import (
 
 // Handlers aggregates all API handlers
 type Handlers struct {
-	Auth         *AuthHandler
-	Child        *ChildHandler
-	Family       *FamilyHandler
-	Medication   *MedicationHandler
-	Log          *LogHandler
-	Alert        *AlertHandler
-	Correlation  *CorrelationHandler
-	Insight      *InsightHandler
-	Chat         *ChatHandler
-	Transparency *TransparencyHandler
-	Support      *SupportHandler
+	Auth          *AuthHandler
+	Child         *ChildHandler
+	Family        *FamilyHandler
+	Medication    *MedicationHandler
+	Log           *LogHandler
+	Alert         *AlertHandler
+	Correlation   *CorrelationHandler
+	Insight       *InsightHandler
+	Chat          *ChatHandler
+	Transparency  *TransparencyHandler
+	Support       *SupportHandler
+	Billing       *BillingHandler
+	PasswordReset *PasswordResetHandler
 }
 
 // NewHandlers creates all API handlers
@@ -28,7 +30,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 	return &Handlers{
 		Auth:         NewAuthHandler(services.Auth),
 		Child:        NewChildHandler(services.Child),
-		Family:       NewFamilyHandler(services.Family, services.User),
+		Family:       NewFamilyHandler(services.Family, services.User, services.Email, cfg.App.URL),
 		Medication:   NewMedicationHandler(services.Medication, services.Child, services.DrugDatabase, services.Insight),
 		Log:          NewLogHandler(services.Log, services.Child),
 		Alert:        NewAlertHandler(services.Alert, services.Child),
@@ -37,6 +39,8 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Chat:         NewChatHandler(services.Chat, services.Family, &cfg.Storage),
 		Transparency: NewTransparencyHandler(services.Transparency),
 		Support:      NewSupportHandler(services.UserSupport),
+		Billing:       NewBillingHandler(services.Billing),
+		PasswordReset: NewPasswordResetHandler(services.PasswordReset),
 	}
 }
 
@@ -47,6 +51,11 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Post("/auth/register", handlers.Auth.Register)
 		r.Post("/auth/login", handlers.Auth.Login)
 		r.Post("/auth/refresh", handlers.Auth.RefreshToken)
+
+		// Password reset (public, no auth required)
+		r.Post("/auth/request-reset", handlers.PasswordReset.RequestReset)
+		r.Get("/auth/validate-reset-token", handlers.PasswordReset.ValidateToken)
+		r.Post("/auth/reset-password", handlers.PasswordReset.ResetPassword)
 	})
 
 	// Protected routes
@@ -68,7 +77,14 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Get("/members/{memberID}", handlers.Family.GetMember)
 			r.Patch("/members/{memberID}", handlers.Family.UpdateMemberRole)
 			r.Delete("/members/{memberID}", handlers.Family.RemoveMember)
+
+			// Billing routes (family context required)
+			r.Get("/billing", handlers.Billing.GetFamilyBilling)
+			r.Get("/billing/can-add-child", handlers.Billing.CanAddChild)
 		})
+
+		// Billing routes - public plans endpoint (no family context required)
+		r.Get("/billing/plans", handlers.Billing.GetPlans)
 
 		// Child routes - require family context
 		r.Route("/children", func(r chi.Router) {
