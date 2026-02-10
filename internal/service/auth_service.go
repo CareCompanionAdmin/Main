@@ -166,6 +166,7 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*mode
 	}
 
 	// Check for pending family invitations and accept them
+	var assignedRole models.FamilyRole
 	invitations, invErr := s.familyRepo.GetPendingInvitations(ctx, req.Email)
 	if invErr == nil && len(invitations) > 0 {
 		for _, inv := range invitations {
@@ -178,12 +179,15 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*mode
 				log.Printf("[AUTH] Failed to auto-add user %s to family %s: %v", user.Email, inv.FamilyID, addErr)
 				continue
 			}
-			s.familyRepo.AcceptInvitation(ctx, inv.ID)
+			if acceptErr := s.familyRepo.AcceptInvitation(ctx, inv.ID); acceptErr != nil {
+				log.Printf("[AUTH] Failed to mark invitation %s as accepted: %v", inv.ID, acceptErr)
+			}
 			// Use the first invited family as the default if no family was created
 			if familyID == uuid.Nil {
 				familyID = inv.FamilyID
+				assignedRole = inv.Role
 			}
-			log.Printf("[AUTH] Auto-accepted invitation for %s to family %s", user.Email, inv.FamilyID)
+			log.Printf("[AUTH] Auto-accepted invitation for %s to family %s with role %s", user.Email, inv.FamilyID, inv.Role)
 		}
 	}
 
@@ -194,8 +198,15 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*mode
 		}
 	}()
 
+	// Determine the role for token generation
+	// If user created their own family, they're a parent; if they joined via invitation, use that role
+	tokenRole := models.FamilyRoleParent
+	if assignedRole != "" {
+		tokenRole = assignedRole
+	}
+
 	// Generate tokens
-	tokens, err := s.generateTokens(user, familyID, models.FamilyRoleParent)
+	tokens, err := s.generateTokens(user, familyID, tokenRole)
 	if err != nil {
 		return nil, nil, err
 	}

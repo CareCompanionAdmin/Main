@@ -381,7 +381,8 @@ async function selectTicket(ticketID) {
         messageArea.scrollTop = messageArea.scrollHeight;
 
         // Hide badge after viewing
-        document.getElementById('support-badge').classList.add('hidden');
+        const desktopBadge = document.getElementById('support-badge-desktop');
+        if (desktopBadge) desktopBadge.classList.add('hidden');
 
     } catch (error) {
         console.error('Error loading ticket:', error);
@@ -470,7 +471,7 @@ async function checkSupportUnread() {
         const response = await fetch('/api/support/unread', { credentials: 'include' });
         if (response.ok) {
             const data = await response.json();
-            const badge = document.getElementById('support-badge');
+            const badge = document.getElementById('support-badge-desktop');
             if (badge) {
                 badge.classList.toggle('hidden', !data.has_unread);
             }
