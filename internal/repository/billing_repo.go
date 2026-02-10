@@ -146,7 +146,11 @@ func (r *billingRepo) GetFamilyBillingInfo(ctx context.Context, familyID uuid.UU
 	}
 
 	// Format display strings
-	info.PriceDisplay = fmt.Sprintf("$%d", info.PriceCents/100)
+	if info.PriceCents%100 == 0 {
+		info.PriceDisplay = fmt.Sprintf("$%d", info.PriceCents/100)
+	} else {
+		info.PriceDisplay = fmt.Sprintf("$%d.%02d", info.PriceCents/100, info.PriceCents%100)
+	}
 
 	if maxChildren == -1 {
 		info.ChildLimitDisplay = "Unlimited"

@@ -120,7 +120,10 @@ func (h *FamilyHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 			// Send invitation email
 			claims := middleware.GetAuthClaims(r.Context())
 			inviterName := claims.FirstName
-			family, _ := h.familyService.GetByID(r.Context(), familyID)
+			family, famErr := h.familyService.GetByID(r.Context(), familyID)
+			if famErr != nil {
+				log.Printf("[FAMILY] Failed to get family %s for invitation email: %v", familyID, famErr)
+			}
 			familyName := "your family"
 			if family != nil {
 				familyName = family.Name
@@ -163,7 +166,10 @@ func (h *FamilyHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send notification email to the added member
-	family, _ := h.familyService.GetByID(r.Context(), familyID)
+	family, famErr := h.familyService.GetByID(r.Context(), familyID)
+	if famErr != nil {
+		log.Printf("[FAMILY] Failed to get family %s for notification email: %v", familyID, famErr)
+	}
 	familyName := "a family"
 	if family != nil {
 		familyName = family.Name
@@ -379,6 +385,9 @@ func (h *FamilyHandler) UpdateUserPreferences(w http.ResponseWriter, r *http.Req
 	}
 
 	// Return updated preferences
-	prefs, _ := h.userService.GetPreferences(r.Context(), userID)
+	prefs, prefsErr := h.userService.GetPreferences(r.Context(), userID)
+	if prefsErr != nil {
+		log.Printf("[FAMILY] Failed to reload preferences after update for user %s: %v", userID, prefsErr)
+	}
 	respondOK(w, prefs)
 }

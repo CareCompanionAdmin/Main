@@ -168,7 +168,7 @@
                     <div id="familyDropdown" class="hidden absolute left-0 mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 z-50">
                         <div class="py-1">
                             {{range .Families}}
-                            <button onclick="switchFamily('{{.FamilyID}}')" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between {{if eq $.FamilyID .FamilyID}}bg-indigo-50 text-indigo-700{{else}}text-gray-700{{end}}">
+                            <button onclick="switchFamily('{{.FamilyID}}')" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between {{if eq $.FamilyID .FamilyID}}bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300{{else}}text-gray-700 dark:text-gray-300{{end}}">
                                 <span>{{.FamilyName}}</span>
                                 {{if eq $.FamilyID .FamilyID}}
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
