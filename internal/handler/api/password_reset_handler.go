@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"carecompanion/internal/service"
@@ -35,7 +36,7 @@ func (h *PasswordResetHandler) RequestReset(w http.ResponseWriter, r *http.Reque
 
 	// Always return success to avoid email enumeration
 	if err := h.passwordResetService.RequestReset(r.Context(), req.Email); err != nil {
-		// Log but don't expose the error
+		log.Printf("[PASSWORD-RESET] Error processing reset request: %v", err)
 		respondOK(w, map[string]interface{}{
 			"success": true,
 			"message": "If an account with that email exists, a password reset link has been sent.",

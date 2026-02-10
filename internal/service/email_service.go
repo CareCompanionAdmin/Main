@@ -56,6 +56,14 @@ func (s *EmailService) IsEnabled() bool {
 	return s.cfg.Enabled
 }
 
+// sanitizeHeader removes \r and \n characters from email header values
+// to prevent header injection attacks via user-controlled input.
+func sanitizeHeader(value string) string {
+	value = strings.ReplaceAll(value, "\r", "")
+	value = strings.ReplaceAll(value, "\n", "")
+	return value
+}
+
 // SendEmail sends an email with the given parameters
 func (s *EmailService) SendEmail(to, subject, htmlBody string) error {
 	if !s.cfg.Enabled {
@@ -64,7 +72,11 @@ func (s *EmailService) SendEmail(to, subject, htmlBody string) error {
 	}
 
 	from := s.cfg.FromAddress
-	fromName := s.cfg.FromName
+	fromName := sanitizeHeader(s.cfg.FromName)
+
+	// Sanitize header values to prevent injection
+	to = sanitizeHeader(to)
+	subject = sanitizeHeader(subject)
 
 	// Build the email message
 	var msg bytes.Buffer

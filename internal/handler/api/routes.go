@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/go-chi/chi/v5"
 
 	"carecompanion/internal/config"
@@ -53,9 +55,13 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Post("/auth/refresh", handlers.Auth.RefreshToken)
 
 		// Password reset (public, no auth required)
-		r.Post("/auth/request-reset", handlers.PasswordReset.RequestReset)
-		r.Get("/auth/validate-reset-token", handlers.PasswordReset.ValidateToken)
-		r.Post("/auth/reset-password", handlers.PasswordReset.ResetPassword)
+		// Rate limited: 5 requests per minute per IP to prevent brute-force and email flooding
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(5, 1*time.Minute))
+			r.Post("/auth/request-reset", handlers.PasswordReset.RequestReset)
+			r.Get("/auth/validate-reset-token", handlers.PasswordReset.ValidateToken)
+			r.Post("/auth/reset-password", handlers.PasswordReset.ResetPassword)
+		})
 	})
 
 	// Protected routes

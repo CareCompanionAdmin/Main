@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 
 	"github.com/google/uuid"
 
@@ -40,7 +41,11 @@ func (s *BillingService) CanAddChild(ctx context.Context, familyID uuid.UUID) (b
 		return false, err
 	}
 	if info == nil {
-		// No subscription found - default to allowing (for now)
+		// No subscription found - all families should have been enrolled by migration 00011.
+		// Log this as a warning so we can investigate, but allow the action to avoid
+		// blocking users during alpha. This should be changed to return false once
+		// subscription enrollment is enforced on family creation.
+		log.Printf("[BILLING] WARNING: No subscription found for family %s - allowing child addition by default", familyID)
 		return true, nil
 	}
 
