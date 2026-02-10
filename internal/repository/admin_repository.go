@@ -192,6 +192,7 @@ type AdminRepository interface {
 	GetRecentPayments(ctx context.Context, page, limit int) ([]models.Payment, int, error)
 	GetRecentSubscriptions(ctx context.Context, page, limit int) ([]models.UserSubscription, int, error)
 	GetDailyRevenueSnapshots(ctx context.Context, startDate, endDate time.Time) ([]models.DailyRevenueSnapshot, error)
+
 }
 
 // adminRepo implements AdminRepository

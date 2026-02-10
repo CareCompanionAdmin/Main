@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -89,6 +90,31 @@ func main() {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	// Maintenance status endpoint (no auth required, used by public pages)
+	r.Get("/api/maintenance-status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		active := false
+		message := ""
+		val, err := repos.Admin.GetSetting(r.Context(), "maintenance_mode")
+		if err == nil && val != nil {
+			if boolVal, ok := val.(bool); ok {
+				active = boolVal
+			}
+		}
+		if active {
+			msgVal, err := repos.Admin.GetSetting(r.Context(), "maintenance_message")
+			if err == nil && msgVal != nil {
+				if strVal, ok := msgVal.(string); ok {
+					message = strVal
+				}
+			}
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"active":  active,
+			"message": message,
+		})
 	})
 
 	// API routes

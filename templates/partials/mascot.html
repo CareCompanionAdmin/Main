@@ -1,4 +1,45 @@
 {{define "mascot"}}
+<!-- Maintenance Mode Overlay -->
+<div id="maintenanceOverlay" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full mx-4 p-8 text-center">
+        <div class="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Maintenance In Progress</h2>
+        <p id="maintenanceMessage" class="text-gray-600 dark:text-gray-300 mb-6">Backend functionality changes are currently being made and any unsaved data inputs may not be saved. Please log out and back in.</p>
+        <a href="/login" onclick="document.cookie='access_token=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT';"
+           class="inline-block px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors">
+            Log Out
+        </a>
+    </div>
+</div>
+
+<script>
+(function() {
+    function checkMaintenanceStatus() {
+        fetch('/api/maintenance-status')
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                var overlay = document.getElementById('maintenanceOverlay');
+                if (!overlay) return;
+                if (data.active) {
+                    if (data.message) {
+                        document.getElementById('maintenanceMessage').textContent = data.message;
+                    }
+                    overlay.classList.remove('hidden');
+                } else {
+                    overlay.classList.add('hidden');
+                }
+            })
+            .catch(function() {});
+    }
+    checkMaintenanceStatus();
+    setInterval(checkMaintenanceStatus, 30000);
+})();
+</script>
+
 <!-- Help Mascot - Desktop: Full Matty with collapse, Mobile: Small circular face -->
 
 <!-- Desktop Mascot (hidden on mobile) -->

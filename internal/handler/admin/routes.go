@@ -93,6 +93,9 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/dev-mode/pem-key", h.DevModeGetPEMKey)
 		r.Get("/dev-mode/pem-download", h.DevModeDownloadPEM)
 		r.Get("/dev-mode/ppk-download", h.DevModeDownloadPPK)
+
+		// Version Log
+		r.Get("/version-log", h.GetVersionLog)
 	})
 
 	// Support routes
@@ -185,6 +188,9 @@ func (h *Handler) UIRoutes() chi.Router {
 
 			// Development Mode page
 			r.Get("/development", h.DevelopmentPage)
+
+			// Version Log page
+			r.Get("/version-log", h.VersionLogPage)
 		})
 
 		// Support pages
