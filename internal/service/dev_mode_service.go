@@ -5,12 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"carecompanion/internal/models"
 	"carecompanion/internal/repository"
@@ -25,15 +28,19 @@ type DevModeService struct {
 	region        string
 	pemKeyPath    string
 	pemKeyContent string
+	devServerURL  string // If set, session ops call this URL instead of running locally
+	internalToken string // Shared token for internal API auth
 }
 
 // NewDevModeService creates a new DevModeService
-func NewDevModeService(repo repository.DevModeRepository, sgID, region, pemKeyPath string) *DevModeService {
+func NewDevModeService(repo repository.DevModeRepository, sgID, region, pemKeyPath, devServerURL, internalToken string) *DevModeService {
 	svc := &DevModeService{
 		repo:          repo,
 		securityGroup: sgID,
 		region:        region,
 		pemKeyPath:    pemKeyPath,
+		devServerURL:  devServerURL,
+		internalToken: internalToken,
 	}
 
 	// Try to load PEM key content from file or environment
@@ -193,15 +200,49 @@ func (s *DevModeService) removeSSHRule(ruleID string) error {
 	return nil
 }
 
-// ListSSHSessions lists active SSH sessions on the local server
+// ListSSHSessions lists active SSH sessions on the dev server
 func (s *DevModeService) ListSSHSessions(ctx context.Context) ([]models.SSHSession, error) {
+	if s.devServerURL != "" {
+		return s.listRemoteSessions()
+	}
+	return s.listLocalSessions()
+}
+
+// listLocalSessions runs who -u on the local machine
+func (s *DevModeService) listLocalSessions() ([]models.SSHSession, error) {
 	cmd := exec.Command("who", "-u")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to run who command: %w", err)
 	}
-
 	return s.parseWhoOutput(string(output)), nil
+}
+
+// listRemoteSessions calls the dev server's internal API
+func (s *DevModeService) listRemoteSessions() ([]models.SSHSession, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequest("GET", s.devServerURL+"/internal/dev-sessions", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("X-Internal-Token", s.internalToken)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to reach dev server: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("dev server returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var sessions []models.SSHSession
+	if err := json.NewDecoder(resp.Body).Decode(&sessions); err != nil {
+		return nil, fmt.Errorf("failed to decode sessions: %w", err)
+	}
+	return sessions, nil
 }
 
 // parseWhoOutput parses the output of the who -u command
@@ -240,6 +281,14 @@ func (s *DevModeService) KillSession(ctx context.Context, tty string) error {
 		return fmt.Errorf("invalid TTY format: %s", tty)
 	}
 
+	if s.devServerURL != "" {
+		return s.killRemoteSession(tty)
+	}
+	return s.killLocalSession(tty)
+}
+
+// killLocalSession kills a session on the local machine
+func (s *DevModeService) killLocalSession(tty string) error {
 	cmd := exec.Command("pkill", "-9", "-t", tty)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -249,9 +298,39 @@ func (s *DevModeService) KillSession(ctx context.Context, tty string) error {
 		}
 		return fmt.Errorf("failed to kill session: %s - %w", string(output), err)
 	}
-
 	log.Printf("Killed SSH session on TTY %s", tty)
 	return nil
+}
+
+// killRemoteSession calls the dev server's internal API to kill a session
+func (s *DevModeService) killRemoteSession(tty string) error {
+	client := &http.Client{Timeout: 5 * time.Second}
+	body := strings.NewReader("tty=" + tty)
+	req, err := http.NewRequest("POST", s.devServerURL+"/internal/dev-kill-session", body)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("X-Internal-Token", s.internalToken)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to reach dev server: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("dev server returned %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	log.Printf("Killed remote SSH session on TTY %s", tty)
+	return nil
+}
+
+// GetInternalToken returns the internal API token for handler registration
+func (s *DevModeService) GetInternalToken() string {
+	return s.internalToken
 }
 
 // killAllSessions kills all SSH sessions on the local server
@@ -292,13 +371,7 @@ func (s *DevModeService) GetSecurityGroupID() string {
 	return s.securityGroup
 }
 
-// GetCurrentInstanceIP returns the current EC2 instance's public IP
+// GetCurrentInstanceIP returns the dev server's public IP for SSH access
 func (s *DevModeService) GetCurrentInstanceIP() string {
-	// Try to get from instance metadata
-	cmd := exec.Command("curl", "-s", "--connect-timeout", "2", "http://169.254.169.254/latest/meta-data/public-ipv4")
-	output, err := cmd.Output()
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(output))
+	return "98.88.131.147"
 }

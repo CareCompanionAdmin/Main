@@ -19,7 +19,7 @@ CareCompanion is a Go web application for tracking and managing care for childre
 - `internal/repository/` - Database access layer
 - `internal/models/` - Data models
 - `templates/admin/` - Admin portal HTML templates
-- `migrations/` - SQL migration files (00001-00011)
+- `migrations/` - SQL migration files (00001-00014)
 - `scripts/` - Dev and deploy scripts
 
 ## Environment Setup

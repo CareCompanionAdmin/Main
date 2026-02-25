@@ -155,17 +155,55 @@ func main() {
 	log.Println("Marketing service initialized")
 
 	// Initialize Development Mode service for SSH access control
-	// The SSH key can be provided via:
-	// 1. SSH_PRIVATE_KEY environment variable (recommended for production)
-	// 2. A file path passed as the 4th argument
+	// In production, devServerURL is set so session ops call the dev server remotely.
+	// On the dev server, devServerURL is empty so ops run locally.
+	internalToken := "b8d5931b7ad0a11d82b85b3b1b91e301"
+	devServerURL := ""
+	if cfg.App.Env == "production" {
+		devServerURL = "http://10.0.1.129:8090" // Dev server private IP (same VPC)
+	}
 	devModeService := service.NewDevModeService(
 		repos.DevMode,
-		"sg-0dcbf363b7127e05d", // Security Group ID
+		"sg-0a4d8f146c6b6de24", // Dev server Security Group (carecompanion-dev-sg)
 		"us-east-1",            // AWS Region
 		"",                     // PEM key path - empty means use SSH_PRIVATE_KEY env var
+		devServerURL,
+		internalToken,
 	)
 	adminHandler.SetDevModeService(devModeService)
 	log.Println("Development Mode service initialized")
+
+	// Internal endpoints for cross-server dev mode session management
+	// These are called by the production server to list/kill sessions on this dev server
+	r.Get("/internal/dev-sessions", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Internal-Token") != internalToken {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		sessions, err := devModeService.ListSSHSessions(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(sessions)
+	})
+	r.Post("/internal/dev-kill-session", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-Internal-Token") != internalToken {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		tty := r.FormValue("tty")
+		if tty == "" {
+			http.Error(w, "tty required", http.StatusBadRequest)
+			return
+		}
+		if err := devModeService.KillSession(r.Context(), tty); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
 
 	r.Route("/api/admin", func(r chi.Router) {
 		r.Use(middleware.ContentTypeJSON)
