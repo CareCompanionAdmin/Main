@@ -181,7 +181,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
                 <div class="min-w-0">
                     <p class="font-medium text-gray-900 dark:text-white break-words">{{.Medication.Name}}</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{.Schedule.TimeOfDay}}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}){{end}}</p>
                 </div>
                 <button onclick="logMedication('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}')" class="w-full sm:w-auto flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm text-center">
                     Mark as Taken
@@ -2734,7 +2734,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // View mode handling
 let currentViewMode = 'daily';
 const currentDateStr = '{{.Date.Format "2006-01-02"}}';
-let historyMonth = new Date(currentDateStr);
+let historyMonth = new Date(currentDateStr + 'T00:00:00');
 
 function setViewMode(mode, navigate = true) {
     currentViewMode = mode;
@@ -2774,7 +2774,7 @@ function updateNavigationLabels() {
 }
 
 function navigateDate(direction) {
-    const currentDate = new Date(document.getElementById('log-date').value);
+    const currentDate = new Date(document.getElementById('log-date').value + 'T00:00:00');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -2856,7 +2856,7 @@ async function loadRecentDatesWithData() {
             const dates = await response.json();
             if (dates && dates.length > 0) {
                 listContainer.innerHTML = dates.slice(0, 14).map(dateInfo => {
-                    const date = new Date(dateInfo.date);
+                    const date = new Date(dateInfo.date + 'T00:00:00');
                     const dateStr = getLocalDateString(date);
                     const displayDate = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                     const isSelected = dateStr === currentDateStr;

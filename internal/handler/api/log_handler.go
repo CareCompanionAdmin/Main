@@ -15,12 +15,14 @@ import (
 type LogHandler struct {
 	logService   *service.LogService
 	childService *service.ChildService
+	userService  *service.UserService
 }
 
-func NewLogHandler(logService *service.LogService, childService *service.ChildService) *LogHandler {
+func NewLogHandler(logService *service.LogService, childService *service.ChildService, userService *service.UserService) *LogHandler {
 	return &LogHandler{
 		logService:   logService,
 		childService: childService,
+		userService:  userService,
 	}
 }
 
@@ -38,10 +40,12 @@ func (h *LogHandler) GetDailyLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+
 	dateStr := r.URL.Query().Get("date")
-	date := time.Now()
+	date := time.Now().In(loc)
 	if dateStr != "" {
-		date, err = parseDate(dateStr)
+		date, err = time.ParseInLocation("2006-01-02", dateStr, loc)
 		if err != nil {
 			respondBadRequest(w, "Invalid date format")
 			return
@@ -126,7 +130,8 @@ func (h *LogHandler) GetBehaviorLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -250,7 +255,8 @@ func (h *LogHandler) GetBowelLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -364,7 +370,8 @@ func (h *LogHandler) GetSpeechLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -478,7 +485,8 @@ func (h *LogHandler) GetDietLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -602,7 +610,8 @@ func (h *LogHandler) GetWeightLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -3, 0) // Last 3 months for weight
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -711,7 +720,8 @@ func (h *LogHandler) GetSleepLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -831,7 +841,8 @@ func (h *LogHandler) GetSensoryLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -946,7 +957,8 @@ func (h *LogHandler) GetSocialLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -1060,7 +1072,8 @@ func (h *LogHandler) GetTherapyLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -1, 0) // Last month for therapy
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -1178,7 +1191,8 @@ func (h *LogHandler) GetSeizureLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -1, 0) // Last month for seizures
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -1296,7 +1310,8 @@ func (h *LogHandler) GetHealthEventLogs(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	endDate := time.Now()
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -3, 0) // Last 3 months for health events
 	startDate = getDateFromQuery(r, "start_date", startDate)
 	endDate = getDateFromQuery(r, "end_date", endDate)
@@ -1430,8 +1445,9 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Calculate date range
-	now := time.Now()
+	// Calculate date range in user's timezone
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	now := time.Now().In(loc)
 	var startDate, endDate time.Time
 	var days []DaySummary
 	var periodLabel string

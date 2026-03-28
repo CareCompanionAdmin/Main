@@ -115,7 +115,25 @@ func (h *WebHandlers) ChildDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dashboard, err := h.services.Child.GetDashboard(r.Context(), childID)
+	// Get user preferences for timezone and time format
+	userTimezone := "America/New_York"
+	userTimeFormat := "12h"
+	prefs, err := h.services.User.GetPreferences(r.Context(), userID)
+	if err == nil && prefs != nil {
+		if prefs.Timezone != "" {
+			userTimezone = prefs.Timezone
+		}
+		if prefs.TimeFormat != "" {
+			userTimeFormat = prefs.TimeFormat
+		}
+	}
+	loc, locErr := time.LoadLocation(userTimezone)
+	if locErr != nil {
+		loc = time.Local
+	}
+	now := time.Now().In(loc)
+
+	dashboard, err := h.services.Child.GetDashboardForDate(r.Context(), childID, now)
 	if err != nil {
 		renderError(w, "Failed to load dashboard", http.StatusInternalServerError)
 		return
@@ -128,9 +146,11 @@ func (h *WebHandlers) ChildDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"Child":       child,
-		"Dashboard":   dashboard,
-		"AllChildren": allChildren,
+		"Child":          child,
+		"Dashboard":      dashboard,
+		"AllChildren":    allChildren,
+		"UserTimezone":   userTimezone,
+		"UserTimeFormat": userTimeFormat,
 	}
 
 	renderTemplate(w, "child_dashboard", data)
@@ -151,11 +171,17 @@ func (h *WebHandlers) DailyLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user preferences for timezone
-	userTimezone := "America/New_York" // Default timezone
+	// Get user preferences for timezone and time format
+	userTimezone := "America/New_York"
+	userTimeFormat := "12h"
 	prefs, err := h.services.User.GetPreferences(r.Context(), userID)
-	if err == nil && prefs != nil && prefs.Timezone != "" {
-		userTimezone = prefs.Timezone
+	if err == nil && prefs != nil {
+		if prefs.Timezone != "" {
+			userTimezone = prefs.Timezone
+		}
+		if prefs.TimeFormat != "" {
+			userTimeFormat = prefs.TimeFormat
+		}
 	}
 
 	loc, locErr := time.LoadLocation(userTimezone)
@@ -212,6 +238,7 @@ func (h *WebHandlers) DailyLogs(w http.ResponseWriter, r *http.Request) {
 		"Logs":           logs,
 		"MedicationsDue": dueMeds,
 		"UserTimezone":   userTimezone,
+		"UserTimeFormat": userTimeFormat,
 	}
 
 	renderTemplate(w, "daily_logs", data)
@@ -238,9 +265,16 @@ func (h *WebHandlers) Medications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userTimeFormat := "12h"
+	prefs, prefsErr := h.services.User.GetPreferences(r.Context(), userID)
+	if prefsErr == nil && prefs != nil && prefs.TimeFormat != "" {
+		userTimeFormat = prefs.TimeFormat
+	}
+
 	data := map[string]interface{}{
-		"Child":       child,
-		"Medications": meds,
+		"Child":          child,
+		"Medications":    meds,
+		"UserTimeFormat": userTimeFormat,
 	}
 
 	renderTemplate(w, "medications", data)

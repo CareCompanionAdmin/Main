@@ -93,6 +93,8 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/dev-mode/pem-key", h.DevModeGetPEMKey)
 		r.Get("/dev-mode/pem-download", h.DevModeDownloadPEM)
 		r.Get("/dev-mode/ppk-download", h.DevModeDownloadPPK)
+		r.Post("/dev-mode/public-access", h.DevPublicAccessToggle)
+		r.Get("/dev-mode/public-access", h.DevPublicAccessStatus)
 
 		// Version Log
 		r.Get("/version-log", h.GetVersionLog)

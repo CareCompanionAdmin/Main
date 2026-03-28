@@ -104,6 +104,53 @@
             {{end}}
         </div>
 
+        <!-- Public Access Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Dev Environment Public Access</h2>
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                    {{if .PublicAccessEnabled}}
+                    <span class="flex h-4 w-4 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-4 w-4 bg-green-500"></span>
+                    </span>
+                    <span class="text-lg font-medium text-green-600">Public Access ON</span>
+                    {{else}}
+                    <span class="inline-flex rounded-full h-4 w-4 bg-gray-400"></span>
+                    <span class="text-lg font-medium text-gray-600">Public Access OFF</span>
+                    {{end}}
+                </div>
+
+                <p class="text-sm text-gray-600">
+                    Controls whether the dev environment (port 8090) is reachable from any IP address.
+                    When off, only whitelisted IPs can access the dev server.
+                </p>
+
+                {{if .PublicAccessEnabled}}
+                <div class="bg-green-50 rounded-lg p-3">
+                    <p class="text-sm text-green-700">
+                        <span class="font-medium">Dev URL:</span>
+                        <a href="http://{{.InstanceIP}}:8090" target="_blank" class="font-mono underline">http://{{.InstanceIP}}:8090</a>
+                        <span class="text-green-600 ml-1">- accessible from anywhere</span>
+                    </p>
+                </div>
+                <form action="/api/admin/super/dev-mode/public-access" method="POST" onsubmit="return confirm('Disable public access to the dev environment?')">
+                    <input type="hidden" name="action" value="disable">
+                    <button type="submit" class="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                        Disable Public Access
+                    </button>
+                </form>
+                {{else}}
+                <form action="/api/admin/super/dev-mode/public-access" method="POST">
+                    <input type="hidden" name="action" value="enable">
+                    <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+                        Enable Public Access
+                    </button>
+                </form>
+                {{end}}
+            </div>
+        </div>
+
         <!-- SSH Key Access Card -->
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">SSH Key Access</h2>

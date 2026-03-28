@@ -42,6 +42,7 @@ type DeploymentRecord struct {
 type VersionLogResponse struct {
 	Uncommitted      []UncommittedChange `json:"uncommitted"`
 	UncommittedCount int                 `json:"uncommitted_count"`
+	ChangeSummary    string              `json:"change_summary"`
 	Pending          []CommitEntry       `json:"pending"`
 	History          []CommitEntry       `json:"history"`
 	Deployments      []DeploymentRecord  `json:"deployments"`
@@ -433,9 +434,18 @@ func (h *Handler) GetVersionLog(w http.ResponseWriter, r *http.Request) {
 		uncommitted = nil // non-fatal, just skip
 	}
 
+	// Read optional change summary (.change-summary.md describes the current batch of changes)
+	var changeSummary string
+	if len(uncommitted) > 0 {
+		if data, err := os.ReadFile(".change-summary.md"); err == nil {
+			changeSummary = strings.TrimSpace(string(data))
+		}
+	}
+
 	respondJSON(w, VersionLogResponse{
 		Uncommitted:      uncommitted,
 		UncommittedCount: len(uncommitted),
+		ChangeSummary:    changeSummary,
 		Pending:          pending,
 		History:          history,
 		Deployments:      deployments,

@@ -40,6 +40,8 @@ func (h *Handler) DevelopmentPage(w http.ResponseWriter, r *http.Request) {
 	var hasPEMKey bool
 	var instanceIP string
 
+	var publicAccessEnabled bool
+
 	if devModeService != nil {
 		var err error
 		status, err = devModeService.GetStatus(r.Context())
@@ -50,6 +52,7 @@ func (h *Handler) DevelopmentPage(w http.ResponseWriter, r *http.Request) {
 		sessions, _ = devModeService.ListSSHSessions(r.Context())
 		hasPEMKey = devModeService.HasPEMKey()
 		instanceIP = devModeService.GetCurrentInstanceIP()
+		publicAccessEnabled, _ = devModeService.GetPublicAccessStatus()
 	} else {
 		errorMsg = "Development mode service not configured"
 	}
@@ -60,25 +63,27 @@ func (h *Handler) DevelopmentPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Title       string
-		CurrentUser AdminUser
-		Status      *models.DevModeStatus
-		Sessions    []models.SSHSession
-		HasPEMKey   bool
-		InstanceIP  string
-		ErrorMsg    string
-		SuccessMsg  string
-		Flash       string
+		Title               string
+		CurrentUser         AdminUser
+		Status              *models.DevModeStatus
+		Sessions            []models.SSHSession
+		HasPEMKey           bool
+		InstanceIP          string
+		PublicAccessEnabled bool
+		ErrorMsg            string
+		SuccessMsg          string
+		Flash               string
 	}{
-		Title:       "Development Mode",
-		CurrentUser: currentUser,
-		Status:      status,
-		Sessions:    sessions,
-		HasPEMKey:   hasPEMKey,
-		InstanceIP:  instanceIP,
-		ErrorMsg:    errorMsg,
-		SuccessMsg:  successMsg,
-		Flash:       "",
+		Title:               "Development Mode",
+		CurrentUser:         currentUser,
+		Status:              status,
+		Sessions:            sessions,
+		HasPEMKey:           hasPEMKey,
+		InstanceIP:          instanceIP,
+		PublicAccessEnabled: publicAccessEnabled,
+		ErrorMsg:            errorMsg,
+		SuccessMsg:          successMsg,
+		Flash:               "",
 	}
 
 	tmpl, err := parseTemplates("layout.html", "development.html")
@@ -254,6 +259,66 @@ func (h *Handler) DevModeDownloadPPK(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", "attachment; filename=carecompanion-key.ppk")
 	w.Write(ppkContent)
+}
+
+// DevPublicAccessToggle enables or disables public access to the dev environment
+func (h *Handler) DevPublicAccessToggle(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	if claims == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if devModeService == nil {
+		http.Error(w, "Development mode service not configured", http.StatusInternalServerError)
+		return
+	}
+
+	action := r.FormValue("action")
+	var enable bool
+	switch action {
+	case "enable":
+		enable = true
+	case "disable":
+		enable = false
+	default:
+		http.Error(w, "Invalid action", http.StatusBadRequest)
+		return
+	}
+
+	if err := devModeService.SetPublicAccess(enable); err != nil {
+		http.Error(w, "Failed to toggle public access: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	msg := "Public access to dev environment enabled"
+	if !enable {
+		msg = "Public access to dev environment disabled"
+	}
+	http.Redirect(w, r, "/admin/development?success="+msg, http.StatusSeeOther)
+}
+
+// DevPublicAccessStatus returns the current public access status as JSON
+func (h *Handler) DevPublicAccessStatus(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	if claims == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if devModeService == nil {
+		http.Error(w, "Development mode service not configured", http.StatusInternalServerError)
+		return
+	}
+
+	enabled, err := devModeService.GetPublicAccessStatus()
+	if err != nil {
+		http.Error(w, "Failed to check public access: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"enabled": enabled})
 }
 
 // DevModeSessions returns JSON of current SSH sessions (for HTMX refresh)

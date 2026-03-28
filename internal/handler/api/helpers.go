@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"carecompanion/internal/middleware"
+	"carecompanion/internal/service"
 )
 
 // parseUUID parses a UUID string
@@ -111,4 +113,18 @@ type ListResponse struct {
 	TotalCount int         `json:"total_count,omitempty"`
 	Page       int         `json:"page,omitempty"`
 	PageSize   int         `json:"page_size,omitempty"`
+}
+
+// getUserTimezone loads the user's configured timezone, defaulting to America/New_York
+func getUserTimezone(ctx context.Context, userService *service.UserService, userID uuid.UUID) *time.Location {
+	if userService != nil {
+		prefs, err := userService.GetPreferences(ctx, userID)
+		if err == nil && prefs != nil && prefs.Timezone != "" {
+			if loc, err := time.LoadLocation(prefs.Timezone); err == nil {
+				return loc
+			}
+		}
+	}
+	loc, _ := time.LoadLocation("America/New_York")
+	return loc
 }

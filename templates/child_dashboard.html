@@ -294,7 +294,7 @@
                         </div>
                         <div class="flex-1">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">{{.Medication.Name}}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{.Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{.Schedule.ScheduledTime.String}}){{end}}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}){{end}}</p>
                         </div>
                         {{if .IsLogged}}
                         <span class="px-3 py-1 text-xs rounded-full {{if eq .LoggedStatus "taken"}}bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300{{else if or (eq .LoggedStatus "skipped") (eq .LoggedStatus "missed")}}bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300{{else}}bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300{{end}}">
@@ -2154,11 +2154,13 @@ async function logMedication(medicationId, scheduleId, status, logDate = null) {
         // Extract HH:MM for actual_time
         const actualTime = dateToUse.toTimeString().slice(0, 5);
 
+        // Use local date to avoid UTC day-shift issues
+        const localDate = getLocalDateString(dateToUse);
         const requestBody = {
             medication_id: medicationId,
             schedule_id: scheduleId || null,
             status: status,
-            log_date: dateToUse.toISOString(),
+            log_date: localDate + 'T00:00:00Z',
             actual_time: actualTime
         };
 

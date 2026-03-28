@@ -375,3 +375,88 @@ func (s *DevModeService) GetSecurityGroupID() string {
 func (s *DevModeService) GetCurrentInstanceIP() string {
 	return "98.88.131.147"
 }
+
+// Dev environment public access control (DevTesting security group)
+const (
+	devInstanceID    = "i-063209ba853c91949"
+	devBaseSG        = "sg-0a4d8f146c6b6de24" // carecompanion-dev-sg (always attached)
+	devTestingSG     = "sg-0c41e9940f6ea95e2" // DevTesting (public port 8090)
+)
+
+// GetPublicAccessStatus checks if the DevTesting security group is attached to the dev instance
+func (s *DevModeService) GetPublicAccessStatus() (bool, error) {
+	cmd := exec.Command("aws", "ec2", "describe-instances",
+		"--instance-ids", devInstanceID,
+		"--region", s.region,
+		"--query", "Reservations[0].Instances[0].SecurityGroups[*].GroupId",
+		"--output", "json")
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("failed to query instance: %s - %w", string(output), err)
+	}
+
+	var sgIDs []string
+	if err := json.Unmarshal(output, &sgIDs); err != nil {
+		return false, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	for _, id := range sgIDs {
+		if id == devTestingSG {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// SetPublicAccess attaches or detaches the DevTesting security group
+func (s *DevModeService) SetPublicAccess(enable bool) error {
+	groups := []string{devBaseSG}
+	if enable {
+		groups = append(groups, devTestingSG)
+	}
+
+	// Also preserve the SSH security group if it's currently attached
+	cmd := exec.Command("aws", "ec2", "describe-instances",
+		"--instance-ids", devInstanceID,
+		"--region", s.region,
+		"--query", "Reservations[0].Instances[0].SecurityGroups[*].GroupId",
+		"--output", "json")
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to query instance: %s - %w", string(output), err)
+	}
+
+	var currentSGs []string
+	if err := json.Unmarshal(output, &currentSGs); err != nil {
+		return fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// Preserve any SGs that aren't the base or DevTesting (e.g., future additions)
+	seen := map[string]bool{devBaseSG: true, devTestingSG: true}
+	for _, sg := range currentSGs {
+		if !seen[sg] {
+			groups = append(groups, sg)
+		}
+	}
+
+	args := []string{"ec2", "modify-instance-attribute",
+		"--instance-id", devInstanceID,
+		"--groups"}
+	args = append(args, groups...)
+	args = append(args, "--region", s.region)
+
+	modCmd := exec.Command("aws", args...)
+	modOutput, err := modCmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to update security groups: %s - %w", string(modOutput), err)
+	}
+
+	action := "enabled"
+	if !enable {
+		action = "disabled"
+	}
+	log.Printf("Public dev access %s (DevTesting SG)", action)
+	return nil
+}

@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -288,6 +289,39 @@ var templateFuncs = template.FuncMap{
 			return t.UTC().Format(layout)
 		}
 		return t.In(loc).Format(layout)
+	},
+	// formatTimeStr formats a time string like "08:00:00" or "08:00" respecting user's time format preference
+	// Usage: {{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}
+	"formatTimeStr": func(s string, args ...string) string {
+		if s == "" {
+			return ""
+		}
+		format := "12h"
+		if len(args) > 0 && args[0] != "" {
+			format = args[0]
+		}
+		for _, layout := range []string{"15:04:05", "15:04"} {
+			if t, err := time.Parse(layout, s); err == nil {
+				if format == "24h" {
+					return t.Format("15:04")
+				}
+				return t.Format("3:04 PM")
+			}
+		}
+		return s
+	},
+	// capitalizeTimeOfDay formats a medication time_of_day value for display
+	// e.g., "morning" → "Morning", "with_breakfast" → "With Breakfast"
+	"capitalizeTimeOfDay": func(v interface{}) string {
+		s := fmt.Sprintf("%v", v)
+		s = strings.ReplaceAll(s, "_", " ")
+		words := strings.Fields(s)
+		for i, w := range words {
+			if len(w) > 0 {
+				words[i] = strings.ToUpper(w[:1]) + w[1:]
+			}
+		}
+		return strings.Join(words, " ")
 	},
 	// formatDate formats a date in the given timezone with the specified layout
 	// Usage: {{formatDate .LogDate $.UserTimezone "Jan 2, 2006"}}

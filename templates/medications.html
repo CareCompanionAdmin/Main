@@ -160,7 +160,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                     </h3>
-                    <p class="text-gray-600 dark:text-gray-300">{{.Dosage}} {{.DosageUnit}} - {{.Frequency}}</p>
+                    <p class="text-gray-600 dark:text-gray-300">{{.Dosage}} {{.DosageUnit}} - {{capitalizeTimeOfDay .Frequency}}</p>
                     {{if .Instructions.Valid}}<p class="text-sm text-gray-500 dark:text-gray-400 mt-1 break-words">{{.Instructions.String}}</p>{{end}}
                 </div>
                 <span class="self-start px-3 py-1 {{if .IsActive}}bg-green-100 text-green-700{{else}}bg-gray-100 text-gray-600{{end}} rounded-full text-sm flex-shrink-0">
@@ -172,7 +172,7 @@
                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Schedule:</p>
                 <div class="flex flex-wrap gap-2">
                     {{range .Schedules}}
-                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">{{.TimeOfDay}}{{if .ScheduledTime.Valid}} ({{.ScheduledTime.String}}){{end}}</span>
+                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">{{capitalizeTimeOfDay .TimeOfDay}}{{if .ScheduledTime.Valid}} ({{formatTimeStr .ScheduledTime.String $.UserTimeFormat}}){{end}}</span>
                     {{end}}
                 </div>
             </div>
@@ -1099,6 +1099,7 @@ function updateScheduleFields() {
         let html = `<div class="flex items-center gap-3">
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300 w-28">${slot.label}:</span>
             <input type="time" name="schedule_time_${idx}" value="${slot.default_time}"
+                   onchange="onScheduleTimeChange(this, this.nextElementSibling)"
                    class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" required>
             <input type="hidden" name="schedule_tod_${idx}" value="${slot.time_of_day}">`;
 
@@ -1116,6 +1117,21 @@ function updateScheduleFields() {
         html += '</div>';
         return html;
     }).join('');
+}
+
+// Infer time_of_day from a time value (HH:MM)
+function inferTimeOfDay(timeStr) {
+    if (!timeStr) return 'morning';
+    const [hours] = timeStr.split(':').map(Number);
+    if (hours < 12) return 'morning';
+    if (hours < 17) return 'afternoon';
+    if (hours < 21) return 'evening';
+    return 'night';
+}
+
+// Update the hidden time_of_day field when the user changes the time input
+function onScheduleTimeChange(timeInput, todInput) {
+    todInput.value = inferTimeOfDay(timeInput.value);
 }
 
 // Initialize schedule fields on page load
@@ -1590,11 +1606,15 @@ function populateEditSchedules(frequency, existingSchedules) {
             }
         }
 
+        // Use the actual time to infer time_of_day instead of relying on preset
+        const todValue = inferTimeOfDay(timeValue);
+
         let html = `<div class="flex items-center gap-3">
             <span class="text-sm font-medium text-gray-700 dark:text-gray-300 w-28">${slot.label}:</span>
             <input type="time" name="edit_schedule_time_${idx}" value="${timeValue}"
+                   onchange="onScheduleTimeChange(this, this.nextElementSibling)"
                    class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" required>
-            <input type="hidden" name="edit_schedule_tod_${idx}" value="${slot.time_of_day}">`;
+            <input type="hidden" name="edit_schedule_tod_${idx}" value="${todValue}">`;
 
         if (slot.weekly) {
             html += `<select name="edit_schedule_day_${idx}" class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">

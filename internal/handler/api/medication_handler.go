@@ -19,14 +19,16 @@ import (
 type MedicationHandler struct {
 	medService      *service.MedicationService
 	childService    *service.ChildService
+	userService     *service.UserService
 	drugDBService   *service.DrugDatabaseService
 	insightService  *service.InsightService
 }
 
-func NewMedicationHandler(medService *service.MedicationService, childService *service.ChildService, drugDBService *service.DrugDatabaseService, insightService *service.InsightService) *MedicationHandler {
+func NewMedicationHandler(medService *service.MedicationService, childService *service.ChildService, userService *service.UserService, drugDBService *service.DrugDatabaseService, insightService *service.InsightService) *MedicationHandler {
 	return &MedicationHandler{
 		medService:     medService,
 		childService:   childService,
+		userService:    userService,
 		drugDBService:  drugDBService,
 		insightService: insightService,
 	}
@@ -291,10 +293,12 @@ func (h *MedicationHandler) GetDue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+
 	dateStr := r.URL.Query().Get("date")
-	date := time.Now()
+	date := time.Now().In(loc)
 	if dateStr != "" {
-		date, err = parseDate(dateStr)
+		date, err = time.ParseInLocation("2006-01-02", dateStr, loc)
 		if err != nil {
 			respondBadRequest(w, "Invalid date format")
 			return
@@ -366,18 +370,20 @@ func (h *MedicationHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+
 	// Default to last 7 days
-	endDate := time.Now()
+	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
 
 	startStr := r.URL.Query().Get("start_date")
 	if startStr != "" {
-		startDate, _ = parseDate(startStr)
+		startDate, _ = time.ParseInLocation("2006-01-02", startStr, loc)
 	}
 
 	endStr := r.URL.Query().Get("end_date")
 	if endStr != "" {
-		endDate, _ = parseDate(endStr)
+		endDate, _ = time.ParseInLocation("2006-01-02", endStr, loc)
 	}
 
 	logs, err := h.medService.GetLogs(r.Context(), childID, startDate, endDate)
