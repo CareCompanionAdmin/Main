@@ -444,7 +444,7 @@
 </main>
 
 <!-- Modal Container -->
-<div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeModal(event)">
+<div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4">
             <h2 id="modal-title" class="text-xl font-bold text-gray-900 dark:text-white">Add Entry</h2>
@@ -459,8 +459,8 @@
 </div>
 
 <!-- Medication Taken Modal -->
-<div id="med-taken-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeMedTakenModal(event)">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+<div id="med-taken-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">When was this medication taken?</h2>
             <button onclick="closeMedTakenModal()" class="text-gray-400 hover:text-gray-600">
@@ -1573,8 +1573,13 @@ function toggleNewFoodAcceptance(input) {
     }
 }
 
+let isSubmitting = false;
 async function handleSubmit(e) {
     e.preventDefault();
+    if (isSubmitting) return;
+    isSubmitting = true;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     const formData = new FormData(e.target);
     let data = {};
     let endpoint = '';
@@ -1790,6 +1795,9 @@ async function handleSubmit(e) {
         }
     } catch (error) {
         alert('An error occurred: ' + error.message);
+    } finally {
+        isSubmitting = false;
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
@@ -2027,9 +2035,7 @@ function openMedTakenModal(medicationId, scheduleId, medName, timeOfDay, schedul
 
     // Show hint about earliest allowed time
     const hintEl = document.getElementById('med-taken-hint');
-    hintEl.textContent = 'Earliest allowed: ' + earliestDate.toLocaleString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-    });
+    hintEl.textContent = 'You can log doses up to 7 days back.';
 
     // Clear any previous error
     document.getElementById('med-taken-error').classList.add('hidden');
@@ -2045,60 +2051,12 @@ function closeMedTakenModal(event) {
 }
 
 function calculateEarliestAllowedTime(timeOfDay, scheduledTime, daysOfWeek) {
-    const now = new Date();
-
-    // Parse scheduled time or use default times for time of day
-    let scheduledHour, scheduledMinute;
-    if (scheduledTime) {
-        const parts = scheduledTime.split(':');
-        scheduledHour = parseInt(parts[0]);
-        scheduledMinute = parseInt(parts[1] || 0);
-    } else {
-        // Default times for each time of day
-        const defaultTimes = {
-            'morning': { hour: 8, minute: 0 },
-            'noon': { hour: 12, minute: 0 },
-            'afternoon': { hour: 15, minute: 0 },
-            'evening': { hour: 18, minute: 0 },
-            'bedtime': { hour: 21, minute: 0 },
-            'as needed': { hour: 0, minute: 0 }
-        };
-        const defaults = defaultTimes[timeOfDay.toLowerCase()] || { hour: 9, minute: 0 };
-        scheduledHour = defaults.hour;
-        scheduledMinute = defaults.minute;
-    }
-
-    // Find the previous scheduled dose time
-    let previousDose = new Date(now);
-    previousDose.setHours(scheduledHour, scheduledMinute, 0, 0);
-
-    // If the scheduled time today hasn't passed yet, or we're looking for previous dose
-    // we need to go back to find the last valid scheduled time
-
-    if (daysOfWeek && daysOfWeek.length > 0 && daysOfWeek.length < 7) {
-        // Medication is not taken every day - find previous scheduled day
-        let daysBack = 1;
-        let foundPrevious = false;
-
-        while (!foundPrevious && daysBack <= 7) {
-            let checkDate = new Date(now);
-            checkDate.setDate(checkDate.getDate() - daysBack);
-            const dayOfWeek = checkDate.getDay();
-
-            if (daysOfWeek.includes(dayOfWeek)) {
-                previousDose = new Date(checkDate);
-                previousDose.setHours(scheduledHour, scheduledMinute, 1, 0); // 1 second after scheduled time
-                foundPrevious = true;
-            }
-            daysBack++;
-        }
-    } else {
-        // Daily medication - previous dose was yesterday at the same time
-        previousDose.setDate(previousDose.getDate() - 1);
-        previousDose.setSeconds(1); // 1 second after scheduled time
-    }
-
-    return previousDose;
+    // Allow logging up to 7 days back — this gives flexibility for catching up
+    // on missed logs without being overly restrictive about exact dose timing
+    const earliest = new Date();
+    earliest.setDate(earliest.getDate() - 7);
+    earliest.setHours(0, 0, 0, 0);
+    return earliest;
 }
 
 function confirmMedTaken(option) {
@@ -2119,12 +2077,9 @@ function confirmMedTaken(option) {
 
         logDate = new Date(dateVal + 'T' + timeVal);
 
-        // Validate against earliest allowed time
+        // Validate against earliest allowed time (7 days back)
         if (logDate < currentMedModal.earliestAllowed) {
-            const earliestStr = new Date(currentMedModal.earliestAllowed).toLocaleString('en-US', {
-                weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
-            });
-            document.getElementById('med-taken-error').textContent = 'Time must be after ' + earliestStr + '. Earlier doses would be considered missed.';
+            document.getElementById('med-taken-error').textContent = 'Cannot log medication more than 7 days in the past.';
             document.getElementById('med-taken-error').classList.remove('hidden');
             return;
         }

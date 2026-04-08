@@ -665,6 +665,9 @@
 
     document.getElementById('promo-form').addEventListener('submit', async function(e) {
         e.preventDefault();
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
 
         const data = collectFormData();
         const url = isEdit ? `/api/admin/super/promo-codes/${promoCodeId}` : '/api/admin/super/promo-codes';
@@ -686,6 +689,7 @@
             window.location.href = '/admin/promo-codes';
         } catch (err) {
             alert('Error: ' + err.message);
+            submitBtn.disabled = false;
         }
     });
 

@@ -367,6 +367,7 @@
 </div>
 
 <script>
+    const userTimeFormat = '{{.UserTimeFormat}}';
     const statusColors = {
         'healthy': 'bg-green-500',
         'degraded': 'bg-yellow-500',
@@ -436,7 +437,14 @@
 
     function updateUI(data) {
         // Update timestamp
-        document.getElementById('last-updated').textContent = 'Last updated: ' + new Date(data.last_updated).toLocaleTimeString();
+        const lastDate = new Date(data.last_updated);
+        let lastTimeStr;
+        if (userTimeFormat === '24h') {
+            lastTimeStr = String(lastDate.getHours()).padStart(2, '0') + ':' + String(lastDate.getMinutes()).padStart(2, '0') + ':' + String(lastDate.getSeconds()).padStart(2, '0');
+        } else {
+            lastTimeStr = lastDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+        }
+        document.getElementById('last-updated').textContent = 'Last updated: ' + lastTimeStr;
 
         // Overall health
         document.getElementById('health-summary').textContent = data.health_summary;
@@ -777,7 +785,10 @@
     function formatTime(timestamp) {
         if (!timestamp) return '';
         const date = new Date(timestamp);
-        return date.toLocaleTimeString();
+        if (userTimeFormat === '24h') {
+            return String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+        }
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     }
 
     function escapeHtml(text) {

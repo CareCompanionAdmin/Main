@@ -15,10 +15,11 @@ import (
 
 // Template data structures
 type AdminPageData struct {
-	Title       string
-	CurrentUser AdminUser
-	Data        interface{}
-	Flash       string
+	Title          string
+	CurrentUser    AdminUser
+	Data           interface{}
+	Flash          string
+	UserTimeFormat string
 }
 
 type AdminUser struct {
@@ -54,6 +55,24 @@ var templateFuncs = template.FuncMap{
 			result += item
 		}
 		return result
+	},
+	"formatTimeStr": func(s string, args ...string) string {
+		if s == "" {
+			return ""
+		}
+		format := "12h"
+		if len(args) > 0 && args[0] != "" {
+			format = args[0]
+		}
+		for _, layout := range []string{"15:04:05", "15:04"} {
+			if t, err := time.Parse(layout, s); err == nil {
+				if format == "24h" {
+					return t.Format("15:04")
+				}
+				return t.Format("3:04 PM")
+			}
+		}
+		return s
 	},
 	"formatDateTime": func(t interface{}) string {
 		if t == nil {

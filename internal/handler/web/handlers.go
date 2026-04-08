@@ -295,11 +295,17 @@ func (h *WebHandlers) Alerts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get user preferences for timezone
-	userTimezone := "America/New_York" // Default timezone
+	// Get user preferences for timezone and time format
+	userTimezone := "America/New_York"
+	userTimeFormat := "12h"
 	prefs, err := h.services.User.GetPreferences(r.Context(), userID)
-	if err == nil && prefs != nil && prefs.Timezone != "" {
-		userTimezone = prefs.Timezone
+	if err == nil && prefs != nil {
+		if prefs.Timezone != "" {
+			userTimezone = prefs.Timezone
+		}
+		if prefs.TimeFormat != "" {
+			userTimeFormat = prefs.TimeFormat
+		}
 	}
 
 	alertsPage, err := h.services.Alert.GetAlertsPage(r.Context(), childID)
@@ -309,9 +315,10 @@ func (h *WebHandlers) Alerts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"Child":        child,
-		"AlertsPage":   alertsPage,
-		"UserTimezone": userTimezone,
+		"Child":          child,
+		"AlertsPage":     alertsPage,
+		"UserTimezone":   userTimezone,
+		"UserTimeFormat": userTimeFormat,
 	}
 
 	renderTemplate(w, "alerts", data)
@@ -446,6 +453,13 @@ func (h *WebHandlers) Chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user time format preference
+	userTimeFormat := "12h"
+	prefs, err := h.services.User.GetPreferences(r.Context(), userID)
+	if err == nil && prefs != nil && prefs.TimeFormat != "" {
+		userTimeFormat = prefs.TimeFormat
+	}
+
 	// Get threads for this user
 	threads, err := h.services.Chat.GetThreads(r.Context(), familyID, userID)
 	if err != nil {
@@ -465,12 +479,13 @@ func (h *WebHandlers) Chat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"UserID":    userID,
-		"FamilyID":  familyID,
-		"FirstName": firstName,
-		"Threads":   threads,
-		"Members":   members,
-		"Children":  children,
+		"UserID":         userID,
+		"FamilyID":       familyID,
+		"FirstName":      firstName,
+		"Threads":        threads,
+		"Members":        members,
+		"Children":       children,
+		"UserTimeFormat": userTimeFormat,
 	}
 
 	renderTemplate(w, "chat", data)

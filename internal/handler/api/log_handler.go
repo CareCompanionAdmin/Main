@@ -204,6 +204,9 @@ func (h *LogHandler) UpdateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 	existing.PositiveBehaviors = req.PositiveBehaviors
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateBehaviorLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update behavior log")
@@ -318,6 +321,9 @@ func (h *LogHandler) UpdateBowelLog(w http.ResponseWriter, r *http.Request) {
 	existing.BloodPresent = req.BloodPresent
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateBowelLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update bowel log")
@@ -419,6 +425,9 @@ func (h *LogHandler) UpdateSpeechLog(w http.ResponseWriter, r *http.Request) {
 	existing.SuccessfulCommunications = req.SuccessfulCommunications
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateSpeechLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update speech log")
@@ -544,6 +553,9 @@ func (h *LogHandler) UpdateDietLog(w http.ResponseWriter, r *http.Request) {
 	existing.ReactionDetails.Valid = req.ReactionDetails != ""
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateDietLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update diet log")
@@ -654,6 +666,9 @@ func (h *LogHandler) UpdateWeightLog(w http.ResponseWriter, r *http.Request) {
 	existing.HeightInches = req.HeightInches
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateWeightLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update weight log")
@@ -775,6 +790,9 @@ func (h *LogHandler) UpdateSleepLog(w http.ResponseWriter, r *http.Request) {
 	existing.BedWetting = req.BedWetting
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateSleepLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update sleep log")
@@ -891,6 +909,9 @@ func (h *LogHandler) UpdateSensoryLog(w http.ResponseWriter, r *http.Request) {
 	existing.OverallRegulation = req.OverallRegulation
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateSensoryLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update sensory log")
@@ -1006,6 +1027,9 @@ func (h *LogHandler) UpdateSocialLog(w http.ResponseWriter, r *http.Request) {
 	existing.CooperativePlayMinutes = req.CooperativePlayMinutes
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateSocialLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update social log")
@@ -1124,6 +1148,9 @@ func (h *LogHandler) UpdateTherapyLog(w http.ResponseWriter, r *http.Request) {
 	existing.HomeworkAssigned.Valid = req.HomeworkAssigned != ""
 	existing.ParentNotes.String = req.ParentNotes
 	existing.ParentNotes.Valid = req.ParentNotes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateTherapyLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update therapy log")
@@ -1244,6 +1271,9 @@ func (h *LogHandler) UpdateSeizureLog(w http.ResponseWriter, r *http.Request) {
 	existing.Called911 = req.Called911
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateSeizureLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update seizure log")
@@ -1370,6 +1400,9 @@ func (h *LogHandler) UpdateHealthEventLog(w http.ResponseWriter, r *http.Request
 	}
 	existing.Notes.String = req.Notes
 	existing.Notes.Valid = req.Notes != ""
+	if !req.LogDate.Time.IsZero() {
+		existing.LogDate = req.LogDate.Time
+	}
 
 	if err := h.logService.UpdateHealthEventLog(r.Context(), existing); err != nil {
 		respondInternalError(w, "Failed to update health event log")

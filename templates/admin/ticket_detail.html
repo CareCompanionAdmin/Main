@@ -8,7 +8,7 @@
     <div class="flex justify-between items-start mb-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">{{.Subject}}</h1>
-            <p class="text-sm text-gray-500">Ticket #{{slice .ID.String 0 8}} | Created {{.CreatedAt.Format "Jan 2, 2006 3:04 PM"}}</p>
+            <p class="text-sm text-gray-500">Ticket #{{slice .ID.String 0 8}} | Created {{.CreatedAt.Format "Jan 2, 2006"}} {{formatTimeStr (.CreatedAt.Format "15:04") $.UserTimeFormat}}</p>
         </div>
         <div class="flex space-x-2">
             <span class="px-3 py-1 text-sm rounded-full
@@ -56,7 +56,7 @@
         <div class="p-4 rounded {{if .IsInternal}}bg-yellow-50 border border-yellow-200{{else}}bg-gray-50{{end}}">
             <div class="flex justify-between text-sm mb-2">
                 <span class="font-medium">{{.SenderName}} {{if .IsInternal}}<span class="text-yellow-600">(Internal)</span>{{end}}</span>
-                <span class="text-gray-500">{{.CreatedAt.Format "Jan 2, 3:04 PM"}}</span>
+                <span class="text-gray-500">{{.CreatedAt.Format "Jan 2,"}} {{formatTimeStr (.CreatedAt.Format "15:04") $.UserTimeFormat}}</span>
             </div>
             <p class="text-gray-800 whitespace-pre-wrap">{{.Message}}</p>
         </div>

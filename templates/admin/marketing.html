@@ -1,7 +1,7 @@
 {{define "content"}}
 <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Marketing Dashboard</h1>
-    <span class="text-sm text-gray-500">Last updated: {{if .Data}}{{.Data.CachedAt.Format "Jan 2, 2006 3:04 PM"}}{{end}}</span>
+    <span class="text-sm text-gray-500">Last updated: {{if .Data}}{{.Data.CachedAt.Format "Jan 2, 2006"}} {{formatTimeStr (.Data.CachedAt.Format "15:04") $.UserTimeFormat}}{{end}}</span>
 </div>
 
 <!-- Hero Stats -->

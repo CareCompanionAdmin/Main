@@ -101,12 +101,12 @@ func (r *logRepo) GetBehaviorLogByID(ctx context.Context, id uuid.UUID) (*models
 func (r *logRepo) UpdateBehaviorLog(ctx context.Context, log *models.BehaviorLog) error {
 	query := `
 		UPDATE behavior_logs
-		SET log_time = $2, time_scope = $3, mood_level = $4, energy_level = $5, anxiety_level = $6, interpersonal_behavior = $7, meltdowns = $8, stimming_episodes = $9, stimming_level = $10, aggression_incidents = $11, self_injury_incidents = $12, triggers = $13, positive_behaviors = $14, notes = $15, updated_at = $16
+		SET log_date = $2, log_time = $3, time_scope = $4, mood_level = $5, energy_level = $6, anxiety_level = $7, interpersonal_behavior = $8, meltdowns = $9, stimming_episodes = $10, stimming_level = $11, aggression_incidents = $12, self_injury_incidents = $13, triggers = $14, positive_behaviors = $15, notes = $16, updated_at = $17
 		WHERE id = $1
 	`
 	log.UpdatedAt = time.Now()
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.LogTime, log.TimeScope,
+		log.ID, log.LogDate, log.LogTime, log.TimeScope,
 		log.MoodLevel, log.EnergyLevel, log.AnxietyLevel, log.InterpersonalBehavior,
 		log.Meltdowns, log.StimmingEpisodes, log.StimmingLevel,
 		log.AggressionIncidents, log.SelfInjuryIncidents,
@@ -189,11 +189,11 @@ func (r *logRepo) GetBowelLogByID(ctx context.Context, id uuid.UUID) (*models.Bo
 func (r *logRepo) UpdateBowelLog(ctx context.Context, log *models.BowelLog) error {
 	query := `
 		UPDATE bowel_logs
-		SET log_time = $2, bristol_scale = $3, had_accident = $4, pain_level = $5, blood_present = $6, notes = $7
+		SET log_date = $2, log_time = $3, bristol_scale = $4, had_accident = $5, pain_level = $6, blood_present = $7, notes = $8
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.LogTime, log.BristolScale, log.HadAccident, log.PainLevel, log.BloodPresent, log.Notes,
+		log.ID, log.LogDate, log.LogTime, log.BristolScale, log.HadAccident, log.PainLevel, log.BloodPresent, log.Notes,
 	)
 	return err
 }
@@ -275,11 +275,11 @@ func (r *logRepo) GetSpeechLogByID(ctx context.Context, id uuid.UUID) (*models.S
 func (r *logRepo) UpdateSpeechLog(ctx context.Context, log *models.SpeechLog) error {
 	query := `
 		UPDATE speech_logs
-		SET verbal_output_level = $2, clarity_level = $3, new_words = $4, lost_words = $5, echolalia_level = $6, communication_attempts = $7, successful_communications = $8, notes = $9
+		SET log_date = $2, verbal_output_level = $3, clarity_level = $4, new_words = $5, lost_words = $6, echolalia_level = $7, communication_attempts = $8, successful_communications = $9, notes = $10
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.VerbalOutputLevel, log.ClarityLevel, log.NewWords, log.LostWords,
+		log.ID, log.LogDate, log.VerbalOutputLevel, log.ClarityLevel, log.NewWords, log.LostWords,
 		log.EcholaliaLevel, log.CommunicationAttempts, log.SuccessfulCommunications, log.Notes,
 	)
 	return err
@@ -362,11 +362,11 @@ func (r *logRepo) GetDietLogByID(ctx context.Context, id uuid.UUID) (*models.Die
 func (r *logRepo) UpdateDietLog(ctx context.Context, log *models.DietLog) error {
 	query := `
 		UPDATE diet_logs
-		SET meal_type = $2, meal_time = $3, foods_eaten = $4, foods_refused = $5, appetite_level = $6, water_intake_oz = $7, supplements_taken = $8, new_food_tried = $9, new_food_acceptance = $10, allergic_reaction = $11, reaction_details = $12, notes = $13
+		SET log_date = $2, meal_type = $3, meal_time = $4, foods_eaten = $5, foods_refused = $6, appetite_level = $7, water_intake_oz = $8, supplements_taken = $9, new_food_tried = $10, new_food_acceptance = $11, allergic_reaction = $12, reaction_details = $13, notes = $14
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.MealType, log.MealTime, log.FoodsEaten, log.FoodsRefused, log.AppetiteLevel,
+		log.ID, log.LogDate, log.MealType, log.MealTime, log.FoodsEaten, log.FoodsRefused, log.AppetiteLevel,
 		log.WaterIntakeOz, log.SupplementsTaken, log.NewFoodTried, log.NewFoodAcceptance,
 		log.AllergicReaction, log.ReactionDetails, log.Notes,
 	)
@@ -444,10 +444,10 @@ func (r *logRepo) GetWeightLogByID(ctx context.Context, id uuid.UUID) (*models.W
 func (r *logRepo) UpdateWeightLog(ctx context.Context, log *models.WeightLog) error {
 	query := `
 		UPDATE weight_logs
-		SET weight_lbs = $2, height_inches = $3, notes = $4
+		SET log_date = $2, weight_lbs = $3, height_inches = $4, notes = $5
 		WHERE id = $1
 	`
-	_, err := r.db.ExecContext(ctx, query, log.ID, log.WeightLbs, log.HeightInches, log.Notes)
+	_, err := r.db.ExecContext(ctx, query, log.ID, log.LogDate, log.WeightLbs, log.HeightInches, log.Notes)
 	return err
 }
 
@@ -528,11 +528,11 @@ func (r *logRepo) GetSleepLogByID(ctx context.Context, id uuid.UUID) (*models.Sl
 func (r *logRepo) UpdateSleepLog(ctx context.Context, log *models.SleepLog) error {
 	query := `
 		UPDATE sleep_logs
-		SET bedtime = $2, wake_time = $3, total_sleep_minutes = $4, night_wakings = $5, sleep_quality = $6, took_sleep_aid = $7, sleep_aid_name = $8, nightmares = $9, bed_wetting = $10, notes = $11
+		SET log_date = $2, bedtime = $3, wake_time = $4, total_sleep_minutes = $5, night_wakings = $6, sleep_quality = $7, took_sleep_aid = $8, sleep_aid_name = $9, nightmares = $10, bed_wetting = $11, notes = $12
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.Bedtime, log.WakeTime, log.TotalSleepMinutes, log.NightWakings,
+		log.ID, log.LogDate, log.Bedtime, log.WakeTime, log.TotalSleepMinutes, log.NightWakings,
 		log.SleepQuality, log.TookSleepAid, log.SleepAidName, log.Nightmares, log.BedWetting, log.Notes,
 	)
 	return err
@@ -618,11 +618,11 @@ func (r *logRepo) GetSensoryLogByID(ctx context.Context, id uuid.UUID) (*models.
 func (r *logRepo) UpdateSensoryLog(ctx context.Context, log *models.SensoryLog) error {
 	query := `
 		UPDATE sensory_logs
-		SET log_time = $2, sensory_seeking_behaviors = $3, sensory_avoiding_behaviors = $4, overload_triggers = $5, calming_strategies_used = $6, overload_episodes = $7, overall_regulation = $8, notes = $9
+		SET log_date = $2, log_time = $3, sensory_seeking_behaviors = $4, sensory_avoiding_behaviors = $5, overload_triggers = $6, calming_strategies_used = $7, overload_episodes = $8, overall_regulation = $9, notes = $10
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.LogTime, log.SensorySeekingBehaviors, log.SensoryAvoidingBehaviors,
+		log.ID, log.LogDate, log.LogTime, log.SensorySeekingBehaviors, log.SensoryAvoidingBehaviors,
 		log.OverloadTriggers, log.CalmingStrategiesUsed, log.OverloadEpisodes, log.OverallRegulation, log.Notes,
 	)
 	return err
@@ -708,11 +708,11 @@ func (r *logRepo) GetSocialLogByID(ctx context.Context, id uuid.UUID) (*models.S
 func (r *logRepo) UpdateSocialLog(ctx context.Context, log *models.SocialLog) error {
 	query := `
 		UPDATE social_logs
-		SET eye_contact_level = $2, social_engagement_level = $3, peer_interactions = $4, positive_interactions = $5, conflicts = $6, parallel_play_minutes = $7, cooperative_play_minutes = $8, notes = $9
+		SET log_date = $2, eye_contact_level = $3, social_engagement_level = $4, peer_interactions = $5, positive_interactions = $6, conflicts = $7, parallel_play_minutes = $8, cooperative_play_minutes = $9, notes = $10
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.EyeContactLevel, log.SocialEngagementLevel, log.PeerInteractions,
+		log.ID, log.LogDate, log.EyeContactLevel, log.SocialEngagementLevel, log.PeerInteractions,
 		log.PositiveInteractions, log.Conflicts, log.ParallelPlayMinutes, log.CooperativePlayMinutes, log.Notes,
 	)
 	return err
@@ -795,11 +795,11 @@ func (r *logRepo) GetTherapyLogByID(ctx context.Context, id uuid.UUID) (*models.
 func (r *logRepo) UpdateTherapyLog(ctx context.Context, log *models.TherapyLog) error {
 	query := `
 		UPDATE therapy_logs
-		SET therapy_type = $2, therapist_name = $3, duration_minutes = $4, goals_worked_on = $5, progress_notes = $6, homework_assigned = $7, parent_notes = $8
+		SET log_date = $2, therapy_type = $3, therapist_name = $4, duration_minutes = $5, goals_worked_on = $6, progress_notes = $7, homework_assigned = $8, parent_notes = $9
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.TherapyType, log.TherapistName, log.DurationMinutes,
+		log.ID, log.LogDate, log.TherapyType, log.TherapistName, log.DurationMinutes,
 		log.GoalsWorkedOn, log.ProgressNotes, log.HomeworkAssigned, log.ParentNotes,
 	)
 	return err
@@ -882,11 +882,11 @@ func (r *logRepo) GetSeizureLogByID(ctx context.Context, id uuid.UUID) (*models.
 func (r *logRepo) UpdateSeizureLog(ctx context.Context, log *models.SeizureLog) error {
 	query := `
 		UPDATE seizure_logs
-		SET log_time = $2, seizure_type = $3, duration_seconds = $4, triggers = $5, warning_signs = $6, post_ictal_symptoms = $7, rescue_medication_given = $8, rescue_medication_name = $9, called_911 = $10, notes = $11
+		SET log_date = $2, log_time = $3, seizure_type = $4, duration_seconds = $5, triggers = $6, warning_signs = $7, post_ictal_symptoms = $8, rescue_medication_given = $9, rescue_medication_name = $10, called_911 = $11, notes = $12
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.LogTime, log.SeizureType, log.DurationSeconds, log.Triggers,
+		log.ID, log.LogDate, log.LogTime, log.SeizureType, log.DurationSeconds, log.Triggers,
 		log.WarningSigns, log.PostIctalSymptoms, log.RescueMedicationGiven, log.RescueMedicationName,
 		log.Called911, log.Notes,
 	)
@@ -967,11 +967,11 @@ func (r *logRepo) GetHealthEventLogByID(ctx context.Context, id uuid.UUID) (*mod
 func (r *logRepo) UpdateHealthEventLog(ctx context.Context, log *models.HealthEventLog) error {
 	query := `
 		UPDATE health_event_logs
-		SET event_type = $2, description = $3, symptoms = $4, temperature_f = $5, provider_name = $6, diagnosis = $7, treatment = $8, follow_up_date = $9, notes = $10
+		SET log_date = $2, event_type = $3, description = $4, symptoms = $5, temperature_f = $6, provider_name = $7, diagnosis = $8, treatment = $9, follow_up_date = $10, notes = $11
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		log.ID, log.EventType, log.Description, log.Symptoms, log.TemperatureF,
+		log.ID, log.LogDate, log.EventType, log.Description, log.Symptoms, log.TemperatureF,
 		log.ProviderName, log.Diagnosis, log.Treatment, log.FollowUpDate, log.Notes,
 	)
 	return err

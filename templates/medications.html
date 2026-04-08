@@ -224,9 +224,9 @@
     <!-- Backdrop -->
     <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <!-- Modal Container - this scrolls -->
-    <div class="fixed inset-0 overflow-y-auto" onclick="hideAddMedication()">
+    <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
-            <div id="modal-content" class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
+            <div id="modal-content" class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full relative shadow-xl">
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Add Medication</h2>
         <form id="medication-form" class="space-y-4">
             <!-- Name, Dosage, Unit - required for lookup -->
@@ -447,7 +447,7 @@
 <!-- Discontinue Medication Modal -->
 <div id="discontinue-modal" class="hidden fixed inset-0 z-50">
     <!-- Backdrop -->
-    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideDiscontinueModal()"></div>
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <!-- Modal -->
     <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
@@ -495,9 +495,9 @@
     <!-- Backdrop -->
     <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <!-- Modal Container -->
-    <div class="fixed inset-0 overflow-y-auto" onclick="hideEditMedication()">
+    <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-start justify-center p-4 pt-10 pb-20">
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full relative shadow-xl" onclick="event.stopPropagation()">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full relative shadow-xl">
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Edit Medication</h2>
                 <form id="edit-medication-form" class="space-y-4">
                     <input type="hidden" name="medication_id" id="edit-med-id">
@@ -789,9 +789,7 @@ function showAddMedication() {
 }
 
 function handleEscKey(event) {
-    if (event.key === 'Escape') {
-        hideAddMedication();
-    }
+    // Escape key intentionally does not close form modals to prevent data loss
 }
 
 function hideAddMedication() {
@@ -1152,6 +1150,10 @@ let detectedInteractions = null;
 
 document.getElementById('medication-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
     const formData = new FormData(this);
     const frequency = formData.get('frequency');
     const config = scheduleConfigs[frequency] || [];
@@ -1207,9 +1209,13 @@ document.getElementById('medication-form').addEventListener('submit', async func
             }
         } else {
             alert('Failed to add medication');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add Medication';
         }
     } catch (error) {
         alert('An error occurred');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add Medication';
     }
 });
 
@@ -1365,9 +1371,7 @@ function hideEditMedication() {
 }
 
 function handleEditEscKey(event) {
-    if (event.key === 'Escape') {
-        hideEditMedication();
-    }
+    // Escape key intentionally does not close form modals to prevent data loss
 }
 
 // Additional Information section
@@ -1640,6 +1644,10 @@ function updateEditScheduleFields() {
 // Edit form submission
 document.getElementById('edit-medication-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
     const formData = new FormData(this);
     const frequency = formData.get('frequency');
     const config = scheduleConfigs[frequency] || [];
@@ -1688,9 +1696,13 @@ document.getElementById('edit-medication-form').addEventListener('submit', async
         } else {
             const errorData = await response.json().catch(() => ({}));
             alert('Failed to update medication: ' + (errorData.error || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Changes';
         }
     } catch (error) {
         alert('An error occurred: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
     }
 });
 

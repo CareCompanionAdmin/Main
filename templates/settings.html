@@ -134,8 +134,8 @@
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Settings</h1>
 
-    <div id="success-message" class="hidden bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded mb-4"></div>
-    <div id="error-message" class="hidden bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4"></div>
+    <div id="success-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-200 px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300"></div>
+    <div id="error-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300"></div>
 
     <div class="space-y-6">
         <!-- Profile Settings -->
@@ -461,7 +461,7 @@
 </main>
 
 <!-- Add Member Modal -->
-<div id="add-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeAddMemberModal()">
+<div id="add-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add Family Member</h3>
@@ -529,7 +529,7 @@
 </div>
 
 <!-- Edit Member Modal -->
-<div id="edit-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeEditMemberModal()">
+<div id="edit-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Member</h3>
@@ -578,7 +578,7 @@
 </div>
 
 <!-- Add Child Modal -->
-<div id="add-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeAddChildModal()">
+<div id="add-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Add Child</h3>
@@ -637,7 +637,7 @@
 </div>
 
 <!-- Edit Child Modal -->
-<div id="edit-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" onclick="closeEditChildModal()">
+<div id="edit-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Child</h3>
@@ -716,7 +716,7 @@
 </div>
 
 <!-- Add/Edit Condition Modal -->
-<div id="condition-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[60]" onclick="closeConditionModal()">
+<div id="condition-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[60]">
     <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
             <h3 id="condition-modal-title" class="text-lg font-semibold text-gray-900">Add Condition</h3>
@@ -794,11 +794,19 @@ function showMessage(type, message) {
     const div = document.getElementById(type + '-message');
     div.textContent = message;
     div.classList.remove('hidden');
-    setTimeout(() => div.classList.add('hidden'), 5000);
+    div.style.opacity = '1';
+    setTimeout(() => {
+        div.style.opacity = '0';
+        setTimeout(() => div.classList.add('hidden'), 300);
+    }, 3000);
 }
 
 document.getElementById('profile-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     const formData = new FormData(this);
     const data = {
         first_name: formData.get('first_name'),
@@ -822,11 +830,17 @@ document.getElementById('profile-form').addEventListener('submit', async functio
         }
     } catch (error) {
         showMessage('error', 'An error occurred');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
 document.getElementById('password-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     const formData = new FormData(this);
     const data = {
         current_password: formData.get('current_password'),
@@ -850,6 +864,8 @@ document.getElementById('password-form').addEventListener('submit', async functi
         }
     } catch (error) {
         showMessage('error', 'An error occurred');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
@@ -1109,6 +1125,11 @@ document.getElementById('add-child-form').addEventListener('submit', async funct
         return;
     }
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+
     try {
         const response = await fetch('/api/children', {
             method: 'POST',
@@ -1135,6 +1156,9 @@ document.getElementById('add-child-form').addEventListener('submit', async funct
         }
     } catch (error) {
         showMessage('error', 'An error occurred');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add Child';
     }
 });
 
@@ -1259,6 +1283,10 @@ document.getElementById('condition-form').addEventListener('submit', async funct
         return;
     }
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     const data = {
         condition_name: conditionName,
         icd_code: icdCode || null,
@@ -1301,6 +1329,8 @@ document.getElementById('condition-form').addEventListener('submit', async funct
         }
     } catch (error) {
         showMessage('error', 'An error occurred');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
@@ -1354,6 +1384,10 @@ document.getElementById('edit-child-form').addEventListener('submit', async func
         showMessage('error', 'First name and date of birth are required');
         return;
     }
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
 
     try {
         const response = await fetch('/api/children/' + childID, {
@@ -1553,6 +1587,10 @@ document.getElementById('add-member-form').addEventListener('submit', async func
         return;
     }
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     try {
         const response = await fetch('/api/family/members', {
             method: 'POST',
@@ -1583,6 +1621,8 @@ document.getElementById('add-member-form').addEventListener('submit', async func
         }
     } catch (error) {
         showMessage('error', 'An error occurred');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
@@ -1629,6 +1669,10 @@ function closeEditMemberModal() {
 document.getElementById('edit-member-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     const memberID = document.getElementById('edit-member-id').value;
     const role = document.getElementById('edit-member-role').value;
 
@@ -1652,6 +1696,8 @@ document.getElementById('edit-member-form').addEventListener('submit', async fun
         }
     } catch (error) {
         showMessage('error', 'An error occurred');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
@@ -1707,6 +1753,9 @@ async function loadInteractionPreferences() {
 
 document.getElementById('interaction-prefs-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
 
     const data = {
         treatment_change_prompt_delay_hours: parseInt(document.getElementById('pref-delay-hours').value) || 48,
@@ -1734,6 +1783,8 @@ document.getElementById('interaction-prefs-form').addEventListener('submit', asy
         }
     } catch (error) {
         showMessage('error', 'An error occurred while saving preferences');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
@@ -1864,6 +1915,9 @@ async function loadUserPreferences() {
 
 document.getElementById('preferences-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
 
     const timezone = document.getElementById('pref-timezone').value;
     const theme = getStoredTheme();
@@ -1890,6 +1944,8 @@ document.getElementById('preferences-form').addEventListener('submit', async fun
         }
     } catch (error) {
         showMessage('error', 'An error occurred while saving preferences');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 

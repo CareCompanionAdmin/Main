@@ -403,6 +403,10 @@ document.getElementById('reply-form').addEventListener('submit', async function(
     const message = input.value.trim();
     if (!message) return;
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     try {
         const response = await fetch(`/api/support/tickets/${currentTicketID}/messages`, {
             method: 'POST',
@@ -421,11 +425,18 @@ document.getElementById('reply-form').addEventListener('submit', async function(
     } catch (error) {
         console.error('Error sending message:', error);
         alert('An error occurred');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
 document.getElementById('new-ticket-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
 
     const formData = new FormData(this);
     const data = {
@@ -447,10 +458,14 @@ document.getElementById('new-ticket-form').addEventListener('submit', async func
         } else {
             const err = await response.json();
             alert(err.error || 'Failed to create ticket');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Ticket';
         }
     } catch (error) {
         console.error('Error creating ticket:', error);
         alert('An error occurred');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Ticket';
     }
 });
 

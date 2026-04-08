@@ -64,6 +64,9 @@
 <script>
 document.getElementById('login-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
 
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -84,6 +87,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
         if (!response.ok) {
             errorDiv.textContent = data.message || 'Login failed';
             errorDiv.classList.remove('hidden');
+            submitBtn.disabled = false;
             return;
         }
 
@@ -95,6 +99,7 @@ document.getElementById('login-form').addEventListener('submit', async function(
     } catch (error) {
         errorDiv.textContent = 'An error occurred. Please try again.';
         errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
     }
 });
 </script>

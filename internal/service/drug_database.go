@@ -10,7 +10,17 @@ import (
 	"time"
 
 	"carecompanion/internal/models"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
+
+var titleCaser = cases.Title(language.English)
+
+// toTitleCase converts an ALL CAPS or lowercase string to Title Case
+func toTitleCase(s string) string {
+	return titleCaser.String(strings.ToLower(s))
+}
 
 // DrugDatabaseService handles medication validation and drug information lookups
 type DrugDatabaseService struct {
@@ -739,9 +749,9 @@ func parseInteractions(text string) []DrugInteraction {
 			}
 
 			interactions = append(interactions, DrugInteraction{
-				Drug:        strings.Title(drug),
+				Drug:        titleCaser.String(drug),
 				Severity:    severity,
-				Description: fmt.Sprintf("Potential interaction with %s (%s) mentioned in drug label", strings.Title(drug), class),
+				Description: fmt.Sprintf("Potential interaction with %s (%s) mentioned in drug label", titleCaser.String(drug), class),
 			})
 		}
 	}
@@ -762,61 +772,82 @@ type DrugSuggestion struct {
 	BrandNames  []string `json:"brand_names,omitempty"`
 }
 
-// SearchDrugs searches the FDA database for medications matching the query
+// SearchDrugs searches the FDA database for medications matching the query.
+// It searches FDA drug labels (brand name, generic name, and substance/active ingredient)
+// and also queries DailyMed for broader OTC and supplement coverage.
 func (s *DrugDatabaseService) SearchDrugs(ctx context.Context, query string) ([]DrugSuggestion, error) {
 	if len(query) < 2 {
 		return nil, nil
 	}
 
-	// Search FDA drug labels
-	searchURL := fmt.Sprintf("%s/label.json?search=(openfda.brand_name:%s*+openfda.generic_name:%s*)&limit=20",
+	seen := make(map[string]bool)
+	var suggestions []DrugSuggestion
+
+	// Search FDA drug labels — include substance_name for OTC/supplement coverage
+	searchURL := fmt.Sprintf("%s/label.json?search=(openfda.brand_name:%s*+openfda.generic_name:%s*+openfda.substance_name:%s*)&limit=20",
 		s.openFDAURL,
+		url.QueryEscape(query),
 		url.QueryEscape(query),
 		url.QueryEscape(query),
 	)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", searchURL, nil)
-	if err != nil {
-		return nil, err
+	if err == nil {
+		resp, respErr := s.httpClient.Do(req)
+		if respErr == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				s.parseFDALabelResults(resp, query, seen, &suggestions)
+			}
+		}
 	}
 
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, err
+	// Also search DailyMed for broader OTC/supplement coverage
+	dailyMedSuggestions := s.searchDailyMed(ctx, query)
+	for _, dm := range dailyMedSuggestions {
+		key := strings.ToLower(dm.Name)
+		if !seen[key] {
+			seen[key] = true
+			suggestions = append(suggestions, dm)
+		}
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		// Try alternative search without wildcard
-		return s.searchDrugsExact(ctx, query)
+	// If we got results from either source, return them
+	if len(suggestions) > 0 {
+		return suggestions, nil
 	}
 
+	// Fall back to exact search
+	return s.searchDrugsExact(ctx, query)
+}
+
+// parseFDALabelResults extracts drug suggestions from an FDA label API response
+func (s *DrugDatabaseService) parseFDALabelResults(resp *http.Response, query string, seen map[string]bool, suggestions *[]DrugSuggestion) {
 	var result struct {
 		Results []struct {
 			OpenFDA struct {
-				BrandName   []string `json:"brand_name"`
-				GenericName []string `json:"generic_name"`
+				BrandName     []string `json:"brand_name"`
+				GenericName   []string `json:"generic_name"`
+				SubstanceName []string `json:"substance_name"`
 			} `json:"openfda"`
 		} `json:"results"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
+		return
 	}
 
-	// Deduplicate and build suggestions
-	seen := make(map[string]bool)
-	var suggestions []DrugSuggestion
+	queryLower := strings.ToLower(query)
 
 	for _, r := range result.Results {
-		// Add generic names
+		// Add generic names (skip overly long combination product names)
 		for _, gn := range r.OpenFDA.GenericName {
 			gnLower := strings.ToLower(gn)
-			if !seen[gnLower] && strings.Contains(gnLower, strings.ToLower(query)) {
+			if len(gn) <= 80 && !seen[gnLower] && strings.Contains(gnLower, queryLower) {
 				seen[gnLower] = true
-				suggestions = append(suggestions, DrugSuggestion{
-					Name:        gn,
-					GenericName: gn,
+				*suggestions = append(*suggestions, DrugSuggestion{
+					Name:        toTitleCase(gn),
+					GenericName: toTitleCase(gn),
 					BrandNames:  r.OpenFDA.BrandName,
 				})
 			}
@@ -824,28 +855,109 @@ func (s *DrugDatabaseService) SearchDrugs(ctx context.Context, query string) ([]
 		// Add brand names
 		for _, bn := range r.OpenFDA.BrandName {
 			bnLower := strings.ToLower(bn)
-			if !seen[bnLower] && strings.Contains(bnLower, strings.ToLower(query)) {
+			if !seen[bnLower] && strings.Contains(bnLower, queryLower) {
 				seen[bnLower] = true
 				genericName := ""
-				if len(r.OpenFDA.GenericName) > 0 {
-					genericName = r.OpenFDA.GenericName[0]
+				if len(r.OpenFDA.GenericName) > 0 && len(r.OpenFDA.GenericName[0]) <= 80 {
+					genericName = toTitleCase(r.OpenFDA.GenericName[0])
 				}
-				suggestions = append(suggestions, DrugSuggestion{
-					Name:        bn,
+				*suggestions = append(*suggestions, DrugSuggestion{
+					Name:        toTitleCase(bn),
 					GenericName: genericName,
 				})
 			}
 		}
+		// Add substance/active ingredient names (catches OTC and supplements)
+		for _, sn := range r.OpenFDA.SubstanceName {
+			snLower := strings.ToLower(sn)
+			if !seen[snLower] && strings.Contains(snLower, queryLower) {
+				seen[snLower] = true
+				genericName := toTitleCase(sn)
+				brandNames := r.OpenFDA.BrandName
+				*suggestions = append(*suggestions, DrugSuggestion{
+					Name:        toTitleCase(sn),
+					GenericName: genericName,
+					BrandNames:  brandNames,
+				})
+			}
+		}
+	}
+}
+
+// searchDailyMed searches the DailyMed API for medications (better OTC/supplement coverage)
+func (s *DrugDatabaseService) searchDailyMed(ctx context.Context, query string) []DrugSuggestion {
+	searchURL := fmt.Sprintf("%s/spls.json?drug_name=%s&page=1&pagesize=20",
+		s.dailyMedURL,
+		url.QueryEscape(query),
+	)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", searchURL, nil)
+	if err != nil {
+		return nil
 	}
 
-	return suggestions, nil
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+
+	var result struct {
+		Data []struct {
+			Title string `json:"title"`
+			SetID string `json:"setid"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil
+	}
+
+	seen := make(map[string]bool)
+	var suggestions []DrugSuggestion
+	queryLower := strings.ToLower(query)
+
+	for _, entry := range result.Data {
+		// DailyMed titles are like "MELATONIN TABLET [MANUFACTURER]"
+		// Extract the drug name (before the dosage form or bracket)
+		title := entry.Title
+		name := title
+
+		// Extract the portion before brackets (manufacturer info)
+		if idx := strings.Index(title, "["); idx > 0 {
+			name = strings.TrimSpace(title[:idx])
+		}
+
+		// Extract just the drug name portion (before parenthetical ingredients)
+		displayName := name
+		if idx := strings.Index(name, "("); idx > 0 {
+			displayName = strings.TrimSpace(name[:idx])
+		}
+
+		nameLower := strings.ToLower(displayName)
+		if !seen[nameLower] && strings.Contains(nameLower, queryLower) {
+			seen[nameLower] = true
+			titleName := toTitleCase(displayName)
+			suggestions = append(suggestions, DrugSuggestion{
+				Name:        titleName,
+				GenericName: titleName,
+			})
+		}
+	}
+
+	return suggestions
 }
 
 // searchDrugsExact performs an exact search without wildcards
 func (s *DrugDatabaseService) searchDrugsExact(ctx context.Context, query string) ([]DrugSuggestion, error) {
-	// Use quoted search for better matching
-	searchURL := fmt.Sprintf("%s/label.json?search=(openfda.brand_name:\"%s\"+openfda.generic_name:\"%s\")&limit=20",
+	// Use quoted search for better matching — include substance_name for OTC/supplements
+	searchURL := fmt.Sprintf("%s/label.json?search=(openfda.brand_name:\"%s\"+openfda.generic_name:\"%s\"+openfda.substance_name:\"%s\")&limit=20",
 		s.openFDAURL,
+		url.QueryEscape(query),
 		url.QueryEscape(query),
 		url.QueryEscape(query),
 	)
@@ -865,49 +977,9 @@ func (s *DrugDatabaseService) searchDrugsExact(ctx context.Context, query string
 		return nil, nil
 	}
 
-	var result struct {
-		Results []struct {
-			OpenFDA struct {
-				BrandName   []string `json:"brand_name"`
-				GenericName []string `json:"generic_name"`
-			} `json:"openfda"`
-		} `json:"results"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, err
-	}
-
 	seen := make(map[string]bool)
 	var suggestions []DrugSuggestion
-
-	for _, r := range result.Results {
-		for _, gn := range r.OpenFDA.GenericName {
-			gnLower := strings.ToLower(gn)
-			if !seen[gnLower] {
-				seen[gnLower] = true
-				suggestions = append(suggestions, DrugSuggestion{
-					Name:        gn,
-					GenericName: gn,
-					BrandNames:  r.OpenFDA.BrandName,
-				})
-			}
-		}
-		for _, bn := range r.OpenFDA.BrandName {
-			bnLower := strings.ToLower(bn)
-			if !seen[bnLower] {
-				seen[bnLower] = true
-				genericName := ""
-				if len(r.OpenFDA.GenericName) > 0 {
-					genericName = r.OpenFDA.GenericName[0]
-				}
-				suggestions = append(suggestions, DrugSuggestion{
-					Name:        bn,
-					GenericName: genericName,
-				})
-			}
-		}
-	}
+	s.parseFDALabelResults(resp, query, seen, &suggestions)
 
 	return suggestions, nil
 }

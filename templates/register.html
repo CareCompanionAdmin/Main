@@ -85,6 +85,10 @@
 <script>
 document.getElementById('register-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating Account...';
 
     const formData = {
         email: document.getElementById('email').value,
@@ -110,6 +114,8 @@ document.getElementById('register-form').addEventListener('submit', async functi
         if (!response.ok) {
             errorDiv.textContent = data.message || 'Registration failed';
             errorDiv.classList.remove('hidden');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Account';
             return;
         }
 
@@ -121,6 +127,8 @@ document.getElementById('register-form').addEventListener('submit', async functi
     } catch (error) {
         errorDiv.textContent = 'An error occurred. Please try again.';
         errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
     }
 });
 </script>

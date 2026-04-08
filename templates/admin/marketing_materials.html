@@ -590,6 +590,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (brandForm) {
         brandForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn && submitBtn.disabled) return;
+            if (submitBtn) submitBtn.disabled = true;
 
             const formData = new FormData(brandForm);
             const data = {
@@ -634,6 +637,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Brand configuration updated successfully!');
             } catch (err) {
                 alert('Error: ' + err.message);
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
         });
     }
@@ -659,6 +664,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (socialForm) {
         socialForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn && submitBtn.disabled) return;
+            if (submitBtn) submitBtn.disabled = true;
 
             const platform = document.getElementById('social-platform').value;
             const headline = document.getElementById('social-headline').value;
@@ -704,6 +712,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.click();
             } catch (err) {
                 alert('Error: ' + err.message);
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
             }
         });
     }

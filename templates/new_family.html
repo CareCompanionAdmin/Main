@@ -122,6 +122,10 @@
 <script>
 document.getElementById('family-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
 
     const name = document.getElementById('name').value;
     const errorDiv = document.getElementById('error-message');
@@ -143,6 +147,8 @@ document.getElementById('family-form').addEventListener('submit', async function
         if (!response.ok) {
             errorDiv.textContent = data.message || 'Failed to create family';
             errorDiv.classList.remove('hidden');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Family';
             return;
         }
 
@@ -168,6 +174,8 @@ document.getElementById('family-form').addEventListener('submit', async function
     } catch (error) {
         errorDiv.textContent = 'An error occurred. Please try again.';
         errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Family';
     }
 });
 

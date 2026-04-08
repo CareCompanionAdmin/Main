@@ -174,18 +174,46 @@
     <!-- Medications Due -->
     {{if .MedicationsDue}}
     <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-4">Medications Due Today</h2>
+        <h2 class="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-4">Medications Due</h2>
         <div class="space-y-3">
             {{range .MedicationsDue}}
             {{if not .IsLogged}}
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
-                <div class="min-w-0">
-                    <p class="font-medium text-gray-900 dark:text-white break-words">{{.Medication.Name}}</p>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}){{end}}</p>
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700" id="med-card-{{.Medication.ID.String}}-{{.Schedule.ID.String}}">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="font-medium text-gray-900 dark:text-white break-words">{{.Medication.Name}}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}){{end}}</p>
+                    </div>
+                    <button onclick="showMedForm('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', '{{if .Schedule.ScheduledTime.Valid}}{{.Schedule.ScheduledTime.String}}{{end}}')" class="w-full sm:w-auto flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm text-center med-log-btn">
+                        Log Medication
+                    </button>
                 </div>
-                <button onclick="logMedication('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}')" class="w-full sm:w-auto flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm text-center">
-                    Mark as Taken
-                </button>
+                <!-- Inline log form (hidden by default) -->
+                <div class="med-log-form hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                            <select class="med-status w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
+                                <option value="taken">Taken</option>
+                                <option value="missed">Missed</option>
+                                <option value="skipped">Skipped</option>
+                                <option value="partial">Partial</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Actual Time</label>
+                            <input type="time" class="med-actual-time w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes <span class="text-gray-400 font-normal">(optional)</span></label>
+                        <input type="text" class="med-notes w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" placeholder="e.g., took with food, 30 min late">
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="submitMedLog('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}')" class="flex-1 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">Save</button>
+                        <button onclick="hideMedForm('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}')" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 text-sm">Cancel</button>
+                    </div>
+                </div>
             </div>
             {{end}}
             {{end}}
@@ -334,7 +362,8 @@
             <div onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Behavior"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-mood="{{if .MoodLevel}}{{.MoodLevel}}{{else}}0{{end}}"
                 data-entry-energy="{{if .EnergyLevel}}{{.EnergyLevel}}{{else}}0{{end}}"
                 data-entry-anxiety="{{if .AnxietyLevel}}{{.AnxietyLevel}}{{else}}0{{end}}"
@@ -363,7 +392,7 @@
                         {{if gt .SelfInjuryIncidents 0}}Self-injury: {{.SelfInjuryIncidents}} {{end}}
                         {{if .Notes.Valid}}{{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -375,7 +404,8 @@
             <div onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Meal"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-mealtype="{{if .MealType.Valid}}{{.MealType.String}}{{end}}"
                 data-entry-foods="{{if .FoodsEaten}}{{range $i, $f := .FoodsEaten}}{{if $i}}, {{end}}{{$f}}{{end}}{{end}}"
                 data-entry-foodsrefused="{{if .FoodsRefused}}{{range $i, $f := .FoodsRefused}}{{if $i}}, {{end}}{{$f}}{{end}}{{end}}"
@@ -395,7 +425,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Meal{{if .MealType.Valid}}: {{.MealType.String}}{{end}}</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -407,7 +437,8 @@
             <div onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sleep"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-quality="{{if .SleepQuality.Valid}}{{.SleepQuality.String}}{{end}}"
                 data-entry-totalminutes="{{if .TotalSleepMinutes}}{{.TotalSleepMinutes}}{{else}}0{{end}}"
                 data-entry-nightwakings="{{.NightWakings}}"
@@ -425,8 +456,8 @@
                 </div>
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Sleep</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{if .TotalSleepMinutes}} - {{.TotalSleepMinutes}} min{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .Bedtime.Valid}}{{formatTimeStr .Bedtime.String $.UserTimeFormat}}{{end}}{{if and .Bedtime.Valid .WakeTime.Valid}} – {{end}}{{if .WakeTime.Valid}}{{formatTimeStr .WakeTime.String $.UserTimeFormat}}{{end}}{{if and (not .Bedtime.Valid) (not .WakeTime.Valid)}}{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{end}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -438,7 +469,8 @@
             <div onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Bowel Movement"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-bristolscale="{{if .BristolScale}}{{.BristolScale}}{{else}}0{{end}}"
                 data-entry-hadaccident="{{.HadAccident}}"
                 data-entry-painlevel="{{if .PainLevel}}{{.PainLevel}}{{else}}0{{end}}"
@@ -452,7 +484,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Bowel Movement</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -464,6 +496,7 @@
             <div onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Medication"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
                 data-entry-name="{{.MedicationName}}"
                 data-entry-time="{{if .ActualTime.Valid}}{{.ActualTime.String}}{{end}}"
                 data-entry-created="{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}"
@@ -482,7 +515,7 @@
                     {{if .ActualTime.Valid}}
                     <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 medication-time-local" data-time="{{.ActualTime.String}}">{{.ActualTime.String}}</p>
                     {{else}}
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 medication-time" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}">{{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 medication-time" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}"></p>
                     {{end}}
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -495,7 +528,8 @@
             <div onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Speech"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-verballevel="{{if .VerbalOutputLevel}}{{.VerbalOutputLevel}}{{else}}0{{end}}"
                 data-entry-claritylevel="{{if .ClarityLevel}}{{.ClarityLevel}}{{else}}0{{end}}"
                 data-entry-newwords="{{if .NewWords}}{{range $i, $w := .NewWords}}{{if $i}}, {{end}}{{$w}}{{end}}{{end}}"
@@ -512,7 +546,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Speech</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -524,7 +558,8 @@
             <div onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg cursor-pointer hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Weight"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-weightlbs="{{if .WeightLbs}}{{.WeightLbs}}{{else}}0{{end}}"
                 data-entry-heightinches="{{if .HeightInches}}{{.HeightInches}}{{else}}0{{end}}"
                 data-entry-notes="{{if .Notes.Valid}}{{.Notes.String}}{{end}}">
@@ -536,7 +571,7 @@
                 <div class="flex-1">
                     <p class="font-medium text-gray-900 dark:text-white">Weight</p>
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -548,7 +583,8 @@
             <div onclick="showDetails('sensory', this)" class="flex items-start space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sensory"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-overloadepisodes="{{.OverloadEpisodes}}"
                 data-entry-overallregulation="{{if .OverallRegulation}}{{.OverallRegulation}}{{else}}0{{end}}"
                 data-entry-overloadtriggers="{{range $i, $v := .OverloadTriggers}}{{if $i}}, {{end}}{{$v}}{{end}}"
@@ -568,7 +604,7 @@
                         {{if .OverallRegulation}}{{if gt (deref .OverallRegulation) 0}}Regulation: {{deref .OverallRegulation}}/5 {{end}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -580,7 +616,8 @@
             <div onclick="showDetails('social', this)" class="flex items-start space-x-3 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Social"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-eyecontactlevel="{{if .EyeContactLevel}}{{.EyeContactLevel}}{{else}}0{{end}}"
                 data-entry-socialengagementlevel="{{if .SocialEngagementLevel}}{{.SocialEngagementLevel}}{{else}}0{{end}}"
                 data-entry-peerinteractions="{{.PeerInteractions}}"
@@ -601,7 +638,7 @@
                         {{if .SocialEngagementLevel}}Engagement: {{.SocialEngagementLevel}}/5 {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -613,7 +650,8 @@
             <div onclick="showDetails('therapy', this)" class="flex items-start space-x-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Therapy"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-therapytype="{{if .TherapyType.Valid}}{{.TherapyType.String}}{{end}}"
                 data-entry-therapistname="{{if .TherapistName.Valid}}{{.TherapistName.String}}{{end}}"
                 data-entry-durationminutes="{{if .DurationMinutes}}{{.DurationMinutes}}{{else}}0{{end}}"
@@ -632,7 +670,7 @@
                         {{if .TherapistName.Valid}}with {{.TherapistName.String}}{{end}}
                         {{if .ProgressNotes.Valid}} - {{.ProgressNotes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -644,7 +682,8 @@
             <div onclick="showDetails('seizure', this)" class="flex items-start space-x-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Seizure"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-seizuretype="{{if .SeizureType.Valid}}{{.SeizureType.String}}{{end}}"
                 data-entry-durationseconds="{{if .DurationSeconds}}{{.DurationSeconds}}{{else}}0{{end}}"
                 data-entry-triggers="{{range $i, $v := .Triggers}}{{if $i}}, {{end}}{{$v}}{{end}}"
@@ -665,7 +704,7 @@
                         {{if .DurationSeconds}}Duration: {{.DurationSeconds}}s {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -677,7 +716,8 @@
             <div onclick="showDetails('health_event', this)" class="flex items-start space-x-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Health Event"
-                data-entry-time="{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}"
+                data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
+                data-entry-time-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-entry-time-date="{{.LogDate.Format "Mon 1/2"}}"
                 data-entry-eventtype="{{if .EventType.Valid}}{{.EventType.String}}{{end}}"
                 data-entry-description="{{if .Description.Valid}}{{.Description.String}}{{end}}"
                 data-entry-symptoms="{{range $i, $v := .Symptoms}}{{if $i}}, {{end}}{{$v}}{{end}}"
@@ -698,7 +738,7 @@
                         {{if .Description.Valid}}{{.Description.String}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}} {{.CreatedAt.Format "3:04 PM"}}</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -777,7 +817,7 @@
 </div>
 
 <!-- Modal Container -->
-<div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeModal(event)">
+<div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4">
             <h2 id="modal-title" class="text-xl font-bold text-gray-900 dark:text-white">Add Entry</h2>
@@ -794,6 +834,22 @@
 <script>
 const childId = '{{.Child.ID}}';
 const token = localStorage.getItem('access_token');
+const userTimeFormat = '{{.UserTimeFormat}}';
+
+// Format a HH:MM (24h) time string according to user's time format preference
+function formatTimeDisplay(timeStr) {
+    if (!timeStr) return 'Not recorded';
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return timeStr;
+    const hours = parseInt(parts[0]);
+    const minutes = parts[1];
+    if (userTimeFormat === '24h') {
+        return String(hours).padStart(2, '0') + ':' + minutes;
+    }
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hour12 = hours % 12 || 12;
+    return hour12 + ':' + minutes + ' ' + period;
+}
 
 // Helper function to get local date string (avoids UTC timezone issues)
 function getLocalDateString(date = new Date()) {
@@ -1011,11 +1067,41 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bedtime</label>
-                    <input type="time" name="bedtime" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <input type="hidden" name="bedtime" value="">
+                    <div class="flex gap-1 items-center">
+                        <select name="bedtime_hour" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('bedtime')">
+                            <option value="">Hr</option>
+                            ${userTimeFormat === '24h' ?
+                                Array.from({length:24}, (_,i) => '<option value="'+i+'">'+String(i).padStart(2,'0')+'</option>').join('') :
+                                Array.from({length:12}, (_,i) => '<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')
+                            }
+                        </select>
+                        <span class="text-gray-500 dark:text-gray-400 font-bold">:</span>
+                        <select name="bedtime_min" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('bedtime')">
+                            <option value="">Min</option>
+                            ${Array.from({length:12}, (_,i) => '<option value="'+(i*5)+'">'+ String(i*5).padStart(2,'0')+'</option>').join('')}
+                        </select>
+                        ${userTimeFormat !== '24h' ? '<select name="bedtime_ampm" class="px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden(&#39;bedtime&#39;)"><option value="PM">PM</option><option value="AM">AM</option></select>' : ''}
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wake Time</label>
-                    <input type="time" name="wake_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <input type="hidden" name="wake_time" value="">
+                    <div class="flex gap-1 items-center">
+                        <select name="wake_time_hour" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('wake_time')">
+                            <option value="">Hr</option>
+                            ${userTimeFormat === '24h' ?
+                                Array.from({length:24}, (_,i) => '<option value="'+i+'">'+String(i).padStart(2,'0')+'</option>').join('') :
+                                Array.from({length:12}, (_,i) => '<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')
+                            }
+                        </select>
+                        <span class="text-gray-500 dark:text-gray-400 font-bold">:</span>
+                        <select name="wake_time_min" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('wake_time')">
+                            <option value="">Min</option>
+                            ${Array.from({length:12}, (_,i) => '<option value="'+(i*5)+'">'+ String(i*5).padStart(2,'0')+'</option>').join('')}
+                        </select>
+                        ${userTimeFormat !== '24h' ? '<select name="wake_time_ampm" class="px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden(&#39;wake_time&#39;)"><option value="AM">AM</option><option value="PM">PM</option></select>' : ''}
+                    </div>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -1052,10 +1138,7 @@ const formTemplates = {
                         </select>
                         <select name="sleep_minutes" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
                             <option value="">Min</option>
-                            <option value="0">0 min</option>
-                            <option value="15">15 min</option>
-                            <option value="30">30 min</option>
-                            <option value="45">45 min</option>
+                            ${Array.from({length:12}, (_,i) => '<option value="'+(i*5)+'">'+(i*5)+' min</option>').join('')}
                         </select>
                     </div>
                 </div>
@@ -1674,6 +1757,94 @@ function openModal(type) {
     document.getElementById('modal-content').innerHTML = formTemplates[type];
     document.getElementById('modal-overlay').classList.remove('hidden');
     document.getElementById('entry-form').addEventListener('submit', handleSubmit);
+    if (type === 'sleep') attachSleepAutoCalc();
+}
+
+// Populate custom time selects from a HH:MM (24h) string (used when editing existing entries)
+function populateSleepTimeSelects(form, prefix, timeStr) {
+    if (!timeStr) return;
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return;
+    let hour24 = parseInt(parts[0]);
+    const min = parseInt(parts[1]);
+    // Round minutes to nearest 5
+    const roundedMin = Math.round(min / 5) * 5;
+
+    const hourSel = form.querySelector('[name="' + prefix + '_hour"]');
+    const minSel = form.querySelector('[name="' + prefix + '_min"]');
+    const ampmSel = form.querySelector('[name="' + prefix + '_ampm"]');
+    const hidden = form.querySelector('[name="' + prefix + '"]');
+
+    if (userTimeFormat === '24h') {
+        if (hourSel) hourSel.value = hour24;
+    } else {
+        const ampm = hour24 >= 12 ? 'PM' : 'AM';
+        let hour12 = hour24 % 12;
+        if (hour12 === 0) hour12 = 12;
+        if (hourSel) hourSel.value = hour12;
+        if (ampmSel) ampmSel.value = ampm;
+    }
+    if (minSel) minSel.value = roundedMin >= 60 ? 55 : roundedMin;
+    if (hidden) hidden.value = timeStr;
+}
+
+// Convert custom hour/min/ampm selects into HH:MM (24h) hidden field value, then recalculate total sleep
+function updateSleepTimeHidden(prefix) {
+    const form = document.getElementById('entry-form');
+    if (!form) return;
+    const hourSel = form.querySelector('[name="' + prefix + '_hour"]');
+    const minSel = form.querySelector('[name="' + prefix + '_min"]');
+    const ampmSel = form.querySelector('[name="' + prefix + '_ampm"]');
+    const hidden = form.querySelector('[name="' + prefix + '"]');
+    if (!hourSel || !minSel || !hidden) return;
+
+    const h = hourSel.value;
+    const m = minSel.value;
+    if (h === '' || m === '') { hidden.value = ''; return; }
+
+    let hour24 = parseInt(h);
+    if (userTimeFormat !== '24h' && ampmSel) {
+        const ampm = ampmSel.value;
+        if (ampm === 'AM' && hour24 === 12) hour24 = 0;
+        else if (ampm === 'PM' && hour24 !== 12) hour24 += 12;
+    }
+    hidden.value = String(hour24).padStart(2, '0') + ':' + String(parseInt(m)).padStart(2, '0');
+
+    calcTotalSleepFromHidden();
+}
+
+// Auto-calculate total sleep from the hidden bedtime/wake_time fields
+function calcTotalSleepFromHidden() {
+    const form = document.getElementById('entry-form');
+    if (!form) return;
+    const bedtime = form.querySelector('[name="bedtime"]').value;
+    const wake = form.querySelector('[name="wake_time"]').value;
+    if (!bedtime || !wake) return;
+
+    const [bh, bm] = bedtime.split(':').map(Number);
+    const [wh, wm] = wake.split(':').map(Number);
+    let bedMins = bh * 60 + bm;
+    let wakeMins = wh * 60 + wm;
+    if (wakeMins <= bedMins) wakeMins += 24 * 60;
+    let totalMins = wakeMins - bedMins;
+
+    const hours = Math.floor(totalMins / 60);
+    const mins = totalMins % 60;
+    // Round minutes to nearest 5 to match dropdown options
+    const roundedMins = Math.round(mins / 5) * 5;
+    const finalHours = roundedMins >= 60 ? Math.min(hours + 1, 14) : Math.min(hours, 14);
+    const finalMins = roundedMins >= 60 ? 0 : roundedMins;
+
+    const hoursSelect = form.querySelector('[name="sleep_hours"]');
+    const minsSelect = form.querySelector('[name="sleep_minutes"]');
+    if (hoursSelect) hoursSelect.value = finalHours;
+    if (minsSelect) minsSelect.value = finalMins;
+}
+
+// Attach auto-calc listeners (for legacy <input type="time"> fallback)
+function attachSleepAutoCalc() {
+    // The custom selects already call updateSleepTimeHidden via onchange, which triggers calcTotalSleepFromHidden
+    // Nothing additional needed here
 }
 
 function closeModal(event) {
@@ -1693,6 +1864,7 @@ function editEntry(type, element) {
     document.getElementById('modal-content').innerHTML = formTemplates[type];
     document.getElementById('modal-overlay').classList.remove('hidden');
     document.getElementById('entry-form').addEventListener('submit', handleSubmit);
+    if (type === 'sleep') attachSleepAutoCalc();
 
     // Wait for DOM to update, then populate form fields
     setTimeout(() => {
@@ -1746,13 +1918,13 @@ function editEntry(type, element) {
                 if (ds.entryTotalminutes && parseInt(ds.entryTotalminutes) > 0) {
                     const totalMins = parseInt(ds.entryTotalminutes);
                     const hours = Math.floor(totalMins / 60);
-                    const mins = Math.round((totalMins % 60) / 15) * 15; // Round to nearest 15
+                    const mins = Math.round((totalMins % 60) / 5) * 5;
                     form.querySelector('[name="sleep_hours"]').value = hours;
-                    form.querySelector('[name="sleep_minutes"]').value = mins;
+                    form.querySelector('[name="sleep_minutes"]').value = mins >= 60 ? 0 : mins;
                 }
                 form.querySelector('[name="night_wakings"]').value = ds.entryNightwakings || 0;
-                if (ds.entryBedtime) form.querySelector('[name="bedtime"]').value = ds.entryBedtime;
-                if (ds.entryWaketime) form.querySelector('[name="wake_time"]').value = ds.entryWaketime;
+                if (ds.entryBedtime) populateSleepTimeSelects(form, 'bedtime', ds.entryBedtime);
+                if (ds.entryWaketime) populateSleepTimeSelects(form, 'wake_time', ds.entryWaketime);
                 if (ds.entryNightmares === 'true') form.querySelector('[name="nightmares"]').checked = true;
                 if (ds.entryBedwetting === 'true') form.querySelector('[name="bed_wetting"]').checked = true;
                 if (ds.entryTooksleepaid === 'true') {
@@ -1849,6 +2021,12 @@ function editEntry(type, element) {
                 if (ds.entryNotes) form.querySelector('[name="notes"]').value = ds.entryNotes;
                 break;
         }
+
+        // Set the log date to the entry's original date
+        const logDateInput = form.querySelector('[name="log_date"]');
+        if (logDateInput && ds.entryLogDate) {
+            logDateInput.value = ds.entryLogDate;
+        }
     }, 10);
 }
 
@@ -1887,8 +2065,13 @@ function toggleNewFoodAcceptance(input) {
     }
 }
 
+let isSubmitting = false;
 async function handleSubmit(e) {
     e.preventDefault();
+    if (isSubmitting) return;
+    isSubmitting = true;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     const formData = new FormData(e.target);
     let data = {};
     let endpoint = '';
@@ -2113,6 +2296,9 @@ async function handleSubmit(e) {
                 }
             } catch (error) {
                 alert('An error occurred while saving medication log');
+            } finally {
+                isSubmitting = false;
+                if (submitBtn) submitBtn.disabled = false;
             }
             return;
         default:
@@ -2143,18 +2329,53 @@ async function handleSubmit(e) {
         }
     } catch (error) {
         alert('An error occurred: ' + error.message);
+    } finally {
+        isSubmitting = false;
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
-async function logMedication(medicationId, scheduleId) {
-    // Get the current viewing date from the page
+function showMedForm(medicationId, scheduleId, scheduledTime) {
+    const card = document.getElementById(`med-card-${medicationId}-${scheduleId}`);
+    if (!card) return;
+    const form = card.querySelector('.med-log-form');
+    const btn = card.querySelector('.med-log-btn');
+    form.classList.remove('hidden');
+    btn.classList.add('hidden');
+
+    // Pre-populate time: current time for today, scheduled time for past dates
     const logDate = document.getElementById('log-date')?.value || '{{.Date.Format "2006-01-02"}}';
-
-    // Get current time in HH:MM format for actual_time
     const now = new Date();
-    const actualTime = now.toTimeString().slice(0, 5); // "HH:MM"
+    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    const timeInput = card.querySelector('.med-actual-time');
+    if (logDate === todayStr) {
+        timeInput.value = now.toTimeString().slice(0, 5);
+    } else if (scheduledTime) {
+        timeInput.value = scheduledTime.slice(0, 5);
+    } else {
+        timeInput.value = '12:00';
+    }
+}
 
-    console.log('logMedication called with:', { medicationId, scheduleId, logDate, actualTime });
+function hideMedForm(medicationId, scheduleId) {
+    const card = document.getElementById(`med-card-${medicationId}-${scheduleId}`);
+    if (!card) return;
+    card.querySelector('.med-log-form').classList.add('hidden');
+    card.querySelector('.med-log-btn').classList.remove('hidden');
+}
+
+async function submitMedLog(medicationId, scheduleId) {
+    const card = document.getElementById(`med-card-${medicationId}-${scheduleId}`);
+    if (!card) return;
+
+    const logBtn = card.querySelector('button[onclick*="submitMedLog"]');
+    if (logBtn && logBtn.disabled) return;
+    if (logBtn) { logBtn.disabled = true; logBtn.textContent = 'Saving...'; }
+
+    const status = card.querySelector('.med-status').value;
+    const actualTime = card.querySelector('.med-actual-time').value || '12:00';
+    const notes = card.querySelector('.med-notes').value;
+    const logDate = document.getElementById('log-date')?.value || '{{.Date.Format "2006-01-02"}}';
 
     try {
         const response = await fetch(`/api/children/${childId}/medications/log`, {
@@ -2167,8 +2388,9 @@ async function logMedication(medicationId, scheduleId) {
                 medication_id: medicationId,
                 schedule_id: scheduleId,
                 log_date: logDate + 'T00:00:00Z',
-                status: 'taken',
-                actual_time: actualTime
+                status: status,
+                actual_time: actualTime,
+                notes: notes
             })
         });
         if (response.ok) {
@@ -2179,6 +2401,7 @@ async function logMedication(medicationId, scheduleId) {
         }
     } catch (error) {
         alert('Failed to log medication: ' + error.message);
+        if (logBtn) { logBtn.disabled = false; logBtn.textContent = 'Log'; }
     }
 }
 
@@ -2256,8 +2479,21 @@ function showDetails(type, element) {
     // Read from individual data attributes instead of parsing JSON
     const ds = element.dataset;
     const entryType = ds.entryType || type;
-    const time = ds.entryTime || '';
     const notes = ds.entryNotes || '';
+    // Convert UTC created_at to local time for display
+    let time = '';
+    if (ds.entryTimeUtc) {
+        const utcDate = new Date(ds.entryTimeUtc);
+        const dateStr = ds.entryTimeDate || '';
+        if (userTimeFormat === '24h') {
+            time = dateStr + ' ' + String(utcDate.getHours()).padStart(2, '0') + ':' + String(utcDate.getMinutes()).padStart(2, '0');
+        } else {
+            time = dateStr + ' ' + utcDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+    } else if (ds.entryTime) {
+        // Fallback for entries that use a different time source (e.g. medication ActualTime)
+        time = ds.entryTime;
+    }
     let content = '';
 
     switch(type) {
@@ -2339,8 +2575,8 @@ function showDetails(type, element) {
                     <div class="flex justify-between"><span class="text-gray-500">Quality:</span><span class="font-medium capitalize">${quality || 'Not recorded'}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Total Sleep:</span><span class="font-medium">${totalMinutes > 0 ? Math.floor(totalMinutes/60) + 'h ' + (totalMinutes%60) + 'm' : 'Not recorded'}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Night Wakings:</span><span class="font-medium">${nightWakings}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500">Bed Time:</span><span class="font-medium">${bedTime || 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500">Wake Time:</span><span class="font-medium">${wakeTime || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Bed Time:</span><span class="font-medium">${formatTimeDisplay(bedTime)}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Wake Time:</span><span class="font-medium">${formatTimeDisplay(wakeTime)}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Nightmares:</span><span class="font-medium ${nightmares ? 'text-red-600' : ''}">${nightmares ? 'Yes' : 'No'}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Bed Wetting:</span><span class="font-medium ${bedWetting ? 'text-amber-600' : ''}">${bedWetting ? 'Yes' : 'No'}</span></div>
                     <div class="flex justify-between"><span class="text-gray-500">Sleep Aid:</span><span class="font-medium">${tookSleepAid ? (sleepAidName || 'Yes') : 'No'}</span></div>
@@ -2370,15 +2606,15 @@ function showDetails(type, element) {
             // Format the time: use actual_time (HH:MM) if available, else use created_at
             let medTimeDisplay = 'Not recorded';
             if (time) {
-                // Convert HH:MM to 12-hour format
-                const [hours, minutes] = time.split(':').map(Number);
-                const period = hours >= 12 ? 'PM' : 'AM';
-                const hour12 = hours % 12 || 12;
-                medTimeDisplay = `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+                medTimeDisplay = formatTimeDisplay(time);
             } else if (ds.entryCreated) {
                 // Fall back to created_at time
                 const createdDate = new Date(ds.entryCreated);
-                medTimeDisplay = createdDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                if (userTimeFormat === '24h') {
+                    medTimeDisplay = String(createdDate.getHours()).padStart(2, '0') + ':' + String(createdDate.getMinutes()).padStart(2, '0');
+                } else {
+                    medTimeDisplay = createdDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                }
             }
             content = `
                 <div class="space-y-3">
@@ -2672,11 +2908,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const dateStr = el.dataset.date;
         if (utcStr) {
             const utcDate = new Date(utcStr);
-            const localTime = utcDate.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
+            let localTime;
+            if (userTimeFormat === '24h') {
+                localTime = String(utcDate.getHours()).padStart(2, '0') + ':' + String(utcDate.getMinutes()).padStart(2, '0');
+            } else {
+                localTime = utcDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            }
             el.textContent = dateStr + ' ' + localTime;
         }
     });
@@ -2715,18 +2952,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const utcTime = el.dataset.utc;
         if (utcTime) {
             const date = new Date(utcTime);
-            el.textContent = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            if (userTimeFormat === '24h') {
+                el.textContent = String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+            } else {
+                el.textContent = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            }
         }
     });
 
-    // Format actual_time (HH:MM) to 12-hour format
+    // Format actual_time (HH:MM) respecting user's time format preference
     document.querySelectorAll('.medication-time-local[data-time]').forEach(el => {
         const timeStr = el.dataset.time;
         if (timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            const period = hours >= 12 ? 'PM' : 'AM';
-            const hour12 = hours % 12 || 12;
-            el.textContent = `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+            el.textContent = formatTimeDisplay(timeStr);
         }
     });
 });

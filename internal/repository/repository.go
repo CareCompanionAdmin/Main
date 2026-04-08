@@ -75,6 +75,7 @@ type MedicationRepository interface {
 	GetSchedules(ctx context.Context, medicationID uuid.UUID) ([]models.MedicationSchedule, error)
 	UpdateSchedule(ctx context.Context, schedule *models.MedicationSchedule) error
 	DeleteSchedule(ctx context.Context, id uuid.UUID) error
+	DeactivateAllSchedules(ctx context.Context, medicationID uuid.UUID) error
 
 	// Log operations
 	CreateLog(ctx context.Context, log *models.MedicationLog) error

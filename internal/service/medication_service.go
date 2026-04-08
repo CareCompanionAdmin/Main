@@ -146,7 +146,29 @@ func (s *MedicationService) UpdateWithTracking(ctx context.Context, oldMed *mode
 		}
 	}
 
-	return s.medRepo.Update(ctx, newMed)
+	if err := s.medRepo.Update(ctx, newMed); err != nil {
+		return err
+	}
+
+	// Sync schedules if provided in the update request
+	if len(newMed.Schedules) > 0 {
+		if err := s.medRepo.DeactivateAllSchedules(ctx, newMed.ID); err != nil {
+			return fmt.Errorf("failed to deactivate old schedules: %w", err)
+		}
+		for _, sched := range newMed.Schedules {
+			schedule := &models.MedicationSchedule{
+				MedicationID: newMed.ID,
+				TimeOfDay:    sched.TimeOfDay,
+				ScheduledTime: sched.ScheduledTime,
+				DaysOfWeek:   sched.DaysOfWeek,
+			}
+			if err := s.medRepo.CreateSchedule(ctx, schedule); err != nil {
+				return fmt.Errorf("failed to create schedule: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *MedicationService) Delete(ctx context.Context, id uuid.UUID) error {

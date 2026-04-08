@@ -227,7 +227,7 @@
 
 <!-- Add Condition Modal -->
 <div id="add-condition-modal" class="hidden fixed inset-0 z-50">
-    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideAddCondition()"></div>
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
@@ -274,7 +274,7 @@
 
 <!-- Edit Condition Modal -->
 <div id="edit-condition-modal" class="hidden fixed inset-0 z-50">
-    <div class="fixed inset-0 bg-black bg-opacity-50" onclick="hideEditCondition()"></div>
+    <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
             <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
@@ -367,15 +367,15 @@ function hideEditCondition() {
 }
 
 function handleEscKey(event) {
-    if (event.key === 'Escape') {
-        hideAddCondition();
-        hideEditCondition();
-    }
+    // Escape key intentionally does not close form modals to prevent data loss
 }
 
 // Save Profile
 document.getElementById('profile-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
     const formData = new FormData(this);
 
     const dateInput = formData.get('date_of_birth');
@@ -412,12 +412,17 @@ document.getElementById('profile-form').addEventListener('submit', async functio
         }
     } catch (error) {
         alert('An error occurred');
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
 // Add Condition
 document.getElementById('add-condition-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
     const formData = new FormData(this);
     const data = {
         condition_name: formData.get('condition_name')
@@ -441,15 +446,20 @@ document.getElementById('add-condition-form').addEventListener('submit', async f
         } else {
             const errorData = await response.json();
             alert(errorData.error || 'Failed to add condition');
+            submitBtn.disabled = false;
         }
     } catch (error) {
         alert('An error occurred');
+        submitBtn.disabled = false;
     }
 });
 
 // Edit Condition
 document.getElementById('edit-condition-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
     const formData = new FormData(this);
     const conditionId = formData.get('condition_id');
     const data = {
@@ -473,9 +483,11 @@ document.getElementById('edit-condition-form').addEventListener('submit', async 
         } else {
             const errorData = await response.json();
             alert(errorData.error || 'Failed to update condition');
+            submitBtn.disabled = false;
         }
     } catch (error) {
         alert('An error occurred');
+        submitBtn.disabled = false;
     }
 });
 

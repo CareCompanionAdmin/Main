@@ -17,7 +17,7 @@
             {{range .Data.entries}}
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{.CreatedAt.Format "Jan 2, 15:04:05"}}
+                    {{.CreatedAt.Format "Jan 2,"}} {{formatTimeStr (.CreatedAt.Format "15:04") $.UserTimeFormat}}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{.AdminEmail}}</td>
                 <td class="px-6 py-4 whitespace-nowrap">

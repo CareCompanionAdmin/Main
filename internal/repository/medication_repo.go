@@ -219,6 +219,12 @@ func (r *medicationRepo) DeleteSchedule(ctx context.Context, id uuid.UUID) error
 	return err
 }
 
+func (r *medicationRepo) DeactivateAllSchedules(ctx context.Context, medicationID uuid.UUID) error {
+	query := `UPDATE medication_schedules SET is_active = false WHERE medication_id = $1 AND is_active = true`
+	_, err := r.db.ExecContext(ctx, query, medicationID)
+	return err
+}
+
 func (r *medicationRepo) CreateLog(ctx context.Context, log *models.MedicationLog) error {
 	query := `
 		INSERT INTO medication_logs (id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at)

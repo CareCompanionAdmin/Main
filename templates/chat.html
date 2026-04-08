@@ -359,6 +359,7 @@
 
 <script>
 const userID = '{{.UserID}}';
+const userTimeFormat = '{{.UserTimeFormat}}';
 let currentThreadID = null;
 let currentParticipants = [];
 
@@ -498,7 +499,13 @@ function renderMessage(msg) {
     const firstName = msg.sender?.first_name || '';
     const lastName = msg.sender?.last_name || '';
     const name = (firstName + ' ' + lastName).trim() || 'Unknown';
-    const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const msgDate = new Date(msg.created_at);
+    let time;
+    if (userTimeFormat === '24h') {
+        time = String(msgDate.getHours()).padStart(2, '0') + ':' + String(msgDate.getMinutes()).padStart(2, '0');
+    } else {
+        time = msgDate.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
+    }
 
     // Render attachments
     let attachmentsHtml = '';
@@ -612,6 +619,10 @@ document.getElementById('message-form').addEventListener('submit', async functio
     // Either text or attachment required
     if (!text && !pendingAttachment) return;
 
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+
     let attachments = [];
 
     // Upload file first if present
@@ -644,11 +655,16 @@ document.getElementById('message-form').addEventListener('submit', async functio
         }
     } catch (error) {
         console.error('Error sending message:', error);
+    } finally {
+        submitBtn.disabled = false;
     }
 });
 
 document.getElementById('new-thread-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
 
     // Get selected participants
     const participantCheckboxes = document.querySelectorAll('input[name="participants"]:checked');
@@ -680,6 +696,9 @@ document.getElementById('new-thread-form').addEventListener('submit', async func
     const childID = new FormData(this).get('child_id');
     if (childID) data.child_id = childID;
 
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+
     try {
         const response = await fetch('/api/chat/threads', {
             method: 'POST',
@@ -692,9 +711,13 @@ document.getElementById('new-thread-form').addEventListener('submit', async func
         } else {
             const err = await response.json();
             alert(err.error || 'Failed to create conversation');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Conversation';
         }
     } catch (error) {
         alert('An error occurred');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Conversation';
     }
 });
 
