@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Logs - CareCompanion</title>
+    <title>Daily Logs - MyCareCompanion</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,7 +25,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
+                <a href="/dashboard" class="text-xl font-bold text-indigo-600">MyCareCompanion</a>
             </div>
             <!-- Desktop Navigation -->
             <div class="hidden md:flex items-center space-x-4">
@@ -184,34 +184,13 @@
                         <p class="font-medium text-gray-900 dark:text-white break-words">{{.Medication.Name}}</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}){{end}}</p>
                     </div>
-                    <button onclick="showMedForm('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', '{{if .Schedule.ScheduledTime.Valid}}{{.Schedule.ScheduledTime.String}}{{end}}')" class="w-full sm:w-auto flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm text-center med-log-btn">
-                        Log Medication
-                    </button>
-                </div>
-                <!-- Inline log form (hidden by default) -->
-                <div class="med-log-form hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-                            <select class="med-status w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
-                                <option value="taken">Taken</option>
-                                <option value="missed">Missed</option>
-                                <option value="skipped">Skipped</option>
-                                <option value="partial">Partial</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Actual Time</label>
-                            <input type="time" class="med-actual-time w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes <span class="text-gray-400 font-normal">(optional)</span></label>
-                        <input type="text" class="med-notes w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" placeholder="e.g., took with food, 30 min late">
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="submitMedLog('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}')" class="flex-1 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium">Save</button>
-                        <button onclick="hideMedForm('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}')" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 text-sm">Cancel</button>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="openMedTakenModal('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', '{{.Medication.Name}}', '{{.Schedule.TimeOfDay}}', '{{if .Schedule.ScheduledTime.Valid}}{{.Schedule.ScheduledTime.String}}{{end}}')" class="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm text-center font-medium">
+                            Taken
+                        </button>
+                        <button onclick="logMedMissed('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', this)" class="flex-1 sm:flex-initial px-4 py-2 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 text-sm text-center font-medium">
+                            Missed
+                        </button>
                     </div>
                 </div>
             </div>
@@ -828,6 +807,82 @@
             </button>
         </div>
         <div id="modal-content"></div>
+    </div>
+</div>
+
+<!-- Medication Taken Modal -->
+<div id="med-taken-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">When was this medication taken?</h2>
+            <button onclick="closeMedTakenModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <p id="med-taken-name" class="text-sm text-gray-600 font-medium"></p>
+
+            <!-- Option 1: On-time -->
+            <button id="med-taken-ontime-btn" onclick="confirmMedTaken('on-time')" class="hidden w-full p-4 text-left border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">On-time</p>
+                        <p id="med-taken-ontime-desc" class="text-sm text-gray-500 dark:text-gray-400">Taken at scheduled time</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- Option 2: Now -->
+            <button onclick="confirmMedTaken('now')" class="w-full p-4 text-left border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">Now</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Record as taken at current time</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- Option 3: Earlier -->
+            <div class="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">Earlier</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Select when it was taken</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" id="med-taken-date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                        <input type="time" id="med-taken-time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                    </div>
+                </div>
+                <p id="med-taken-error" class="text-sm text-red-600 mb-3 hidden"></p>
+                <button onclick="confirmMedTaken('earlier')" class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    Confirm
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -2335,48 +2390,102 @@ async function handleSubmit(e) {
     }
 }
 
-function showMedForm(medicationId, scheduleId, scheduledTime) {
-    const card = document.getElementById(`med-card-${medicationId}-${scheduleId}`);
-    if (!card) return;
-    const form = card.querySelector('.med-log-form');
-    const btn = card.querySelector('.med-log-btn');
-    form.classList.remove('hidden');
-    btn.classList.add('hidden');
+let currentMedModal = {
+    medicationId: null,
+    scheduleId: null,
+    medName: null,
+    timeOfDay: null,
+    scheduledTime: null
+};
 
-    // Pre-populate time: current time for today, scheduled time for past dates
-    const logDate = document.getElementById('log-date')?.value || '{{.Date.Format "2006-01-02"}}';
-    const now = new Date();
-    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    const timeInput = card.querySelector('.med-actual-time');
-    if (logDate === todayStr) {
-        timeInput.value = now.toTimeString().slice(0, 5);
-    } else if (scheduledTime) {
-        timeInput.value = scheduledTime.slice(0, 5);
+function openMedTakenModal(medicationId, scheduleId, medName, timeOfDay, scheduledTime) {
+    currentMedModal = { medicationId, scheduleId, medName, timeOfDay, scheduledTime };
+
+    document.getElementById('med-taken-name').textContent = medName + ' - ' + timeOfDay + (scheduledTime ? ' (' + scheduledTime + ')' : '');
+
+    // Show/hide On-time button
+    const ontimeBtn = document.getElementById('med-taken-ontime-btn');
+    if (scheduledTime) {
+        ontimeBtn.classList.remove('hidden');
+        document.getElementById('med-taken-ontime-desc').textContent = 'Taken at scheduled time (' + scheduledTime + ')';
     } else {
-        timeInput.value = '12:00';
+        ontimeBtn.classList.add('hidden');
     }
+
+    // Set default date/time
+    const now = new Date();
+    const localDateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    document.getElementById('med-taken-date').value = localDateStr;
+    document.getElementById('med-taken-time').value = now.toTimeString().slice(0, 5);
+
+    // Clear errors
+    document.getElementById('med-taken-error').classList.add('hidden');
+
+    document.getElementById('med-taken-modal').classList.remove('hidden');
 }
 
-function hideMedForm(medicationId, scheduleId) {
-    const card = document.getElementById(`med-card-${medicationId}-${scheduleId}`);
-    if (!card) return;
-    card.querySelector('.med-log-form').classList.add('hidden');
-    card.querySelector('.med-log-btn').classList.remove('hidden');
+function closeMedTakenModal() {
+    document.getElementById('med-taken-modal').classList.add('hidden');
 }
 
-async function submitMedLog(medicationId, scheduleId) {
-    const card = document.getElementById(`med-card-${medicationId}-${scheduleId}`);
-    if (!card) return;
+function confirmMedTaken(option) {
+    let logDate;
 
-    const logBtn = card.querySelector('button[onclick*="submitMedLog"]');
-    if (logBtn && logBtn.disabled) return;
-    if (logBtn) { logBtn.disabled = true; logBtn.textContent = 'Saving...'; }
+    if (option === 'on-time') {
+        const now = new Date();
+        const schedTime = currentMedModal.scheduledTime || '12:00';
+        let hours, minutes;
+        const ampmMatch = schedTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (ampmMatch) {
+            hours = parseInt(ampmMatch[1]);
+            minutes = parseInt(ampmMatch[2]);
+            if (ampmMatch[3].toUpperCase() === 'PM' && hours !== 12) hours += 12;
+            if (ampmMatch[3].toUpperCase() === 'AM' && hours === 12) hours = 0;
+        } else {
+            const parts = schedTime.split(':');
+            hours = parseInt(parts[0]);
+            minutes = parseInt(parts[1]) || 0;
+        }
+        logDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+    } else if (option === 'now') {
+        logDate = new Date();
+    } else {
+        const dateVal = document.getElementById('med-taken-date').value;
+        const timeVal = document.getElementById('med-taken-time').value;
+        if (!dateVal || !timeVal) {
+            document.getElementById('med-taken-error').textContent = 'Please select both date and time.';
+            document.getElementById('med-taken-error').classList.remove('hidden');
+            return;
+        }
+        logDate = new Date(dateVal + 'T' + timeVal);
 
-    const status = card.querySelector('.med-status').value;
-    const actualTime = card.querySelector('.med-actual-time').value || '12:00';
-    const notes = card.querySelector('.med-notes').value;
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        if (logDate < sevenDaysAgo) {
+            document.getElementById('med-taken-error').textContent = 'Cannot log medication more than 7 days in the past.';
+            document.getElementById('med-taken-error').classList.remove('hidden');
+            return;
+        }
+        if (logDate > new Date(Date.now() + 60000)) {
+            document.getElementById('med-taken-error').textContent = 'Cannot log medication for a future time.';
+            document.getElementById('med-taken-error').classList.remove('hidden');
+            return;
+        }
+    }
+
+    const localDate = logDate.getFullYear() + '-' + String(logDate.getMonth() + 1).padStart(2, '0') + '-' + String(logDate.getDate()).padStart(2, '0');
+    const actualTime = String(logDate.getHours()).padStart(2, '0') + ':' + String(logDate.getMinutes()).padStart(2, '0');
+
+    logMedication(currentMedModal.medicationId, currentMedModal.scheduleId, 'taken', localDate, actualTime);
+    closeMedTakenModal();
+}
+
+async function logMedMissed(medicationId, scheduleId, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
     const logDate = document.getElementById('log-date')?.value || '{{.Date.Format "2006-01-02"}}';
+    await logMedication(medicationId, scheduleId, 'missed', logDate, '');
+}
 
+async function logMedication(medicationId, scheduleId, status, logDate, actualTime) {
     try {
         const response = await fetch(`/api/children/${childId}/medications/log`, {
             method: 'POST',
@@ -2390,7 +2499,7 @@ async function submitMedLog(medicationId, scheduleId) {
                 log_date: logDate + 'T00:00:00Z',
                 status: status,
                 actual_time: actualTime,
-                notes: notes
+                notes: ''
             })
         });
         if (response.ok) {
@@ -2401,7 +2510,6 @@ async function submitMedLog(medicationId, scheduleId) {
         }
     } catch (error) {
         alert('Failed to log medication: ' + error.message);
-        if (logBtn) { logBtn.disabled = false; logBtn.textContent = 'Log'; }
     }
 }
 

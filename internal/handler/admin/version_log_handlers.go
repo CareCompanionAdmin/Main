@@ -379,6 +379,86 @@ func getUncommittedChanges() ([]UncommittedChange, error) {
 	return changes, nil
 }
 
+// generateChangeSummary creates a human-readable summary grouped by area of change
+func generateChangeSummary(changes []UncommittedChange) string {
+	// Group changes by area
+	groups := map[string][]string{} // area -> descriptions
+	order := []string{}             // preserve insertion order
+
+	for _, c := range changes {
+		area := categorizeFile(c.FilePath)
+		if _, exists := groups[area]; !exists {
+			order = append(order, area)
+		}
+		groups[area] = append(groups[area], c.Description)
+	}
+
+	var lines []string
+	for _, area := range order {
+		descs := groups[area]
+		// Deduplicate
+		seen := map[string]bool{}
+		var unique []string
+		for _, d := range descs {
+			if !seen[d] {
+				seen[d] = true
+				unique = append(unique, d)
+			}
+		}
+		lines = append(lines, area+":")
+		for _, d := range unique {
+			lines = append(lines, "  - "+d)
+		}
+	}
+
+	if len(lines) == 0 {
+		return ""
+	}
+
+	header := fmt.Sprintf("%d file(s) changed", len(changes))
+	return header + "\n\n" + strings.Join(lines, "\n")
+}
+
+// categorizeFile maps a file path to a human-readable area name
+func categorizeFile(filePath string) string {
+	switch {
+	case strings.HasPrefix(filePath, "migrations/"):
+		return "Database"
+	case strings.HasPrefix(filePath, "internal/models/"):
+		return "Data Models"
+	case strings.HasPrefix(filePath, "internal/repository/"):
+		return "Data Access"
+	case strings.HasPrefix(filePath, "internal/service/"):
+		return "Business Logic"
+	case strings.HasPrefix(filePath, "internal/handler/admin/"):
+		return "Admin Portal"
+	case strings.HasPrefix(filePath, "internal/handler/api/"):
+		return "API"
+	case strings.HasPrefix(filePath, "internal/handler/web/"):
+		return "Web"
+	case strings.HasPrefix(filePath, "internal/middleware/"):
+		return "Middleware"
+	case strings.HasPrefix(filePath, "internal/config/"):
+		return "Configuration"
+	case strings.HasPrefix(filePath, "templates/admin/"):
+		return "Admin Templates"
+	case strings.HasPrefix(filePath, "templates/"):
+		return "Templates"
+	case strings.HasPrefix(filePath, "static/"):
+		return "Static Assets"
+	case strings.HasPrefix(filePath, "infrastructure/"):
+		return "Infrastructure"
+	case strings.HasPrefix(filePath, "scripts/"):
+		return "Scripts"
+	case strings.HasPrefix(filePath, "mobile/"):
+		return "Mobile App (Capacitor)"
+	case strings.HasPrefix(filePath, "cmd/"):
+		return "Application Entry"
+	default:
+		return "Other"
+	}
+}
+
 // GetVersionLog handles GET /api/admin/super/version-log
 func (h *Handler) GetVersionLog(w http.ResponseWriter, r *http.Request) {
 	commits, err := getGitLog()
@@ -434,12 +514,10 @@ func (h *Handler) GetVersionLog(w http.ResponseWriter, r *http.Request) {
 		uncommitted = nil // non-fatal, just skip
 	}
 
-	// Read optional change summary (.change-summary.md describes the current batch of changes)
+	// Auto-generate change summary from uncommitted changes
 	var changeSummary string
 	if len(uncommitted) > 0 {
-		if data, err := os.ReadFile(".change-summary.md"); err == nil {
-			changeSummary = strings.TrimSpace(string(data))
-		}
+		changeSummary = generateChangeSummary(uncommitted)
 	}
 
 	respondJSON(w, VersionLogResponse{

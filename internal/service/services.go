@@ -30,6 +30,7 @@ type Services struct {
 	Billing           *BillingService
 	Email             *EmailService
 	PasswordReset     *PasswordResetService
+	Push              *PushService
 }
 
 // NewServices creates all services with their dependencies
@@ -41,6 +42,11 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	cohortService := NewCohortService(repos.Cohort, repos.Child, repos.Insight)
 	chatService := NewChatService(repos.Chat, repos.User, repos.Family, repos.Child)
 	transparencyService := NewTransparencyService(repos.Transparency, repos.Alert, repos.Child)
+
+	pushService := NewPushService(repos.DeviceToken, cfg.FCM.ServerKey)
+
+	// Wire push notifications into alert service (avoids circular constructor deps)
+	alertService.SetPushService(pushService, repos.Family)
 
 	return &Services{
 		Auth:              NewAuthService(repos.User, repos.Family, redis, &cfg.JWT, emailService, cfg.App.URL),
@@ -63,5 +69,6 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Billing:           NewBillingService(repos.Billing, repos.Child),
 		Email:             emailService,
 		PasswordReset:     NewPasswordResetService(db, repos.User, emailService, cfg.App.URL),
+		Push:              pushService,
 	}
 }

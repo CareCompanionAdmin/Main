@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/models"
+	"carecompanion/internal/service"
 )
 
 // ============================================================================
@@ -489,6 +491,26 @@ func (h *Handler) AddTicketMessage(w http.ResponseWriter, r *http.Request) {
 	if err := h.adminRepo.AddTicketMessage(ctx, id, claims.UserID, req.Message, req.IsInternal); err != nil {
 		http.Error(w, "Failed to add message: "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Send push notification to ticket owner (only for non-internal messages)
+	if h.pushService != nil && !req.IsInternal {
+		go func() {
+			ticket, err := h.adminRepo.GetTicketByID(context.Background(), id)
+			if err != nil || ticket == nil || !ticket.UserID.Valid {
+				return
+			}
+			msg := service.PushMessage{
+				Title:    "Support ticket update",
+				Body:     "Your support ticket has a new reply",
+				Priority: service.PushPriorityNormal,
+				Data: map[string]string{
+					"type":      "ticket_reply",
+					"ticket_id": id.String(),
+				},
+			}
+			h.pushService.Send(context.Background(), ticket.UserID.UUID, msg)
+		}()
 	}
 
 	w.WriteHeader(http.StatusOK)

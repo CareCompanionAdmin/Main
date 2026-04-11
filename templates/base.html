@@ -3,8 +3,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{block "title" .}}CareCompanion{{end}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{{block "title" .}}MyCareCompanion{{end}}</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -35,7 +35,15 @@
         .htmx-indicator { display: none; }
         .htmx-request .htmx-indicator { display: inline; }
         .htmx-request.htmx-indicator { display: inline; }
+        /* Capacitor safe-area handling for notched phones */
+        body.capacitor {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
     </style>
+    <script src="/static/js/capacitor-bridge.js" defer></script>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
     {{block "content" .}}{{end}}

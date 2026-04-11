@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{.Child.FirstName}} - CareCompanion</title>
+    <title>{{.Child.FirstName}} - MyCareCompanion</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,7 +25,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <a href="/dashboard" class="text-xl font-bold text-indigo-600">CareCompanion</a>
+                <a href="/dashboard" class="text-xl font-bold text-indigo-600">MyCareCompanion</a>
             </div>
             <!-- Desktop Navigation -->
             <div class="hidden md:flex items-center space-x-4">
@@ -472,7 +472,22 @@
         <div class="space-y-4">
             <p id="med-taken-name" class="text-sm text-gray-600 font-medium"></p>
 
-            <!-- Option 1: Now -->
+            <!-- Option 1: On-time (at scheduled time) -->
+            <button id="med-taken-ontime-btn" onclick="confirmMedTaken('on-time')" class="hidden w-full p-4 text-left border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">On-time</p>
+                        <p id="med-taken-ontime-desc" class="text-sm text-gray-500 dark:text-gray-400">Taken at scheduled time</p>
+                    </div>
+                </div>
+            </button>
+
+            <!-- Option 2: Now -->
             <button onclick="confirmMedTaken('now')" class="w-full p-4 text-left border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
                 <div class="flex items-center">
                     <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
@@ -481,7 +496,7 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="font-medium text-gray-900 dark:text-white">Now (within the last 15 min)</p>
+                        <p class="font-medium text-gray-900 dark:text-white">Now</p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Record as taken at current time</p>
                     </div>
                 </div>
@@ -2022,6 +2037,15 @@ function openMedTakenModal(medicationId, scheduleId, medName, timeOfDay, schedul
     // Set modal content
     document.getElementById('med-taken-name').textContent = medName + ' - ' + timeOfDay + (scheduledTime ? ' (' + scheduledTime + ')' : '');
 
+    // Show/hide On-time button based on whether a scheduled time exists
+    const ontimeBtn = document.getElementById('med-taken-ontime-btn');
+    if (scheduledTime) {
+        ontimeBtn.classList.remove('hidden');
+        document.getElementById('med-taken-ontime-desc').textContent = 'Taken at scheduled time (' + scheduledTime + ')';
+    } else {
+        ontimeBtn.classList.add('hidden');
+    }
+
     // Set default date/time to now (use local date, not UTC)
     const now = new Date();
     const localDateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
@@ -2062,7 +2086,25 @@ function calculateEarliestAllowedTime(timeOfDay, scheduledTime, daysOfWeek) {
 function confirmMedTaken(option) {
     let logDate;
 
-    if (option === 'now') {
+    if (option === 'on-time') {
+        // Use today's date with the scheduled time
+        const now = new Date();
+        const schedTime = currentMedModal.scheduledTime || '12:00';
+        // Parse scheduled time (could be "8:00 AM", "14:00", "08:00:00", etc.)
+        let hours, minutes;
+        const ampmMatch = schedTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        if (ampmMatch) {
+            hours = parseInt(ampmMatch[1]);
+            minutes = parseInt(ampmMatch[2]);
+            if (ampmMatch[3].toUpperCase() === 'PM' && hours !== 12) hours += 12;
+            if (ampmMatch[3].toUpperCase() === 'AM' && hours === 12) hours = 0;
+        } else {
+            const parts = schedTime.split(':');
+            hours = parseInt(parts[0]);
+            minutes = parseInt(parts[1]) || 0;
+        }
+        logDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+    } else if (option === 'now') {
         logDate = new Date();
     } else {
         // Get the selected date and time

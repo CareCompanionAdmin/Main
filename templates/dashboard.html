@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - CareCompanion</title>
+    <title>Dashboard - MyCareCompanion</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,7 +25,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <a href="/dashboard" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">CareCompanion</a>
+                <a href="/dashboard" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">MyCareCompanion</a>
             </div>
             <!-- Desktop Navigation -->
             <div class="hidden md:flex items-center space-x-4">
@@ -39,6 +39,7 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
+                    <span id="chat-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center"></span>
                 </a>
                 <a href="/support" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 relative" title="Support">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,10 +71,11 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
                 </a>
-                <a href="/chat" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Family Chat">
+                <a href="/chat" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative" title="Family Chat">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
+                    <span id="chat-badge-bottom" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center"></span>
                 </a>
                 <a href="/support" class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 relative" title="Support">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,6 +116,7 @@
             <a href="/chat" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                 Family Chat
+                <span id="chat-badge-mobile" class="hidden ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5"></span>
             </a>
             <a href="/support" class="flex items-center px-3 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -513,9 +516,41 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         document.documentElement.classList.remove('dark');
     }
-    // Check for unread support messages
+    // Check for unread messages
+    checkChatUnread();
     checkSupportUnread();
 });
+
+// Check for unread chat messages
+async function checkChatUnread() {
+    try {
+        const response = await fetch('/api/chat/unread', { credentials: 'include' });
+        if (response.ok) {
+            const data = await response.json();
+            const count = data.unread_count || 0;
+            ['chat-badge', 'chat-badge-bottom'].forEach(function(id) {
+                const badge = document.getElementById(id);
+                if (badge) {
+                    if (count > 0) {
+                        badge.textContent = count > 9 ? '9+' : count;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            });
+            const mobileBadge = document.getElementById('chat-badge-mobile');
+            if (mobileBadge) {
+                if (count > 0) {
+                    mobileBadge.textContent = count + ' new';
+                    mobileBadge.classList.remove('hidden');
+                } else {
+                    mobileBadge.classList.add('hidden');
+                }
+            }
+        }
+    } catch (e) {}
+}
 
 // Check for unread support messages
 async function checkSupportUnread() {
@@ -523,15 +558,19 @@ async function checkSupportUnread() {
         const response = await fetch('/api/support/unread', { credentials: 'include' });
         if (response.ok) {
             const data = await response.json();
-            const badge = document.getElementById('support-badge');
-            if (badge) {
-                badge.classList.toggle('hidden', !data.has_unread);
-            }
+            const hasUnread = data.has_unread || false;
+            ['support-badge', 'support-badge-mobile'].forEach(function(id) {
+                const badge = document.getElementById(id);
+                if (badge) {
+                    badge.classList.toggle('hidden', !hasUnread);
+                }
+            });
         }
     } catch (e) {}
 }
 
-// Poll for unread support messages every 60 seconds
+// Poll every 5 seconds for chat, 60 seconds for support
+setInterval(checkChatUnread, 5000);
 setInterval(checkSupportUnread, 60000);
 </script>
 </body>

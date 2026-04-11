@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CareCompanion Infrastructure Stack'
+Description: 'MyCareCompanion Infrastructure Stack'
 
 Parameters:
   Environment:
@@ -313,7 +313,32 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName}-redis'
 
-  # S3 Bucket
+  # S3 Bucket for DB Backups
+  BackupsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-db-backups'
+      LifecycleConfiguration:
+        Rules:
+          - Id: TransitionToInfrequentAccess
+            Status: Enabled
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+          - Id: ExpireOldBackups
+            Status: Enabled
+            ExpirationInDays: 90
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-db-backups'
+
+  # S3 Bucket for Uploads
   UploadsBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
@@ -354,7 +379,14 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                   - s3:DeleteObject
-                Resource: !Sub '${UploadsBucket.Arn}/*'
+                Resource:
+                  - !Sub '${UploadsBucket.Arn}/*'
+                  - !Sub '${BackupsBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !Sub '${BackupsBucket.Arn}'
         - PolicyName: SecretsAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -487,7 +519,7 @@ Resources:
               -e SMTP_USERNAME=notifications@mycarecompanion.net \
               -e SMTP_PASSWORD="$SMTP_PASSWORD" \
               -e SMTP_FROM_ADDRESS=notifications@mycarecompanion.net \
-              -e SMTP_FROM_NAME=CareCompanion \
+              -e SMTP_FROM_NAME=MyCareCompanion \
               -e APP_URL=https://www.mycarecompanion.net \
               ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/carecompanion:latest
 
@@ -561,3 +593,9 @@ Outputs:
     Value: !Ref UploadsBucket
     Export:
       Name: !Sub '${AWS::StackName}-S3Bucket'
+
+  BackupsBucketName:
+    Description: S3 Bucket for database backups
+    Value: !Ref BackupsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BackupsBucket'

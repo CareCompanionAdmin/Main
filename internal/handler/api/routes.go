@@ -25,6 +25,8 @@ type Handlers struct {
 	Support       *SupportHandler
 	Billing       *BillingHandler
 	PasswordReset *PasswordResetHandler
+	Device        *DeviceHandler
+	User          *UserHandler
 }
 
 // NewHandlers creates all API handlers
@@ -32,17 +34,19 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 	return &Handlers{
 		Auth:         NewAuthHandler(services.Auth),
 		Child:        NewChildHandler(services.Child),
-		Family:       NewFamilyHandler(services.Family, services.User, services.Email, cfg.App.URL),
+		Family:       NewFamilyHandler(services.Family, services.User, services.Email, services.Push, cfg.App.URL),
 		Medication:   NewMedicationHandler(services.Medication, services.Child, services.User, services.DrugDatabase, services.Insight),
 		Log:          NewLogHandler(services.Log, services.Child, services.User),
 		Alert:        NewAlertHandler(services.Alert, services.Child),
 		Correlation:  NewCorrelationHandler(services.Correlation, services.Child),
 		Insight:      NewInsightHandler(services.Insight, services.Child),
-		Chat:         NewChatHandler(services.Chat, services.Family, &cfg.Storage),
+		Chat:         NewChatHandler(services.Chat, services.Family, services.Push, &cfg.Storage),
 		Transparency: NewTransparencyHandler(services.Transparency),
 		Support:      NewSupportHandler(services.UserSupport),
 		Billing:       NewBillingHandler(services.Billing),
 		PasswordReset: NewPasswordResetHandler(services.PasswordReset),
+		Device:        NewDeviceHandler(services.Push, &cfg.App),
+		User:          NewUserHandler(services.User),
 	}
 }
 
@@ -53,6 +57,9 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Post("/auth/register", handlers.Auth.Register)
 		r.Post("/auth/login", handlers.Auth.Login)
 		r.Post("/auth/refresh", handlers.Auth.RefreshToken)
+
+		// App config (public, used by mobile app)
+		r.Get("/app/config", handlers.Device.GetAppConfig)
 
 		// Password reset (public, no auth required)
 		// Rate limited: 5 requests per minute per IP to prevent brute-force and email flooding
@@ -72,6 +79,14 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Post("/auth/logout", handlers.Auth.Logout)
 		r.Get("/auth/me", handlers.Auth.Me)
 		r.Post("/auth/switch-family", handlers.Auth.SwitchFamily)
+
+		// User profile and password
+		r.Patch("/users/profile", handlers.User.UpdateProfile)
+		r.Post("/users/password", handlers.User.ChangePassword)
+
+		// Device registration (push notifications)
+		r.Post("/devices/register", handlers.Device.RegisterDevice)
+		r.Delete("/devices/unregister", handlers.Device.UnregisterDevice)
 
 		// Family routes - require family context
 		r.Route("/family", func(r chi.Router) {

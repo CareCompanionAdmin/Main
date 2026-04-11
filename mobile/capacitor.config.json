@@ -1,0 +1,27 @@
+{
+  "appId": "com.bluebonnettech.carecompanion",
+  "appName": "MyCareCompanion",
+  "webDir": "www",
+  "server": {
+    "url": "https://www.mycarecompanion.net",
+    "allowNavigation": [
+      "www.mycarecompanion.net",
+      "mycarecompanion.net",
+      "98.88.131.147"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 2000,
+      "backgroundColor": "#3b82f6"
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#3b82f6"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

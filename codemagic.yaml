@@ -1,0 +1,109 @@
+workflows:
+  # iOS build workflow
+  ios-build:
+    name: iOS Build
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - apple_credentials  # APP_STORE_CONNECT_KEY_IDENTIFIER, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_PRIVATE_KEY
+        - firebase           # GOOGLE_SERVICE_INFO_PLIST (base64 encoded)
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.bluebonnettech.carecompanion
+      node: 20
+      xcode: latest
+      cocoapods: default
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'mobile-v*'
+          include: true
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          cd mobile
+          npm ci
+      - name: Sync Capacitor iOS
+        script: |
+          cd mobile
+          npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd mobile/ios/App
+          pod install
+      - name: Build iOS
+        script: |
+          cd mobile/ios/App
+          xcodebuild build -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            -archivePath build/App.xcarchive \
+            archive
+      - name: Export IPA
+        script: |
+          cd mobile/ios/App
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportOptionsPlist exportOptions.plist \
+            -exportPath build/export
+    artifacts:
+      - mobile/ios/App/build/export/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  # Android build workflow
+  android-build:
+    name: Android Build
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      groups:
+        - android_keystore   # CM_KEYSTORE, CM_KEY_ALIAS, CM_KEY_PASSWORD, CM_KEYSTORE_PASSWORD
+        - firebase           # GOOGLE_SERVICES_JSON (base64 encoded)
+      node: 20
+      java: 17
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'mobile-v*'
+          include: true
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          cd mobile
+          npm ci
+      - name: Sync Capacitor Android
+        script: |
+          cd mobile
+          npx cap sync android
+      - name: Set up Firebase config
+        script: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo $GOOGLE_SERVICES_JSON | base64 --decode > mobile/android/app/google-services.json
+          fi
+      - name: Set up keystore
+        script: |
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo $CM_KEYSTORE | base64 --decode > mobile/android/app/carecompanion-upload.jks
+          fi
+      - name: Build Android
+        script: |
+          cd mobile/android
+          chmod +x gradlew
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/app/carecompanion-upload.jks \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
+    artifacts:
+      - mobile/android/app/build/outputs/bundle/release/*.aab
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal

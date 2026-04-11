@@ -409,13 +409,13 @@ func renderFallback(w http.ResponseWriter, name string, data interface{}) {
 	fmt.Fprintf(w, `<!DOCTYPE html>
 <html>
 <head>
-    <title>CareCompanion</title>
+    <title>MyCareCompanion</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-4">CareCompanion</h1>
+        <h1 class="text-2xl font-bold mb-4">MyCareCompanion</h1>
         <p>Template: %s</p>
         <p>Data: %v</p>
         <p class="text-gray-500 mt-4">Templates not yet generated. Run 'templ generate' to create templates.</p>

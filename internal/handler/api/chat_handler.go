@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,10 +23,11 @@ import (
 type ChatHandler struct {
 	chatService   *service.ChatService
 	familyService *service.FamilyService
+	pushService   *service.PushService
 	storageConfig *config.StorageConfig
 }
 
-func NewChatHandler(chatService *service.ChatService, familyService *service.FamilyService, storageConfig *config.StorageConfig) *ChatHandler {
+func NewChatHandler(chatService *service.ChatService, familyService *service.FamilyService, pushService *service.PushService, storageConfig *config.StorageConfig) *ChatHandler {
 	// Ensure upload directory exists
 	if storageConfig != nil && storageConfig.UploadDir != "" {
 		os.MkdirAll(filepath.Join(storageConfig.UploadDir, "chat"), 0755)
@@ -33,6 +35,7 @@ func NewChatHandler(chatService *service.ChatService, familyService *service.Fam
 	return &ChatHandler{
 		chatService:   chatService,
 		familyService: familyService,
+		pushService:   pushService,
 		storageConfig: storageConfig,
 	}
 }
@@ -144,6 +147,44 @@ func (h *ChatHandler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		}
 		respondInternalError(w, "Failed to send message")
 		return
+	}
+
+	// Send push notifications to other thread participants
+	if h.pushService != nil {
+		go func() {
+			thread, err := h.chatService.GetThread(context.Background(), threadID, userID)
+			if err != nil || thread == nil {
+				return
+			}
+			participants := thread.Participants
+			// Get sender name for notification
+			senderName := "Someone"
+			claims := middleware.GetAuthClaims(r.Context())
+			if claims != nil && claims.FirstName != "" {
+				senderName = claims.FirstName
+			}
+			bodyText := req.MessageText
+			if bodyText == "" {
+				bodyText = "Sent an attachment"
+			}
+			if len(bodyText) > 100 {
+				bodyText = bodyText[:100] + "..."
+			}
+			msg := service.PushMessage{
+				Title:    fmt.Sprintf("New message from %s", senderName),
+				Body:     bodyText,
+				Priority: service.PushPriorityNormal,
+				Data: map[string]string{
+					"type":      "chat_message",
+					"thread_id": threadID.String(),
+				},
+			}
+			for _, p := range participants {
+				if p.UserID != userID {
+					h.pushService.Send(context.Background(), p.UserID, msg)
+				}
+			}
+		}()
 	}
 
 	respondCreated(w, message)

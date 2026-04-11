@@ -3,7 +3,7 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-echo "=== CareCompanion Dev Environment ==="
+echo "=== MyCareCompanion Dev Environment ==="
 
 # Start Postgres & Redis if not running
 if ! docker ps --format '{{.Names}}' | grep -q carecompanion-dev-postgres; then

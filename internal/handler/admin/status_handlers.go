@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"carecompanion/internal/models"
@@ -612,6 +615,67 @@ func determineHealthStatus(value, warningThreshold, criticalThreshold float64) m
 		return models.HealthStatusDegraded
 	}
 	return models.HealthStatusHealthy
+}
+
+// ListInfraFiles returns a JSON list of files in the infrastructure directory
+func (h *Handler) ListInfraFiles(w http.ResponseWriter, r *http.Request) {
+	infraDir := filepath.Join("infrastructure")
+	entries, err := os.ReadDir(infraDir)
+	if err != nil {
+		http.Error(w, "Failed to read infrastructure directory", http.StatusInternalServerError)
+		return
+	}
+
+	type fileInfo struct {
+		Name    string `json:"name"`
+		Size    int64  `json:"size"`
+		ModTime string `json:"mod_time"`
+	}
+
+	files := []fileInfo{}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		files = append(files, fileInfo{
+			Name:    entry.Name(),
+			Size:    info.Size(),
+			ModTime: info.ModTime().Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(files)
+}
+
+// DownloadInfraFile serves a file from the infrastructure directory
+func (h *Handler) DownloadInfraFile(w http.ResponseWriter, r *http.Request) {
+	filename := r.URL.Query().Get("file")
+	if filename == "" {
+		http.Error(w, "Missing file parameter", http.StatusBadRequest)
+		return
+	}
+
+	// Prevent path traversal
+	cleaned := filepath.Clean(filename)
+	if strings.Contains(cleaned, "/") || strings.Contains(cleaned, "\\") || strings.Contains(cleaned, "..") {
+		http.Error(w, "Invalid filename", http.StatusBadRequest)
+		return
+	}
+
+	fp := filepath.Join("infrastructure", cleaned)
+	info, err := os.Stat(fp)
+	if err != nil || info.IsDir() {
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", cleaned))
+	http.ServeFile(w, r, fp)
 }
 
 func calculateOverallHealth(status *models.InfrastructureStatus) (models.HealthStatus, string, int, int) {

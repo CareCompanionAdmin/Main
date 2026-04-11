@@ -16,7 +16,7 @@ const (
 	TierGlobalMedical InsightTier = 1
 
 	// TierCohortPattern - Patterns observed across similar children
-	// Source: Anonymized, aggregated data from CareCompanion users
+	// Source: Anonymized, aggregated data from MyCareCompanion users
 	// Example: "3 of 5 families with similar profiles report improved sleep after removing red dye"
 	TierCohortPattern InsightTier = 2
 

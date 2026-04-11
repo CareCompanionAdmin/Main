@@ -346,6 +346,7 @@ type Repositories struct {
 	Marketing    MarketingRepository   // Marketing materials center
 	DevMode      DevModeRepository     // Development mode SSH control
 	Billing      BillingRepository     // Family-based billing
+	DeviceToken  DeviceTokenRepository // Mobile device tokens for push notifications
 }
 
 // NewRepositories creates all repository implementations
@@ -367,5 +368,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Marketing:    NewMarketingRepo(db),
 		DevMode:      NewDevModeRepo(db),
 		Billing:      NewBillingRepo(db),
+		DeviceToken:  NewDeviceTokenRepo(db),
 	}
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -15,14 +16,16 @@ type FamilyHandler struct {
 	familyService *service.FamilyService
 	userService   *service.UserService
 	emailService  *service.EmailService
+	pushService   *service.PushService
 	appURL        string
 }
 
-func NewFamilyHandler(familyService *service.FamilyService, userService *service.UserService, emailService *service.EmailService, appURL string) *FamilyHandler {
+func NewFamilyHandler(familyService *service.FamilyService, userService *service.UserService, emailService *service.EmailService, pushService *service.PushService, appURL string) *FamilyHandler {
 	return &FamilyHandler{
 		familyService: familyService,
 		userService:   userService,
 		emailService:  emailService,
+		pushService:   pushService,
 		appURL:        appURL,
 	}
 }
@@ -179,6 +182,22 @@ func (h *FamilyHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 			log.Printf("[EMAIL] Failed to send member-added email to %s: %v", user.Email, err)
 		}
 	}()
+
+	// Send push notification to the added user
+	if h.pushService != nil {
+		go func() {
+			msg := service.PushMessage{
+				Title:    "You've been added to a family",
+				Body:     "You have been added to " + familyName + " as a " + string(role),
+				Priority: service.PushPriorityNormal,
+				Data: map[string]string{
+					"type":      "family_added",
+					"family_id": familyID.String(),
+				},
+			}
+			h.pushService.Send(context.Background(), user.ID, msg)
+		}()
+	}
 
 	respondCreated(w, map[string]interface{}{
 		"success": true,

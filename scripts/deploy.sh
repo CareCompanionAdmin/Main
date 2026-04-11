@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 # =============================================================================
-# CareCompanion Production Deploy Script
+# MyCareCompanion Production Deploy Script
 #
 # SAFETY: This script requires explicit confirmation before every
 # production-impacting action. This safeguard is designed for the beta period.
@@ -64,7 +64,7 @@ confirm_production() {
 }
 
 echo ""
-echo -e "${GREEN}=== CareCompanion Production Deploy ===${NC}"
+echo -e "${GREEN}=== MyCareCompanion Production Deploy ===${NC}"
 echo ""
 echo "This will:"
 echo "  1. Build a Docker image from current code"

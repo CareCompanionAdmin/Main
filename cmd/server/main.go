@@ -154,6 +154,9 @@ func main() {
 	adminHandler.SetMarketingService(marketingService)
 	log.Println("Marketing service initialized")
 
+	// Wire push notifications into admin handlers
+	adminHandler.SetPushService(services.Push)
+
 	// Initialize Development Mode service for SSH access control
 	// In production, devServerURL is set so session ops call the dev server remotely.
 	// On the dev server, devServerURL is empty so ops run locally.
@@ -238,7 +241,7 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("Starting CareCompanion server on %s", addr)
+		log.Printf("Starting MyCareCompanion server on %s", addr)
 		log.Printf("Environment: %s", cfg.App.Env)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)

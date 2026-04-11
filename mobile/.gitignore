@@ -1,0 +1,17 @@
+node_modules/
+www/
+*.log
+
+# Firebase config files (contain project secrets - added per-environment in CI)
+google-services.json
+GoogleService-Info.plist
+
+# Android build outputs
+android/app/build/
+android/.gradle/
+android/build/
+android/app/carecompanion-upload.jks
+
+# iOS build outputs
+ios/App/build/
+ios/App/Pods/

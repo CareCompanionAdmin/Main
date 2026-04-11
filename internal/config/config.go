@@ -16,6 +16,7 @@ type Config struct {
 	Correlation CorrelationConfig
 	Storage     StorageConfig
 	SMTP        SMTPConfig
+	FCM         FCMConfig
 }
 
 type StorageConfig struct {
@@ -72,6 +73,10 @@ type SMTPConfig struct {
 	FromName    string
 }
 
+type FCMConfig struct {
+	ServerKey string
+}
+
 func Load() (*Config, error) {
 	godotenv.Load()
 
@@ -114,6 +119,9 @@ func Load() (*Config, error) {
 			UploadDir:   getEnv("STORAGE_UPLOAD_DIR", "./uploads"),
 			MaxFileSize: int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10*1024*1024)), // 10MB default
 		},
+		FCM: FCMConfig{
+			ServerKey: getEnv("FCM_SERVER_KEY", ""),
+		},
 		SMTP: SMTPConfig{
 			Enabled:     getEnvBool("SMTP_ENABLED", false),
 			Host:        getEnv("SMTP_HOST", "smtp.office365.com"),
@@ -121,7 +129,7 @@ func Load() (*Config, error) {
 			Username:    getEnv("SMTP_USERNAME", ""),
 			Password:    getEnv("SMTP_PASSWORD", ""),
 			FromAddress: getEnv("SMTP_FROM_ADDRESS", "notifications@mycarecompanion.net"),
-			FromName:    getEnv("SMTP_FROM_NAME", "CareCompanion"),
+			FromName:    getEnv("SMTP_FROM_NAME", "MyCareCompanion"),
 		},
 	}
 

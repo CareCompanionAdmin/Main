@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CareCompanion</string>
+    <string name="title_activity_main">CareCompanion</string>
+    <string name="package_name">com.bluebonnettech.carecompanion</string>
+    <string name="custom_url_scheme">com.bluebonnettech.carecompanion</string>
+</resources>

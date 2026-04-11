@@ -3,7 +3,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <a href="/dashboard" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">CareCompanion</a>
+                <a href="/dashboard" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">MyCareCompanion</a>
             </div>
 
             <!-- Desktop Navigation -->
@@ -134,6 +134,58 @@ document.addEventListener('click', function(event) {
         toggleMobileMenu();
     }
 });
+
+// Poll for unread chat messages
+async function checkChatUnread() {
+    try {
+        const response = await fetch('/api/chat/unread', { credentials: 'include' });
+        if (response.ok) {
+            const data = await response.json();
+            const count = data.unread_count || 0;
+            const badge = document.getElementById('chat-badge');
+            const badgeMobile = document.getElementById('chat-badge-mobile');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count > 9 ? '9+' : count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+            if (badgeMobile) {
+                if (count > 0) {
+                    badgeMobile.textContent = count + ' new';
+                    badgeMobile.classList.remove('hidden');
+                } else {
+                    badgeMobile.classList.add('hidden');
+                }
+            }
+        }
+    } catch (e) {}
+}
+
+// Poll for unread support messages
+async function checkSupportUnread() {
+    try {
+        const response = await fetch('/api/support/unread', { credentials: 'include' });
+        if (response.ok) {
+            const data = await response.json();
+            const hasUnread = data.has_unread || false;
+            ['support-badge-desktop', 'support-badge-mobile'].forEach(function(id) {
+                const badge = document.getElementById(id);
+                if (badge) {
+                    badge.classList.toggle('hidden', !hasUnread);
+                }
+            });
+        }
+    } catch (e) {}
+}
+
+// Check immediately on page load, then poll every 30 seconds
+checkChatUnread();
+checkSupportUnread();
+setInterval(checkChatUnread, 5000);
+setInterval(checkSupportUnread, 60000);
 
 async function logout() {
     try {

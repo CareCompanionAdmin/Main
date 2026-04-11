@@ -14,6 +14,12 @@ type Handler struct {
 	authService       *service.AuthService
 	cloudwatchService *service.CloudWatchService
 	marketingService  *service.MarketingService
+	pushService       *service.PushService
+}
+
+// SetPushService sets the push notification service for admin handlers
+func (h *Handler) SetPushService(ps *service.PushService) {
+	h.pushService = ps
 }
 
 // NewHandler creates a new admin handler
@@ -59,6 +65,10 @@ func (h *Handler) Routes() chi.Router {
 		// Infrastructure Status
 		r.Get("/status", h.GetInfrastructureStatus)
 		r.Post("/status/refresh", h.RefreshInfrastructureStatus)
+
+		// Infrastructure File Share
+		r.Get("/infra-files", h.ListInfraFiles)
+		r.Get("/infra-files/download", h.DownloadInfraFile)
 
 		// Error Logs
 		r.Get("/errors", h.ListErrorLogs)

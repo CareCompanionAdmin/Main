@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 
@@ -15,8 +17,10 @@ var (
 )
 
 type AlertService struct {
-	alertRepo repository.AlertRepository
-	childRepo repository.ChildRepository
+	alertRepo   repository.AlertRepository
+	childRepo   repository.ChildRepository
+	familyRepo  repository.FamilyRepository
+	pushService *PushService
 }
 
 func NewAlertService(alertRepo repository.AlertRepository, childRepo repository.ChildRepository) *AlertService {
@@ -26,8 +30,50 @@ func NewAlertService(alertRepo repository.AlertRepository, childRepo repository.
 	}
 }
 
+// SetPushService sets the push notification service (called after service creation to avoid circular deps)
+func (s *AlertService) SetPushService(ps *PushService, familyRepo repository.FamilyRepository) {
+	s.pushService = ps
+	s.familyRepo = familyRepo
+}
+
 func (s *AlertService) Create(ctx context.Context, alert *models.Alert) error {
-	return s.alertRepo.Create(ctx, alert)
+	if err := s.alertRepo.Create(ctx, alert); err != nil {
+		return err
+	}
+
+	// Send push notifications to family members
+	if s.pushService != nil && s.familyRepo != nil && alert.FamilyID != uuid.Nil {
+		go func() {
+			members, err := s.familyRepo.GetMembers(context.Background(), alert.FamilyID)
+			if err != nil {
+				log.Printf("Failed to get family members for alert push: %v", err)
+				return
+			}
+
+			// Get child name for the notification
+			childName := "your child"
+			if child, err := s.childRepo.GetByID(context.Background(), alert.ChildID); err == nil && child != nil {
+				childName = child.FirstName
+			}
+
+			msg := PushMessage{
+				Title:    fmt.Sprintf("Alert for %s", childName),
+				Body:     alert.Title,
+				Priority: PushPriorityHigh,
+				Data: map[string]string{
+					"type":     "alert",
+					"alert_id": alert.ID.String(),
+					"child_id": alert.ChildID.String(),
+				},
+			}
+
+			for _, m := range members {
+				s.pushService.Send(context.Background(), m.UserID, msg)
+			}
+		}()
+	}
+
+	return nil
 }
 
 func (s *AlertService) GetByID(ctx context.Context, id uuid.UUID) (*models.Alert, error) {

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -13,6 +14,8 @@ import (
 
 var (
 	ErrPasswordMismatch = errors.New("current password is incorrect")
+	ErrEmailTaken       = errors.New("email address is already in use")
+	ErrEmailInvalid     = errors.New("invalid email address")
 )
 
 type UserService struct {
@@ -57,6 +60,22 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 	if req.Phone != nil {
 		user.Phone.String = *req.Phone
 		user.Phone.Valid = *req.Phone != ""
+	}
+	if req.Email != nil {
+		newEmail := strings.TrimSpace(strings.ToLower(*req.Email))
+		if newEmail == "" || !strings.Contains(newEmail, "@") {
+			return ErrEmailInvalid
+		}
+		if newEmail != strings.ToLower(user.Email) {
+			existing, err := s.userRepo.GetByEmail(ctx, newEmail)
+			if err != nil {
+				return err
+			}
+			if existing != nil {
+				return ErrEmailTaken
+			}
+			user.Email = newEmail
+		}
 	}
 
 	return s.userRepo.Update(ctx, user)

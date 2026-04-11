@@ -147,7 +147,7 @@ func (s *EmailService) SendEmail(to, subject, htmlBody string) error {
 
 // SendWelcomeEmail sends a welcome email to a newly registered user
 func (s *EmailService) SendWelcomeEmail(to, firstName, appURL string) error {
-	subject := "Welcome to CareCompanion!"
+	subject := "Welcome to MyCareCompanion!"
 	body, err := renderTemplate(welcomeEmailTemplate, map[string]string{
 		"FirstName": firstName,
 		"AppURL":    appURL,
@@ -160,7 +160,7 @@ func (s *EmailService) SendWelcomeEmail(to, firstName, appURL string) error {
 
 // SendFamilyInvitationEmail sends an invitation email to a new user
 func (s *EmailService) SendFamilyInvitationEmail(to, inviteeName, familyName, inviterName, appURL string) error {
-	subject := fmt.Sprintf("You've been invited to join %s on CareCompanion", familyName)
+	subject := fmt.Sprintf("You've been invited to join %s on MyCareCompanion", familyName)
 	body, err := renderTemplate(familyInvitationTemplate, map[string]string{
 		"InviteeName": inviteeName,
 		"FamilyName":  familyName,
@@ -175,7 +175,7 @@ func (s *EmailService) SendFamilyInvitationEmail(to, inviteeName, familyName, in
 
 // SendPasswordResetEmail sends a password reset email
 func (s *EmailService) SendPasswordResetEmail(to, firstName, resetURL string) error {
-	subject := "CareCompanion - Reset Your Password"
+	subject := "MyCareCompanion - Reset Your Password"
 	body, err := renderTemplate(passwordResetTemplate, map[string]string{
 		"FirstName": firstName,
 		"ResetURL":  resetURL,
@@ -188,7 +188,7 @@ func (s *EmailService) SendPasswordResetEmail(to, firstName, resetURL string) er
 
 // SendFamilyMemberAddedEmail notifies a user they've been added to a family
 func (s *EmailService) SendFamilyMemberAddedEmail(to, firstName, familyName, role, appURL string) error {
-	subject := fmt.Sprintf("You've been added to %s on CareCompanion", familyName)
+	subject := fmt.Sprintf("You've been added to %s on MyCareCompanion", familyName)
 	body, err := renderTemplate(memberAddedTemplate, map[string]string{
 		"FirstName":  firstName,
 		"FamilyName": familyName,
@@ -251,13 +251,13 @@ const emailWrapper = `<!DOCTYPE html>
 <div style="padding: 20px;">
 <div class="container">
   <div class="header">
-    <h1>CareCompanion</h1>
+    <h1>MyCareCompanion</h1>
   </div>
   <div class="content">
     %s
   </div>
   <div class="footer">
-    <p>&copy; 2026 CareCompanion. All rights reserved.</p>
+    <p>&copy; 2026 MyCareCompanion. All rights reserved.</p>
     <p>This email was sent from notifications@mycarecompanion.net</p>
   </div>
 </div>
@@ -267,8 +267,8 @@ const emailWrapper = `<!DOCTYPE html>
 
 var welcomeEmailTemplate = fmt.Sprintf(emailWrapper, `
     <h2>Welcome, {{.FirstName}}!</h2>
-    <p>Thank you for joining CareCompanion. We're here to help you track and manage care for your family.</p>
-    <p>With CareCompanion, you can:</p>
+    <p>Thank you for joining MyCareCompanion. We're here to help you track and manage care for your family.</p>
+    <p>With MyCareCompanion, you can:</p>
     <ul>
       <li>Track behaviors, medications, sleep, diet, and more</li>
       <li>Monitor patterns and receive intelligent alerts</li>
@@ -282,8 +282,8 @@ var welcomeEmailTemplate = fmt.Sprintf(emailWrapper, `
 var familyInvitationTemplate = fmt.Sprintf(emailWrapper, `
     <h2>You're Invited!</h2>
     <p>Hi {{.InviteeName}},</p>
-    <p><strong>{{.InviterName}}</strong> has invited you to join the <strong>{{.FamilyName}}</strong> family on CareCompanion.</p>
-    <p>CareCompanion helps families track and manage care for children with autism, including behaviors, medications, therapy, and more.</p>
+    <p><strong>{{.InviterName}}</strong> has invited you to join the <strong>{{.FamilyName}}</strong> family on MyCareCompanion.</p>
+    <p>MyCareCompanion helps families track and manage care for children with autism, including behaviors, medications, therapy, and more.</p>
     <p>To accept this invitation, create your account:</p>
     <p><a href="{{.AppURL}}/register" class="btn" style="color: #ffffff;">Create Your Account</a></p>
     <p>Once you register with this email address, you'll automatically be added to the family.</p>
@@ -293,7 +293,7 @@ var familyInvitationTemplate = fmt.Sprintf(emailWrapper, `
 var passwordResetTemplate = fmt.Sprintf(emailWrapper, `
     <h2>Reset Your Password</h2>
     <p>Hi {{.FirstName}},</p>
-    <p>We received a request to reset your CareCompanion password. Click the button below to set a new password:</p>
+    <p>We received a request to reset your MyCareCompanion password. Click the button below to set a new password:</p>
     <p><a href="{{.ResetURL}}" class="btn" style="color: #ffffff;">Reset Password</a></p>
     <p>This link will expire in 1 hour for security.</p>
     <p>If you didn't request this, you can safely ignore this email. Your password won't be changed.</p>
@@ -302,7 +302,7 @@ var passwordResetTemplate = fmt.Sprintf(emailWrapper, `
 var memberAddedTemplate = fmt.Sprintf(emailWrapper, `
     <h2>You've Been Added to a Family</h2>
     <p>Hi {{.FirstName}},</p>
-    <p>You've been added to the <strong>{{.FamilyName}}</strong> family on CareCompanion as a <strong>{{.Role}}</strong>.</p>
+    <p>You've been added to the <strong>{{.FamilyName}}</strong> family on MyCareCompanion as a <strong>{{.Role}}</strong>.</p>
     <p>You can now access this family's data, including children's profiles, logs, medications, and more.</p>
-    <p><a href="{{.AppURL}}" class="btn" style="color: #ffffff;">Open CareCompanion</a></p>
+    <p><a href="{{.AppURL}}" class="btn" style="color: #ffffff;">Open MyCareCompanion</a></p>
 `)
