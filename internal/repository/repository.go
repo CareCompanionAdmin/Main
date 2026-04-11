@@ -348,6 +348,7 @@ type Repositories struct {
 	Billing      BillingRepository     // Family-based billing
 	DeviceToken  DeviceTokenRepository // Mobile device tokens for push notifications
 	Report       ReportRepository     // Reports and scheduled reports
+	Search       SearchRepository     // Global search
 }
 
 // NewRepositories creates all repository implementations
@@ -371,5 +372,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Billing:      NewBillingRepo(db),
 		DeviceToken:  NewDeviceTokenRepo(db),
 		Report:       NewReportRepo(db),
+		Search:       NewSearchRepo(db),
 	}
 }

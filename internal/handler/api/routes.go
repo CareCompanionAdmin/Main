@@ -28,6 +28,7 @@ type Handlers struct {
 	Device        *DeviceHandler
 	User          *UserHandler
 	Report        *ReportHandler
+	Search        *SearchHandler
 }
 
 // NewHandlers creates all API handlers
@@ -36,8 +37,8 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Auth:         NewAuthHandler(services.Auth),
 		Child:        NewChildHandler(services.Child),
 		Family:       NewFamilyHandler(services.Family, services.User, services.Email, services.Push, cfg.App.URL),
-		Medication:   NewMedicationHandler(services.Medication, services.Child, services.User, services.DrugDatabase, services.Insight),
-		Log:          NewLogHandler(services.Log, services.Child, services.User),
+		Medication:   NewMedicationHandler(services.Medication, services.Child, services.User, services.DrugDatabase, services.Insight, services.RealtimeDetection),
+		Log:          NewLogHandler(services.Log, services.Child, services.User, services.RealtimeDetection),
 		Alert:        NewAlertHandler(services.Alert, services.Child),
 		Correlation:  NewCorrelationHandler(services.Correlation, services.Child),
 		Insight:      NewInsightHandler(services.Insight, services.Child),
@@ -49,6 +50,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Device:        NewDeviceHandler(services.Push, &cfg.App),
 		User:          NewUserHandler(services.User),
 		Report:        NewReportHandler(services.Report, services.Child),
+		Search:        NewSearchHandler(services.Search),
 	}
 }
 
@@ -122,6 +124,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Put("/", handlers.Child.Update)
 			r.Delete("/", handlers.Child.Delete)
 			r.Get("/dashboard", handlers.Child.Dashboard)
+			r.Get("/dashboard/insights", handlers.Alert.DashboardInsights)
 
 			// Conditions
 			r.Get("/conditions", handlers.Child.GetConditions)
@@ -287,6 +290,12 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 
 		r.Route("/correlations/{correlationID}", func(r chi.Router) {
 			r.Get("/", handlers.Correlation.GetCorrelationRequest)
+		})
+
+		// Global search (requires family context)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireFamilyContext())
+			r.Get("/search", handlers.Search.Search)
 		})
 
 		// Report file serving

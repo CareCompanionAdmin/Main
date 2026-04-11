@@ -248,10 +248,13 @@ func main() {
 		}
 	}()
 
-	// Start report scheduler
+	// Start background services
 	schedulerCtx, schedulerCancel := context.WithCancel(context.Background())
 	reportScheduler := service.NewReportScheduler(services.Report)
 	go reportScheduler.Start(schedulerCtx)
+
+	insightGen := service.NewInsightGenerator(services.Alert, repos.Log, repos.Medication, repos.Alert, db.DB)
+	go insightGen.Start(schedulerCtx)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)

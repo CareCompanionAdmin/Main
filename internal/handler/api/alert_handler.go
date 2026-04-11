@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -183,6 +184,56 @@ func (h *AlertHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetAlertsPage returns the alerts page data
+// DashboardInsights returns recent alerts formatted for the carousel widget
+func (h *AlertHandler) DashboardInsights(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	// Get active and recent acknowledged alerts (last 7 days)
+	activeStatus := models.AlertStatusActive
+	activeAlerts, err := h.alertService.GetByChildID(r.Context(), childID, &activeStatus)
+	if err != nil {
+		respondInternalError(w, "Failed to get insights")
+		return
+	}
+
+	// Also include recently created info alerts (positive feedback)
+	infoAlerts, _ := h.alertService.GetByChildID(r.Context(), childID, nil)
+
+	// Combine and deduplicate, prioritize by severity then recency
+	seen := make(map[string]bool)
+	var insights []models.Alert
+	// Active alerts first
+	for _, a := range activeAlerts {
+		if !seen[a.ID.String()] {
+			seen[a.ID.String()] = true
+			insights = append(insights, a)
+		}
+	}
+	// Then recent info alerts (last 3 days, not already included)
+	cutoff := time.Now().AddDate(0, 0, -3)
+	for _, a := range infoAlerts {
+		if !seen[a.ID.String()] && a.CreatedAt.After(cutoff) {
+			seen[a.ID.String()] = true
+			insights = append(insights, a)
+		}
+		if len(insights) >= 20 {
+			break
+		}
+	}
+
+	respondOK(w, insights)
+}
+
 func (h *AlertHandler) GetAlertsPage(w http.ResponseWriter, r *http.Request) {
 	childID, err := getChildIDFromURL(r)
 	if err != nil {

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -22,15 +23,17 @@ type MedicationHandler struct {
 	userService     *service.UserService
 	drugDBService   *service.DrugDatabaseService
 	insightService  *service.InsightService
+	realtimeService *service.RealtimeDetectionService
 }
 
-func NewMedicationHandler(medService *service.MedicationService, childService *service.ChildService, userService *service.UserService, drugDBService *service.DrugDatabaseService, insightService *service.InsightService) *MedicationHandler {
+func NewMedicationHandler(medService *service.MedicationService, childService *service.ChildService, userService *service.UserService, drugDBService *service.DrugDatabaseService, insightService *service.InsightService, realtimeService *service.RealtimeDetectionService) *MedicationHandler {
 	return &MedicationHandler{
-		medService:     medService,
-		childService:   childService,
-		userService:    userService,
-		drugDBService:  drugDBService,
-		insightService: insightService,
+		medService:      medService,
+		childService:    childService,
+		userService:     userService,
+		drugDBService:   drugDBService,
+		insightService:  insightService,
+		realtimeService: realtimeService,
 	}
 }
 
@@ -354,6 +357,14 @@ func (h *MedicationHandler) Log(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+
+	// Trigger missed medication detection if status is "missed"
+	if req.Status == "missed" && h.realtimeService != nil {
+		go func() {
+			defer func() { recover() }()
+			h.realtimeService.OnMedicationMissed(context.Background(), childID, req.MedicationID)
+		}()
+	}
 }
 
 // GetLogs returns medication logs

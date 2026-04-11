@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	stdlog "log"
 	"net/http"
@@ -13,17 +14,46 @@ import (
 )
 
 type LogHandler struct {
-	logService   *service.LogService
-	childService *service.ChildService
-	userService  *service.UserService
+	logService       *service.LogService
+	childService     *service.ChildService
+	userService      *service.UserService
+	realtimeService  *service.RealtimeDetectionService
 }
 
-func NewLogHandler(logService *service.LogService, childService *service.ChildService, userService *service.UserService) *LogHandler {
+func NewLogHandler(logService *service.LogService, childService *service.ChildService, userService *service.UserService, realtimeService *service.RealtimeDetectionService) *LogHandler {
 	return &LogHandler{
-		logService:   logService,
-		childService: childService,
-		userService:  userService,
+		logService:      logService,
+		childService:    childService,
+		userService:     userService,
+		realtimeService: realtimeService,
 	}
+}
+
+// triggerDetection runs realtime detection asynchronously after a log is created
+func (h *LogHandler) triggerDetection(childID interface{ String() string }, logType string) {
+	if h.realtimeService == nil {
+		return
+	}
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				stdlog.Printf("Realtime detection panic for %s: %v", logType, r)
+			}
+		}()
+		// Parse UUID from the stringer interface
+		id, err := parseUUID(childID.String())
+		if err != nil {
+			return
+		}
+		result, err := h.realtimeService.OnLogCreated(context.Background(), id, logType, nil)
+		if err != nil {
+			stdlog.Printf("Realtime detection error for %s: %v", logType, err)
+			return
+		}
+		if result != nil && result.AlertCreated {
+			stdlog.Printf("Realtime detection: alert created for %s (child %s)", logType, childID.String())
+		}
+	}()
 }
 
 // GetDailyLogs returns all logs for a specific day
@@ -115,6 +145,7 @@ func (h *LogHandler) CreateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "behavior")
 }
 
 func (h *LogHandler) GetBehaviorLogs(w http.ResponseWriter, r *http.Request) {
@@ -243,6 +274,7 @@ func (h *LogHandler) CreateBowelLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "bowel")
 }
 
 func (h *LogHandler) GetBowelLogs(w http.ResponseWriter, r *http.Request) {
@@ -361,6 +393,7 @@ func (h *LogHandler) CreateSpeechLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "speech")
 }
 
 func (h *LogHandler) GetSpeechLogs(w http.ResponseWriter, r *http.Request) {
@@ -479,6 +512,7 @@ func (h *LogHandler) CreateDietLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "meal")
 }
 
 func (h *LogHandler) GetDietLogs(w http.ResponseWriter, r *http.Request) {
@@ -607,6 +641,7 @@ func (h *LogHandler) CreateWeightLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "weight")
 }
 
 func (h *LogHandler) GetWeightLogs(w http.ResponseWriter, r *http.Request) {
@@ -720,6 +755,7 @@ func (h *LogHandler) CreateSleepLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "sleep")
 }
 
 func (h *LogHandler) GetSleepLogs(w http.ResponseWriter, r *http.Request) {
@@ -844,6 +880,7 @@ func (h *LogHandler) CreateSensoryLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "sensory")
 }
 
 func (h *LogHandler) GetSensoryLogs(w http.ResponseWriter, r *http.Request) {
@@ -963,6 +1000,7 @@ func (h *LogHandler) CreateSocialLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "social")
 }
 
 func (h *LogHandler) GetSocialLogs(w http.ResponseWriter, r *http.Request) {
@@ -1081,6 +1119,7 @@ func (h *LogHandler) CreateTherapyLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "therapy")
 }
 
 func (h *LogHandler) GetTherapyLogs(w http.ResponseWriter, r *http.Request) {
@@ -1203,6 +1242,7 @@ func (h *LogHandler) CreateSeizureLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "seizure")
 }
 
 func (h *LogHandler) GetSeizureLogs(w http.ResponseWriter, r *http.Request) {
@@ -1325,6 +1365,7 @@ func (h *LogHandler) CreateHealthEventLog(w http.ResponseWriter, r *http.Request
 	}
 
 	respondCreated(w, log)
+	h.triggerDetection(childID, "symptom")
 }
 
 func (h *LogHandler) GetHealthEventLogs(w http.ResponseWriter, r *http.Request) {

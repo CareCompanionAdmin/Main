@@ -29,6 +29,16 @@
             </div>
             <!-- Desktop Navigation -->
             <div class="hidden md:flex items-center space-x-4">
+                <!-- Global Search -->
+                <div id="global-search" class="relative flex-1 max-w-xs">
+                    <input type="text" id="global-search-input" placeholder="Search..."
+                        class="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        autocomplete="off" />
+                    <svg class="absolute left-2.5 top-2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <div id="global-search-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50" style="min-width: 350px"></div>
+                </div>
                 <a href="/dashboard" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" title="Dashboard">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
@@ -338,7 +348,7 @@
         {{if or .Logs.BehaviorLogs .Logs.DietLogs .Logs.MedicationLogs .Logs.BowelLogs .Logs.SleepLogs .Logs.SpeechLogs .Logs.WeightLogs .Logs.SensoryLogs .Logs.SocialLogs .Logs.TherapyLogs .Logs.SeizureLogs .Logs.HealthEventLogs}}
         <div class="space-y-3">
             {{range .Logs.BehaviorLogs}}
-            <div onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            <div id="behavior-{{.ID}}" onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Behavior"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -380,7 +390,7 @@
             {{end}}
 
             {{range .Logs.DietLogs}}
-            <div onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            <div id="diet-{{.ID}}" onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Meal"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -413,7 +423,7 @@
             {{end}}
 
             {{range .Logs.SleepLogs}}
-            <div onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+            <div id="sleep-{{.ID}}" onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sleep"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -445,7 +455,7 @@
             {{end}}
 
             {{range .Logs.BowelLogs}}
-            <div onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+            <div id="bowel-{{.ID}}" onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Bowel Movement"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -472,7 +482,7 @@
             {{end}}
 
             {{range .Logs.MedicationLogs}}
-            <div onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+            <div id="medication_logs-{{.ID}}" onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Medication"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -504,7 +514,7 @@
             {{end}}
 
             {{range .Logs.SpeechLogs}}
-            <div onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
+            <div id="speech-{{.ID}}" onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Speech"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -534,7 +544,7 @@
             {{end}}
 
             {{range .Logs.WeightLogs}}
-            <div onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg cursor-pointer hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
+            <div id="weight-{{.ID}}" onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg cursor-pointer hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Weight"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -559,7 +569,7 @@
             {{end}}
 
             {{range .Logs.SensoryLogs}}
-            <div onclick="showDetails('sensory', this)" class="flex items-start space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+            <div id="sensory-{{.ID}}" onclick="showDetails('sensory', this)" class="flex items-start space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sensory"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -592,7 +602,7 @@
             {{end}}
 
             {{range .Logs.SocialLogs}}
-            <div onclick="showDetails('social', this)" class="flex items-start space-x-3 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors"
+            <div id="social-{{.ID}}" onclick="showDetails('social', this)" class="flex items-start space-x-3 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Social"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -626,7 +636,7 @@
             {{end}}
 
             {{range .Logs.TherapyLogs}}
-            <div onclick="showDetails('therapy', this)" class="flex items-start space-x-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+            <div id="therapy-{{.ID}}" onclick="showDetails('therapy', this)" class="flex items-start space-x-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Therapy"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -658,7 +668,7 @@
             {{end}}
 
             {{range .Logs.SeizureLogs}}
-            <div onclick="showDetails('seizure', this)" class="flex items-start space-x-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
+            <div id="seizure-{{.ID}}" onclick="showDetails('seizure', this)" class="flex items-start space-x-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Seizure"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -692,7 +702,7 @@
             {{end}}
 
             {{range .Logs.HealthEventLogs}}
-            <div onclick="showDetails('health_event', this)" class="flex items-start space-x-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+            <div id="health_events-{{.ID}}" onclick="showDetails('health_event', this)" class="flex items-start space-x-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Health Event"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -886,6 +896,7 @@
     </div>
 </div>
 
+<script src="/static/js/global-search.js" defer></script>
 <script>
 const childId = '{{.Child.ID}}';
 const token = localStorage.getItem('access_token');
@@ -2412,11 +2423,10 @@ function openMedTakenModal(medicationId, scheduleId, medName, timeOfDay, schedul
         ontimeBtn.classList.add('hidden');
     }
 
-    // Set default date/time
-    const now = new Date();
-    const localDateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    document.getElementById('med-taken-date').value = localDateStr;
-    document.getElementById('med-taken-time').value = now.toTimeString().slice(0, 5);
+    // Set default date/time to the page's viewed date
+    const viewedDate = document.getElementById('log-date')?.value || '{{.Date.Format "2006-01-02"}}';
+    document.getElementById('med-taken-date').value = viewedDate;
+    document.getElementById('med-taken-time').value = new Date().toTimeString().slice(0, 5);
 
     // Clear errors
     document.getElementById('med-taken-error').classList.add('hidden');
@@ -2430,9 +2440,14 @@ function closeMedTakenModal() {
 
 function confirmMedTaken(option) {
     let logDate;
+    // Use the page's viewed date, not today's date
+    const pageDate = document.getElementById('log-date')?.value || '{{.Date.Format "2006-01-02"}}';
+    const pageDateParts = pageDate.split('-');
+    const pageYear = parseInt(pageDateParts[0]);
+    const pageMonth = parseInt(pageDateParts[1]) - 1;
+    const pageDay = parseInt(pageDateParts[2]);
 
     if (option === 'on-time') {
-        const now = new Date();
         const schedTime = currentMedModal.scheduledTime || '12:00';
         let hours, minutes;
         const ampmMatch = schedTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
@@ -2446,9 +2461,11 @@ function confirmMedTaken(option) {
             hours = parseInt(parts[0]);
             minutes = parseInt(parts[1]) || 0;
         }
-        logDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+        logDate = new Date(pageYear, pageMonth, pageDay, hours, minutes);
     } else if (option === 'now') {
-        logDate = new Date();
+        // "Now" still uses current time but with the page's date
+        const now = new Date();
+        logDate = new Date(pageYear, pageMonth, pageDay, now.getHours(), now.getMinutes());
     } else {
         const dateVal = document.getElementById('med-taken-date').value;
         const timeVal = document.getElementById('med-taken-time').value;
