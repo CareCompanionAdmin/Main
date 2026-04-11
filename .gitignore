@@ -20,6 +20,8 @@ build/
 *.dylib
 carecompanion
 carecomp
+server
+__pycache__/
 
 # Database backups
 backups/
@@ -50,6 +52,9 @@ uploads/
 # Logs
 logs/
 *.log
+
+# One-time generation scripts
+scripts/generate_mobile_plan.py
 
 # Debug/utility scripts
 cmd/addtofamily/
