@@ -3202,7 +3202,9 @@ async function loadRecentDatesWithData() {
             const dates = await response.json();
             if (dates && dates.length > 0) {
                 listContainer.innerHTML = dates.slice(0, 14).map(dateInfo => {
-                    const date = new Date(dateInfo.date + 'T00:00:00');
+                    // dateInfo.date may be an ISO timestamp or plain date string
+                    const rawDate = typeof dateInfo.date === 'string' ? dateInfo.date.split('T')[0] : dateInfo.date;
+                    const date = new Date(rawDate + 'T00:00:00');
                     const dateStr = getLocalDateString(date);
                     const displayDate = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                     const isSelected = dateStr === currentDateStr;

@@ -1270,29 +1270,29 @@ func (r *logRepo) GetDatesWithLogs(ctx context.Context, childID uuid.UUID, limit
 	// Query to get dates with entry counts across all log tables
 	query := `
 		WITH all_logs AS (
-			SELECT log_date AS date FROM behavior_logs WHERE child_id = $1
+			SELECT log_date AS date FROM behavior_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM bowel_logs WHERE child_id = $1
+			SELECT log_date AS date FROM bowel_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM speech_logs WHERE child_id = $1
+			SELECT log_date AS date FROM speech_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM diet_logs WHERE child_id = $1
+			SELECT log_date AS date FROM diet_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM weight_logs WHERE child_id = $1
+			SELECT log_date AS date FROM weight_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM sleep_logs WHERE child_id = $1
+			SELECT log_date AS date FROM sleep_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM sensory_logs WHERE child_id = $1
+			SELECT log_date AS date FROM sensory_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM social_logs WHERE child_id = $1
+			SELECT log_date AS date FROM social_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM therapy_logs WHERE child_id = $1
+			SELECT log_date AS date FROM therapy_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM seizure_logs WHERE child_id = $1
+			SELECT log_date AS date FROM seizure_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM health_event_logs WHERE child_id = $1
+			SELECT log_date AS date FROM health_event_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 			UNION ALL
-			SELECT log_date AS date FROM medication_logs WHERE child_id = $1
+			SELECT log_date AS date FROM medication_logs WHERE child_id = $1 AND log_date > '1970-01-01'
 		)
 		SELECT date, COUNT(*) as entry_count
 		FROM all_logs

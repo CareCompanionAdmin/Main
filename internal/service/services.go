@@ -31,6 +31,7 @@ type Services struct {
 	Email             *EmailService
 	PasswordReset     *PasswordResetService
 	Push              *PushService
+	Report            *ReportService
 }
 
 // NewServices creates all services with their dependencies
@@ -70,5 +71,6 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Email:             emailService,
 		PasswordReset:     NewPasswordResetService(db, repos.User, emailService, cfg.App.URL),
 		Push:              pushService,
+		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, cfg.Storage.UploadDir),
 	}
 }

@@ -27,6 +27,7 @@ type Handlers struct {
 	PasswordReset *PasswordResetHandler
 	Device        *DeviceHandler
 	User          *UserHandler
+	Report        *ReportHandler
 }
 
 // NewHandlers creates all API handlers
@@ -47,6 +48,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		PasswordReset: NewPasswordResetHandler(services.PasswordReset),
 		Device:        NewDeviceHandler(services.Push, &cfg.App),
 		User:          NewUserHandler(services.User),
+		Report:        NewReportHandler(services.Report, services.Child),
 	}
 }
 
@@ -264,11 +266,31 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				r.Get("/", handlers.Correlation.GetPattern)
 				r.Delete("/", handlers.Correlation.DeletePattern)
 			})
+
+			// Reports
+			r.Route("/reports", func(r chi.Router) {
+				r.Post("/generate", handlers.Report.GenerateReport)
+				r.Get("/", handlers.Report.ListReports)
+				r.Post("/schedules", handlers.Report.CreateSchedule)
+				r.Get("/schedules", handlers.Report.ListSchedules)
+				r.Delete("/schedules/{scheduleID}", handlers.Report.DeleteSchedule)
+
+				r.Route("/{reportID}", func(r chi.Router) {
+					r.Get("/", handlers.Report.GetReport)
+					r.Get("/download", handlers.Report.DownloadReport)
+					r.Get("/view", handlers.Report.ViewReportData)
+					r.Post("/share", handlers.Report.ShareReport)
+					r.Delete("/", handlers.Report.DeleteReport)
+				})
+			})
 		})
 
 		r.Route("/correlations/{correlationID}", func(r chi.Router) {
 			r.Get("/", handlers.Correlation.GetCorrelationRequest)
 		})
+
+		// Report file serving
+		r.Get("/reports/files/{filename}", handlers.Report.ServeReportFile)
 
 		// Medication reference search
 		r.Get("/medication-references", handlers.Medication.SearchReferences)

@@ -325,6 +325,31 @@ func (h *WebHandlers) Alerts(w http.ResponseWriter, r *http.Request) {
 }
 
 // Insights renders the insights page
+func (h *WebHandlers) Reports(w http.ResponseWriter, r *http.Request) {
+	childID, err := parseUUID(chi.URLParam(r, "childID"))
+	if err != nil {
+		renderError(w, "Invalid child ID", http.StatusBadRequest)
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	child, err := h.services.Child.VerifyChildAccess(r.Context(), childID, userID)
+	if err != nil {
+		renderError(w, "Access denied", http.StatusForbidden)
+		return
+	}
+
+	familyID := middleware.GetFamilyID(r.Context())
+	members, _ := h.services.Family.GetMembers(r.Context(), familyID)
+
+	data := map[string]interface{}{
+		"Child":   child,
+		"Members": members,
+	}
+
+	renderTemplate(w, "reports", data)
+}
+
 func (h *WebHandlers) Insights(w http.ResponseWriter, r *http.Request) {
 	childID, err := parseUUID(chi.URLParam(r, "childID"))
 	if err != nil {

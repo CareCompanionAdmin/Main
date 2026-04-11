@@ -38,6 +38,7 @@ func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthS
 			r.Get("/alerts", handlers.Alerts)
 			r.Get("/alert/{alertID}/analysis", handlers.AlertAnalysis)
 			r.Get("/insights", handlers.Insights)
+			r.Get("/reports", handlers.Reports)
 			r.Get("/settings", handlers.ChildSettings)
 		})
 	})

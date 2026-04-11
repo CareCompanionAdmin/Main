@@ -248,11 +248,17 @@ func main() {
 		}
 	}()
 
+	// Start report scheduler
+	schedulerCtx, schedulerCancel := context.WithCancel(context.Background())
+	reportScheduler := service.NewReportScheduler(services.Report)
+	go reportScheduler.Start(schedulerCtx)
+
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
+	schedulerCancel()
 	log.Println("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

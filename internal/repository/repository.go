@@ -347,6 +347,7 @@ type Repositories struct {
 	DevMode      DevModeRepository     // Development mode SSH control
 	Billing      BillingRepository     // Family-based billing
 	DeviceToken  DeviceTokenRepository // Mobile device tokens for push notifications
+	Report       ReportRepository     // Reports and scheduled reports
 }
 
 // NewRepositories creates all repository implementations
@@ -369,5 +370,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		DevMode:      NewDevModeRepo(db),
 		Billing:      NewBillingRepo(db),
 		DeviceToken:  NewDeviceTokenRepo(db),
+		Report:       NewReportRepo(db),
 	}
 }
