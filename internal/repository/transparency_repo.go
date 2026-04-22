@@ -515,3 +515,31 @@ func (r *TransparencyRepository) GetMedicationHistory(ctx context.Context, child
 	}
 	return entries, rows.Err()
 }
+
+// GetMedChangeDates returns a set of date strings (YYYY-MM-DD) that had medication
+// treatment changes for a given child within a date range.
+func (r *TransparencyRepository) GetMedChangeDates(ctx context.Context, childID string, startDate, endDate time.Time) (map[string]bool, error) {
+	query := `
+		SELECT DISTINCT DATE(created_at AT TIME ZONE 'UTC')::text
+		FROM treatment_changes
+		WHERE child_id = $1
+		  AND created_at >= $2
+		  AND created_at < $3
+		  AND change_type IN ('medication_added', 'medication_discontinued', 'medication_dose_changed', 'medication_schedule_changed', 'medication_switched')
+	`
+	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	dates := make(map[string]bool)
+	for rows.Next() {
+		var d string
+		if err := rows.Scan(&d); err != nil {
+			return nil, err
+		}
+		dates[d] = true
+	}
+	return dates, rows.Err()
+}

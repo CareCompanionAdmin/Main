@@ -17,6 +17,7 @@ type Config struct {
 	Storage     StorageConfig
 	SMTP        SMTPConfig
 	FCM         FCMConfig
+	Claude      ClaudeConfig
 }
 
 type StorageConfig struct {
@@ -77,6 +78,16 @@ type FCMConfig struct {
 	ServerKey string
 }
 
+type ClaudeConfig struct {
+	APIKey         string
+	Model          string
+	MaxTokens      int
+	DailyRunHour   int
+	MaxInsights    int
+	LookbackDays   int
+	Enabled        bool
+}
+
 func Load() (*Config, error) {
 	godotenv.Load()
 
@@ -130,6 +141,15 @@ func Load() (*Config, error) {
 			Password:    getEnv("SMTP_PASSWORD", ""),
 			FromAddress: getEnv("SMTP_FROM_ADDRESS", "notifications@mycarecompanion.net"),
 			FromName:    getEnv("SMTP_FROM_NAME", "MyCareCompanion"),
+		},
+		Claude: ClaudeConfig{
+			APIKey:       getEnv("CLAUDE_API_KEY", ""),
+			Model:        getEnv("CLAUDE_MODEL", "claude-sonnet-4-5-20241022"),
+			MaxTokens:    getEnvInt("CLAUDE_MAX_TOKENS", 4096),
+			DailyRunHour: getEnvInt("CLAUDE_DAILY_RUN_HOUR", 6),
+			MaxInsights:  getEnvInt("CLAUDE_MAX_INSIGHTS", 5),
+			LookbackDays: getEnvInt("CLAUDE_LOOKBACK_DAYS", 7),
+			Enabled:      getEnvBool("CLAUDE_ENABLED", false),
 		},
 	}
 

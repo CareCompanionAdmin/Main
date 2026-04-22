@@ -253,7 +253,18 @@ func main() {
 	reportScheduler := service.NewReportScheduler(services.Report)
 	go reportScheduler.Start(schedulerCtx)
 
-	insightGen := service.NewInsightGenerator(services.Alert, repos.Log, repos.Medication, repos.Alert, db.DB)
+	// Create AI insight service if Claude is configured
+	var aiInsightService *service.AIInsightService
+	if cfg.Claude.Enabled && cfg.Claude.APIKey != "" {
+		aiInsightService = service.NewAIInsightService(
+			&cfg.Claude, repos.Log, repos.Child, repos.Medication, repos.Insight, services.Alert,
+		)
+		log.Println("Claude AI insights enabled")
+	} else {
+		log.Println("Claude AI insights disabled (set CLAUDE_ENABLED=true and CLAUDE_API_KEY to enable)")
+	}
+
+	insightGen := service.NewInsightGenerator(services.Alert, repos.Log, repos.Medication, repos.Alert, db.DB, aiInsightService, cfg.Claude.DailyRunHour)
 	go insightGen.Start(schedulerCtx)
 
 	// Graceful shutdown

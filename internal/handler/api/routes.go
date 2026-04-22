@@ -38,7 +38,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Child:        NewChildHandler(services.Child),
 		Family:       NewFamilyHandler(services.Family, services.User, services.Email, services.Push, cfg.App.URL),
 		Medication:   NewMedicationHandler(services.Medication, services.Child, services.User, services.DrugDatabase, services.Insight, services.RealtimeDetection),
-		Log:          NewLogHandler(services.Log, services.Child, services.User, services.RealtimeDetection),
+		Log:          NewLogHandler(services.Log, services.Child, services.User, services.RealtimeDetection, services.Transparency),
 		Alert:        NewAlertHandler(services.Alert, services.Child),
 		Correlation:  NewCorrelationHandler(services.Correlation, services.Child),
 		Insight:      NewInsightHandler(services.Insight, services.Child),

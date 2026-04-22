@@ -262,9 +262,9 @@
                 </div>
 
                 <!-- Summary Display -->
-                <div id="quick-summary-content">
+                <div id="quick-summary-content" class="overflow-visible">
                     <!-- Weekly View (default) -->
-                    <div id="weekly-summary" class="grid grid-cols-7 gap-1 py-2">
+                    <div id="weekly-summary" class="grid grid-cols-7 gap-1 py-2 overflow-visible">
                         <!-- Populated by JavaScript -->
                     </div>
 
@@ -284,7 +284,7 @@
                         <div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-400 mb-1">
                             <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
                         </div>
-                        <div id="monthly-grid" class="grid grid-cols-7 gap-1">
+                        <div id="monthly-grid" class="grid grid-cols-7 gap-1 overflow-visible">
                             <!-- Monthly calendar grid populated by JS -->
                         </div>
                     </div>
@@ -663,21 +663,26 @@ function renderQuickSummary(data) {
             const isToday = day.date === getLocalDateString();
             const todayClass = isToday ? 'font-bold text-indigo-600' : 'text-gray-500';
             const todayBorder = isToday ? 'ring-[5px] ring-indigo-500 ring-offset-2' : '';
+            const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-xl" title="Medication change">💊</span>` : '';
 
             return `
                 <div class="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform"
                      onclick="showDayDetails('${day.date}', '${data.category}')"
-                     title="${day.date}${day.has_data ? ' - Score: ' + Math.round(day.score) + ' - ' + alt : ' - No data'}">
+                     title="${day.date}${day.has_data ? ' - Score: ' + Math.round(day.score) + ' - ' + alt : ' - No data'}${day.has_med_change ? ' - Medication change' : ''}">
                     <div class="text-xs ${todayClass} mb-1">${days[i]}</div>
-                    <img src="${src}" alt="${alt}" style="width: 80%; aspect-ratio: 1;" class="rounded-full ${todayBorder}">
+                    <div class="relative overflow-visible" style="width: 80%;">
+                        <img src="${src}" alt="${alt}" style="aspect-ratio: 1;" class="rounded-full ${todayBorder} w-full">
+                        ${pillIcon}
+                    </div>
                 </div>
             `;
         }).join('');
     } else if (data.time_range === 'daily') {
         const day = data.days[0];
         const { src, alt } = getMoodImage(day.score, day.has_data);
+        const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-2xl" title="Medication change">💊</span>` : '';
 
-        document.getElementById('daily-emoji').innerHTML = `<img src="${src}" alt="${alt}" class="w-24 h-24 mx-auto">`;
+        document.getElementById('daily-emoji').innerHTML = `<div class="relative inline-block"><img src="${src}" alt="${alt}" class="w-24 h-24 mx-auto">${pillIcon}</div>`;
         document.getElementById('daily-emoji').className = 'mb-2';
         document.getElementById('daily-label').textContent = day.has_data ? alt : 'No data for today';
         document.getElementById('daily-details').textContent = day.has_data ?
@@ -709,12 +714,17 @@ function renderQuickSummary(data) {
             const todayClass = isToday ? 'font-bold text-indigo-600' : 'text-gray-400';
             const todayBorder = isToday ? 'ring-[3px] ring-indigo-500' : '';
 
+            const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-[20px]" title="Medication change">💊</span>` : '';
+
             html += `
                 <div class="aspect-square flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform p-0.5"
                      onclick="showDayDetails('${day.date}', '${data.category}')"
-                     title="${day.date}${day.has_data ? ' - ' + alt : ''}">
+                     title="${day.date}${day.has_data ? ' - ' + alt : ''}${day.has_med_change ? ' - Medication change' : ''}">
                     <span class="text-[10px] leading-none ${todayClass}">${dayNum}</span>
-                    <img src="${src}" alt="${alt}" style="width: 75%; aspect-ratio: 1;" class="${todayBorder} rounded-full">
+                    <div class="relative overflow-visible" style="width: 75%;">
+                        <img src="${src}" alt="${alt}" style="aspect-ratio: 1;" class="${todayBorder} rounded-full w-full">
+                        ${pillIcon}
+                    </div>
                 </div>
             `;
         });

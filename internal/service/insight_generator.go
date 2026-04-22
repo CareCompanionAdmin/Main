@@ -18,6 +18,9 @@ type InsightGenerator struct {
 	medRepo      repository.MedicationRepository
 	alertRepo    repository.AlertRepository
 	db           *sql.DB
+	aiService    *AIInsightService
+	lastAIRun    time.Time
+	aiRunHour    int
 }
 
 // NewInsightGenerator creates a new insight generator
@@ -27,6 +30,8 @@ func NewInsightGenerator(
 	medRepo repository.MedicationRepository,
 	alertRepo repository.AlertRepository,
 	db *sql.DB,
+	aiService *AIInsightService,
+	aiRunHour int,
 ) *InsightGenerator {
 	return &InsightGenerator{
 		alertService: alertService,
@@ -34,6 +39,8 @@ func NewInsightGenerator(
 		medRepo:      medRepo,
 		alertRepo:    alertRepo,
 		db:           db,
+		aiService:    aiService,
+		aiRunHour:    aiRunHour,
 	}
 }
 
@@ -42,6 +49,12 @@ func (g *InsightGenerator) Start(ctx context.Context) {
 	log.Println("Insight generator started")
 	// Run immediately on startup
 	g.generateAllInsights(ctx)
+
+	// Also run AI analysis immediately on first startup if enabled
+	if g.aiService != nil {
+		log.Println("AI Insight generator enabled — running initial analysis")
+		g.runAIAnalysis(ctx)
+	}
 
 	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
@@ -53,14 +66,49 @@ func (g *InsightGenerator) Start(ctx context.Context) {
 			return
 		case <-ticker.C:
 			g.generateAllInsights(ctx)
+
+			// Run AI analysis daily at configured hour
+			if g.shouldRunAI() {
+				g.runAIAnalysis(ctx)
+			}
 		}
 	}
 }
 
+// shouldRunAI checks if it's time for the daily AI analysis
+func (g *InsightGenerator) shouldRunAI() bool {
+	if g.aiService == nil {
+		return false
+	}
+	now := time.Now()
+	// Run at the configured hour, only if we haven't already run today
+	if now.Hour() == g.aiRunHour && now.Format("2006-01-02") != g.lastAIRun.Format("2006-01-02") {
+		return true
+	}
+	return false
+}
+
+// runAIAnalysis runs Claude AI analysis for all active children
+func (g *InsightGenerator) runAIAnalysis(ctx context.Context) {
+	children, err := g.getAllActiveChildren(ctx)
+	if err != nil {
+		log.Printf("AI Insights: failed to get children: %v", err)
+		return
+	}
+
+	log.Printf("AI Insights: starting analysis for %d children", len(children))
+	g.lastAIRun = time.Now()
+
+	for _, child := range children {
+		if err := g.aiService.AnalyzeChild(ctx, child); err != nil {
+			log.Printf("AI Insights: error analyzing %s: %v", child.FirstName, err)
+		}
+	}
+
+	log.Println("AI Insights: daily analysis complete")
+}
+
 func (g *InsightGenerator) generateAllInsights(ctx context.Context) {
-	// Get all active children across all families
-	// We query each family's children through the family memberships
-	// For simplicity, query all active children directly
 	children, err := g.getAllActiveChildren(ctx)
 	if err != nil {
 		log.Printf("Insight generator: failed to get children: %v", err)
@@ -128,7 +176,6 @@ func (g *InsightGenerator) checkMoodTrend(ctx context.Context, child models.Chil
 		return
 	}
 
-	// Calculate daily mood averages
 	dayMoods := make(map[string][]int)
 	for _, bl := range logs.BehaviorLogs {
 		if bl.MoodLevel == nil {
@@ -142,7 +189,6 @@ func (g *InsightGenerator) checkMoodTrend(ctx context.Context, child models.Chil
 		return
 	}
 
-	// Get averages sorted by date
 	type dayAvg struct {
 		date string
 		avg  float64
@@ -156,7 +202,6 @@ func (g *InsightGenerator) checkMoodTrend(ctx context.Context, child models.Chil
 		avgs = append(avgs, dayAvg{d, float64(sum) / float64(len(moods))})
 	}
 
-	// Sort by date
 	for i := 0; i < len(avgs)-1; i++ {
 		for j := i + 1; j < len(avgs); j++ {
 			if avgs[i].date > avgs[j].date {
@@ -165,7 +210,6 @@ func (g *InsightGenerator) checkMoodTrend(ctx context.Context, child models.Chil
 		}
 	}
 
-	// Check for declining trend (first day vs last day)
 	if len(avgs) >= 2 {
 		first := avgs[0].avg
 		last := avgs[len(avgs)-1].avg
@@ -255,7 +299,6 @@ func (g *InsightGenerator) checkMedicationAdherence(ctx context.Context, child m
 }
 
 func (g *InsightGenerator) checkMissedMedStreak(ctx context.Context, child models.Child, logs *models.DailyLogPage) {
-	// Group missed meds by date
 	missedByDate := make(map[string]int)
 	for _, ml := range logs.MedicationLogs {
 		if ml.Status == "missed" {
@@ -264,7 +307,6 @@ func (g *InsightGenerator) checkMissedMedStreak(ctx context.Context, child model
 		}
 	}
 
-	// Check for consecutive days with missed meds
 	consecutiveDays := 0
 	now := time.Now()
 	for i := 0; i < 3; i++ {
@@ -284,13 +326,11 @@ func (g *InsightGenerator) checkMissedMedStreak(ctx context.Context, child model
 	}
 }
 
-// createAlertIfNew creates an alert only if a similar one doesn't exist in the past 24 hours
 func (g *InsightGenerator) createAlertIfNew(ctx context.Context, child models.Child, alertType string, severity models.AlertSeverity, title, description string) {
-	// Check for duplicate alerts in last 24 hours
 	since := time.Now().Add(-24 * time.Hour)
 	existing, err := g.alertRepo.GetByChildIDAndTypeSince(ctx, child.ID, alertType, since)
 	if err == nil && len(existing) > 0 {
-		return // Already have a recent alert of this type
+		return
 	}
 
 	alert := &models.Alert{

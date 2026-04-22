@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -361,6 +362,11 @@ func GetConfidenceColor(score float64) string {
 		return "yellow"
 	}
 	return "red"
+}
+
+// GetMedChangeDates returns dates with medication changes for a child in a date range.
+func (s *TransparencyService) GetMedChangeDates(ctx context.Context, childID string, startDate, endDate time.Time) (map[string]bool, error) {
+	return s.repo.GetMedChangeDates(ctx, childID, startDate, endDate)
 }
 
 // GetFilledDots returns the number of filled dots for confidence meter (out of 5)

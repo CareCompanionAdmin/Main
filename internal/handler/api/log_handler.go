@@ -14,18 +14,20 @@ import (
 )
 
 type LogHandler struct {
-	logService       *service.LogService
-	childService     *service.ChildService
-	userService      *service.UserService
-	realtimeService  *service.RealtimeDetectionService
+	logService          *service.LogService
+	childService        *service.ChildService
+	userService         *service.UserService
+	realtimeService     *service.RealtimeDetectionService
+	transparencyService *service.TransparencyService
 }
 
-func NewLogHandler(logService *service.LogService, childService *service.ChildService, userService *service.UserService, realtimeService *service.RealtimeDetectionService) *LogHandler {
+func NewLogHandler(logService *service.LogService, childService *service.ChildService, userService *service.UserService, realtimeService *service.RealtimeDetectionService, transparencyService *service.TransparencyService) *LogHandler {
 	return &LogHandler{
-		logService:      logService,
-		childService:    childService,
-		userService:     userService,
-		realtimeService: realtimeService,
+		logService:          logService,
+		childService:        childService,
+		userService:         userService,
+		realtimeService:     realtimeService,
+		transparencyService: transparencyService,
 	}
 }
 
@@ -1480,11 +1482,12 @@ type QuickSummaryResponse struct {
 }
 
 type DaySummary struct {
-	Date      string  `json:"date"`
-	DayOfWeek string  `json:"day_of_week"`
-	Score     float64 `json:"score"` // 0-100, where 100 is best
-	HasData   bool    `json:"has_data"`
-	Details   string  `json:"details,omitempty"`
+	Date         string  `json:"date"`
+	DayOfWeek    string  `json:"day_of_week"`
+	Score        float64 `json:"score"` // 0-100, where 100 is best
+	HasData      bool    `json:"has_data"`
+	Details      string  `json:"details,omitempty"`
+	HasMedChange bool    `json:"has_med_change"`
 }
 
 // GetQuickSummary returns a summary of logs for a category over a time range
@@ -1591,6 +1594,14 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get medication change dates for this period
+	medChangeDates, err := h.transparencyService.GetMedChangeDates(r.Context(), childID.String(), startDate, endDate)
+	if err != nil {
+		stdlog.Printf("Error getting med change dates: %v", err)
+		// Non-fatal — continue without med change indicators
+		medChangeDates = make(map[string]bool)
+	}
+
 	// Map the data to days
 	for i := range days {
 		if data, ok := summaryData[days[i].Date]; ok {
@@ -1598,6 +1609,7 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 			days[i].HasData = data.HasData
 			days[i].Details = data.Details
 		}
+		days[i].HasMedChange = medChangeDates[days[i].Date]
 	}
 
 	response := QuickSummaryResponse{
