@@ -47,11 +47,12 @@ workflows:
             echo "--- $f ---"
             security cms -D -i "$f" 2>/dev/null | grep -A1 "UUID\|TeamIdentifier\|Name" | head -10
           done
-      - name: Build iOS
+      - name: Build and export iOS
         script: |
           cd mobile/ios/App
-          # Find provisioning profile UUID
           PROFILE_PATH=$(ls "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null | head -1)
+          PROFILE_UUID=""
+          PROFILE_NAME=""
           if [ -n "$PROFILE_PATH" ]; then
             PROFILE_UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -)
             PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
@@ -59,6 +60,7 @@ workflows:
           fi
           SIGN_ID=$(security find-identity -v -p codesigning | grep "Apple Distribution" | head -1 | awk -F'"' '{print $2}')
           echo "Using identity: $SIGN_ID"
+          echo "=== Archive ==="
           xcodebuild archive -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
@@ -69,14 +71,7 @@ workflows:
             CODE_SIGN_IDENTITY="$SIGN_ID" \
             PROVISIONING_PROFILE="$PROFILE_UUID" \
             PROVISIONING_PROFILE_SPECIFIER=""
-      - name: Export IPA
-        script: |
-          cd mobile/ios/App
-          PROFILE_PATH=$(ls "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null | head -1)
-          PROFILE_NAME=""
-          if [ -n "$PROFILE_PATH" ]; then
-            PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
-          fi
+          echo "=== Export ==="
           python3 -c "
           import plistlib
           opts = {
@@ -89,9 +84,7 @@ workflows:
           }
           with open('exportOptions.plist', 'wb') as f:
               plistlib.dump(opts, f)
-          print('Export options written')
           "
-          cat exportOptions.plist
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportPath build/export \
