@@ -36,24 +36,39 @@ workflows:
             --create
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --warn-only
       - name: Build iOS
         script: |
           cd mobile/ios/App
-          xcodebuild build -workspace App.xcworkspace \
+          xcodebuild archive -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -destination generic/platform=iOS \
             -archivePath build/App.xcarchive \
-            archive \
-            CODE_SIGN_STYLE=Manual
+            -allowProvisioningUpdates \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=33MD3X7Z3D
       - name: Export IPA
         script: |
           cd mobile/ios/App
+          cat > exportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <true/>
+          </dict>
+          </plist>
+          PLIST
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
-            -exportOptionsPlist build/App.xcarchive/Info.plist \
-            -exportPath build/export
+            -exportPath build/export \
+            -exportOptionsPlist exportOptions.plist
     artifacts:
       - mobile/ios/App/build/export/*.ipa
     publishing:
