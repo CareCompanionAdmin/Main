@@ -81,17 +81,12 @@ workflows:
           cd mobile
           mkdir -p android/app/src/main/assets/public
           npx cap sync android
-      - name: Set up keystore
-        script: |
-          if [ -n "$CM_KEYSTORE" ]; then
-            echo $CM_KEYSTORE | base64 --decode > mobile/android/app/carecompanion-upload.jks
-          fi
       - name: Build Android
         script: |
           cd mobile/android
           chmod +x gradlew
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file=$(pwd)/app/carecompanion-upload.jks \
+            -Pandroid.injected.signing.store.file=$(pwd)/../../infrastructure/carecompanion-upload.jks \
             -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
