@@ -52,9 +52,9 @@ workflows:
     artifacts:
       - mobile/ios/App/build/export/*.ipa
     publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
+      email:
+        recipients:
+          - bryan@bluebonnettech.com
 
   # Android build workflow
   android-build:
@@ -63,7 +63,7 @@ workflows:
     instance_type: linux_x2
     environment:
       groups:
-        - android_keystore   # CM_KEYSTORE, CM_KEY_ALIAS, CM_KEY_PASSWORD, CM_KEYSTORE_PASSWORD
+        - android_signing   # CM_KEYSTORE, CM_KEY_ALIAS, CM_KEY_PASSWORD, CM_KEYSTORE_PASSWORD
         - firebase           # GOOGLE_SERVICES_JSON (base64 encoded)
       node: 20
       java: 17
@@ -104,6 +104,6 @@ workflows:
     artifacts:
       - mobile/android/app/build/outputs/bundle/release/*.aab
     publishing:
-      google_play:
-        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-        track: internal
+      email:
+        recipients:
+          - bryan@bluebonnettech.com
