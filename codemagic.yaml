@@ -72,51 +72,30 @@ workflows:
       - name: Export IPA
         script: |
           cd mobile/ios/App
-          # Re-initialize keychain for this step
-          keychain use-login
           PROFILE_PATH=$(ls "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null | head -1)
-          if [ -z "$PROFILE_PATH" ]; then
-            echo "No profile found, using export_options from fetch step"
-            xcodebuild -exportArchive \
-              -archivePath build/App.xcarchive \
-              -exportPath build/export \
-              -exportOptionsPlist /Users/builder/export_options.plist \
-              -allowProvisioningUpdates
-          else
+          PROFILE_NAME=""
+          if [ -n "$PROFILE_PATH" ]; then
             PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
-            SIGN_ID=$(security find-identity -v -p codesigning | grep "Apple Distribution" | head -1 | awk -F'"' '{print $2}')
-            cat > exportOptions.plist <<'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>method</key>
-    <string>app-store-connect</string>
-    <key>teamID</key>
-    <string>33MD3X7Z3D</string>
-    <key>signingStyle</key>
-    <string>manual</string>
-    <key>uploadSymbols</key>
-    <true/>
-    <key>signingCertificate</key>
-    <string>Apple Distribution</string>
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>net.mycarecompanion.app</key>
-PLIST
-            echo "        <string>${PROFILE_NAME}</string>" >> exportOptions.plist
-            cat >> exportOptions.plist <<'PLIST'
-    </dict>
-</dict>
-</plist>
-PLIST
-            echo "Export options:"
-            cat exportOptions.plist
-            xcodebuild -exportArchive \
-              -archivePath build/App.xcarchive \
-              -exportPath build/export \
-              -exportOptionsPlist exportOptions.plist
           fi
+          python3 -c "
+          import plistlib
+          opts = {
+              'method': 'app-store-connect',
+              'teamID': '33MD3X7Z3D',
+              'signingStyle': 'manual',
+              'uploadSymbols': True,
+              'signingCertificate': 'Apple Distribution',
+              'provisioningProfiles': {'net.mycarecompanion.app': '${PROFILE_NAME}'},
+          }
+          with open('exportOptions.plist', 'wb') as f:
+              plistlib.dump(opts, f)
+          print('Export options written')
+          "
+          cat exportOptions.plist
+          xcodebuild -exportArchive \
+            -archivePath build/App.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist exportOptions.plist
     artifacts:
       - mobile/ios/App/build/export/*.ipa
     publishing:
