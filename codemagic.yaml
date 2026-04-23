@@ -37,60 +37,15 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
-          # Debug: show what was installed
-          echo "=== Installed profiles ==="
-          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null || echo "No profiles dir"
-          echo "=== Signing identities ==="
-          security find-identity -v -p codesigning
-          echo "=== Profile details ==="
-          for f in "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision; do
-            echo "--- $f ---"
-            security cms -D -i "$f" 2>/dev/null | grep -A1 "UUID\|TeamIdentifier\|Name" | head -10
-          done
-      - name: Build and export iOS
+      - name: Build iOS
         script: |
           cd mobile/ios/App
-          PROFILE_PATH=$(ls "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null | head -1)
-          PROFILE_UUID=""
-          PROFILE_NAME=""
-          if [ -n "$PROFILE_PATH" ]; then
-            PROFILE_UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -)
-            PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
-            echo "Using profile: $PROFILE_NAME ($PROFILE_UUID)"
-          fi
-          SIGN_ID=$(security find-identity -v -p codesigning | grep "Apple Distribution" | head -1 | awk -F'"' '{print $2}')
-          echo "Using identity: $SIGN_ID"
-          echo "=== Archive ==="
-          xcodebuild archive -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Release \
-            -destination generic/platform=iOS \
-            -archivePath build/App.xcarchive \
-            CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=33MD3X7Z3D \
-            CODE_SIGN_IDENTITY="$SIGN_ID" \
-            PROVISIONING_PROFILE="$PROFILE_UUID" \
-            PROVISIONING_PROFILE_SPECIFIER=""
-          echo "=== Export ==="
-          python3 -c "
-          import plistlib
-          opts = {
-              'method': 'app-store-connect',
-              'teamID': '33MD3X7Z3D',
-              'signingStyle': 'manual',
-              'uploadSymbols': True,
-              'signingCertificate': 'Apple Distribution',
-              'provisioningProfiles': {'net.mycarecompanion.app': '${PROFILE_NAME}'},
-          }
-          with open('exportOptions.plist', 'wb') as f:
-              plistlib.dump(opts, f)
-          "
-          xcodebuild -exportArchive \
-            -archivePath build/App.xcarchive \
-            -exportPath build/export \
-            -exportOptionsPlist exportOptions.plist
+          xcode-project build-ipa \
+            --workspace App.xcworkspace \
+            --scheme App
     artifacts:
-      - mobile/ios/App/build/export/*.ipa
+      - mobile/ios/App/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       email:
         recipients:
