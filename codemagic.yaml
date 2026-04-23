@@ -7,9 +7,6 @@ workflows:
     environment:
       groups:
         - apple_credentials  # APP_STORE_CONNECT_KEY_IDENTIFIER, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_PRIVATE_KEY
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: net.mycarecompanion.app
       node: 20
       xcode: latest
       cocoapods: default
@@ -32,6 +29,14 @@ workflows:
         script: |
           cd mobile/ios/App
           pod install
+      - name: Set up iOS code signing
+        script: |
+          app-store-connect fetch-signing-files "net.mycarecompanion.app" \
+            --type IOS_APP_STORE \
+            --create
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
       - name: Build iOS
         script: |
           cd mobile/ios/App
@@ -40,13 +45,14 @@ workflows:
             -configuration Release \
             -destination generic/platform=iOS \
             -archivePath build/App.xcarchive \
-            archive
+            archive \
+            CODE_SIGN_STYLE=Manual
       - name: Export IPA
         script: |
           cd mobile/ios/App
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
-            -exportOptionsPlist exportOptions.plist \
+            -exportOptionsPlist build/App.xcarchive/Info.plist \
             -exportPath build/export
     artifacts:
       - mobile/ios/App/build/export/*.ipa
