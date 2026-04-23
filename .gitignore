@@ -9,6 +9,7 @@
 credentials.json
 secrets.json
 *-firebase-adminsdk-*.json
+*.jks
 
 # Build artifacts
 bin/
