@@ -79,6 +79,7 @@ workflows:
       - name: Sync Capacitor Android
         script: |
           cd mobile
+          mkdir -p android/app/src/main/assets/public
           npx cap sync android
       - name: Set up keystore
         script: |
