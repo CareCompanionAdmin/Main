@@ -7,7 +7,6 @@ workflows:
     environment:
       groups:
         - apple_credentials  # APP_STORE_CONNECT_KEY_IDENTIFIER, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_PRIVATE_KEY
-        - firebase           # GOOGLE_SERVICE_INFO_PLIST (base64 encoded)
       ios_signing:
         distribution_type: app_store
         bundle_identifier: net.mycarecompanion.app
@@ -64,7 +63,6 @@ workflows:
     environment:
       groups:
         - android_signing   # CM_KEYSTORE, CM_KEY_ALIAS, CM_KEY_PASSWORD, CM_KEYSTORE_PASSWORD
-        - firebase           # GOOGLE_SERVICES_JSON (base64 encoded)
       node: 20
       java: 17
     triggering:
@@ -82,11 +80,6 @@ workflows:
         script: |
           cd mobile
           npx cap sync android
-      - name: Set up Firebase config
-        script: |
-          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
-            echo $GOOGLE_SERVICES_JSON | base64 --decode > mobile/android/app/google-services.json
-          fi
       - name: Set up keystore
         script: |
           if [ -n "$CM_KEYSTORE" ]; then
