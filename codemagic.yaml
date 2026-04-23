@@ -72,10 +72,35 @@ workflows:
       - name: Export IPA
         script: |
           cd mobile/ios/App
+          PROFILE_PATH=$(ls "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null | head -1)
+          PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
+          cat > exportOptions.plist << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>33MD3X7Z3D</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>net.mycarecompanion.app</key>
+                  <string>${PROFILE_NAME}</string>
+              </dict>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <true/>
+          </dict>
+          </plist>
+          PLIST
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportPath build/export \
-            -exportOptionsPlist /Users/builder/export_options.plist
+            -exportOptionsPlist exportOptions.plist
     artifacts:
       - mobile/ios/App/build/export/*.ipa
     publishing:
