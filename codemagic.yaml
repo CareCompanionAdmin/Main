@@ -64,7 +64,7 @@ workflows:
       groups:
         - android_signing   # CM_KEYSTORE, CM_KEY_ALIAS, CM_KEY_PASSWORD, CM_KEYSTORE_PASSWORD
       node: 20
-      java: 17
+      java: 21
     triggering:
       events:
         - tag
