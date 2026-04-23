@@ -7,9 +7,6 @@ workflows:
     integrations:
       app_store_connect: Codemagic
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: net.mycarecompanion.app
       node: 20
       xcode: latest
       cocoapods: default
