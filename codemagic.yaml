@@ -36,28 +36,43 @@ workflows:
             --create
           keychain initialize
           keychain add-certificates
-          xcode-project use-profiles --warn-only
+          xcode-project use-profiles
       - name: Build iOS
         script: |
           cd mobile/ios/App
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          PROFILE=$(ls "$PROFILES_DIR"/*.mobileprovision 2>/dev/null | head -1)
+          if [ -z "$PROFILE" ]; then
+            echo "ERROR: No provisioning profile found"
+            exit 1
+          fi
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(security cms -D -i "$PROFILE"))
+          TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" /dev/stdin <<< $(security cms -D -i "$PROFILE"))
+          SIGN_ID=$(security find-identity -v -p codesigning | grep "Apple Distribution" | head -1 | awk -F'"' '{print $2}')
+          echo "Profile UUID: $PROFILE_UUID"
+          echo "Team ID: $TEAM_ID"
+          echo "Signing Identity: $SIGN_ID"
           xcodebuild archive -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
             -destination generic/platform=iOS \
             -archivePath build/App.xcarchive \
-            -allowProvisioningUpdates \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=33MD3X7Z3D
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_IDENTITY="$SIGN_ID" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID"
       - name: Export IPA
         script: |
           cd mobile/ios/App
-          cat > exportOptions.plist <<PLIST
+          cat > exportOptions.plist << PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
           <dict>
               <key>method</key>
               <string>app-store</string>
+              <key>teamID</key>
+              <string>33MD3X7Z3D</string>
               <key>uploadBitcode</key>
               <false/>
               <key>uploadSymbols</key>
