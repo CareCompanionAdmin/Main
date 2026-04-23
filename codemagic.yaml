@@ -3,7 +3,7 @@ workflows:
   ios-build:
     name: iOS Build
     max_build_duration: 30
-    instance_type: mac_mini_m2
+    instance_type: mac_mini_m1
     environment:
       groups:
         - apple_credentials  # APP_STORE_CONNECT_KEY_IDENTIFIER, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_PRIVATE_KEY
@@ -60,7 +60,7 @@ workflows:
   android-build:
     name: Android Build
     max_build_duration: 30
-    instance_type: linux_x2
+    instance_type: linux
     environment:
       groups:
         - android_signing   # CM_KEYSTORE, CM_KEY_ALIAS, CM_KEY_PASSWORD, CM_KEYSTORE_PASSWORD
