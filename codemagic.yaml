@@ -7,6 +7,9 @@ workflows:
     integrations:
       app_store_connect: Codemagic
     environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: net.mycarecompanion.app
       node: 20
       xcode: latest
       cocoapods: default
@@ -31,12 +34,7 @@ workflows:
           pod install
       - name: Set up iOS code signing
         script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "net.mycarecompanion.app" \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
-          echo "=== Fetched profiles ==="
+          echo "=== Injected profiles ==="
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" 2>/dev/null || echo "No profiles dir"
           echo "=== Signing identities ==="
           security find-identity -v -p codesigning
