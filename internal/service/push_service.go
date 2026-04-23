@@ -2,14 +2,14 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
-	"time"
 
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/messaging"
 	"github.com/google/uuid"
+	"google.golang.org/api/option"
 
 	"carecompanion/internal/models"
 	"carecompanion/internal/repository"
@@ -35,28 +35,42 @@ type PushMessage struct {
 // PushService handles sending push notifications via Firebase Cloud Messaging
 type PushService struct {
 	deviceTokenRepo repository.DeviceTokenRepository
-	fcmServerKey    string
+	fcmClient       *messaging.Client
 	enabled         bool
-	httpClient      *http.Client
 }
 
 // NewPushService creates a new push notification service
 func NewPushService(deviceTokenRepo repository.DeviceTokenRepository, fcmServerKey string) *PushService {
-	enabled := fcmServerKey != ""
-	if !enabled {
-		log.Println("Push notifications disabled: FCM_SERVER_KEY not configured")
-	} else {
-		log.Println("Push notifications enabled")
-	}
-
 	return &PushService{
 		deviceTokenRepo: deviceTokenRepo,
-		fcmServerKey:    fcmServerKey,
-		enabled:         enabled,
-		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
+		enabled:         false,
 	}
+}
+
+// InitFirebase initializes the Firebase Admin SDK with a service account key file
+func (s *PushService) InitFirebase(serviceAccountKeyFile string) {
+	if serviceAccountKeyFile == "" {
+		log.Println("Push notifications disabled: FIREBASE_SERVICE_ACCOUNT_KEY not configured")
+		return
+	}
+
+	ctx := context.Background()
+	opt := option.WithCredentialsFile(serviceAccountKeyFile)
+	app, err := firebase.NewApp(ctx, nil, opt)
+	if err != nil {
+		log.Printf("Push notifications disabled: failed to initialize Firebase: %v", err)
+		return
+	}
+
+	client, err := app.Messaging(ctx)
+	if err != nil {
+		log.Printf("Push notifications disabled: failed to get FCM client: %v", err)
+		return
+	}
+
+	s.fcmClient = client
+	s.enabled = true
+	log.Println("Push notifications enabled (Firebase Admin SDK)")
 }
 
 // IsEnabled returns whether push notifications are configured
@@ -93,7 +107,6 @@ func (s *PushService) Send(ctx context.Context, userID uuid.UUID, msg PushMessag
 	var lastErr error
 	for _, dt := range tokens {
 		if err := s.sendToDevice(ctx, dt.Token, msg); err != nil {
-			// If the token is invalid, deactivate it
 			if isTokenInvalid(err) {
 				log.Printf("Deactivating invalid device token for user %s: %v", userID, err)
 				if deactErr := s.deviceTokenRepo.DeactivateByToken(ctx, dt.Token); deactErr != nil {
@@ -118,78 +131,42 @@ func (s *PushService) SendToUsers(ctx context.Context, userIDs []uuid.UUID, msg 
 	}
 }
 
-// fcmMessage is the FCM HTTP v1 message format (legacy endpoint)
-type fcmMessage struct {
-	To           string            `json:"to"`
-	Priority     string            `json:"priority"`
-	Notification *fcmNotification  `json:"notification"`
-	Data         map[string]string `json:"data,omitempty"`
-}
-
-type fcmNotification struct {
-	Title string `json:"title"`
-	Body  string `json:"body"`
-	Sound string `json:"sound,omitempty"`
-	Badge string `json:"badge,omitempty"`
-}
-
-type fcmResponse struct {
-	Success int `json:"success"`
-	Failure int `json:"failure"`
-	Results []struct {
-		MessageID string `json:"message_id,omitempty"`
-		Error     string `json:"error,omitempty"`
-	} `json:"results"`
-}
-
 func (s *PushService) sendToDevice(ctx context.Context, token string, msg PushMessage) error {
 	priority := "normal"
 	if msg.Priority == PushPriorityHigh {
 		priority = "high"
 	}
 
-	fcmMsg := fcmMessage{
-		To:       token,
-		Priority: priority,
-		Notification: &fcmNotification{
+	fcmMsg := &messaging.Message{
+		Token: token,
+		Notification: &messaging.Notification{
 			Title: msg.Title,
 			Body:  msg.Body,
-			Sound: "default",
 		},
 		Data: msg.Data,
+		Android: &messaging.AndroidConfig{
+			Priority: priority,
+		},
+		APNS: &messaging.APNSConfig{
+			Headers: map[string]string{
+				"apns-priority": func() string {
+					if msg.Priority == PushPriorityHigh {
+						return "10"
+					}
+					return "5"
+				}(),
+			},
+			Payload: &messaging.APNSPayload{
+				Aps: &messaging.Aps{
+					Sound: "default",
+				},
+			},
+		},
 	}
 
-	body, err := json.Marshal(fcmMsg)
+	_, err := s.fcmClient.Send(ctx, fcmMsg)
 	if err != nil {
-		return fmt.Errorf("failed to marshal FCM message: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://fcm.googleapis.com/fcm/send", strings.NewReader(string(body)))
-	if err != nil {
-		return fmt.Errorf("failed to create FCM request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "key="+s.fcmServerKey)
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("FCM request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("FCM returned status %d", resp.StatusCode)
-	}
-
-	var fcmResp fcmResponse
-	if err := json.NewDecoder(resp.Body).Decode(&fcmResp); err != nil {
-		return fmt.Errorf("failed to decode FCM response: %w", err)
-	}
-
-	if fcmResp.Failure > 0 && len(fcmResp.Results) > 0 {
-		errMsg := fcmResp.Results[0].Error
-		return fmt.Errorf("FCM error: %s", errMsg)
+		return fmt.Errorf("FCM send failed: %w", err)
 	}
 
 	return nil
@@ -201,7 +178,8 @@ func isTokenInvalid(err error) bool {
 		return false
 	}
 	msg := err.Error()
-	return strings.Contains(msg, "NotRegistered") ||
-		strings.Contains(msg, "InvalidRegistration") ||
-		strings.Contains(msg, "MismatchSenderId")
+	return strings.Contains(msg, "registration-token-not-registered") ||
+		strings.Contains(msg, "invalid-registration-token") ||
+		strings.Contains(msg, "NotRegistered") ||
+		strings.Contains(msg, "InvalidRegistration")
 }

@@ -5,8 +5,10 @@
 .env.*.local
 *.pem
 *.key
+*.p8
 credentials.json
 secrets.json
+*-firebase-adminsdk-*.json
 
 # Build artifacts
 bin/

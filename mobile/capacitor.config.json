@@ -1,5 +1,5 @@
 {
-  "appId": "com.bluebonnettech.carecompanion",
+  "appId": "net.mycarecompanion.app",
   "appName": "MyCareCompanion",
   "webDir": "www",
   "server": {

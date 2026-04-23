@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -676,6 +677,44 @@ func (h *Handler) DownloadInfraFile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", cleaned))
 	http.ServeFile(w, r, fp)
+}
+
+// UploadInfraFile handles file uploads to the infrastructure directory
+func (h *Handler) UploadInfraFile(w http.ResponseWriter, r *http.Request) {
+	// 50 MB max
+	r.ParseMultipartForm(50 << 20)
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Failed to read uploaded file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Sanitize filename
+	filename := filepath.Base(header.Filename)
+	cleaned := filepath.Clean(filename)
+	if strings.Contains(cleaned, "/") || strings.Contains(cleaned, "\\") || strings.Contains(cleaned, "..") {
+		http.Error(w, "Invalid filename", http.StatusBadRequest)
+		return
+	}
+
+	fp := filepath.Join("infrastructure", cleaned)
+
+	dst, err := os.Create(fp)
+	if err != nil {
+		http.Error(w, "Failed to save file", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, file); err != nil {
+		http.Error(w, "Failed to write file", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "filename": cleaned})
 }
 
 func calculateOverallHealth(status *models.InfrastructureStatus) (models.HealthStatus, string, int, int) {

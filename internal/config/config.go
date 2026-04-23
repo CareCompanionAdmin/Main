@@ -75,7 +75,8 @@ type SMTPConfig struct {
 }
 
 type FCMConfig struct {
-	ServerKey string
+	ServerKey              string
+	ServiceAccountKeyFile  string
 }
 
 type ClaudeConfig struct {
@@ -131,7 +132,8 @@ func Load() (*Config, error) {
 			MaxFileSize: int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10*1024*1024)), // 10MB default
 		},
 		FCM: FCMConfig{
-			ServerKey: getEnv("FCM_SERVER_KEY", ""),
+			ServerKey:             getEnv("FCM_SERVER_KEY", ""),
+			ServiceAccountKeyFile: getEnv("FIREBASE_SERVICE_ACCOUNT_KEY", ""),
 		},
 		SMTP: SMTPConfig{
 			Enabled:     getEnvBool("SMTP_ENABLED", false),

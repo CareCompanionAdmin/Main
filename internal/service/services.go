@@ -46,6 +46,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	transparencyService := NewTransparencyService(repos.Transparency, repos.Alert, repos.Child)
 
 	pushService := NewPushService(repos.DeviceToken, cfg.FCM.ServerKey)
+	pushService.InitFirebase(cfg.FCM.ServiceAccountKeyFile)
 
 	// Wire push notifications into alert service (avoids circular constructor deps)
 	alertService.SetPushService(pushService, repos.Family)

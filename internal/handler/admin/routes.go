@@ -69,6 +69,7 @@ func (h *Handler) Routes() chi.Router {
 		// Infrastructure File Share
 		r.Get("/infra-files", h.ListInfraFiles)
 		r.Get("/infra-files/download", h.DownloadInfraFile)
+		r.Post("/infra-files/upload", h.UploadInfraFile)
 
 		// Error Logs
 		r.Get("/errors", h.ListErrorLogs)

@@ -345,6 +345,16 @@
             </h3>
             <span class="text-xs text-gray-400">infrastructure/</span>
         </div>
+        <div class="mb-4">
+            <label class="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-400 hover:bg-gray-50 transition">
+                <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                </svg>
+                <span class="text-sm text-gray-600" id="upload-label">Click to upload a file</span>
+                <input type="file" id="infra-file-upload" class="hidden" onchange="uploadInfraFile(this)">
+            </label>
+            <div id="upload-status" class="mt-2 text-sm hidden"></div>
+        </div>
         <div id="infra-files-list" class="space-y-2">
             <p class="text-gray-500 text-sm">Loading files...</p>
         </div>
@@ -831,6 +841,41 @@
                 }
             }
         });
+    }
+
+    async function uploadInfraFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const label = document.getElementById('upload-label');
+        const status = document.getElementById('upload-status');
+        label.textContent = 'Uploading ' + file.name + '...';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/admin/super/infra-files/upload', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData,
+            });
+            if (!response.ok) throw new Error(await response.text());
+
+            status.className = 'mt-2 text-sm text-green-600';
+            status.textContent = file.name + ' uploaded successfully';
+            status.classList.remove('hidden');
+            label.textContent = 'Click to upload a file';
+            input.value = '';
+            loadInfraFiles();
+            setTimeout(() => status.classList.add('hidden'), 3000);
+        } catch (err) {
+            status.className = 'mt-2 text-sm text-red-600';
+            status.textContent = 'Upload failed: ' + err.message;
+            status.classList.remove('hidden');
+            label.textContent = 'Click to upload a file';
+            input.value = '';
+        }
     }
 
     async function loadInfraFiles() {

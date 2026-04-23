@@ -10,7 +10,7 @@ workflows:
         - firebase           # GOOGLE_SERVICE_INFO_PLIST (base64 encoded)
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.bluebonnettech.carecompanion
+        bundle_identifier: net.mycarecompanion.app
       node: 20
       xcode: latest
       cocoapods: default
