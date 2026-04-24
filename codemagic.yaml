@@ -42,6 +42,13 @@ workflows:
           xcode-project use-profiles --warn-only
           echo "=== pbxproj signing settings after use-profiles ==="
           grep -E "CODE_SIGN_STYLE|DEVELOPMENT_TEAM|PROVISIONING_PROFILE|CODE_SIGN_IDENTITY" App.xcodeproj/project.pbxproj || true
+      - name: Set iOS build number
+        script: |
+          cd mobile/ios/App
+          echo "Codemagic BUILD_NUMBER: $BUILD_NUMBER"
+          sed -i '' -E "s/CURRENT_PROJECT_VERSION = [0-9]+;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" App.xcodeproj/project.pbxproj
+          echo "=== Build number after bump ==="
+          grep "CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj | sort -u
       - name: Build iOS
         script: |
           cd mobile/ios/App
@@ -52,6 +59,9 @@ workflows:
       - mobile/ios/App/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
       email:
         recipients:
           - bryan@bluebonnettech.com
