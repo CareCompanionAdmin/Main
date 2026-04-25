@@ -100,7 +100,9 @@ func (h *AlertHandler) Acknowledge(w http.ResponseWriter, r *http.Request) {
 	respondOK(w, map[string]string{"message": "Alert acknowledged"})
 }
 
-// Resolve marks an alert as resolved
+// Resolve marks an alert as resolved. Optional notes from the request body
+// (`{"notes": "..."}`) are persisted as resolution_notes; missing/empty body is allowed
+// since the carousel always sends JSON but other callers may not.
 func (h *AlertHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	alertID, err := parseUUID(chi.URLParam(r, "alertID"))
 	if err != nil {
@@ -110,7 +112,14 @@ func (h *AlertHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserID(r.Context())
 
-	if err := h.alertService.Resolve(r.Context(), alertID, userID); err != nil {
+	var body struct {
+		Notes string `json:"notes"`
+	}
+	if r.Body != nil && r.ContentLength != 0 {
+		_ = decodeJSON(r, &body)
+	}
+
+	if err := h.alertService.Resolve(r.Context(), alertID, userID, body.Notes); err != nil {
 		respondInternalError(w, "Failed to resolve alert")
 		return
 	}

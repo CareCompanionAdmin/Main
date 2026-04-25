@@ -170,14 +170,32 @@ func (r *alertRepo) Acknowledge(ctx context.Context, id, userID uuid.UUID) error
 	return err
 }
 
-func (r *alertRepo) Resolve(ctx context.Context, id, userID uuid.UUID) error {
+func (r *alertRepo) Resolve(ctx context.Context, id, userID uuid.UUID, notes string) error {
 	query := `
 		UPDATE alerts
-		SET status = $2, resolved_by = $3, resolved_at = $4, updated_at = $4
+		SET status = $2, resolved_by = $3, resolved_at = $4, updated_at = $4, resolution_notes = NULLIF($5, '')
 		WHERE id = $1
 	`
 	now := time.Now()
-	_, err := r.db.ExecContext(ctx, query, id, models.AlertStatusResolved, userID, now)
+	_, err := r.db.ExecContext(ctx, query, id, models.AlertStatusResolved, userID, now, notes)
+	return err
+}
+
+// ResolveActiveByTypeAndSeverity bulk-resolves all active or acknowledged alerts of the given
+// type+severity for a child. Used by the insight generator to suppress prior positive
+// streak alerts so only the most recent one stays visible in the carousel.
+// resolved_by stays NULL because this is a system-driven resolution, not a user action.
+func (r *alertRepo) ResolveActiveByTypeAndSeverity(ctx context.Context, childID uuid.UUID, alertType string, severity models.AlertSeverity) error {
+	query := `
+		UPDATE alerts
+		SET status = $4, resolved_at = $5, updated_at = $5
+		WHERE child_id = $1
+		  AND alert_type = $2
+		  AND severity = $3
+		  AND status IN ('active', 'acknowledged')
+	`
+	now := time.Now()
+	_, err := r.db.ExecContext(ctx, query, childID, alertType, severity, models.AlertStatusResolved, now)
 	return err
 }
 

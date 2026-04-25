@@ -25,6 +25,7 @@ type Alert struct {
 	AcknowledgedAt  NullTime        `json:"acknowledged_at,omitempty"`
 	ResolvedBy      NullUUID        `json:"resolved_by,omitempty"`
 	ResolvedAt      NullTime        `json:"resolved_at,omitempty"`
+	ResolutionNotes NullString      `json:"resolution_notes,omitempty"`
 	CreatedAt       time.Time       `json:"created_at"`
 	UpdatedAt       time.Time       `json:"updated_at"`
 }

@@ -193,7 +193,8 @@ type AlertRepository interface {
 	GetByFamilyID(ctx context.Context, familyID uuid.UUID, status *models.AlertStatus) ([]models.Alert, error)
 	Update(ctx context.Context, alert *models.Alert) error
 	Acknowledge(ctx context.Context, id, userID uuid.UUID) error
-	Resolve(ctx context.Context, id, userID uuid.UUID) error
+	Resolve(ctx context.Context, id, userID uuid.UUID, notes string) error
+	ResolveActiveByTypeAndSeverity(ctx context.Context, childID uuid.UUID, alertType string, severity models.AlertSeverity) error
 	Delete(ctx context.Context, id uuid.UUID) error
 
 	// Feedback

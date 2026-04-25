@@ -108,8 +108,8 @@ func (s *AlertService) Acknowledge(ctx context.Context, alertID, userID uuid.UUI
 	return s.alertRepo.Acknowledge(ctx, alertID, userID)
 }
 
-func (s *AlertService) Resolve(ctx context.Context, alertID, userID uuid.UUID) error {
-	return s.alertRepo.Resolve(ctx, alertID, userID)
+func (s *AlertService) Resolve(ctx context.Context, alertID, userID uuid.UUID, notes string) error {
+	return s.alertRepo.Resolve(ctx, alertID, userID, notes)
 }
 
 func (s *AlertService) Delete(ctx context.Context, id uuid.UUID) error {

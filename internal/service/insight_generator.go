@@ -291,10 +291,38 @@ func (g *InsightGenerator) checkMedicationAdherence(ctx context.Context, child m
 	adherenceRate := float64(taken) / float64(total) * 100
 
 	if adherenceRate >= 90 {
-		g.createAlertIfNew(ctx, child, "medication_adherence", models.AlertSeverityInfo,
-			fmt.Sprintf("Great medication adherence for %s!", child.FirstName),
-			fmt.Sprintf("%.0f%% of medications taken this week (%d of %d doses). Excellent consistency!",
-				adherenceRate, taken, total))
+		// Throttle: at most one positive adherence alert per child per 24h.
+		// Done before the resolve step so we don't blow away the visible alert and then
+		// fail to create a new one (which would leave the carousel empty for ~24h).
+		since := time.Now().Add(-24 * time.Hour)
+		existing, err := g.alertRepo.GetByChildIDAndTypeSince(ctx, child.ID, "medication_adherence", since)
+		if err == nil {
+			for _, e := range existing {
+				if e.Severity == models.AlertSeverityInfo {
+					return
+				}
+			}
+		}
+
+		// Past the throttle: auto-resolve any prior active/acknowledged positive adherence
+		// alerts so only the latest streak count stays visible (no more 8/8 + 10/10 + 12/12).
+		if err := g.alertRepo.ResolveActiveByTypeAndSeverity(ctx, child.ID, "medication_adherence", models.AlertSeverityInfo); err != nil {
+			log.Printf("Insight generator: failed to dedupe positive adherence alerts for %s: %v", child.FirstName, err)
+		}
+
+		alert := &models.Alert{
+			ChildID:     child.ID,
+			FamilyID:    child.FamilyID,
+			AlertType:   "medication_adherence",
+			Severity:    models.AlertSeverityInfo,
+			Status:      models.AlertStatusActive,
+			Title:       fmt.Sprintf("Great medication adherence for %s!", child.FirstName),
+			Description: fmt.Sprintf("%.0f%% of medications taken this week (%d of %d doses). Excellent consistency!", adherenceRate, taken, total),
+			SourceType:  models.CorrelationTypeAutomatic,
+		}
+		if err := g.alertService.Create(ctx, alert); err != nil {
+			log.Printf("Insight generator: failed to create positive adherence alert for %s: %v", child.FirstName, err)
+		}
 	}
 }
 
