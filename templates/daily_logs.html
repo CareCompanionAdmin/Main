@@ -2973,6 +2973,11 @@ function renderAlerts(alerts) {
                 </svg>`;
         }
 
+        const status = alert.status || 'active';
+        const showAck = status === 'active';
+        const showResolve = status === 'active' || status === 'acknowledged';
+        const titleEsc = (alert.title || '').replace(/'/g, "\\'");
+
         return `
             <div class="${bgColor} ${borderColor} border-l-4 rounded-lg p-4 shadow-sm">
                 <div class="flex items-start">
@@ -2984,11 +2989,20 @@ function renderAlerts(alerts) {
                         <p class="text-sm ${textColor} opacity-90 mt-1">${alert.description}</p>
                         ${alert.confidence_score ? `<p class="text-xs ${textColor} opacity-70 mt-1">Confidence: ${Math.round(alert.confidence_score * 100)}%</p>` : ''}
                     </div>
-                    <button onclick="acknowledgeAlert('${alert.id}')" class="ml-4 text-gray-400 hover:text-gray-600" title="Dismiss">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
+                    <div class="ml-4 flex items-center gap-1 flex-shrink-0">
+                        ${showAck ? `
+                        <button type="button" title="Acknowledge"
+                            onclick="openAckConfirm('${alert.id}', '${titleEsc}')"
+                            class="p-1.5 rounded-full bg-white/70 hover:bg-white text-gray-500 hover:text-blue-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"></path></svg>
+                        </button>` : ''}
+                        ${showResolve ? `
+                        <button type="button" title="Resolve"
+                            onclick="openResolveModal('${alert.id}', '${titleEsc}')"
+                            class="p-1.5 rounded-full bg-white/70 hover:bg-white text-gray-500 hover:text-emerald-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </button>` : ''}
+                    </div>
                 </div>
             </div>
         `;
@@ -2998,24 +3012,91 @@ function renderAlerts(alerts) {
     container.classList.remove('hidden');
 }
 
-async function acknowledgeAlert(alertId) {
+// Inline acknowledge / resolve from the daily logs alert list.
+// Mirrors the carousel flow on the child dashboard so the UX is identical.
+let pendingInsightAction = { alertId: null, kind: null };
+
+function openAckConfirm(alertId, title) {
+    pendingInsightAction = { alertId, kind: 'ack' };
+    document.getElementById('insight-ack-title').textContent = title || 'this alert';
+    document.getElementById('insight-ack-modal').classList.remove('hidden');
+}
+
+function closeAckConfirm() {
+    document.getElementById('insight-ack-modal').classList.add('hidden');
+    pendingInsightAction = { alertId: null, kind: null };
+}
+
+async function confirmAck() {
+    const { alertId } = pendingInsightAction;
+    if (!alertId) return;
+    const btn = document.getElementById('insight-ack-confirm-btn');
+    btn.disabled = true;
     try {
-        const response = await fetch(`/api/alerts/${alertId}/acknowledge`, {
+        const r = await fetch(`/api/children/${childId}/alerts/${alertId}/acknowledge`, {
             method: 'POST',
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
-
-        if (response.ok) {
-            // Reload alerts to refresh the list
-            loadActiveAlerts();
-        }
-    } catch (error) {
-        console.error('Failed to acknowledge alert:', error);
+        if (!r.ok) throw new Error('ack failed: ' + r.status);
+        closeAckConfirm();
+        loadActiveAlerts();
+    } catch (e) {
+        console.error('Failed to acknowledge alert:', e);
+        alert('Could not acknowledge — please try again.');
+    } finally {
+        btn.disabled = false;
     }
 }
+
+function openResolveModal(alertId, title) {
+    pendingInsightAction = { alertId, kind: 'resolve' };
+    document.getElementById('insight-resolve-title').textContent = title || 'this alert';
+    document.getElementById('insight-resolve-notes').value = '';
+    document.getElementById('insight-resolve-modal').classList.remove('hidden');
+    setTimeout(() => document.getElementById('insight-resolve-notes').focus(), 50);
+}
+
+function closeResolveModal() {
+    document.getElementById('insight-resolve-modal').classList.add('hidden');
+    pendingInsightAction = { alertId: null, kind: null };
+}
+
+async function confirmResolve() {
+    const { alertId } = pendingInsightAction;
+    if (!alertId) return;
+    const notes = document.getElementById('insight-resolve-notes').value.trim();
+    const btn = document.getElementById('insight-resolve-confirm-btn');
+    btn.disabled = true;
+    try {
+        const r = await fetch(`/api/children/${childId}/alerts/${alertId}/resolve`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes })
+        });
+        if (!r.ok) throw new Error('resolve failed: ' + r.status);
+        closeResolveModal();
+        loadActiveAlerts();
+    } catch (e) {
+        console.error('Failed to resolve alert:', e);
+        alert('Could not resolve — please try again.');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+document.addEventListener('click', (e) => {
+    if (e.target.id === 'insight-ack-modal') closeAckConfirm();
+    if (e.target.id === 'insight-resolve-modal') closeResolveModal();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const ackM = document.getElementById('insight-ack-modal');
+    const resM = document.getElementById('insight-resolve-modal');
+    if (ackM && !ackM.classList.contains('hidden')) closeAckConfirm();
+    if (resM && !resM.classList.contains('hidden')) closeResolveModal();
+});
 
 // Auto-open modal if 'open' query parameter is present
 document.addEventListener('DOMContentLoaded', function() {
@@ -3323,5 +3404,44 @@ function renderHistoryCalendar() {
     calendarContainer.innerHTML = html;
 }
 </script>
+
+<!-- Insight Acknowledge Confirm Modal -->
+<div id="insight-ack-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Acknowledge alert?</h2>
+            <button onclick="closeAckConfirm()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">You're about to acknowledge:</p>
+        <p id="insight-ack-title" class="text-sm font-medium text-gray-900 dark:text-white mb-5"></p>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeAckConfirm()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Cancel</button>
+            <button id="insight-ack-confirm-btn" type="button" onclick="confirmAck()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">Acknowledge</button>
+        </div>
+    </div>
+</div>
+
+<!-- Insight Resolve Modal (with optional notes) -->
+<div id="insight-resolve-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Mark as resolved?</h2>
+            <button onclick="closeResolveModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">You're about to resolve:</p>
+        <p id="insight-resolve-title" class="text-sm font-medium text-gray-900 dark:text-white mb-4"></p>
+        <label for="insight-resolve-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Notes (optional)</label>
+        <textarea id="insight-resolve-notes" rows="3" placeholder="What did you do? Anything to remember?" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm mb-5"></textarea>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeResolveModal()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Cancel</button>
+            <button id="insight-resolve-confirm-btn" type="button" onclick="confirmResolve()" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50">Resolve</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
