@@ -1,3 +1,14 @@
+# CSS build stage: compile Tailwind from templates into a single minified file.
+FROM node:20-alpine AS css-builder
+WORKDIR /css
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=optional --no-audit --no-fund
+COPY tailwind.config.js ./
+COPY static/css/input.css ./static/css/input.css
+COPY templates ./templates
+COPY static/js ./static/js
+RUN npx tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify
+
 # Build stage
 FROM golang:1.24-alpine AS builder
 
@@ -15,6 +26,10 @@ RUN go mod download
 
 # Copy source code
 COPY . .
+
+# Replace the committed (potentially stale) Tailwind build with the freshly
+# compiled one from the css-builder stage.
+COPY --from=css-builder /css/static/css/tailwind.css ./static/css/tailwind.css
 
 # Generate git log for version log page (git available in builder only)
 RUN git log --format="%H|%ai|%s" > git-log.txt

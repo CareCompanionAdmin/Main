@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* HTMX indicator helpers (also defined inline in some pages) */
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline; }
+.htmx-request.htmx-indicator { display: inline; }
+
+/* Capacitor safe-area handling for notched/Dynamic Island phones */
+body.capacitor nav.app-nav {
+  padding-top: env(safe-area-inset-top);
+  background-clip: padding-box;
+}
+body.capacitor {
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}

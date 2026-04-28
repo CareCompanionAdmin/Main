@@ -1,0 +1,13 @@
+{
+  "name": "carecompanion-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tailwind CSS build for the CareCompanion server-rendered web app.",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.13"
+  }
+}

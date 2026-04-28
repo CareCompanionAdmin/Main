@@ -22,7 +22,7 @@
     // =========================================================================
     if (window.Capacitor.Plugins.StatusBar) {
         var StatusBar = window.Capacitor.Plugins.StatusBar;
-        StatusBar.setBackgroundColor({ color: '#3b82f6' }).catch(function() {});
+        StatusBar.setBackgroundColor({ color: '#4F46E5' }).catch(function() {});
         StatusBar.setStyle({ style: 'LIGHT' }).catch(function() {});
     }
 
@@ -218,7 +218,7 @@
         var toast = document.createElement('div');
         toast.style.cssText = 'position:fixed;top:env(safe-area-inset-top,20px);left:16px;right:16px;' +
             'z-index:99999;background:white;border-radius:12px;padding:16px;box-shadow:0 4px 20px rgba(0,0,0,0.15);' +
-            'cursor:pointer;transition:opacity 0.3s;border-left:4px solid #3b82f6';
+            'cursor:pointer;transition:opacity 0.3s;border-left:4px solid #4F46E5';
         toast.innerHTML = '<div style="font-weight:600;font-size:14px;margin-bottom:4px">' +
             escapeHtml(notification.title || '') + '</div>' +
             '<div style="font-size:13px;color:#6B7280">' + escapeHtml(notification.body || '') + '</div>';

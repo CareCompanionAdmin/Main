@@ -89,3 +89,6 @@ testdata.sql
 # Go workspace
 go.work
 
+# Node modules (Tailwind build deps; output is committed under static/css/)
+node_modules/
+
