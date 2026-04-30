@@ -31,6 +31,15 @@ type CreateTicketRequest struct {
 	Subject     string `json:"subject"`
 	Description string `json:"description"`
 	Priority    string `json:"priority"`
+	Type        string `json:"type"`
+}
+
+// validTicketTypes whitelists the type values the form may submit.
+var validTicketTypes = map[string]bool{
+	"bug_report":      true,
+	"feature_request": true,
+	"billing":         true,
+	"general":         true,
 }
 
 // CreateTicket creates a new support ticket for a user
@@ -42,7 +51,12 @@ func (s *UserSupportService) CreateTicket(ctx context.Context, userID uuid.UUID,
 		return nil, ErrEmptyDescription
 	}
 
-	return s.repo.CreateTicket(ctx, userID, req.Subject, req.Description, req.Priority)
+	ticketType := req.Type
+	if !validTicketTypes[ticketType] {
+		ticketType = "general"
+	}
+
+	return s.repo.CreateTicket(ctx, userID, req.Subject, req.Description, req.Priority, ticketType)
 }
 
 // GetTickets returns all tickets for a user

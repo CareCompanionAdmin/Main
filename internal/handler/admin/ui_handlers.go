@@ -281,7 +281,9 @@ func (h *Handler) TicketsPage(w http.ResponseWriter, r *http.Request) {
 		SystemRole: string(claims.SystemRole),
 	}
 
-	tickets, total, _ := h.adminRepo.GetTickets(r.Context(), "", 1, 50)
+	status := r.URL.Query().Get("status")
+	ticketType := r.URL.Query().Get("type")
+	tickets, total, _ := h.adminRepo.GetTickets(r.Context(), status, ticketType, 1, 50)
 
 	tmpl, err := parseTemplates("layout.html", "tickets.html")
 	if err != nil {

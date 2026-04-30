@@ -25,13 +25,20 @@
                     <div class="flex justify-between items-start gap-2">
                         <div class="flex-1 min-w-0">
                             <h3 class="font-medium text-gray-900 dark:text-white truncate">{{.Subject}}</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap gap-1">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
                                     {{if eq .Status "open"}}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
                                     {{else if eq .Status "in_progress"}}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
                                     {{else if eq .Status "resolved"}}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300
                                     {{else}}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{{end}}">
                                     {{.Status}}
+                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                    {{if eq .Type "bug_report"}}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                    {{else if eq .Type "feature_request"}}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
+                                    {{else if eq .Type "billing"}}bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200
+                                    {{else}}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200{{end}}">
+                                    {{if eq .Type "bug_report"}}Bug{{else if eq .Type "feature_request"}}Feature{{else if eq .Type "billing"}}Billing{{else}}General{{end}}
                                 </span>
                             </p>
                         </div>
@@ -62,8 +69,9 @@
                     </button>
                     <div class="flex-1 min-w-0">
                         <h2 id="ticket-subject" class="font-semibold text-gray-900 dark:text-white truncate"></h2>
-                        <div class="flex items-center gap-4 mt-1">
+                        <div class="flex items-center gap-2 mt-1 flex-wrap">
                             <span id="ticket-status" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"></span>
+                            <span id="ticket-type" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"></span>
                             <span id="ticket-created" class="text-sm text-gray-500 dark:text-gray-400"></span>
                         </div>
                     </div>
@@ -104,6 +112,15 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                 <textarea name="description" required rows="4" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="Please describe your issue in detail"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                <select name="type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option value="general" selected>General</option>
+                    <option value="bug_report">Bug Report</option>
+                    <option value="feature_request">Feature Request</option>
+                    <option value="billing">Billing</option>
+                </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
@@ -224,6 +241,17 @@ async function selectTicket(ticketID) {
             statusEl.className += 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
         }
 
+        const typeEl = document.getElementById('ticket-type');
+        const typeMap = {
+            'bug_report':      ['Bug',     'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'],
+            'feature_request': ['Feature', 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'],
+            'billing':         ['Billing', 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'],
+            'general':         ['General', 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200']
+        };
+        const t = typeMap[ticket.type] || typeMap['general'];
+        typeEl.textContent = t[0];
+        typeEl.className = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' + t[1];
+
         document.getElementById('ticket-created').textContent = 'Created ' + new Date(ticket.created_at).toLocaleDateString();
 
         // Render messages
@@ -320,7 +348,8 @@ document.getElementById('new-ticket-form').addEventListener('submit', async func
     const data = {
         subject: formData.get('subject'),
         description: formData.get('description'),
-        priority: formData.get('priority')
+        priority: formData.get('priority'),
+        type: formData.get('type')
     };
 
     try {

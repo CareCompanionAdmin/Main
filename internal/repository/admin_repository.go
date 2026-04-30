@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,6 +60,7 @@ type SupportTicket struct {
 	Description string            `json:"description"`
 	Status      string            `json:"status"`
 	Priority    string            `json:"priority"`
+	Type        string            `json:"type"`
 	AssignedTo  models.NullUUID   `json:"assigned_to,omitempty"`
 	CreatedAt   time.Time         `json:"created_at"`
 	UpdatedAt   time.Time         `json:"updated_at"`
@@ -137,8 +140,8 @@ type AdminRepository interface {
 	GetFamilyByID(ctx context.Context, id uuid.UUID) (*AdminFamilyView, error)
 
 	// Support tickets
-	CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority string) (*SupportTicket, error)
-	GetTickets(ctx context.Context, status string, page, limit int) ([]SupportTicket, int, error)
+	CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority, ticketType string) (*SupportTicket, error)
+	GetTickets(ctx context.Context, status, ticketType string, page, limit int) ([]SupportTicket, int, error)
 	GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTicket, error)
 	GetOpenTicketCount(ctx context.Context) (int, error)
 	UpdateTicketStatus(ctx context.Context, id uuid.UUID, status string) error
@@ -411,63 +414,79 @@ func (r *adminRepo) GetFamilyByID(ctx context.Context, id uuid.UUID) (*AdminFami
 // SUPPORT TICKETS
 // ============================================================================
 
-func (r *adminRepo) CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority string) (*SupportTicket, error) {
+func (r *adminRepo) CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority, ticketType string) (*SupportTicket, error) {
 	id := uuid.New()
 	now := time.Now()
 	if priority == "" {
 		priority = "normal"
 	}
+	if ticketType == "" {
+		ticketType = "general"
+	}
 	query := `
-		INSERT INTO support_tickets (id, user_id, subject, description, priority, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $6)
+		INSERT INTO support_tickets (id, user_id, subject, description, priority, type, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
 		RETURNING id
 	`
 	var userIDPtr *uuid.UUID
 	if userID != uuid.Nil {
 		userIDPtr = &userID
 	}
-	err := r.db.QueryRowContext(ctx, query, id, userIDPtr, subject, description, priority, now).Scan(&id)
+	err := r.db.QueryRowContext(ctx, query, id, userIDPtr, subject, description, priority, ticketType, now).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
 	return r.GetTicketByID(ctx, id)
 }
 
-func (r *adminRepo) GetTickets(ctx context.Context, status string, page, limit int) ([]SupportTicket, int, error) {
+func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, page, limit int) ([]SupportTicket, int, error) {
 	offset := (page - 1) * limit
 
-	// Count query
-	countArgs := []interface{}{}
-	countSQL := "SELECT COUNT(*) FROM support_tickets"
+	// Build WHERE clause and args (shared by count + select).
+	var whereParts []string
+	var filterArgs []interface{}
 	if status != "" {
-		countSQL += " WHERE status = $1"
-		countArgs = append(countArgs, status)
+		filterArgs = append(filterArgs, status)
+		whereParts = append(whereParts, fmt.Sprintf("status = $%d", len(filterArgs)))
 	}
+	if ticketType != "" {
+		filterArgs = append(filterArgs, ticketType)
+		whereParts = append(whereParts, fmt.Sprintf("type = $%d", len(filterArgs)))
+	}
+	whereClause := ""
+	if len(whereParts) > 0 {
+		whereClause = " WHERE " + strings.Join(whereParts, " AND ")
+	}
+
+	countSQL := "SELECT COUNT(*) FROM support_tickets" + whereClause
 	var total int
-	if err := r.db.QueryRowContext(ctx, countSQL, countArgs...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countSQL, filterArgs...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	// Get tickets
-	args := []interface{}{}
+	// Get tickets — reuse the same WHERE filters built above, then append paging args.
+	selectWhere := ""
+	if len(whereParts) > 0 {
+		// Re-prefix the WHERE conditions with the table alias used in the SELECT.
+		var aliased []string
+		for _, p := range whereParts {
+			aliased = append(aliased, "t."+p)
+		}
+		selectWhere = " WHERE " + strings.Join(aliased, " AND ")
+	}
+	args := append([]interface{}{}, filterArgs...)
+	args = append(args, limit, offset)
+	limitPlaceholder := fmt.Sprintf("$%d", len(args)-1)
+	offsetPlaceholder := fmt.Sprintf("$%d", len(args))
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority,
+		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       COALESCE(u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
 		FROM support_tickets t
 		LEFT JOIN users u ON t.user_id = u.id
-		LEFT JOIN users a ON t.assigned_to = a.id
-	`
-	if status != "" {
-		query += " WHERE t.status = $1"
-		args = append(args, status)
-		query += " ORDER BY t.created_at DESC LIMIT $2 OFFSET $3"
-		args = append(args, limit, offset)
-	} else {
-		query += " ORDER BY t.created_at DESC LIMIT $1 OFFSET $2"
-		args = append(args, limit, offset)
-	}
+		LEFT JOIN users a ON t.assigned_to = a.id` + selectWhere +
+		" ORDER BY t.created_at DESC LIMIT " + limitPlaceholder + " OFFSET " + offsetPlaceholder
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -478,7 +497,7 @@ func (r *adminRepo) GetTickets(ctx context.Context, status string, page, limit i
 	var tickets []SupportTicket
 	for rows.Next() {
 		var t SupportTicket
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority,
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 			&t.UserEmail, &t.AssigneeName); err != nil {
 			return nil, 0, err
@@ -490,7 +509,7 @@ func (r *adminRepo) GetTickets(ctx context.Context, status string, page, limit i
 
 func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTicket, error) {
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority,
+		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       COALESCE(u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
@@ -501,7 +520,7 @@ func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTi
 	`
 	t := &SupportTicket{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority,
+		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 		&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 		&t.UserEmail, &t.AssigneeName,
 	)
@@ -1160,7 +1179,7 @@ func (r *adminRepo) CreateTicketFromError(ctx context.Context, errorID, adminID 
 	}
 
 	// Create the ticket (assigned to the admin who created it)
-	ticket, err := r.CreateTicket(ctx, uuid.Nil, subject, description, priority)
+	ticket, err := r.CreateTicket(ctx, uuid.Nil, subject, description, priority, "bug_report")
 	if err != nil {
 		return nil, err
 	}

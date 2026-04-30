@@ -280,8 +280,9 @@ func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
 	page := getIntParam(r, "page", 1)
 	limit := getIntParam(r, "limit", 20)
 	status := r.URL.Query().Get("status")
+	ticketType := r.URL.Query().Get("type")
 
-	tickets, total, err := h.adminRepo.GetTickets(ctx, status, page, limit)
+	tickets, total, err := h.adminRepo.GetTickets(ctx, status, ticketType, page, limit)
 	if err != nil {
 		http.Error(w, "Failed to list tickets: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -311,6 +312,7 @@ type CreateTicketRequest struct {
 	Subject     string `json:"subject"`
 	Description string `json:"description"`
 	Priority    string `json:"priority"`
+	Type        string `json:"type"`
 }
 
 func (h *Handler) CreateTicket(w http.ResponseWriter, r *http.Request) {
@@ -331,7 +333,7 @@ func (h *Handler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		userID, _ = uuid.Parse(req.UserID)
 	}
 
-	ticket, err := h.adminRepo.CreateTicket(ctx, userID, req.Subject, req.Description, req.Priority)
+	ticket, err := h.adminRepo.CreateTicket(ctx, userID, req.Subject, req.Description, req.Priority, req.Type)
 	if err != nil {
 		http.Error(w, "Failed to create ticket: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -12,6 +12,13 @@
         </div>
         <div class="flex space-x-2">
             <span class="px-3 py-1 text-sm rounded-full
+                {{if eq .Type "bug_report"}}bg-red-100 text-red-800
+                {{else if eq .Type "feature_request"}}bg-purple-100 text-purple-800
+                {{else if eq .Type "billing"}}bg-amber-100 text-amber-800
+                {{else}}bg-blue-100 text-blue-800{{end}}">
+                {{if eq .Type "bug_report"}}Bug Report{{else if eq .Type "feature_request"}}Feature Request{{else if eq .Type "billing"}}Billing{{else}}General{{end}}
+            </span>
+            <span class="px-3 py-1 text-sm rounded-full
                 {{if eq .Priority "urgent"}}bg-red-100 text-red-800
                 {{else if eq .Priority "high"}}bg-orange-100 text-orange-800
                 {{else}}bg-blue-100 text-blue-800{{end}}">

@@ -13,7 +13,7 @@ import (
 // UserSupportRepository handles user-facing support ticket operations
 type UserSupportRepository interface {
 	// CreateTicket creates a new ticket for the current user
-	CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority string) (*SupportTicket, error)
+	CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority, ticketType string) (*SupportTicket, error)
 
 	// GetTickets gets all tickets for a user
 	GetTickets(ctx context.Context, userID uuid.UUID) ([]SupportTicket, error)
@@ -48,19 +48,22 @@ func NewUserSupportRepo(db *sql.DB) UserSupportRepository {
 }
 
 // CreateTicket creates a new support ticket for a user
-func (r *userSupportRepo) CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority string) (*SupportTicket, error) {
+func (r *userSupportRepo) CreateTicket(ctx context.Context, userID uuid.UUID, subject, description, priority, ticketType string) (*SupportTicket, error) {
 	id := uuid.New()
 	now := time.Now()
 	if priority == "" {
 		priority = "normal"
 	}
+	if ticketType == "" {
+		ticketType = "general"
+	}
 
 	query := `
-		INSERT INTO support_tickets (id, user_id, subject, description, priority, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, 'open', $6, $6)
+		INSERT INTO support_tickets (id, user_id, subject, description, priority, type, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, 'open', $7, $7)
 		RETURNING id
 	`
-	err := r.db.QueryRowContext(ctx, query, id, userID, subject, description, priority, now).Scan(&id)
+	err := r.db.QueryRowContext(ctx, query, id, userID, subject, description, priority, ticketType, now).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +74,7 @@ func (r *userSupportRepo) CreateTicket(ctx context.Context, userID uuid.UUID, su
 // GetTickets returns all tickets for a specific user
 func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]SupportTicket, error) {
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority,
+		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       COALESCE(u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
@@ -90,7 +93,7 @@ func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]S
 	var tickets []SupportTicket
 	for rows.Next() {
 		var t SupportTicket
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority,
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 			&t.UserEmail, &t.AssigneeName); err != nil {
 			return nil, err
@@ -103,7 +106,7 @@ func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]S
 // GetTicketByID returns a specific ticket, validating user ownership
 func (r *userSupportRepo) GetTicketByID(ctx context.Context, ticketID, userID uuid.UUID) (*SupportTicket, error) {
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority,
+		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       COALESCE(u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
@@ -114,7 +117,7 @@ func (r *userSupportRepo) GetTicketByID(ctx context.Context, ticketID, userID uu
 	`
 	t := &SupportTicket{}
 	err := r.db.QueryRowContext(ctx, query, ticketID, userID).Scan(
-		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority,
+		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 		&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 		&t.UserEmail, &t.AssigneeName,
 	)
