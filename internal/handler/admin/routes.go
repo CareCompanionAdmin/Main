@@ -15,11 +15,17 @@ type Handler struct {
 	cloudwatchService *service.CloudWatchService
 	marketingService  *service.MarketingService
 	pushService       *service.PushService
+	roadmapService    *service.RoadmapService
 }
 
 // SetPushService sets the push notification service for admin handlers
 func (h *Handler) SetPushService(ps *service.PushService) {
 	h.pushService = ps
+}
+
+// SetRoadmapService sets the roadmap service for admin handlers.
+func (h *Handler) SetRoadmapService(rs *service.RoadmapService) {
+	h.roadmapService = rs
 }
 
 // NewHandler creates a new admin handler
@@ -109,6 +115,17 @@ func (h *Handler) Routes() chi.Router {
 
 		// Version Log
 		r.Get("/version-log", h.GetVersionLog)
+
+		// Roadmap (super_admin only)
+		r.Get("/roadmap", h.ListRoadmapItems)
+		r.Post("/roadmap", h.CreateRoadmapItem)
+		r.Get("/roadmap/{id}", h.GetRoadmapItem)
+		r.Put("/roadmap/{id}", h.UpdateRoadmapItem)
+		r.Delete("/roadmap/{id}", h.DeleteRoadmapItem)
+		r.Post("/roadmap/{id}/mark-live-dev", h.MarkRoadmapLiveDev)
+		r.Post("/roadmap/{id}/mark-live-prod", h.MarkRoadmapLiveProd)
+		// Promotion endpoint lives under super because it triggers a ticket close + email.
+		r.Post("/tickets/{id}/add-to-roadmap", h.AddRoadmapFromTicket)
 	})
 
 	// Support routes
@@ -204,6 +221,12 @@ func (h *Handler) UIRoutes() chi.Router {
 
 			// Version Log page
 			r.Get("/version-log", h.VersionLogPage)
+
+			// Roadmap pages
+			r.Get("/roadmap", h.RoadmapListPage)
+			r.Get("/roadmap/new", h.RoadmapNewPage)
+			r.Get("/roadmap/{id}", h.RoadmapDetailPage)
+			r.Get("/roadmap/{id}/edit", h.RoadmapEditPage)
 		})
 
 		// Support pages

@@ -315,6 +315,16 @@ func (h *Handler) TicketDetailPage(w http.ResponseWriter, r *http.Request) {
 	ticket, _ := h.adminRepo.GetTicketByID(r.Context(), id)
 	messages, _ := h.adminRepo.GetTicketMessages(r.Context(), id)
 
+	// If the roadmap service is wired and this ticket is a feature_request,
+	// look up whether it's already been promoted so the UI can show
+	// either the "Add to Roadmap" button or a link to the existing item.
+	var roadmapItem interface{}
+	if h.roadmapService != nil && ticket != nil && ticket.Type == "feature_request" {
+		if existing, _ := h.roadmapService.GetByTicketID(r.Context(), id); existing != nil {
+			roadmapItem = existing
+		}
+	}
+
 	tmpl, err := parseTemplates("layout.html", "ticket_detail.html")
 	if err != nil {
 		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
@@ -325,8 +335,10 @@ func (h *Handler) TicketDetailPage(w http.ResponseWriter, r *http.Request) {
 		Title:       "Ticket #" + id.String()[:8],
 		CurrentUser: currentUser,
 		Data: map[string]interface{}{
-			"ticket":   ticket,
-			"messages": messages,
+			"ticket":        ticket,
+			"messages":      messages,
+			"roadmap_item":  roadmapItem,
+			"is_super":      currentUser.SystemRole == "super_admin",
 		},
 	})
 }

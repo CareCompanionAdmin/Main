@@ -45,7 +45,14 @@
             <span>Assigned: {{if .AssigneeName}}{{.AssigneeName}}{{else}}Unassigned{{end}}</span>
         </div>
         <div class="flex space-x-2">
-            {{if ne .Status "resolved"}}
+            {{if and (eq .Type "feature_request") $.Data.is_super}}
+                {{if $.Data.roadmap_item}}
+                <a href="/admin/roadmap/{{$.Data.roadmap_item.ID}}" class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">On Roadmap &rarr;</a>
+                {{else}}
+                <button onclick="addToRoadmap('{{.ID}}')" class="px-3 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200">Add to Roadmap</button>
+                {{end}}
+            {{end}}
+            {{if and (ne .Status "resolved") (ne .Status "closed")}}
             <button onclick="assignToMe('{{.ID}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Assign to Me</button>
             <button onclick="resolveTicket('{{.ID}}')" class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Resolve</button>
             {{end}}
@@ -110,6 +117,34 @@ async function resolveTicket(id) {
         await apiCall('POST', '/api/admin/support/tickets/' + id + '/resolve');
         location.reload();
     }
+}
+
+async function addToRoadmap(id) {
+    const priority = prompt(
+        'Add this feature request to the roadmap?\n\n' +
+        'The user will get a thank-you message and the ticket will be closed.\n' +
+        'They will be notified again when the feature ships to dev and to prod.\n\n' +
+        'Set priority (p0 / p1 / p2 / p3):',
+        'p2'
+    );
+    if (priority === null) return;
+    const trimmed = (priority || '').trim().toLowerCase();
+    if (!['p0','p1','p2','p3'].includes(trimmed)) {
+        alert('Priority must be p0, p1, p2, or p3.');
+        return;
+    }
+    const res = await fetch('/api/admin/super/tickets/' + id + '/add-to-roadmap', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+        body: JSON.stringify({ priority: trimmed }),
+    });
+    if (!res.ok) {
+        alert('Failed: ' + await res.text());
+        return;
+    }
+    const item = await res.json();
+    window.location = '/admin/roadmap/' + item.id;
 }
 </script>
 {{end}}

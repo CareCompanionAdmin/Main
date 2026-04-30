@@ -1,0 +1,114 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Product Roadmap</h1>
+        <p class="text-sm text-gray-500 mt-1">Prioritized list of upcoming work. Items can be added manually, captured for larger initiatives, or promoted from user feature requests.</p>
+    </div>
+    <a href="/admin/roadmap/new" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">+ New Item</a>
+</div>
+
+<div class="flex space-x-3 mb-4">
+    <select id="prioFilter" onchange="filterRoadmap()" class="px-3 py-2 border rounded">
+        <option value="">All Priorities</option>
+        <option value="p0">P0 — Critical</option>
+        <option value="p1">P1 — High</option>
+        <option value="p2">P2 — Normal</option>
+        <option value="p3">P3 — Low</option>
+    </select>
+    <select id="statusFilter" onchange="filterRoadmap()" class="px-3 py-2 border rounded">
+        <option value="">All Status</option>
+        <option value="proposed">Proposed</option>
+        <option value="planned">Planned</option>
+        <option value="in_progress">In Progress</option>
+        <option value="in_dev">In Dev</option>
+        <option value="in_prod">In Prod</option>
+        <option value="cancelled">Cancelled</option>
+    </select>
+    <select id="sourceFilter" onchange="filterRoadmap()" class="px-3 py-2 border rounded">
+        <option value="">All Sources</option>
+        <option value="manual">Manual</option>
+        <option value="internal">Internal Initiative</option>
+        <option value="feature_request">Feature Request</option>
+    </select>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requester</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {{range .Data.items}}
+            <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='/admin/roadmap/{{.ID}}'">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs rounded-full font-semibold
+                        {{if eq .Priority "p0"}}bg-red-100 text-red-800
+                        {{else if eq .Priority "p1"}}bg-orange-100 text-orange-800
+                        {{else if eq .Priority "p2"}}bg-blue-100 text-blue-800
+                        {{else}}bg-gray-100 text-gray-700{{end}}">
+                        {{.Priority}}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="text-sm font-medium text-gray-900">{{.Title}}</div>
+                    {{if .TicketSubject}}<div class="text-xs text-gray-500">from ticket: {{.TicketSubject}}</div>{{end}}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs rounded-full
+                        {{if eq .Status "proposed"}}bg-gray-100 text-gray-700
+                        {{else if eq .Status "planned"}}bg-blue-100 text-blue-800
+                        {{else if eq .Status "in_progress"}}bg-yellow-100 text-yellow-800
+                        {{else if eq .Status "in_dev"}}bg-indigo-100 text-indigo-800
+                        {{else if eq .Status "in_prod"}}bg-green-100 text-green-800
+                        {{else}}bg-red-100 text-red-700{{end}}">
+                        {{.Status}}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs rounded-full
+                        {{if eq .Source "manual"}}bg-gray-100 text-gray-700
+                        {{else if eq .Source "internal"}}bg-purple-100 text-purple-800
+                        {{else}}bg-amber-100 text-amber-800{{end}}">
+                        {{if eq .Source "feature_request"}}feature req{{else}}{{.Source}}{{end}}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{if .RequesterEmail}}{{.RequesterEmail}}{{else}}—{{end}}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{.CreatedAt.Format "Jan 2, 2006"}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No roadmap items yet. <a href="/admin/roadmap/new" class="text-indigo-600 hover:text-indigo-800">Add the first one</a>.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<script>
+function filterRoadmap() {
+    const params = new URLSearchParams();
+    const p = document.getElementById('prioFilter').value;
+    const s = document.getElementById('statusFilter').value;
+    const src = document.getElementById('sourceFilter').value;
+    if (p)   params.set('priority', p);
+    if (s)   params.set('status', s);
+    if (src) params.set('source', src);
+    const qs = params.toString();
+    window.location = '/admin/roadmap' + (qs ? '?' + qs : '');
+}
+(function preset() {
+    const p = new URLSearchParams(window.location.search);
+    const prio = p.get('priority');
+    const st   = p.get('status');
+    const src  = p.get('source');
+    if (prio) document.getElementById('prioFilter').value = prio;
+    if (st)   document.getElementById('statusFilter').value = st;
+    if (src)  document.getElementById('sourceFilter').value = src;
+})();
+</script>
+{{end}}

@@ -350,6 +350,7 @@ type Repositories struct {
 	DeviceToken  DeviceTokenRepository // Mobile device tokens for push notifications
 	Report       ReportRepository     // Reports and scheduled reports
 	Search       SearchRepository     // Global search
+	Roadmap      RoadmapRepository    // Product roadmap items
 }
 
 // NewRepositories creates all repository implementations
@@ -374,5 +375,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		DeviceToken:  NewDeviceTokenRepo(db),
 		Report:       NewReportRepo(db),
 		Search:       NewSearchRepo(db),
+		Roadmap:      NewRoadmapRepo(db),
 	}
 }
