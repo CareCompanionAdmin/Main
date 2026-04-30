@@ -54,21 +54,24 @@ type AdminFamilyView struct {
 
 // SupportTicket represents a support ticket
 type SupportTicket struct {
-	ID          uuid.UUID         `json:"id"`
-	UserID      models.NullUUID   `json:"user_id,omitempty"`
-	Subject     string            `json:"subject"`
-	Description string            `json:"description"`
-	Status      string            `json:"status"`
-	Priority    string            `json:"priority"`
-	Type        string            `json:"type"`
-	AssignedTo  models.NullUUID   `json:"assigned_to,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
-	ResolvedAt  models.NullTime   `json:"resolved_at,omitempty"`
-	ResolvedBy  models.NullUUID   `json:"resolved_by,omitempty"`
+	ID                   uuid.UUID         `json:"id"`
+	UserID               models.NullUUID   `json:"user_id,omitempty"`
+	Subject              string            `json:"subject"`
+	Description          string            `json:"description"`
+	Status               string            `json:"status"`
+	Priority             string            `json:"priority"`
+	Type                 string            `json:"type"`
+	AssignedTo           models.NullUUID   `json:"assigned_to,omitempty"`
+	CreatedAt            time.Time         `json:"created_at"`
+	UpdatedAt            time.Time         `json:"updated_at"`
+	ResolvedAt           models.NullTime   `json:"resolved_at,omitempty"`
+	ResolvedBy           models.NullUUID   `json:"resolved_by,omitempty"`
+	DuplicateOfTicketID  models.NullUUID   `json:"duplicate_of_ticket_id,omitempty"`
+	DuplicateOfRoadmapID models.NullUUID   `json:"duplicate_of_roadmap_id,omitempty"`
 	// Populated when needed
-	UserEmail    string `json:"user_email,omitempty"`
-	AssigneeName string `json:"assignee_name,omitempty"`
+	UserEmail      string `json:"user_email,omitempty"`
+	AssigneeName   string `json:"assignee_name,omitempty"`
+	DuplicateCount int    `json:"duplicate_count,omitempty"`
 }
 
 // TicketMessage represents a message in a support ticket
@@ -149,6 +152,12 @@ type AdminRepository interface {
 	ResolveTicket(ctx context.Context, ticketID, resolverID uuid.UUID) error
 	GetTicketMessages(ctx context.Context, ticketID uuid.UUID) ([]TicketMessage, error)
 	AddTicketMessage(ctx context.Context, ticketID, senderID uuid.UUID, message string, isInternal bool) error
+
+	// Duplicate handling
+	SetTicketDuplicate(ctx context.Context, ticketID uuid.UUID, dupTicketID, dupRoadmapID *uuid.UUID) error
+	GetTicketDuplicates(ctx context.Context, canonicalTicketID uuid.UUID) ([]SupportTicket, error)
+	GetTicketsDuplicatedToRoadmap(ctx context.Context, roadmapID uuid.UUID) ([]SupportTicket, error)
+	SearchTicketsByText(ctx context.Context, query string, limit int) ([]SupportTicket, error)
 
 	// Metrics (aggregates only, NO individual PHI data)
 	GetCachedMetrics(ctx context.Context) (*SystemMetrics, error)
@@ -481,8 +490,10 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 	query := `
 		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
+		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(u.email, '') as user_email,
-		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
+		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
+		       (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
 		FROM support_tickets t
 		LEFT JOIN users u ON t.user_id = u.id
 		LEFT JOIN users a ON t.assigned_to = a.id` + selectWhere +
@@ -499,7 +510,8 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 		var t SupportTicket
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
-			&t.UserEmail, &t.AssigneeName); err != nil {
+			&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
+			&t.UserEmail, &t.AssigneeName, &t.DuplicateCount); err != nil {
 			return nil, 0, err
 		}
 		tickets = append(tickets, t)
@@ -511,8 +523,10 @@ func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTi
 	query := `
 		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
+		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(u.email, '') as user_email,
-		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
+		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
+		       (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
 		FROM support_tickets t
 		LEFT JOIN users u ON t.user_id = u.id
 		LEFT JOIN users a ON t.assigned_to = a.id
@@ -522,7 +536,8 @@ func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTi
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 		&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
-		&t.UserEmail, &t.AssigneeName,
+		&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
+		&t.UserEmail, &t.AssigneeName, &t.DuplicateCount,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -589,6 +604,102 @@ func (r *adminRepo) AddTicketMessage(ctx context.Context, ticketID, senderID uui
 	// Update ticket updated_at
 	_, err = r.db.ExecContext(ctx, "UPDATE support_tickets SET updated_at = NOW() WHERE id = $1", ticketID)
 	return err
+}
+
+// SetTicketDuplicate sets exactly one of duplicate_of_ticket_id or
+// duplicate_of_roadmap_id (the other is forced NULL). Pass nil for both to
+// clear the duplicate marker.
+func (r *adminRepo) SetTicketDuplicate(ctx context.Context, ticketID uuid.UUID, dupTicketID, dupRoadmapID *uuid.UUID) error {
+	if dupTicketID != nil && dupRoadmapID != nil {
+		return fmt.Errorf("ticket can be a duplicate of either a ticket or a roadmap item, not both")
+	}
+	_, err := r.db.ExecContext(ctx, `
+        UPDATE support_tickets
+        SET duplicate_of_ticket_id  = $2,
+            duplicate_of_roadmap_id = $3,
+            updated_at              = NOW()
+        WHERE id = $1
+    `, ticketID, dupTicketID, dupRoadmapID)
+	return err
+}
+
+// GetTicketDuplicates returns tickets that point at canonicalTicketID via
+// duplicate_of_ticket_id.
+func (r *adminRepo) GetTicketDuplicates(ctx context.Context, canonicalTicketID uuid.UUID) ([]SupportTicket, error) {
+	return r.queryTicketsBy(ctx, "t.duplicate_of_ticket_id = $1", canonicalTicketID)
+}
+
+// GetTicketsDuplicatedToRoadmap returns tickets that were marked dup directly
+// onto a roadmap item.
+func (r *adminRepo) GetTicketsDuplicatedToRoadmap(ctx context.Context, roadmapID uuid.UUID) ([]SupportTicket, error) {
+	return r.queryTicketsBy(ctx, "t.duplicate_of_roadmap_id = $1", roadmapID)
+}
+
+// SearchTicketsByText performs a case-insensitive substring match on subject.
+// Used by the dup picker autocomplete; capped at the caller-provided limit.
+func (r *adminRepo) SearchTicketsByText(ctx context.Context, query string, limit int) ([]SupportTicket, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 10
+	}
+	pattern := "%" + strings.ToLower(query) + "%"
+	rows, err := r.db.QueryContext(ctx, `
+        SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+               t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
+               t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
+               COALESCE(u.email, '') as user_email,
+               COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
+               (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
+        FROM support_tickets t
+        LEFT JOIN users u ON t.user_id = u.id
+        LEFT JOIN users a ON t.assigned_to = a.id
+        WHERE LOWER(t.subject) LIKE $1
+        ORDER BY t.created_at DESC
+        LIMIT $2
+    `, pattern, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanTickets(rows)
+}
+
+// queryTicketsBy is a small helper to avoid repeating the column list +
+// joins for one-arg WHERE-clause lookups.
+func (r *adminRepo) queryTicketsBy(ctx context.Context, whereClause string, arg interface{}) ([]SupportTicket, error) {
+	q := `
+        SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+               t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
+               t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
+               COALESCE(u.email, '') as user_email,
+               COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
+               (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
+        FROM support_tickets t
+        LEFT JOIN users u ON t.user_id = u.id
+        LEFT JOIN users a ON t.assigned_to = a.id
+        WHERE ` + whereClause + `
+        ORDER BY t.created_at DESC
+    `
+	rows, err := r.db.QueryContext(ctx, q, arg)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanTickets(rows)
+}
+
+func scanTickets(rows *sql.Rows) ([]SupportTicket, error) {
+	var out []SupportTicket
+	for rows.Next() {
+		var t SupportTicket
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
+			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
+			&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
+			&t.UserEmail, &t.AssigneeName, &t.DuplicateCount); err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
 }
 
 // ============================================================================

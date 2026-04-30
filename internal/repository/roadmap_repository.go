@@ -36,6 +36,7 @@ type RoadmapItem struct {
 	RequesterEmail string `json:"requester_email,omitempty"`
 	RequesterName  string `json:"requester_name,omitempty"`
 	TicketSubject  string `json:"ticket_subject,omitempty"`
+	FollowerCount  int    `json:"follower_count,omitempty"`
 }
 
 // RoadmapRepository is a thin DB layer over roadmap_items. The cross-table
@@ -49,6 +50,28 @@ type RoadmapRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	MarkDevReleased(ctx context.Context, id uuid.UUID) error
 	MarkProdReleased(ctx context.Context, id uuid.UUID) error
+
+	// Followers — multiple users can be subscribed to release notifications
+	// for a single roadmap item (one canonical promoter + N duplicates).
+	AddFollower(ctx context.Context, roadmapID, userID uuid.UUID, sourceTicketID *uuid.UUID, notifyDev, notifyProd bool) error
+	ListFollowers(ctx context.Context, roadmapID uuid.UUID) ([]RoadmapFollower, error)
+	FollowerCount(ctx context.Context, roadmapID uuid.UUID) (int, error)
+}
+
+// RoadmapFollower is a user subscribed to release notifications for a roadmap
+// item, plus the ticket through which they expressed interest (so the release
+// message can be posted on their own thread).
+type RoadmapFollower struct {
+	RoadmapID      uuid.UUID       `json:"roadmap_id"`
+	UserID         uuid.UUID       `json:"user_id"`
+	SourceTicketID models.NullUUID `json:"source_ticket_id,omitempty"`
+	NotifyOnDev    bool            `json:"notify_on_dev"`
+	NotifyOnProd   bool            `json:"notify_on_prod"`
+	CreatedAt      time.Time       `json:"created_at"`
+	// Joined
+	UserEmail     string `json:"user_email,omitempty"`
+	UserName      string `json:"user_name,omitempty"`
+	TicketSubject string `json:"ticket_subject,omitempty"`
 }
 
 type roadmapRepo struct {
@@ -68,7 +91,8 @@ const roadmapSelectColumns = `
     r.created_by, r.created_at, r.updated_at,
     COALESCE(u.email, '')                                  AS requester_email,
     COALESCE(u.first_name || ' ' || u.last_name, '')       AS requester_name,
-    COALESCE(t.subject, '')                                AS ticket_subject
+    COALESCE(t.subject, '')                                AS ticket_subject,
+    (SELECT COUNT(*) FROM roadmap_item_followers f WHERE f.roadmap_id = r.id) AS follower_count
 `
 
 const roadmapFromJoins = `
@@ -225,11 +249,67 @@ func scanRoadmapRow(s rowScanner) (*RoadmapItem, error) {
 		&it.NotifyOnDev, &it.NotifyOnProd,
 		&it.DevReleasedAt, &it.ProdReleasedAt,
 		&it.CreatedBy, &it.CreatedAt, &it.UpdatedAt,
-		&it.RequesterEmail, &it.RequesterName, &it.TicketSubject,
+		&it.RequesterEmail, &it.RequesterName, &it.TicketSubject, &it.FollowerCount,
 	); err != nil {
 		return nil, err
 	}
 	return &it, nil
+}
+
+// AddFollower upserts (roadmap_id, user_id) into roadmap_item_followers.
+// Calling it again for the same pair is a no-op.
+func (r *roadmapRepo) AddFollower(ctx context.Context, roadmapID, userID uuid.UUID, sourceTicketID *uuid.UUID, notifyDev, notifyProd bool) error {
+	_, err := r.db.ExecContext(ctx, `
+        INSERT INTO roadmap_item_followers
+            (roadmap_id, user_id, source_ticket_id, notify_on_dev, notify_on_prod, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        ON CONFLICT (roadmap_id, user_id) DO NOTHING
+    `, roadmapID, userID, sourceTicketID, notifyDev, notifyProd)
+	return err
+}
+
+// ListFollowers returns all followers of a roadmap item with their email,
+// display name, and originating ticket subject for UI rendering.
+func (r *roadmapRepo) ListFollowers(ctx context.Context, roadmapID uuid.UUID) ([]RoadmapFollower, error) {
+	rows, err := r.db.QueryContext(ctx, `
+        SELECT f.roadmap_id, f.user_id, f.source_ticket_id,
+               f.notify_on_dev, f.notify_on_prod, f.created_at,
+               COALESCE(u.email, '')                                  AS user_email,
+               COALESCE(u.first_name || ' ' || u.last_name, '')       AS user_name,
+               COALESCE(t.subject, '')                                AS ticket_subject
+        FROM roadmap_item_followers f
+        LEFT JOIN users           u ON f.user_id          = u.id
+        LEFT JOIN support_tickets t ON f.source_ticket_id = t.id
+        WHERE f.roadmap_id = $1
+        ORDER BY f.created_at ASC
+    `, roadmapID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []RoadmapFollower
+	for rows.Next() {
+		var f RoadmapFollower
+		if err := rows.Scan(
+			&f.RoadmapID, &f.UserID, &f.SourceTicketID,
+			&f.NotifyOnDev, &f.NotifyOnProd, &f.CreatedAt,
+			&f.UserEmail, &f.UserName, &f.TicketSubject,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
+// FollowerCount returns the number of users subscribed to a roadmap item.
+// Cheap convenience wrapper used in spots where the full list isn't needed.
+func (r *roadmapRepo) FollowerCount(ctx context.Context, roadmapID uuid.UUID) (int, error) {
+	var n int
+	err := r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM roadmap_item_followers WHERE roadmap_id = $1", roadmapID).Scan(&n)
+	return n, err
 }
 
 func nullableUUID(n models.NullUUID) interface{} {

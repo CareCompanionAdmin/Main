@@ -22,6 +22,10 @@ var (
 	ErrRoadmapInvalidSource = errors.New("invalid source")
 	ErrRoadmapTicketAlready = errors.New("ticket has already been promoted to the roadmap")
 	ErrRoadmapTicketWrongType = errors.New("only feature_request tickets can be promoted")
+	ErrDuplicateSelf         = errors.New("a ticket cannot be a duplicate of itself")
+	ErrDuplicateAlreadySet   = errors.New("ticket is already marked as a duplicate")
+	ErrDuplicateTargetMissing = errors.New("duplicate target not found")
+	ErrDuplicateTargetIsDup  = errors.New("the chosen target is itself a duplicate; pick the canonical one")
 )
 
 // validRoadmapStatuses, validRoadmapPriorities, validRoadmapSources mirror the
@@ -75,6 +79,12 @@ func (s *RoadmapService) Get(ctx context.Context, id uuid.UUID) (*repository.Roa
 // or nil if the ticket has not been promoted.
 func (s *RoadmapService) GetByTicketID(ctx context.Context, ticketID uuid.UUID) (*repository.RoadmapItem, error) {
 	return s.repo.GetByTicketID(ctx, ticketID)
+}
+
+// ListFollowers returns all users subscribed to release notifications for a
+// given roadmap item.
+func (s *RoadmapService) ListFollowers(ctx context.Context, id uuid.UUID) ([]repository.RoadmapFollower, error) {
+	return s.repo.ListFollowers(ctx, id)
 }
 
 // Create inserts a manual or internal roadmap item. For feature_request items
@@ -169,6 +179,25 @@ func (s *RoadmapService) AddFromTicket(ctx context.Context, ticketID, adminID uu
 		return nil, err
 	}
 
+	// Enroll the original requester as the first follower, then enroll any
+	// existing duplicates of this ticket so they get release pings too.
+	if ticket.UserID.Valid {
+		tid := ticket.ID
+		if err := s.repo.AddFollower(ctx, item.ID, ticket.UserID.UUID, &tid, true, true); err != nil {
+			log.Printf("[ROADMAP] enroll original requester as follower failed: %v", err)
+		}
+	}
+	dups, _ := s.adminRepo.GetTicketDuplicates(ctx, ticket.ID)
+	for _, d := range dups {
+		if !d.UserID.Valid {
+			continue
+		}
+		dt := d.ID
+		if err := s.repo.AddFollower(ctx, item.ID, d.UserID.UUID, &dt, true, true); err != nil {
+			log.Printf("[ROADMAP] enroll dup follower failed: %v", err)
+		}
+	}
+
 	const cannedMsg = "Thank you for being such a valuable part of our community. " +
 		"After review, our dev team decided your idea was AWESOME and was added to our roadmap. " +
 		"This ticket will be marked as closed but you'll receive a message when your requested feature goes live."
@@ -235,40 +264,55 @@ func (s *RoadmapService) markLive(ctx context.Context, id, adminID uuid.UUID, en
 }
 
 // notifyRequester posts a follow-up ticket message and (if SMTP is up) sends
-// an email — both best-effort.
+// an email to every follower of the roadmap item that has the relevant
+// notify_on_* flag enabled. All sends are best-effort — failures are logged.
+//
+// The item-level NotifyOn* flags act as a global gate; per-follower flags
+// allow opt-out by individual users.
 func (s *RoadmapService) notifyRequester(ctx context.Context, item *repository.RoadmapItem, adminID uuid.UUID, env string) {
-	notifyEnabled := item.NotifyOnDev
 	envLabel := "dev"
 	envFriendly := "our development environment for testing"
+	itemAllowed := item.NotifyOnDev
 	if env == "prod" {
-		notifyEnabled = item.NotifyOnProd
 		envLabel = "prod"
 		envFriendly = "production"
+		itemAllowed = item.NotifyOnProd
 	}
-	if !notifyEnabled {
-		return
-	}
-	if !item.RequesterUserID.Valid || !item.SourceTicketID.Valid {
+	if !itemAllowed {
 		return
 	}
 
-	msg := fmt.Sprintf(
-		"Heads up — your requested feature \"%s\" is now live in %s. Thanks again for the great idea!",
-		item.Title, envFriendly,
-	)
-	if err := s.adminRepo.AddTicketMessage(ctx, item.SourceTicketID.UUID, adminID, msg, false); err != nil {
-		log.Printf("[ROADMAP] %s release: post ticket message failed: %v", envLabel, err)
+	followers, err := s.repo.ListFollowers(ctx, item.ID)
+	if err != nil {
+		log.Printf("[ROADMAP] %s release: list followers failed: %v", envLabel, err)
+		return
 	}
 
-	if item.RequesterEmail != "" && s.email != nil && s.email.IsEnabled() {
-		subject := fmt.Sprintf("Your feature is live in %s: %s", envFriendly, item.Title)
-		body := emailWrap(
-			fmt.Sprintf("Your feature is live in %s", envFriendly),
-			html.EscapeString(msg),
-			"",
-		)
-		if err := s.email.SendEmail(item.RequesterEmail, subject, body); err != nil {
-			log.Printf("[ROADMAP] %s release: email requester failed: %v", envLabel, err)
+	msgTmpl := "Heads up — your requested feature \"%s\" is now live in %s. Thanks again for the great idea!"
+	for _, f := range followers {
+		// Per-follower opt-out.
+		if env == "dev" && !f.NotifyOnDev {
+			continue
+		}
+		if env == "prod" && !f.NotifyOnProd {
+			continue
+		}
+		msg := fmt.Sprintf(msgTmpl, item.Title, envFriendly)
+		if f.SourceTicketID.Valid {
+			if err := s.adminRepo.AddTicketMessage(ctx, f.SourceTicketID.UUID, adminID, msg, false); err != nil {
+				log.Printf("[ROADMAP] %s release: post ticket message to %s failed: %v", envLabel, f.UserEmail, err)
+			}
+		}
+		if f.UserEmail != "" && s.email != nil && s.email.IsEnabled() {
+			subject := fmt.Sprintf("Your feature is live in %s: %s", envFriendly, item.Title)
+			body := emailWrap(
+				fmt.Sprintf("Your feature is live in %s", envFriendly),
+				html.EscapeString(msg),
+				"",
+			)
+			if err := s.email.SendEmail(f.UserEmail, subject, body); err != nil {
+				log.Printf("[ROADMAP] %s release: email %s failed: %v", envLabel, f.UserEmail, err)
+			}
 		}
 	}
 }

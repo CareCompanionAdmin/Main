@@ -325,6 +325,18 @@ func (h *Handler) TicketDetailPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Resolve dup canonical info so the banner can render a friendly link.
+	var dupCanonicalTicket interface{}
+	var dupCanonicalRoadmap interface{}
+	if ticket != nil {
+		if ticket.DuplicateOfTicketID.Valid {
+			dupCanonicalTicket, _ = h.adminRepo.GetTicketByID(r.Context(), ticket.DuplicateOfTicketID.UUID)
+		}
+		if ticket.DuplicateOfRoadmapID.Valid && h.roadmapService != nil {
+			dupCanonicalRoadmap, _ = h.roadmapService.Get(r.Context(), ticket.DuplicateOfRoadmapID.UUID)
+		}
+	}
+
 	tmpl, err := parseTemplates("layout.html", "ticket_detail.html")
 	if err != nil {
 		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
@@ -335,10 +347,12 @@ func (h *Handler) TicketDetailPage(w http.ResponseWriter, r *http.Request) {
 		Title:       "Ticket #" + id.String()[:8],
 		CurrentUser: currentUser,
 		Data: map[string]interface{}{
-			"ticket":        ticket,
-			"messages":      messages,
-			"roadmap_item":  roadmapItem,
-			"is_super":      currentUser.SystemRole == "super_admin",
+			"ticket":            ticket,
+			"messages":          messages,
+			"roadmap_item":      roadmapItem,
+			"is_super":          currentUser.SystemRole == "super_admin",
+			"dup_canonical_t":   dupCanonicalTicket,
+			"dup_canonical_r":   dupCanonicalRoadmap,
 		},
 	})
 }

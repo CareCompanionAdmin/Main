@@ -34,6 +34,7 @@ type Services struct {
 	Report            *ReportService
 	Search            *SearchService
 	Roadmap           *RoadmapService
+	TicketDuplicate   *TicketDuplicateService
 }
 
 // NewServices creates all services with their dependencies
@@ -77,5 +78,6 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, cfg.Storage.UploadDir),
 		Search:            NewSearchService(repos.Search),
 		Roadmap:           NewRoadmapService(repos.Roadmap, repos.Admin, emailService, db),
+		TicketDuplicate:   NewTicketDuplicateService(repos.Admin, repos.Roadmap, emailService),
 	}
 }

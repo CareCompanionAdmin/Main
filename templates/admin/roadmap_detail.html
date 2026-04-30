@@ -72,6 +72,30 @@
         </div>
     </div>
 
+    <div class="border-t pt-4 mt-4">
+        <h3 class="text-sm font-medium text-gray-500 mb-2">
+            Requesters ({{len .Data.followers}})
+            {{if gt (len .Data.followers) 1}}<span class="text-purple-700 ml-1 text-xs">popular</span>{{end}}
+        </h3>
+        {{if .Data.followers}}
+        <ul class="text-sm divide-y border rounded">
+            {{range .Data.followers}}
+            <li class="px-3 py-2 flex justify-between items-center">
+                <div>
+                    <span class="font-medium text-gray-800">{{if .UserEmail}}{{.UserEmail}}{{else}}(unknown){{end}}</span>
+                    {{if .TicketSubject}}<span class="text-gray-500"> — "{{.TicketSubject}}"</span>{{end}}
+                </div>
+                {{if .SourceTicketID.Valid}}
+                <a href="/admin/tickets/{{.SourceTicketID.UUID}}" class="text-indigo-600 hover:underline text-xs">view ticket</a>
+                {{end}}
+            </li>
+            {{end}}
+        </ul>
+        {{else}}
+        <p class="text-sm text-gray-400">No requesters subscribed yet.</p>
+        {{end}}
+    </div>
+
     <div class="border-t pt-4 mt-4 flex flex-wrap gap-2">
         <a href="/admin/roadmap/{{$item.ID}}/edit" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Edit</a>
         {{if not $item.DevReleasedAt.Valid}}

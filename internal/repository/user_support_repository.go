@@ -76,6 +76,7 @@ func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]S
 	query := `
 		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
+		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
 		FROM support_tickets t
@@ -95,6 +96,7 @@ func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]S
 		var t SupportTicket
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
+			&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
 			&t.UserEmail, &t.AssigneeName); err != nil {
 			return nil, err
 		}
@@ -108,6 +110,7 @@ func (r *userSupportRepo) GetTicketByID(ctx context.Context, ticketID, userID uu
 	query := `
 		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
+		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name
 		FROM support_tickets t
@@ -119,6 +122,7 @@ func (r *userSupportRepo) GetTicketByID(ctx context.Context, ticketID, userID uu
 	err := r.db.QueryRowContext(ctx, query, ticketID, userID).Scan(
 		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 		&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
+		&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
 		&t.UserEmail, &t.AssigneeName,
 	)
 	if err == sql.ErrNoRows {

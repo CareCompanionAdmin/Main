@@ -27,6 +27,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dups</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -49,6 +50,13 @@
                         {{else}}bg-blue-100 text-blue-800{{end}}">
                         {{if eq .Type "bug_report"}}Bug{{else if eq .Type "feature_request"}}Feature{{else if eq .Type "billing"}}Billing{{else}}General{{end}}
                     </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    {{if gt .DuplicateCount 0}}
+                        <span class="px-2 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800" title="Multiple users have reported this">+{{.DuplicateCount}}</span>
+                    {{else}}
+                        <span class="text-gray-300">—</span>
+                    {{end}}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{.UserEmail}}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -74,7 +82,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="8" class="px-6 py-4 text-center text-gray-500">No tickets found</td>
+                <td colspan="9" class="px-6 py-4 text-center text-gray-500">No tickets found</td>
             </tr>
             {{end}}
         </tbody>

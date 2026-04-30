@@ -308,6 +308,7 @@ func (h *Handler) RoadmapDetailPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
+	followers, _ := h.roadmapService.ListFollowers(r.Context(), id)
 	tmpl, err := parseTemplates("layout.html", "roadmap_detail.html")
 	if err != nil {
 		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
@@ -316,6 +317,9 @@ func (h *Handler) RoadmapDetailPage(w http.ResponseWriter, r *http.Request) {
 	_ = tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
 		Title:       "Roadmap: " + item.Title,
 		CurrentUser: currentUser,
-		Data:        map[string]interface{}{"item": item},
+		Data: map[string]interface{}{
+			"item":      item,
+			"followers": followers,
+		},
 	})
 }

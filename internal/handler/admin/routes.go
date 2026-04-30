@@ -16,6 +16,7 @@ type Handler struct {
 	marketingService  *service.MarketingService
 	pushService       *service.PushService
 	roadmapService    *service.RoadmapService
+	dupService        *service.TicketDuplicateService
 }
 
 // SetPushService sets the push notification service for admin handlers
@@ -26,6 +27,11 @@ func (h *Handler) SetPushService(ps *service.PushService) {
 // SetRoadmapService sets the roadmap service for admin handlers.
 func (h *Handler) SetRoadmapService(rs *service.RoadmapService) {
 	h.roadmapService = rs
+}
+
+// SetTicketDuplicateService wires the dup-handling service.
+func (h *Handler) SetTicketDuplicateService(s *service.TicketDuplicateService) {
+	h.dupService = s
 }
 
 // NewHandler creates a new admin handler
@@ -134,12 +140,15 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/tickets/open-count", h.GetOpenTicketCount)
 		r.Get("/tickets", h.ListTickets)
 		r.Post("/tickets", h.CreateTicket)
+		r.Get("/duplicate-targets", h.SearchDuplicateTargets)
 		r.Get("/tickets/{id}", h.GetTicket)
 		r.Put("/tickets/{id}", h.UpdateTicket)
 		r.Post("/tickets/{id}/assign", h.AssignTicket)
 		r.Post("/tickets/{id}/resolve", h.ResolveTicket)
 		r.Get("/tickets/{id}/messages", h.GetTicketMessages)
 		r.Post("/tickets/{id}/messages", h.AddTicketMessage)
+		r.Post("/tickets/{id}/mark-duplicate", h.MarkTicketDuplicate)
+		r.Get("/tickets/{id}/duplicates", h.ListTicketDuplicates)
 		r.Get("/users", h.SearchUsers)
 		r.Get("/users/{id}", h.GetUser)
 		r.Put("/users/{id}/status", h.UpdateUserStatus)

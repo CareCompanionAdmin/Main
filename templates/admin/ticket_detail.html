@@ -4,6 +4,29 @@
 </div>
 
 {{with .Data.ticket}}
+{{if or .DuplicateOfTicketID.Valid .DuplicateOfRoadmapID.Valid}}
+<div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded text-sm text-amber-900">
+    <strong>Marked as duplicate</strong> of
+    {{if $.Data.dup_canonical_t}}
+        ticket
+        <a href="/admin/tickets/{{$.Data.dup_canonical_t.ID}}" class="text-amber-900 underline">#{{slice $.Data.dup_canonical_t.ID.String 0 8}} — {{$.Data.dup_canonical_t.Subject}}</a>
+    {{else if $.Data.dup_canonical_r}}
+        roadmap item
+        <a href="/admin/roadmap/{{$.Data.dup_canonical_r.ID}}" class="text-amber-900 underline">{{$.Data.dup_canonical_r.Title}}</a>
+    {{else}}
+        an item that has since been removed.
+    {{end}}
+</div>
+{{end}}
+
+{{if gt .DuplicateCount 0}}
+<div class="mb-4 p-3 bg-purple-50 border border-purple-200 rounded text-sm text-purple-900 flex justify-between items-center">
+    <span><strong>{{.DuplicateCount}} duplicate{{if ne .DuplicateCount 1}}s{{end}}</strong> of this ticket — multiple users have reported the same issue.</span>
+    <button onclick="toggleDups()" class="text-purple-700 underline">View</button>
+</div>
+<div id="dupList" class="hidden mb-4 p-3 bg-white border rounded text-sm"></div>
+{{end}}
+
 <div class="bg-white rounded-lg shadow p-6 mb-6">
     <div class="flex justify-between items-start mb-4">
         <div>
@@ -53,6 +76,9 @@
                 {{end}}
             {{end}}
             {{if and (ne .Status "resolved") (ne .Status "closed")}}
+            {{if not (or .DuplicateOfTicketID.Valid .DuplicateOfRoadmapID.Valid)}}
+            <button onclick="openDupPicker()" class="px-3 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200">Mark as Duplicate</button>
+            {{end}}
             <button onclick="assignToMe('{{.ID}}')" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Assign to Me</button>
             <button onclick="resolveTicket('{{.ID}}')" class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Resolve</button>
             {{end}}
@@ -146,5 +172,114 @@ async function addToRoadmap(id) {
     const item = await res.json();
     window.location = '/admin/roadmap/' + item.id;
 }
+
+// ---- Duplicate picker ----
+let dupSearchTimer = null;
+function openDupPicker() {
+    document.getElementById('dupModal').classList.remove('hidden');
+    document.getElementById('dupQuery').value = '';
+    document.getElementById('dupResults').innerHTML = '<p class="text-sm text-gray-500 p-3">Type to search existing tickets and roadmap items...</p>';
+    document.getElementById('dupQuery').focus();
+}
+function closeDupPicker() {
+    document.getElementById('dupModal').classList.add('hidden');
+}
+function escapeHtml(s) {
+    return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function onDupQueryInput() {
+    if (dupSearchTimer) clearTimeout(dupSearchTimer);
+    dupSearchTimer = setTimeout(runDupSearch, 200);
+}
+async function runDupSearch() {
+    const q = document.getElementById('dupQuery').value.trim();
+    if (!q) {
+        document.getElementById('dupResults').innerHTML = '<p class="text-sm text-gray-500 p-3">Type to search existing tickets and roadmap items...</p>';
+        return;
+    }
+    const res = await fetch('/api/admin/support/duplicate-targets?q=' + encodeURIComponent(q), { credentials: 'include' });
+    if (!res.ok) {
+        document.getElementById('dupResults').innerHTML = '<p class="text-sm text-red-600 p-3">Search failed.</p>';
+        return;
+    }
+    const data = await res.json();
+    const tickets = (data.tickets || []).filter(t => t.id !== ticketId);
+    const items   = data.roadmap || [];
+    let html = '';
+    if (tickets.length === 0 && items.length === 0) {
+        html = '<p class="text-sm text-gray-500 p-3">No matches.</p>';
+    } else {
+        if (tickets.length) {
+            html += '<div class="px-3 py-1 text-xs uppercase text-gray-500 bg-gray-50">Tickets</div>';
+            tickets.forEach(t => {
+                const dup = t.duplicate_count > 0 ? ` <span class="text-purple-700">(${t.duplicate_count} dup${t.duplicate_count===1?'':'s'})</span>` : '';
+                html += `<button type="button" onclick="confirmDup('ticket','${t.id}', ${JSON.stringify(escapeHtml(t.subject))})" class="block w-full text-left px-3 py-2 hover:bg-amber-50 border-t">
+                    <div class="font-medium text-gray-900">${escapeHtml(t.subject)}${dup}</div>
+                    <div class="text-xs text-gray-500">#${t.id.substring(0,8)} · ${t.type} · ${t.status}</div>
+                </button>`;
+            });
+        }
+        if (items.length) {
+            html += '<div class="px-3 py-1 text-xs uppercase text-gray-500 bg-gray-50">Roadmap items</div>';
+            items.forEach(it => {
+                const fc = it.follower_count > 0 ? ` <span class="text-purple-700">(${it.follower_count} requester${it.follower_count===1?'':'s'})</span>` : '';
+                html += `<button type="button" onclick="confirmDup('roadmap','${it.id}', ${JSON.stringify(escapeHtml(it.title))})" class="block w-full text-left px-3 py-2 hover:bg-amber-50 border-t">
+                    <div class="font-medium text-gray-900">${escapeHtml(it.title)}${fc}</div>
+                    <div class="text-xs text-gray-500">${it.priority} · ${it.status}</div>
+                </button>`;
+            });
+        }
+    }
+    document.getElementById('dupResults').innerHTML = html;
+}
+async function confirmDup(targetKind, targetId, displayLabel) {
+    if (!confirm('Mark this ticket as duplicate of "' + displayLabel + '"?\n\nThe user will get a thank-you message (without internal IDs) and the ticket will be closed.')) return;
+    const body = targetKind === 'ticket'
+        ? { target_ticket_id: targetId }
+        : { target_roadmap_id: targetId };
+    const res = await fetch('/api/admin/support/tickets/' + ticketId + '/mark-duplicate', {
+        method: 'POST', credentials: 'include',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        alert('Failed: ' + await res.text());
+        return;
+    }
+    location.reload();
+}
+
+// ---- Duplicates of THIS ticket ----
+async function toggleDups() {
+    const box = document.getElementById('dupList');
+    if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+    const res = await fetch('/api/admin/support/tickets/' + ticketId + '/duplicates', { credentials: 'include' });
+    if (!res.ok) { box.innerHTML = '<p class="text-red-600">Failed to load.</p>'; box.classList.remove('hidden'); return; }
+    const dups = await res.json();
+    if (!dups || dups.length === 0) { box.innerHTML = '<p class="text-gray-500">No duplicates.</p>'; }
+    else {
+        box.innerHTML = dups.map(d => `
+            <div class="py-1 border-b last:border-b-0">
+                <a href="/admin/tickets/${d.id}" class="text-indigo-600 hover:underline">${escapeHtml(d.subject)}</a>
+                <span class="text-xs text-gray-500"> — ${d.user_email || 'no email'} · ${new Date(d.created_at).toLocaleDateString()}</span>
+            </div>
+        `).join('');
+    }
+    box.classList.remove('hidden');
+}
 </script>
+
+<!-- Duplicate picker modal -->
+<div id="dupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 p-5">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-bold text-gray-800">Mark as Duplicate</h2>
+            <button onclick="closeDupPicker()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">Search for the existing ticket or roadmap item this is a duplicate of. The user will get a friendly thank-you message — they won't see internal ticket numbers.</p>
+        <input type="text" id="dupQuery" oninput="onDupQueryInput()" placeholder="Search by subject or title..."
+               class="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-amber-500 focus:border-transparent mb-3" />
+        <div id="dupResults" class="border rounded max-h-80 overflow-y-auto"></div>
+    </div>
+</div>
 {{end}}
