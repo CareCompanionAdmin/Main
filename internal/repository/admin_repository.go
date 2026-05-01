@@ -2100,7 +2100,10 @@ func (r *adminRepo) UpdateFamilySubscription(ctx context.Context, sub *models.Fa
 
 // CompFamilySubscription UPSERTs a family onto the chosen plan as comped
 // through `until`. Used by the "Comp this family" admin button. If the
-// family already has a subscription row, it's updated in place.
+// family already has a subscription row, it's updated in place. Comping
+// also clears past_due_since since the comp restores access — otherwise
+// the termination clock could fire after the comp lapses, even though the
+// family was healthy throughout the comp window.
 func (r *adminRepo) CompFamilySubscription(ctx context.Context, familyID, planID, compedBy uuid.UUID, reason string, until time.Time) (*models.FamilySubscription, error) {
 	_, err := r.db.ExecContext(ctx, `
         INSERT INTO family_subscriptions (
@@ -2117,6 +2120,7 @@ func (r *adminRepo) CompFamilySubscription(ctx context.Context, familyID, planID
             comp_until           = EXCLUDED.comp_until,
             cancel_at_period_end = false,
             cancelled_at         = NULL,
+            past_due_since       = NULL,
             updated_at           = NOW()`,
 		familyID, planID, until, reason, compedBy,
 	)

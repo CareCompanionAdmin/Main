@@ -41,6 +41,7 @@ type Services struct {
 	AppStoreConnect   *AppStoreConnectService
 	Beta              *BetaService
 	Bounty            *BountyService
+	Subscription      *SubscriptionService
 }
 
 // NewServices creates all services with their dependencies
@@ -104,6 +105,17 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		AppStoreConnect:   ascService,
 		Beta:              NewBetaService(repos.BetaInvitation, emailService, ascService, cfg.App.URL, "/static/docs/beta-onboarding.html"),
 		Bounty:            NewBountyService(repos.BountyAward, repos.Admin, emailService, db),
+	}
+	// Subscription service has to come AFTER auth/family/child services exist
+	// because we wire it INTO them below (signup → trial, add-child → bump).
+	subSvc, subErr := NewSubscriptionService(db)
+	if subErr != nil {
+		log.Printf("[SUB] subscription service init failed; trial autoplay disabled: %v", subErr)
+	} else {
+		svcs.Subscription = subSvc
+		svcs.Auth.SetSubscriptionService(subSvc)
+		svcs.Family.SetSubscriptionService(subSvc)
+		svcs.Child.SetSubscriptionService(subSvc)
 	}
 	// Wire attachment service into the close paths so PHI is purged on
 	// every transition to closed/resolved (manual, dup, or promote).

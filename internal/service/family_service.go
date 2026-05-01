@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/google/uuid"
 
@@ -23,6 +24,7 @@ var (
 type FamilyService struct {
 	familyRepo repository.FamilyRepository
 	childRepo  repository.ChildRepository
+	subSvc     *SubscriptionService // wired post-construction; nil-safe
 }
 
 func NewFamilyService(familyRepo repository.FamilyRepository, childRepo repository.ChildRepository) *FamilyService {
@@ -30,6 +32,12 @@ func NewFamilyService(familyRepo repository.FamilyRepository, childRepo reposito
 		familyRepo: familyRepo,
 		childRepo:  childRepo,
 	}
+}
+
+// SetSubscriptionService wires the subscription lifecycle service so Create
+// can start a 14-day trial when a family is created post-signup.
+func (s *FamilyService) SetSubscriptionService(sub *SubscriptionService) {
+	s.subSvc = sub
 }
 
 func (s *FamilyService) Create(ctx context.Context, name string, creatorID uuid.UUID) (*models.Family, error) {
@@ -49,6 +57,13 @@ func (s *FamilyService) Create(ctx context.Context, name string, creatorID uuid.
 	}
 	if err := s.familyRepo.AddMember(ctx, membership); err != nil {
 		return nil, err
+	}
+
+	// Start 14-day Single-Child trial. Best-effort.
+	if s.subSvc != nil {
+		if err := s.subSvc.StartTrialIfNew(ctx, family.ID); err != nil {
+			log.Printf("[FAMILY] StartTrialIfNew failed for family %s: %v", family.ID, err)
+		}
 	}
 
 	return family, nil

@@ -31,6 +31,13 @@ type AuthService struct {
 	jwtConfig    *config.JWTConfig
 	emailService *EmailService
 	appURL       string
+	subSvc       *SubscriptionService // wired post-construction; nil-safe
+}
+
+// SetSubscriptionService wires the subscription lifecycle service so
+// Register can start a 14-day trial when a new family is created.
+func (s *AuthService) SetSubscriptionService(sub *SubscriptionService) {
+	s.subSvc = sub
 }
 
 func NewAuthService(
@@ -162,6 +169,15 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*mode
 		}
 		if err := s.familyRepo.AddMember(ctx, membership); err != nil {
 			return nil, nil, err
+		}
+
+		// Start 14-day Single-Child trial. Best-effort — a trial-creation
+		// failure shouldn't block signup; the user will see a paywall on
+		// next request and an admin can comp them manually if needed.
+		if s.subSvc != nil {
+			if err := s.subSvc.StartTrialIfNew(ctx, family.ID); err != nil {
+				log.Printf("[AUTH] StartTrialIfNew failed for family %s: %v", family.ID, err)
+			}
 		}
 	}
 

@@ -289,6 +289,14 @@ func main() {
 	insightGen := service.NewInsightGenerator(services.Alert, repos.Log, repos.Medication, repos.Alert, db.DB, aiInsightService, cfg.Claude.DailyRunHour)
 	go insightGen.Start(schedulerCtx)
 
+	// Subscription expiry sweeper — transitions trialing→past_due and
+	// past_due→terminated. No-op when the subscription service couldn't
+	// initialize (e.g. plan rows missing).
+	if services.Subscription != nil {
+		subScheduler := service.NewSubscriptionScheduler(services.Subscription)
+		go subScheduler.Start(schedulerCtx)
+	}
+
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ var (
 type ChildService struct {
 	childRepo  repository.ChildRepository
 	familyRepo repository.FamilyRepository
+	subSvc     *SubscriptionService // wired post-construction; nil-safe
 }
 
 func NewChildService(childRepo repository.ChildRepository, familyRepo repository.FamilyRepository) *ChildService {
@@ -25,6 +27,12 @@ func NewChildService(childRepo repository.ChildRepository, familyRepo repository
 		childRepo:  childRepo,
 		familyRepo: familyRepo,
 	}
+}
+
+// SetSubscriptionService wires the lifecycle service so adding the 2nd
+// child triggers a Family-plan trial bump.
+func (s *ChildService) SetSubscriptionService(sub *SubscriptionService) {
+	s.subSvc = sub
 }
 
 func (s *ChildService) Create(ctx context.Context, familyID uuid.UUID, req *models.CreateChildRequest) (*models.Child, error) {
@@ -54,6 +62,27 @@ func (s *ChildService) Create(ctx context.Context, familyID uuid.UUID, req *mode
 			return nil, err
 		}
 		child.Conditions = append(child.Conditions, *condition)
+	}
+
+	// If this is the family's 2nd active child, bump them onto the Family
+	// plan with a fresh 14-day trial. Best-effort: a bump failure shouldn't
+	// block child creation; the user will simply not see the upgraded plan
+	// (admin can fix via /admin/subscriptions).
+	if s.subSvc != nil {
+		siblings, sErr := s.childRepo.GetByFamilyID(ctx, familyID)
+		if sErr == nil {
+			active := 0
+			for _, c := range siblings {
+				if c.IsActive {
+					active++
+				}
+			}
+			if active == 2 {
+				if err := s.subSvc.BumpTrialOnSecondChild(ctx, familyID); err != nil {
+					log.Printf("[CHILD] BumpTrialOnSecondChild failed for family %s: %v", familyID, err)
+				}
+			}
+		}
 	}
 
 	return child, nil
