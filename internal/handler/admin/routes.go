@@ -18,6 +18,12 @@ type Handler struct {
 	roadmapService    *service.RoadmapService
 	dupService        *service.TicketDuplicateService
 	attachService     *service.TicketAttachmentService
+	betaService       *service.BetaService
+}
+
+// SetBetaService wires the beta-invite orchestration service.
+func (h *Handler) SetBetaService(s *service.BetaService) {
+	h.betaService = s
 }
 
 // SetPushService sets the push notification service for admin handlers
@@ -189,6 +195,11 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/materials/brochure", h.GenerateBrochure)
 		r.Get("/materials/style-guide", h.GenerateStyleGuide)
 		r.Get("/materials/logo", h.GenerateLogo)
+
+		// Beta program (marketing-managed TestFlight invites)
+		r.Get("/beta/invitations", h.ListBetaInvitations)
+		r.Post("/beta/invitations", h.CreateBetaInvitation)
+		r.Post("/beta/invitations/{id}/resend", h.ResendBetaInvitation)
 	})
 
 	// Super admin marketing material management (edit access)
@@ -264,6 +275,8 @@ func (h *Handler) UIRoutes() chi.Router {
 			r.Get("/marketing/tickets/{id}", h.TicketDetailPage)
 			// Marketing materials page
 			r.Get("/materials", h.MaterialsPage)
+			// Beta program page
+			r.Get("/marketing/beta", h.BetaProgramPage)
 		})
 
 		// Promo codes - accessible by both super_admin and marketing (view only for marketing)

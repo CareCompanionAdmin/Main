@@ -166,6 +166,9 @@ func main() {
 	// Wire ticket-attachment service into admin handlers
 	adminHandler.SetTicketAttachmentService(services.TicketAttachment)
 
+	// Wire beta-invitation service into admin handlers
+	adminHandler.SetBetaService(services.Beta)
+
 	// Initialize Development Mode service for SSH access control
 	// In production, devServerURL is set so session ops call the dev server remotely.
 	// On the dev server, devServerURL is empty so ops run locally.
@@ -222,6 +225,10 @@ func main() {
 		r.Mount("/", adminHandler.Routes())
 	})
 	r.Mount("/admin", adminHandler.UIRoutes())
+
+	// Public beta onboarding page (no auth — tokenized URL is the access control)
+	r.Get("/beta/onboard/{token}", adminHandler.BetaOnboardPage)
+	r.Post("/beta/onboard/{token}", adminHandler.BetaOnboardSubmit)
 
 	// File transfer utility (keep for development)
 	r.Get("/filextfer", handleFileTransfer)

@@ -105,6 +105,14 @@ func parseTemplates(names ...string) (*template.Template, error) {
 	return template.New(names[0]).Funcs(templateFuncs).ParseFiles(paths...)
 }
 
+// parsePublicTemplate loads a single template from templates/ (not the admin
+// subdir) for use by no-auth public pages like beta onboarding.
+func parsePublicTemplate(name string) (*template.Template, error) {
+	return template.New(name).Funcs(templateFuncs).ParseFiles(
+		filepath.Join("templates", name),
+	)
+}
+
 // AdminLoginPage renders the admin login page
 func (h *Handler) AdminLoginPage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := parseTemplates("login.html")

@@ -9,15 +9,27 @@ import (
 )
 
 type Config struct {
-	App         AppConfig
-	Database    DatabaseConfig
-	Redis       RedisConfig
-	JWT         JWTConfig
-	Correlation CorrelationConfig
-	Storage     StorageConfig
-	SMTP        SMTPConfig
-	FCM         FCMConfig
-	Claude      ClaudeConfig
+	App              AppConfig
+	Database         DatabaseConfig
+	Redis            RedisConfig
+	JWT              JWTConfig
+	Correlation      CorrelationConfig
+	Storage          StorageConfig
+	SMTP             SMTPConfig
+	FCM              FCMConfig
+	Claude           ClaudeConfig
+	AppStoreConnect  AppStoreConnectConfig
+}
+
+// AppStoreConnectConfig holds the team-level API key Apple issues from
+// App Store Connect → Users and Access → Integrations → Team Keys.
+// All four fields must be set for the beta-invite auto-add flow to work;
+// when any are blank the BetaService falls back to manual-add (logs only).
+type AppStoreConnectConfig struct {
+	IssuerID      string
+	KeyID         string
+	KeyPath       string // absolute path to AuthKey_*.p8 (mode 600, outside repo)
+	BetaGroupName string // e.g. "External Beta Testers"
 }
 
 type StorageConfig struct {
@@ -156,6 +168,12 @@ func Load() (*Config, error) {
 			Password:    getEnv("SMTP_PASSWORD", ""),
 			FromAddress: getEnv("SMTP_FROM_ADDRESS", "notifications@mycarecompanion.net"),
 			FromName:    getEnv("SMTP_FROM_NAME", "MyCareCompanion"),
+		},
+		AppStoreConnect: AppStoreConnectConfig{
+			IssuerID:      getEnv("ASC_ISSUER_ID", ""),
+			KeyID:         getEnv("ASC_KEY_ID", ""),
+			KeyPath:       getEnv("ASC_KEY_PATH", ""),
+			BetaGroupName: getEnv("ASC_BETA_GROUP_NAME", "External Beta Testers"),
 		},
 		Claude: ClaudeConfig{
 			APIKey:       getEnv("CLAUDE_API_KEY", ""),

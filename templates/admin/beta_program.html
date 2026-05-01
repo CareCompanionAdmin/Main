@@ -1,0 +1,118 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Beta Program</h1>
+        <p class="text-sm text-gray-500 mt-1">Invite users to the My Care Companion TestFlight beta. Each invite emails the user a secret onboarding page where they enter their Apple ID. We then add them to the External Beta Testers group in App Store Connect automatically.</p>
+    </div>
+</div>
+
+{{if not .Data.asc_ready}}
+<div class="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 mb-6 text-sm">
+    App Store Connect API is not configured. Invitations and emails will still go out, but new testers will need to be added to the TestFlight group manually until <code>ASC_ISSUER_ID</code>, <code>ASC_KEY_ID</code>, and <code>ASC_KEY_PATH</code> are set on the server.
+</div>
+{{end}}
+
+<!-- Invite form -->
+<div class="bg-white rounded-lg shadow p-5 mb-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-3">Invite a new tester</h2>
+    <form id="inviteForm" class="flex flex-col sm:flex-row gap-3">
+        <input id="email" type="email" required placeholder="user@example.com"
+               class="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+        <input id="notes" type="text" placeholder="Internal note (optional)"
+               class="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+        <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 whitespace-nowrap">Send invite</button>
+    </form>
+    <p class="text-xs text-gray-500 mt-2">Sending the same email twice is safe — the existing invitation row is reused. To re-issue the email, use the row's <strong>Resend</strong> button below.</p>
+</div>
+
+<!-- Invitations table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apple ID</th>
+                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invited</th>
+                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">By</th>
+                <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {{if .Data.items}}
+            {{range .Data.items}}
+            <tr class="hover:bg-gray-50">
+                <td class="px-5 py-3 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{.Email}}</div>
+                    {{if .Notes}}<div class="text-xs text-gray-500 italic">{{.Notes}}</div>{{end}}
+                </td>
+                <td class="px-5 py-3 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs rounded-full font-semibold
+                        {{if eq .Status "invited"}}bg-blue-100 text-blue-800
+                        {{else if eq .Status "apple_id_collected"}}bg-amber-100 text-amber-800
+                        {{else if eq .Status "added_to_testflight"}}bg-green-100 text-green-800
+                        {{else}}bg-red-100 text-red-800{{end}}">
+                        {{if eq .Status "invited"}}Email sent
+                        {{else if eq .Status "apple_id_collected"}}Apple ID received
+                        {{else if eq .Status "added_to_testflight"}}On TestFlight
+                        {{else}}Error{{end}}
+                    </span>
+                    {{if .LastError}}<div class="text-xs text-red-600 mt-1">{{.LastError}}</div>{{end}}
+                </td>
+                <td class="px-5 py-3 text-sm text-gray-700">
+                    {{if .AppleID}}{{.AppleID}}{{if and .AppleFirstName .AppleLastName}}<br/><span class="text-xs text-gray-500">{{.AppleFirstName}} {{.AppleLastName}}</span>{{end}}{{else}}<span class="text-gray-400 italic">awaiting</span>{{end}}
+                </td>
+                <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-600">{{formatDateTime .InvitedAt}}</td>
+                <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-600">{{.InvitedByEmail}}</td>
+                <td class="px-5 py-3 whitespace-nowrap text-right text-sm">
+                    <button onclick="resend('{{.ID}}')" class="text-indigo-600 hover:text-indigo-800 font-medium">Resend</button>
+                    <button onclick="copyLink('{{.Token}}')" class="ml-3 text-gray-600 hover:text-gray-900">Copy link</button>
+                </td>
+            </tr>
+            {{end}}
+            {{else}}
+            <tr><td colspan="6" class="px-5 py-12 text-center text-sm text-gray-500 italic">No invitations yet. Send the first one above.</td></tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.getElementById('inviteForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const notes = document.getElementById('notes').value.trim();
+    const res = await fetch('/api/admin/marketing/beta/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, notes }),
+    });
+    if (!res.ok) {
+        alert('Invite failed: ' + (await res.text()));
+        return;
+    }
+    window.location.reload();
+};
+
+async function resend(id) {
+    if (!confirm('Re-send the onboarding email to this user?')) return;
+    const res = await fetch('/api/admin/marketing/beta/invitations/' + id + '/resend', {
+        method: 'POST', credentials: 'include',
+    });
+    if (!res.ok) {
+        alert('Resend failed: ' + (await res.text()));
+        return;
+    }
+    alert('Email re-sent.');
+}
+
+function copyLink(token) {
+    const url = window.location.origin + '/beta/onboard/' + token;
+    navigator.clipboard.writeText(url).then(
+        () => alert('Onboarding link copied to clipboard:\n' + url),
+        () => prompt('Copy this link manually:', url)
+    );
+}
+</script>
+{{end}}

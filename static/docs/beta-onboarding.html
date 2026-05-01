@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>My Care Companion — Beta Onboarding Guide</title>
+<style>
+  :root {
+    --ink: #1f2937;
+    --ink-soft: #4b5563;
+    --rule: #e5e7eb;
+    --teal: #0f766e;
+    --teal-soft: #ccfbf1;
+    --amber: #b45309;
+    --amber-soft: #fef3c7;
+    --slate-soft: #f8fafc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
+    color: var(--ink);
+    background: #f5f3ee;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0;
+  }
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    background: #ffffff; border-bottom: 1px solid var(--rule);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .toolbar p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+  .toolbar button {
+    background: var(--teal); color: #fff; border: 0;
+    padding: 8px 16px; border-radius: 999px; font-weight: 600; cursor: pointer;
+    font-size: 13px;
+  }
+  .toolbar button:hover { background: #0d6b62; }
+
+  main {
+    max-width: 720px;
+    margin: 24px auto 64px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    padding: 48px 56px;
+  }
+
+  .eyebrow {
+    text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px;
+    font-weight: 700; color: var(--teal);
+  }
+  h1 {
+    font-size: 32px; line-height: 1.2; margin: 6px 0 18px;
+  }
+  h2 {
+    font-size: 20px; margin: 36px 0 8px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--rule);
+  }
+  h3 { font-size: 15px; margin: 20px 0 6px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+  p, li { font-size: 15px; }
+  p { margin: 8px 0 12px; }
+
+  ol, ul { padding-left: 22px; }
+  ol li, ul li { margin: 6px 0; }
+  code {
+    background: var(--slate-soft); padding: 2px 6px; border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+  }
+
+  .callout {
+    border-left: 4px solid var(--teal);
+    background: var(--teal-soft);
+    padding: 12px 16px; border-radius: 6px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .warn {
+    border-left: 4px solid var(--amber);
+    background: var(--amber-soft);
+  }
+
+  /* Screenshot placeholders look intentional, not broken */
+  .screenshot {
+    background:
+      repeating-linear-gradient(45deg, #fafaf7, #fafaf7 12px, #f0f0e8 12px, #f0f0e8 24px);
+    border: 2px dashed #d6d6cb;
+    border-radius: 10px;
+    padding: 22px;
+    margin: 14px 0;
+    color: #6b7280;
+    font-size: 13px;
+    text-align: center;
+  }
+  .screenshot strong { display: block; color: var(--ink); font-size: 14px; margin-bottom: 4px; }
+  .screenshot em { color: #9ca3af; font-style: italic; font-size: 12px; }
+
+  .signoff {
+    margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--rule);
+    color: var(--ink-soft); font-size: 13px;
+  }
+  .small { font-size: 12px; color: var(--ink-soft); }
+
+  /* PRINT */
+  @media print {
+    body { background: #fff; }
+    .toolbar, .no-print { display: none !important; }
+    main { box-shadow: none; margin: 0; padding: 24px 0; max-width: none; border-radius: 0; }
+    .screenshot { page-break-inside: avoid; }
+    h2, h3 { page-break-after: avoid; }
+    a { color: inherit; text-decoration: underline; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <p>My Care Companion · Beta Onboarding Guide</p>
+  <button onclick="window.print()">🖨 Print or save as PDF</button>
+</div>
+
+<main>
+
+  <p class="eyebrow">Beta Program</p>
+  <h1>Welcome to the My Care Companion beta.</h1>
+  <p>This short guide walks you through getting the beta installed on your iPhone, creating your account, and submitting your first piece of feedback. Read it once — should take about five minutes.</p>
+
+  <!-- ============== 1 ============== -->
+  <h2>1 · What "beta" means</h2>
+  <p>Beta is a working preview of My Care Companion released to a small group of users before the public launch. A few things to know:</p>
+  <ul>
+    <li><strong>Things may change without warning.</strong> A button might move; a screen might be redesigned. We're improving things based on what we hear from you.</li>
+    <li><strong>You may see the occasional bug.</strong> If you do, please report it (instructions in section 5). Bug reports from beta users are how we ship a more polished product.</li>
+    <li><strong>Your data is safe.</strong> The beta uses the same secure backend as the production app. Anything you log here is real, encrypted, and yours.</li>
+    <li><strong>You can leave at any time</strong> by removing the app from TestFlight (instructions at the end).</li>
+  </ul>
+
+  <!-- ============== 2 ============== -->
+  <h2>2 · Installing TestFlight (iPhone)</h2>
+  <p>Apple distributes all beta apps through a free app called <strong>TestFlight</strong>. It's safe, official, and the only way to get pre-release apps onto your iPhone.</p>
+
+  <h3>Step 2a — install TestFlight if you don't already have it</h3>
+  <ol>
+    <li>On your iPhone, open the <strong>App Store</strong>.</li>
+    <li>Search for <strong>TestFlight</strong>.</li>
+    <li>Tap <strong>Get</strong> and authenticate (Face ID / Touch ID / password).</li>
+  </ol>
+
+  <div class="screenshot">
+    <strong>[Screenshot: App Store search result for "TestFlight"]</strong>
+    <em>Shows the official Apple TestFlight icon (blue, white triangle propeller) and a Get button.</em>
+  </div>
+
+  <h3>Step 2b — accept your invitation</h3>
+  <p>Once you submitted your Apple ID on the onboarding page, Apple sent (or will shortly send) you an email titled something like <em>"Bryan Stofle invited you to test My Care Companion."</em> If you don't see it, check your spam folder.</p>
+  <ol>
+    <li>Open that email <strong>on your iPhone</strong>.</li>
+    <li>Tap <strong>View in TestFlight</strong>.</li>
+    <li>TestFlight will open. Tap <strong>Accept</strong> next to <em>My Care Companion</em>.</li>
+    <li>Tap <strong>Install</strong>. The beta will appear on your home screen.</li>
+  </ol>
+
+  <div class="screenshot">
+    <strong>[Screenshot: TestFlight invitation screen showing "My Care Companion" with Accept/Install]</strong>
+    <em>Shows the app icon, version number, and a brief description of what's new.</em>
+  </div>
+
+  <div class="callout">
+    <strong>Tip:</strong> The beta app icon will have a small orange dot beside it on your home screen. That's how you (and Apple) tell it apart from a normal App Store version.
+  </div>
+
+  <!-- ============== 3 ============== -->
+  <h2>3 · Creating your account</h2>
+  <p>You can create your account on the iPhone or in a desktop browser. The data syncs automatically — pick whichever feels easier right now.</p>
+
+  <h3>On the iPhone</h3>
+  <ol>
+    <li>Open the <strong>My Care Companion</strong> app from your home screen.</li>
+    <li>Tap <strong>Sign Up</strong>.</li>
+    <li>Enter your name, email, and a password.</li>
+    <li>You'll be asked to set up multi-factor authentication (MFA). Choose either a code sent by email or an authenticator app — both work fine.</li>
+    <li>You'll land on the dashboard.</li>
+  </ol>
+
+  <div class="screenshot">
+    <strong>[Screenshot: Mobile app sign-up screen]</strong>
+    <em>Shows the email/password form, the "Sign Up" button, and the company logo.</em>
+  </div>
+
+  <h3>On the web</h3>
+  <p>Open <strong>https://dev.mycarecompanion.com</strong> in your browser, click <strong>Sign Up</strong>, and follow the same steps. You can use either device interchangeably.</p>
+
+  <div class="screenshot">
+    <strong>[Screenshot: Web sign-up page]</strong>
+    <em>Same fields, larger layout. Includes the same MFA step.</em>
+  </div>
+
+  <!-- ============== 4 ============== -->
+  <h2>4 · Adding your first child</h2>
+  <p>My Care Companion is built around tracking one or more children. After you sign up:</p>
+  <ol>
+    <li>From the dashboard, tap or click <strong>Add a child</strong>.</li>
+    <li>Enter their name, date of birth, and any conditions or diagnoses you want the app to be aware of.</li>
+    <li>Save. You'll be returned to the dashboard, now with that child visible.</li>
+  </ol>
+
+  <div class="screenshot">
+    <strong>[Screenshot: Add Child form]</strong>
+    <em>Name, DOB, conditions multi-select. Big "Save" button at the bottom.</em>
+  </div>
+
+  <p>You can add medications, log behaviors, sleep, meals — whatever you want to track — from the child's dashboard. Take your time exploring; the app is designed so you don't have to log everything to get value from logging something.</p>
+
+  <!-- ============== 5 ============== -->
+  <h2>5 · Filing a bug report (this is the most important section)</h2>
+  <p>If something looks wrong, doesn't work the way you expected, or crashes — please report it. Even small things help. Bug reports from beta users are the single most valuable thing you can give us during this phase.</p>
+
+  <ol>
+    <li>From any screen, tap or click <strong>Support</strong> in the menu.</li>
+    <li>Tap the <strong>+ New Ticket</strong> button.</li>
+    <li>In the <strong>Type</strong> dropdown, choose <strong>Bug Report</strong>.</li>
+    <li>Fill in the subject and a description of what happened.</li>
+    <li>Use the <strong>Attachments</strong> area to add screenshots or a short video. The beta supports both file upload and (on desktop) <strong>screen + microphone recording</strong> — that last one is incredibly useful: it lets you talk through what you're seeing while we watch the same thing.</li>
+    <li>Submit.</li>
+  </ol>
+
+  <div class="screenshot">
+    <strong>[Screenshot: Support page with "+ New Ticket" form open, type dropdown showing Bug Report selected]</strong>
+    <em>Shows the priority selector, attachment widget with a 📎 button, and (on desktop) the 🎬 Record screen + mic button.</em>
+  </div>
+
+  <div class="callout warn">
+    <strong>Heads up about privacy:</strong> Screenshots and screen recordings may capture personal health information. Our support team is allowed to see this material to help you, but every attachment is <strong>permanently deleted from our servers</strong> the moment we close your ticket. You can read more about this in the consent dialog the first time you attach something.
+  </div>
+
+  <h3>What "good" looks like</h3>
+  <ul>
+    <li><strong>What you were doing</strong> when you noticed the problem ("I was trying to log a sleep entry…")</li>
+    <li><strong>What you expected to happen</strong> ("…I expected the form to save.")</li>
+    <li><strong>What actually happened</strong> ("…the page froze and I had to refresh.")</li>
+    <li>A screenshot or 30-second screen recording showing it.</li>
+  </ul>
+
+  <!-- ============== 6 ============== -->
+  <h2>6 · Submitting a feature request</h2>
+  <p>If there's something you wish the app did, file it the same way:</p>
+  <ol>
+    <li>Support &rarr; + New Ticket.</li>
+    <li>Type: <strong>Feature Request</strong>.</li>
+    <li>Describe what you'd like to be able to do, and why.</li>
+  </ol>
+  <p>Genuinely good ideas get added to our public product roadmap, and you'll get a notification when the feature ships — first to dev, then to production.</p>
+
+  <div class="screenshot">
+    <strong>[Screenshot: New ticket form with Type dropdown showing Feature Request highlighted]</strong>
+    <em>Same form as a bug report, just a different type. The Attachments area still works if you want to mock up your idea.</em>
+  </div>
+
+  <!-- ============== 7 ============== -->
+  <h2>7 · Where to get help</h2>
+  <p>If you get stuck on any of this, you have three ways to reach us:</p>
+  <ul>
+    <li>Send a Support ticket from the app (any type).</li>
+    <li>Reply to whoever invited you — they'll route the message to the right person.</li>
+    <li>Email <strong>support@mycarecompanion.net</strong>.</li>
+  </ul>
+
+  <h3>Leaving the beta</h3>
+  <p>If you ever want to stop receiving the beta:</p>
+  <ol>
+    <li>Open the <strong>TestFlight</strong> app on your iPhone.</li>
+    <li>Tap <strong>My Care Companion</strong>.</li>
+    <li>Scroll to the bottom and tap <strong>Stop Testing</strong>.</li>
+  </ol>
+  <p>Your account, data, and family stay intact — you'll just stop receiving pre-release builds. When the app launches publicly you can re-install from the regular App Store and pick right back up.</p>
+
+  <div class="signoff">
+    <p>Thank you for being part of this — beta users are the reason My Care Companion gets to be a thoughtful, careful product instead of a generic one.</p>
+    <p><strong>— The My Care Companion team</strong></p>
+    <p class="small">v1 of this guide · last updated May 1, 2026</p>
+  </div>
+
+</main>
+
+</body>
+</html>

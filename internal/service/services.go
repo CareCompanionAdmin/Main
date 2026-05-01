@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"log"
 
 	"carecompanion/internal/config"
 	"carecompanion/internal/database"
@@ -37,6 +38,8 @@ type Services struct {
 	TicketDuplicate   *TicketDuplicateService
 	TicketAttachment  *TicketAttachmentService
 	AttachmentStorage AttachmentStorage
+	AppStoreConnect   *AppStoreConnectService
+	Beta              *BetaService
 }
 
 // NewServices creates all services with their dependencies
@@ -53,6 +56,18 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	pushService.InitFirebase(cfg.FCM.ServiceAccountKeyFile)
 
 	attachmentStorage := NewAttachmentStorage(&cfg.Storage)
+
+	// App Store Connect — nil when env vars are unset; BetaService falls back
+	// to manual-add in that case rather than failing.
+	ascService, ascErr := NewAppStoreConnectService(
+		cfg.AppStoreConnect.IssuerID,
+		cfg.AppStoreConnect.KeyID,
+		cfg.AppStoreConnect.KeyPath,
+		cfg.AppStoreConnect.BetaGroupName,
+	)
+	if ascErr != nil {
+		log.Printf("[ASC] App Store Connect init failed; beta auto-add disabled: %v", ascErr)
+	}
 
 	// Wire push notifications into alert service (avoids circular constructor deps)
 	alertService.SetPushService(pushService, repos.Family)
@@ -85,6 +100,8 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		TicketDuplicate:   NewTicketDuplicateService(repos.Admin, repos.Roadmap, emailService),
 		AttachmentStorage: attachmentStorage,
 		TicketAttachment:  NewTicketAttachmentService(repos.TicketAttachment, repos.Admin, attachmentStorage, cfg.Storage.AttachmentMaxBytes, cfg.Storage.AttachmentMaxPerTkt),
+		AppStoreConnect:   ascService,
+		Beta:              NewBetaService(repos.BetaInvitation, emailService, ascService, cfg.App.URL, "/static/docs/beta-onboarding.html"),
 	}
 	// Wire attachment service into the close paths so PHI is purged on
 	// every transition to closed/resolved (manual, dup, or promote).
