@@ -169,6 +169,9 @@ func main() {
 	// Wire beta-invitation service into admin handlers
 	adminHandler.SetBetaService(services.Beta)
 
+	// Wire bounty-rewards service into admin handlers
+	adminHandler.SetBountyService(services.Bounty)
+
 	// Initialize Development Mode service for SSH access control
 	// In production, devServerURL is set so session ops call the dev server remotely.
 	// On the dev server, devServerURL is empty so ops run locally.
@@ -229,6 +232,9 @@ func main() {
 	// Public beta onboarding page (no auth — tokenized URL is the access control)
 	r.Get("/beta/onboard/{token}", adminHandler.BetaOnboardPage)
 	r.Post("/beta/onboard/{token}", adminHandler.BetaOnboardSubmit)
+
+	// Public bounty/rewards criteria page (no auth — purely informational)
+	r.Get("/rewards", adminHandler.RewardsPage)
 
 	// File transfer utility (keep for development)
 	r.Get("/filextfer", handleFileTransfer)

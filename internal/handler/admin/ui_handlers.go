@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"carecompanion/internal/middleware"
+	"carecompanion/internal/repository"
 	"carecompanion/internal/service"
 )
 
@@ -73,6 +75,27 @@ var templateFuncs = template.FuncMap{
 			}
 		}
 		return s
+	},
+	"candidateJSON": func(c repository.BountyCandidate) template.JS {
+		// Marshal a bounty candidate to JS for inline onclick attributes.
+		// Returns template.JS so html/template doesn't escape the braces.
+		out := map[string]interface{}{
+			"type":             c.Type,
+			"recipient_user_id": c.RecipientUserID.String(),
+			"recipient_email":  c.RecipientEmail,
+			"subject":          c.Subject,
+		}
+		if c.TicketID.Valid {
+			out["ticket_id"] = c.TicketID.UUID.String()
+		}
+		if c.RoadmapItemID.Valid {
+			out["roadmap_item_id"] = c.RoadmapItemID.UUID.String()
+		}
+		if c.SourceTicketID.Valid {
+			out["source_ticket_id"] = c.SourceTicketID.UUID.String()
+		}
+		b, _ := json.Marshal(out)
+		return template.JS(b)
 	},
 	"formatDateTime": func(t interface{}) string {
 		if t == nil {

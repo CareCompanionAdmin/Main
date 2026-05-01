@@ -64,6 +64,18 @@ func (h *Handler) lookupInvitation(r *http.Request, token uuid.UUID) (*repositor
 	return h.betaService.GetByToken(r.Context(), token)
 }
 
+// RewardsPage renders the public bounty-program criteria page. No auth.
+// Mounted at GET /rewards from main.go. Pure informational content; the
+// real award decisions happen in /admin/marketing/bounty.
+func (h *Handler) RewardsPage(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := parsePublicTemplate("rewards.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_ = tmpl.ExecuteTemplate(w, "rewards.html", nil)
+}
+
 // BetaOnboardSubmit accepts the form POST. Mounted at POST /beta/onboard/{token}.
 func (h *Handler) BetaOnboardSubmit(w http.ResponseWriter, r *http.Request) {
 	if h.betaService == nil {

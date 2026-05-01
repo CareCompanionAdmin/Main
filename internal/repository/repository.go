@@ -353,6 +353,7 @@ type Repositories struct {
 	Roadmap      RoadmapRepository    // Product roadmap items
 	TicketAttachment TicketAttachmentRepository // Per-ticket file attachments
 	BetaInvitation   BetaInvitationRepository   // Marketing-managed TestFlight beta invites
+	BountyAward      BountyAwardRepository      // Monthly top-5+5 bounty rewards
 }
 
 // NewRepositories creates all repository implementations
@@ -380,5 +381,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Roadmap:      NewRoadmapRepo(db),
 		TicketAttachment: NewTicketAttachmentRepo(db),
 		BetaInvitation:   NewBetaInvitationRepo(db),
+		BountyAward:      NewBountyAwardRepo(db),
 	}
 }

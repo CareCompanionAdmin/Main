@@ -1,0 +1,227 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Bounty Program</h1>
+        <p class="text-sm text-gray-500 mt-1">Each calendar month, select up to <strong>5 bug reports</strong> and <strong>5 feature requests</strong> as the most significant. Each selection earns the submitter a 1-month free promo code locked to their account. Submissions you don't select can still get a "thanks anyway" canned message — they keep the lights on.</p>
+    </div>
+    <div class="text-right text-sm">
+        <p class="text-gray-500">This cycle</p>
+        <p class="font-bold text-gray-800">{{.Data.month.Format "January 2006"}}</p>
+    </div>
+</div>
+
+<!-- Cap progress -->
+<div class="grid grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 flex items-center justify-between">
+        <div>
+            <p class="text-xs uppercase tracking-wider text-gray-500 font-bold">Bugs selected this month</p>
+            <p class="text-2xl font-bold text-gray-800 mt-1">{{.Data.bugs_selected}} <span class="text-base font-normal text-gray-500">of {{.Data.bug_cap}}</span></p>
+        </div>
+        <div class="w-16 h-16 rounded-full grid place-items-center text-2xl"
+             style="background: conic-gradient(#dc2626 calc({{.Data.bugs_selected}}/{{.Data.bug_cap}} * 360deg), #fee2e2 0); position:relative;">
+            <span style="position:absolute;inset:6px;background:#fff;border-radius:50%;"></span>
+            <span style="position:relative;">🐛</span>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 flex items-center justify-between">
+        <div>
+            <p class="text-xs uppercase tracking-wider text-gray-500 font-bold">Features selected this month</p>
+            <p class="text-2xl font-bold text-gray-800 mt-1">{{.Data.feats_selected}} <span class="text-base font-normal text-gray-500">of {{.Data.feature_cap}}</span></p>
+        </div>
+        <div class="w-16 h-16 rounded-full grid place-items-center text-2xl"
+             style="background: conic-gradient(#7c3aed calc({{.Data.feats_selected}}/{{.Data.feature_cap}} * 360deg), #ede9fe 0); position:relative;">
+            <span style="position:absolute;inset:6px;background:#fff;border-radius:50%;"></span>
+            <span style="position:relative;">💡</span>
+        </div>
+    </div>
+</div>
+
+<!-- Eligible bugs -->
+<div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-gray-200 bg-red-50">
+        <h2 class="text-lg font-semibold text-red-800">🐛 Eligible bug reports (last 30 days)</h2>
+        <p class="text-xs text-red-700 mt-0.5">Resolved or closed bug-type tickets where this user was the canonical reporter (not a duplicate).</p>
+    </div>
+    {{if .Data.bugs}}
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <tr>
+                <th class="px-5 py-2 text-left">Subject</th>
+                <th class="px-5 py-2 text-left">Reporter</th>
+                <th class="px-5 py-2 text-left">Closed</th>
+                <th class="px-5 py-2 text-center">Dups</th>
+                <th class="px-5 py-2 text-right">Action</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200 text-sm">
+            {{range .Data.bugs}}
+            <tr class="hover:bg-red-50/40">
+                <td class="px-5 py-3"><div class="font-medium text-gray-900">{{.Subject}}</div></td>
+                <td class="px-5 py-3 text-gray-700">{{.RecipientEmail}}</td>
+                <td class="px-5 py-3 text-gray-500 text-xs">{{.ResolvedOrShipAt.Format "Jan 2"}}</td>
+                <td class="px-5 py-3 text-center">{{if gt .DupCount 0}}<span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">+{{.DupCount}}</span>{{end}}</td>
+                <td class="px-5 py-3 text-right">
+                    {{if .AlreadyAwarded}}
+                        <span class="text-xs px-2 py-1 rounded-full {{if eq .Decision "selected"}}bg-green-100 text-green-800{{else}}bg-gray-100 text-gray-700{{end}}">
+                            {{if eq .Decision "selected"}}✓ Selected{{else}}Thanks-anyway sent{{end}}
+                        </span>
+                    {{else}}
+                        <button onclick='selectCandidate({{candidateJSON .}})'
+                                class="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold">Select</button>
+                        <button onclick='thanksAnyway({{candidateJSON .}})'
+                                class="text-xs px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded ml-1">Thanks anyway</button>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="px-5 py-8 text-center text-gray-500 italic">No eligible bug reports this cycle.</p>
+    {{end}}
+</div>
+
+<!-- Eligible features -->
+<div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-gray-200 bg-purple-50">
+        <h2 class="text-lg font-semibold text-purple-800">💡 Eligible feature requests (last 30 days)</h2>
+        <p class="text-xs text-purple-700 mt-0.5">Roadmap items shipped to prod that came from a user feature request. All followers (canonical + duplicates) are eligible per item.</p>
+    </div>
+    {{if .Data.features}}
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <tr>
+                <th class="px-5 py-2 text-left">Feature</th>
+                <th class="px-5 py-2 text-left">Requester</th>
+                <th class="px-5 py-2 text-left">Shipped</th>
+                <th class="px-5 py-2 text-center">Followers</th>
+                <th class="px-5 py-2 text-right">Action</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200 text-sm">
+            {{range .Data.features}}
+            <tr class="hover:bg-purple-50/40">
+                <td class="px-5 py-3"><div class="font-medium text-gray-900">{{.Subject}}</div></td>
+                <td class="px-5 py-3 text-gray-700">{{.RecipientEmail}}</td>
+                <td class="px-5 py-3 text-gray-500 text-xs">{{.ResolvedOrShipAt.Format "Jan 2"}}</td>
+                <td class="px-5 py-3 text-center">{{if gt .DupCount 1}}<span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">{{.DupCount}}</span>{{else}}<span class="text-gray-400">1</span>{{end}}</td>
+                <td class="px-5 py-3 text-right">
+                    {{if .AlreadyAwarded}}
+                        <span class="text-xs px-2 py-1 rounded-full {{if eq .Decision "selected"}}bg-green-100 text-green-800{{else}}bg-gray-100 text-gray-700{{end}}">
+                            {{if eq .Decision "selected"}}✓ Selected{{else}}Thanks-anyway sent{{end}}
+                        </span>
+                    {{else}}
+                        <button onclick='selectCandidate({{candidateJSON .}})'
+                                class="text-xs px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold">Select</button>
+                        <button onclick='thanksAnyway({{candidateJSON .}})'
+                                class="text-xs px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded ml-1">Thanks anyway</button>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="px-5 py-8 text-center text-gray-500 italic">No eligible feature requests this cycle (no roadmap items shipped to prod from a user request in the last 30 days).</p>
+    {{end}}
+</div>
+
+<!-- This month so far -->
+<div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-gray-200 bg-emerald-50">
+        <h2 class="text-lg font-semibold text-emerald-800">Awards this month</h2>
+    </div>
+    {{if .Data.awards}}
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <tr>
+                <th class="px-5 py-2 text-left">Type</th>
+                <th class="px-5 py-2 text-left">Decision</th>
+                <th class="px-5 py-2 text-left">Recipient</th>
+                <th class="px-5 py-2 text-left">Subject</th>
+                <th class="px-5 py-2 text-left">Code</th>
+                <th class="px-5 py-2 text-left">When</th>
+                <th class="px-5 py-2 text-left">By</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {{range .Data.awards}}
+            <tr>
+                <td class="px-5 py-2">{{if eq .AwardType "bug"}}🐛{{else}}💡{{end}}</td>
+                <td class="px-5 py-2">
+                    <span class="text-xs px-2 py-0.5 rounded-full
+                        {{if eq .Decision "selected"}}bg-emerald-100 text-emerald-800{{else}}bg-gray-100 text-gray-700{{end}}">
+                        {{.Decision}}
+                    </span>
+                </td>
+                <td class="px-5 py-2 text-gray-700">{{.RecipientEmail}}</td>
+                <td class="px-5 py-2 text-gray-700">{{.Subject}}</td>
+                <td class="px-5 py-2 font-mono text-xs">{{if .PromoCode}}{{.PromoCode}}{{else}}<span class="text-gray-400">—</span>{{end}}</td>
+                <td class="px-5 py-2 text-xs text-gray-500">{{.AwardedAt.Format "Jan 2 15:04"}}</td>
+                <td class="px-5 py-2 text-xs text-gray-500">{{.AwardedByEmail}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="px-5 py-6 text-center text-gray-500 italic">No awards yet this month.</p>
+    {{end}}
+</div>
+
+<!-- History -->
+{{if .Data.history}}
+<details class="bg-white rounded-lg shadow overflow-hidden">
+    <summary class="px-5 py-3 cursor-pointer text-sm font-semibold text-gray-700 hover:bg-gray-50">Past awards (last 25)</summary>
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <tr>
+                <th class="px-5 py-2 text-left">Month</th>
+                <th class="px-5 py-2 text-left">Type</th>
+                <th class="px-5 py-2 text-left">Decision</th>
+                <th class="px-5 py-2 text-left">Recipient</th>
+                <th class="px-5 py-2 text-left">Subject</th>
+                <th class="px-5 py-2 text-left">Code</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {{range .Data.history}}
+            <tr>
+                <td class="px-5 py-2 text-xs text-gray-500">{{.AwardMonth.Format "Jan 2006"}}</td>
+                <td class="px-5 py-2">{{if eq .AwardType "bug"}}🐛{{else}}💡{{end}}</td>
+                <td class="px-5 py-2 text-xs">{{.Decision}}</td>
+                <td class="px-5 py-2 text-gray-700">{{.RecipientEmail}}</td>
+                <td class="px-5 py-2 text-gray-700">{{.Subject}}</td>
+                <td class="px-5 py-2 font-mono text-xs">{{if .PromoCode}}{{.PromoCode}}{{end}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</details>
+{{end}}
+
+<script>
+async function selectCandidate(c) {
+    if (!confirm('Select "' + c.subject + '" as one of this month\'s top reports?\n\nA promo code worth one free month will be issued to ' + c.recipient_email + ' and a thank-you message posted on their original ticket.')) return;
+    await postBounty('/api/admin/marketing/bounty/select', c);
+}
+
+async function thanksAnyway(c) {
+    if (!confirm('Send a "thanks anyway" message to ' + c.recipient_email + '?\n\nNo promo code will be issued. Their ticket will receive a friendly canned response.')) return;
+    await postBounty('/api/admin/marketing/bounty/thanks-anyway', c);
+}
+
+async function postBounty(url, c) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(c),
+    });
+    if (!res.ok) {
+        alert('Action failed: ' + (await res.text()));
+        return;
+    }
+    window.location.reload();
+}
+</script>
+{{end}}

@@ -40,6 +40,7 @@ type Services struct {
 	AttachmentStorage AttachmentStorage
 	AppStoreConnect   *AppStoreConnectService
 	Beta              *BetaService
+	Bounty            *BountyService
 }
 
 // NewServices creates all services with their dependencies
@@ -102,6 +103,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		TicketAttachment:  NewTicketAttachmentService(repos.TicketAttachment, repos.Admin, attachmentStorage, cfg.Storage.AttachmentMaxBytes, cfg.Storage.AttachmentMaxPerTkt),
 		AppStoreConnect:   ascService,
 		Beta:              NewBetaService(repos.BetaInvitation, emailService, ascService, cfg.App.URL, "/static/docs/beta-onboarding.html"),
+		Bounty:            NewBountyService(repos.BountyAward, repos.Admin, emailService, db),
 	}
 	// Wire attachment service into the close paths so PHI is purged on
 	// every transition to closed/resolved (manual, dup, or promote).

@@ -19,11 +19,17 @@ type Handler struct {
 	dupService        *service.TicketDuplicateService
 	attachService     *service.TicketAttachmentService
 	betaService       *service.BetaService
+	bountyService     *service.BountyService
 }
 
 // SetBetaService wires the beta-invite orchestration service.
 func (h *Handler) SetBetaService(s *service.BetaService) {
 	h.betaService = s
+}
+
+// SetBountyService wires the monthly bounty-rewards service.
+func (h *Handler) SetBountyService(s *service.BountyService) {
+	h.bountyService = s
 }
 
 // SetPushService sets the push notification service for admin handlers
@@ -200,6 +206,11 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/beta/invitations", h.ListBetaInvitations)
 		r.Post("/beta/invitations", h.CreateBetaInvitation)
 		r.Post("/beta/invitations/{id}/resend", h.ResendBetaInvitation)
+
+		// Bounty program (monthly top-5+5 rewards)
+		r.Get("/bounty/candidates", h.ListBountyCandidates)
+		r.Post("/bounty/select", h.SelectBountyCandidate)
+		r.Post("/bounty/thanks-anyway", h.ThanksAnywayBountyCandidate)
 	})
 
 	// Super admin marketing material management (edit access)
@@ -277,6 +288,8 @@ func (h *Handler) UIRoutes() chi.Router {
 			r.Get("/materials", h.MaterialsPage)
 			// Beta program page
 			r.Get("/marketing/beta", h.BetaProgramPage)
+			// Bounty program page
+			r.Get("/marketing/bounty", h.BountyProgramPage)
 		})
 
 		// Promo codes - accessible by both super_admin and marketing (view only for marketing)
