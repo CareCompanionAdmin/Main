@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CareCompanion — Matty's Garden</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    background:
+      radial-gradient(circle at 10% 0%, #fef3c7 0%, transparent 35%),
+      radial-gradient(circle at 95% 8%, #d1fae5 0%, transparent 35%),
+      radial-gradient(circle at 50% 110%, #fce7f3 0%, transparent 40%),
+      linear-gradient(180deg, #fdfcf6 0%, #f4f7f0 100%);
+    color: #2f3a2e;
+    min-height: 100vh;
+  }
+  .display { font-family: 'Fraunces', serif; font-optical-sizing: auto; }
+  .handwritten { font-family: 'Caveat', cursive; }
+
+  .plant-card {
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: 28px;
+    box-shadow: 0 1px 2px rgba(60,80,40,0.04), 0 12px 28px -10px rgba(60,80,40,0.12);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .plant-card:hover { transform: translateY(-3px); box-shadow: 0 1px 2px rgba(60,80,40,0.04), 0 18px 36px -10px rgba(60,80,40,0.18); }
+
+  /* Soft growth ring (no charts, no numbers shouting) */
+  .grow-ring {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: conic-gradient(var(--c, #84cc16) calc(var(--p, 0.75) * 360deg), #f1f5e8 0);
+    display: grid; place-items: center;
+    position: relative;
+  }
+  .grow-ring::before {
+    content: ""; position: absolute; inset: 8px; background: #fff; border-radius: 50%;
+  }
+  .grow-ring > * { position: relative; z-index: 1; }
+
+  .bloom {
+    background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 50%, #fde68a 100%);
+    border: 1px solid rgba(202,138,4,0.18);
+  }
+
+  .quick-btn {
+    background: rgba(255,255,255,0.82);
+    border: 1.5px solid rgba(132,204,22,0.25);
+    border-radius: 18px;
+    transition: all .18s ease;
+  }
+  .quick-btn:hover { background: #fff; border-color: #84cc16; transform: translateY(-1px); }
+  .quick-btn .icon { font-size: 28px; }
+
+  .sky {
+    background: linear-gradient(180deg, #ddeaf6 0%, #fef9ed 100%);
+    border-radius: 32px 32px 60% 60% / 32px 32px 16% 16%;
+  }
+
+  /* gentle fade-in for confirmation toasts */
+  @keyframes pop { 0% { transform: translateY(8px) scale(0.96); opacity: 0; } 60% { transform: translateY(-2px) scale(1.02); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+  .pop { animation: pop .35s ease-out; }
+
+  /* checked state for med checkboxes */
+  .med-row.done { opacity: 0.55; text-decoration: line-through; }
+  .med-row.done .check { background: #84cc16; border-color: #84cc16; color: #fff; }
+  .check {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid #cbd5b0; background: #fff;
+    display: grid; place-items: center; cursor: pointer;
+    transition: all .15s ease; font-size: 16px; line-height: 1;
+  }
+  .check:hover { border-color: #84cc16; }
+</style>
+</head>
+<body>
+
+<!-- ====== sky / header ====== -->
+<header class="max-w-3xl mx-auto px-6 pt-8">
+  <div class="sky px-6 pt-6 pb-12 relative overflow-hidden">
+    <!-- soft sun + cloud -->
+    <svg width="120" height="120" viewBox="0 0 120 120" class="absolute right-2 top-2 opacity-90">
+      <circle cx="40" cy="42" r="22" fill="#fde68a" />
+      <circle cx="38" cy="40" r="22" fill="#fcd34d" opacity="0.7"/>
+      <ellipse cx="76" cy="74" rx="34" ry="20" fill="#fff"/>
+      <ellipse cx="58" cy="72" rx="18" ry="14" fill="#fff"/>
+      <ellipse cx="92" cy="68" rx="18" ry="13" fill="#fff"/>
+    </svg>
+    <p class="text-xs uppercase tracking-widest text-emerald-800/70 font-bold">Friday · May 1</p>
+    <h1 class="display text-4xl mt-2 text-stone-800">Matty's garden today</h1>
+    <p class="display italic text-stone-600 mt-1">Things are growing. <span class="handwritten text-emerald-700 text-2xl">5 calm days in a row.</span></p>
+  </div>
+</header>
+
+<!-- ====== bloom · auto-detected positive ====== -->
+<section class="max-w-3xl mx-auto px-6 pt-6">
+  <div class="bloom rounded-3xl p-5 flex items-start gap-4">
+    <div class="text-4xl">🌼</div>
+    <div class="flex-1">
+      <p class="text-xs uppercase tracking-wider text-amber-800 font-bold">Today's bloom</p>
+      <p class="display text-xl text-stone-800 mt-0.5">Matty has had a calm streak this week — mood is steady at 8/10.</p>
+      <p class="text-sm text-stone-600 mt-1">Whatever the routine is right now, it's working. Worth holding onto.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== four plants ====== -->
+<section class="max-w-3xl mx-auto px-6 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+  <!-- 🌱 Meds plant -->
+  <div class="plant-card p-5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-blue-100 grid place-items-center text-2xl">💊</div>
+        <div>
+          <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Meds today</p>
+          <p class="display text-lg text-stone-800 leading-tight">3 of 5 given</p>
+        </div>
+      </div>
+      <div class="grow-ring" style="--c:#3b82f6; --p:0.6;">
+        <span class="display text-xl text-blue-700 font-medium">3<span class="text-sm text-blue-300">/5</span></span>
+      </div>
+    </div>
+    <div class="mt-4 text-sm text-stone-600">
+      <p>Next: <strong class="text-stone-800">Clonidine 0.1 mg</strong> · 4:00 pm</p>
+    </div>
+    <button onclick="openMedsSheet()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-full transition">
+      I gave the next dose
+    </button>
+  </div>
+
+  <!-- 🌙 Sleep plant -->
+  <div class="plant-card p-5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-indigo-100 grid place-items-center text-2xl">🌙</div>
+        <div>
+          <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Last night</p>
+          <p class="display text-lg text-stone-800 leading-tight">9h 15m · restful</p>
+        </div>
+      </div>
+      <div class="grow-ring" style="--c:#6366f1; --p:0.92;">
+        <span class="display text-2xl text-indigo-700 font-medium">9<span class="text-base text-indigo-300">h</span></span>
+      </div>
+    </div>
+    <div class="mt-4 text-sm text-stone-600">
+      <p>Bedtime 9:15 pm · woke 6:30 am</p>
+      <p class="italic text-stone-500 mt-0.5">"Fell asleep easily."</p>
+    </div>
+    <button onclick="toast('Got it — added a note about last night.')" class="mt-4 w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold py-2.5 rounded-full transition">
+      Add a sleep note
+    </button>
+  </div>
+
+  <!-- 💛 Mood plant -->
+  <div class="plant-card p-5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-amber-100 grid place-items-center text-2xl">💛</div>
+        <div>
+          <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">How Matty feels</p>
+          <p class="display text-lg text-stone-800 leading-tight">Calm · 8/10</p>
+        </div>
+      </div>
+      <div class="grow-ring" style="--c:#f59e0b; --p:0.8;">
+        <span class="text-3xl">😊</span>
+      </div>
+    </div>
+    <div class="mt-4 flex gap-2">
+      <button onclick="logMood('rough')"  class="flex-1 quick-btn py-2 text-sm">😞<br><span class="text-xs">Rough</span></button>
+      <button onclick="logMood('okay')"   class="flex-1 quick-btn py-2 text-sm">😐<br><span class="text-xs">Okay</span></button>
+      <button onclick="logMood('good')"   class="flex-1 quick-btn py-2 text-sm">🙂<br><span class="text-xs">Good</span></button>
+      <button onclick="logMood('great')"  class="flex-1 quick-btn py-2 text-sm">😊<br><span class="text-xs">Great</span></button>
+    </div>
+  </div>
+
+  <!-- 🌟 Bright spot plant -->
+  <div class="plant-card p-5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-rose-100 grid place-items-center text-2xl">🌟</div>
+        <div>
+          <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Worth noticing</p>
+          <p class="display text-lg text-stone-800 leading-tight">Routine is working</p>
+        </div>
+      </div>
+      <div class="grow-ring" style="--c:#f43f5e; --p:0.85;">
+        <span class="text-3xl">✨</span>
+      </div>
+    </div>
+    <div class="mt-4 text-sm text-stone-600">
+      <p>Clonidine + Trazodone combo is helping Matty wind down. Sleep is steady — no waking, no nightmares.</p>
+    </div>
+    <button onclick="toast('Saved to Matty\\'s journal.')" class="mt-4 w-full bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold py-2.5 rounded-full transition">
+      Save this to journal
+    </button>
+  </div>
+
+</section>
+
+<!-- ====== seeds (quick add) ====== -->
+<section class="max-w-3xl mx-auto px-6 pt-8 pb-32">
+  <p class="handwritten text-3xl text-emerald-800 mb-3">Plant a seed…</p>
+  <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+    <button onclick="toast('Meal note saved.')"     class="quick-btn py-4 text-center"><div class="icon">🍽️</div><div class="text-xs mt-1 font-semibold">Meal</div></button>
+    <button onclick="toast('Behavior logged.')"     class="quick-btn py-4 text-center"><div class="icon">🧠</div><div class="text-xs mt-1 font-semibold">Behavior</div></button>
+    <button onclick="toast('Sensory entry added.')" class="quick-btn py-4 text-center"><div class="icon">🌀</div><div class="text-xs mt-1 font-semibold">Sensory</div></button>
+    <button onclick="toast('Therapy note saved.')"  class="quick-btn py-4 text-center"><div class="icon">🤝</div><div class="text-xs mt-1 font-semibold">Therapy</div></button>
+    <button onclick="toast('Bowel log added.')"     class="quick-btn py-4 text-center"><div class="icon">💩</div><div class="text-xs mt-1 font-semibold">Bowel</div></button>
+    <button onclick="toast('Photo saved.')"         class="quick-btn py-4 text-center"><div class="icon">📷</div><div class="text-xs mt-1 font-semibold">Photo</div></button>
+  </div>
+  <p class="text-center text-xs text-stone-500 italic mt-6">You don't have to log everything. Even one note helps us notice patterns.</p>
+</section>
+
+<!-- ====== meds bottom sheet ====== -->
+<div id="medsBackdrop" class="hidden fixed inset-0 bg-stone-900/40 z-40" onclick="closeMedsSheet()"></div>
+<div id="medsSheet" class="hidden fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-3xl p-6 shadow-2xl max-w-3xl mx-auto pop">
+  <div class="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mb-4"></div>
+  <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Today · Friday</p>
+  <h3 class="display text-2xl text-stone-800 mt-1">Mark Matty's meds</h3>
+  <p class="text-sm text-stone-500 mb-5">Tap each one as you give it. We'll save the time automatically.</p>
+
+  <div id="medList" class="space-y-2">
+    <!-- populated below -->
+  </div>
+
+  <div class="flex gap-3 mt-6">
+    <button onclick="closeMedsSheet()" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold py-3 rounded-full">Done</button>
+  </div>
+</div>
+
+<!-- ====== toast ====== -->
+<div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-5 py-3 rounded-full shadow-lg z-50 pop">
+  <span id="toastText"></span>
+</div>
+
+<script>
+  const meds = [
+    { name: 'Leucovorin',   dose: '15 mg',  time: '8:00 am',  done: true  },
+    { name: 'Fluoxetine',   dose: '20 mg',  time: '8:00 am',  done: true  },
+    { name: 'Clonidine',    dose: '0.1 mg', time: '12:00 pm', done: true  },
+    { name: 'Clonidine',    dose: '0.1 mg', time: '4:00 pm',  done: false },
+    { name: 'Melatonin',    dose: '1 mg',   time: '8:30 pm',  done: false },
+    { name: 'Trazodone',    dose: '50 mg',  time: '9:00 pm',  done: false },
+  ];
+
+  function renderMeds() {
+    const list = document.getElementById('medList');
+    list.innerHTML = '';
+    meds.forEach((m, i) => {
+      const row = document.createElement('div');
+      row.className = 'med-row flex items-center gap-4 p-3 bg-stone-50 rounded-2xl' + (m.done ? ' done' : '');
+      row.innerHTML = `
+        <div class="check" data-i="${i}">${m.done ? '✓' : ''}</div>
+        <div class="flex-1">
+          <p class="font-semibold text-stone-800">${m.name} · <span class="text-stone-500">${m.dose}</span></p>
+          <p class="text-xs text-stone-500">${m.time}</p>
+        </div>
+      `;
+      row.querySelector('.check').onclick = () => {
+        meds[i].done = !meds[i].done;
+        renderMeds();
+        if (meds[i].done) toast(`${m.name} marked given.`);
+      };
+      list.appendChild(row);
+    });
+  }
+
+  function openMedsSheet() {
+    renderMeds();
+    document.getElementById('medsBackdrop').classList.remove('hidden');
+    document.getElementById('medsSheet').classList.remove('hidden');
+  }
+  function closeMedsSheet() {
+    document.getElementById('medsBackdrop').classList.add('hidden');
+    document.getElementById('medsSheet').classList.add('hidden');
+  }
+
+  function logMood(level) {
+    const labels = { rough: 'Rough day noted — we hear you.', okay: 'Logged: today is okay.', good: 'Logged: today is good.', great: 'Logged: today is great. 🌟' };
+    toast(labels[level]);
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastText').textContent = msg;
+    t.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.add('hidden'), 2200);
+  }
+</script>
+
+</body>
+</html>

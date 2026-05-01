@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CareCompanion — Clinical Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #fafafa; color: #0f172a; font-size: 13px; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
+  .label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; font-weight: 600; }
+  .kpi-num { font-family: 'Inter', sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .row:hover { background: #f8fafc; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .spark path { fill: none; stroke-width: 1.5; }
+  .pill { font-size: 10px; padding: 1px 7px; border-radius: 4px; font-weight: 600; }
+  .accent { color: #0d9488; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- top bar -->
+<header class="border-b border-slate-200 bg-white">
+  <div class="max-w-7xl mx-auto px-5 h-12 flex items-center gap-4">
+    <span class="font-bold tracking-tight">CareCompanion</span>
+    <span class="text-slate-300">/</span>
+    <span class="text-slate-600">Family</span>
+    <span class="text-slate-300">/</span>
+    <button class="flex items-center gap-1.5 hover:bg-slate-50 px-2 py-0.5 rounded">
+      <span class="w-5 h-5 rounded-full bg-rose-200 flex items-center justify-center text-rose-800 font-semibold text-[10px]">E</span>
+      <span class="font-semibold">Emma Chen</span>
+      <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 5l3 3 3-3" stroke="#94a3b8" stroke-width="1.5" fill="none"/></svg>
+    </button>
+    <span class="text-slate-400">· 6y · ASD, SPD</span>
+    <div class="ml-auto flex items-center gap-2">
+      <button class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 rounded">Today</button>
+      <button class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 rounded">7d</button>
+      <button class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 rounded">30d</button>
+      <button class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 rounded">90d</button>
+      <span class="w-px h-4 bg-slate-200 mx-1"></span>
+      <button class="px-2.5 py-1 text-slate-600 hover:bg-slate-50 rounded">Reports</button>
+      <button class="bg-teal-700 hover:bg-teal-800 text-white px-3 py-1 rounded font-medium">+ Log</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-5 py-4 space-y-4">
+
+  <!-- KPI strip -->
+  <section class="grid grid-cols-5 gap-3">
+    <div class="panel p-4">
+      <p class="label">Mood score · today</p>
+      <div class="flex items-baseline gap-2 mt-1">
+        <span class="kpi-num text-3xl font-bold">72</span>
+        <span class="pill bg-emerald-50 text-emerald-700">+12 wk</span>
+      </div>
+      <svg viewBox="0 0 100 24" class="spark w-full h-5 mt-2"><path stroke="#0d9488" d="M0,16 L14,18 L28,8 L42,12 L56,6 L70,4 L84,3 L100,3"/></svg>
+    </div>
+    <div class="panel p-4">
+      <p class="label">Sleep · last night</p>
+      <div class="flex items-baseline gap-2 mt-1">
+        <span class="kpi-num text-3xl font-bold">10:30</span>
+        <span class="text-xs text-slate-500">hrs</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">1 waking · quality good</p>
+    </div>
+    <div class="panel p-4">
+      <p class="label">Med adherence · 7d</p>
+      <div class="flex items-baseline gap-2 mt-1">
+        <span class="kpi-num text-3xl font-bold">93<span class="text-lg text-slate-400">%</span></span>
+        <span class="pill bg-emerald-50 text-emerald-700">13/14</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">1 missed Tue evening</p>
+    </div>
+    <div class="panel p-4">
+      <p class="label">Active alerts</p>
+      <div class="flex items-baseline gap-2 mt-1">
+        <span class="kpi-num text-3xl font-bold text-rose-600">1</span>
+        <span class="pill bg-rose-50 text-rose-700">Sensory</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">Stimming +40% wk</p>
+    </div>
+    <div class="panel p-4">
+      <p class="label">Last log</p>
+      <div class="flex items-baseline gap-2 mt-1">
+        <span class="kpi-num text-3xl font-bold">1h</span>
+        <span class="text-xs text-slate-500">ago</span>
+      </div>
+      <p class="text-xs text-slate-500 mt-1">Sensory · 1:00 pm</p>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-12 gap-4">
+
+    <!-- categories grid -->
+    <section class="panel col-span-7 p-4">
+      <div class="flex items-center justify-between mb-3">
+        <p class="font-semibold">Categories <span class="text-slate-400 font-normal">· 7-day trend</span></p>
+        <div class="flex items-center gap-3 text-xs text-slate-500">
+          <span class="flex items-center gap-1"><span class="dot bg-emerald-500"></span>Improving</span>
+          <span class="flex items-center gap-1"><span class="dot bg-amber-500"></span>Stable</span>
+          <span class="flex items-center gap-1"><span class="dot bg-rose-500"></span>Worsening</span>
+        </div>
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-slate-500 border-b border-slate-200">
+            <th class="font-medium pb-2">Category</th>
+            <th class="font-medium pb-2 w-24">Today</th>
+            <th class="font-medium pb-2">Trend</th>
+            <th class="font-medium pb-2 w-16 text-right">7d Δ</th>
+            <th class="font-medium pb-2 w-12 text-center">·</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr class="row">
+            <td class="py-2 font-medium">Behavior</td>
+            <td class="mono">7 / 10</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#10b981" d="M0,12 L14,14 L28,4 L42,8 L56,3 L70,2 L84,1 L100,1"/></svg></td>
+            <td class="mono text-right text-emerald-700">+18%</td>
+            <td class="text-center"><span class="dot bg-emerald-500"></span></td>
+          </tr>
+          <tr class="row">
+            <td class="py-2 font-medium">Sleep</td>
+            <td class="mono">10h 30m</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#a855f7" d="M0,6 L14,8 L28,10 L42,7 L56,5 L70,6 L84,3 L100,4"/></svg></td>
+            <td class="mono text-right text-emerald-700">+4%</td>
+            <td class="text-center"><span class="dot bg-emerald-500"></span></td>
+          </tr>
+          <tr class="row">
+            <td class="py-2 font-medium">Diet</td>
+            <td class="mono">Normal</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#10b981" d="M0,8 L14,7 L28,5 L42,4 L56,6 L70,3 L84,3 L100,4"/></svg></td>
+            <td class="mono text-right text-emerald-700">+6%</td>
+            <td class="text-center"><span class="dot bg-emerald-500"></span></td>
+          </tr>
+          <tr class="row bg-rose-50/40">
+            <td class="py-2 font-medium">Sensory</td>
+            <td class="mono">4 / 5</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#f97316" d="M0,4 L14,6 L28,12 L42,14 L56,11 L70,8 L84,6 L100,5"/></svg></td>
+            <td class="mono text-right text-rose-700">−12%</td>
+            <td class="text-center"><span class="dot bg-rose-500"></span></td>
+          </tr>
+          <tr class="row">
+            <td class="py-2 font-medium">Speech</td>
+            <td class="mono text-slate-400">— no log</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#14b8a6" d="M0,10 L14,8 L28,7 L42,7 L56,6 L70,5 L84,5 L100,4"/></svg></td>
+            <td class="mono text-right text-emerald-700">+9%</td>
+            <td class="text-center"><span class="dot bg-emerald-500"></span></td>
+          </tr>
+          <tr class="row">
+            <td class="py-2 font-medium">Social</td>
+            <td class="mono">3 / 5</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#06b6d4" d="M0,8 L14,8 L28,7 L42,5 L56,4 L70,5 L84,3 L100,3"/></svg></td>
+            <td class="mono text-right text-emerald-700">+5%</td>
+            <td class="text-center"><span class="dot bg-emerald-500"></span></td>
+          </tr>
+          <tr class="row">
+            <td class="py-2 font-medium">Bowel</td>
+            <td class="mono text-slate-400">—</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#d97706" d="M0,8 L14,7 L28,8 L42,7 L56,7 L70,8 L84,8 L100,7"/></svg></td>
+            <td class="mono text-right text-slate-500">±0</td>
+            <td class="text-center"><span class="dot bg-amber-500"></span></td>
+          </tr>
+          <tr class="row">
+            <td class="py-2 font-medium">Therapy</td>
+            <td class="mono text-slate-400">—</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#6366f1" d="M0,10 L14,10 L28,8 L42,6 L56,6 L70,4 L84,4 L100,3"/></svg></td>
+            <td class="mono text-right text-emerald-700">+7%</td>
+            <td class="text-center"><span class="dot bg-emerald-500"></span></td>
+          </tr>
+          <tr class="row">
+            <td class="py-2 font-medium">Seizure</td>
+            <td class="mono">0 events</td>
+            <td><svg viewBox="0 0 100 16" class="spark w-32 h-4"><path stroke="#e11d48" d="M0,12 L14,12 L28,12 L42,12 L56,12 L70,12 L84,12 L100,12"/></svg></td>
+            <td class="mono text-right text-slate-500">±0</td>
+            <td class="text-center"><span class="dot bg-emerald-500"></span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- right column: today log + alerts -->
+    <section class="col-span-5 space-y-4">
+
+      <div class="panel p-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="font-semibold">Today's log <span class="text-slate-400 font-normal">· 5 entries</span></p>
+          <button class="text-xs text-teal-700 font-semibold">View all →</button>
+        </div>
+        <div class="divide-y divide-slate-100 -my-2 text-xs">
+          <div class="row py-2 flex items-center gap-3">
+            <span class="mono text-slate-500 w-12">07:15</span>
+            <span class="dot bg-purple-500"></span>
+            <span class="font-medium w-16">Sleep</span>
+            <span class="text-slate-600 truncate">10h 30m, good quality, 1 waking</span>
+          </div>
+          <div class="row py-2 flex items-center gap-3">
+            <span class="mono text-slate-500 w-12">08:00</span>
+            <span class="dot bg-blue-500"></span>
+            <span class="font-medium w-16">Med</span>
+            <span class="text-slate-600 truncate">Guanfacine 1 mg — taken</span>
+          </div>
+          <div class="row py-2 flex items-center gap-3">
+            <span class="mono text-slate-500 w-12">08:30</span>
+            <span class="dot bg-emerald-500"></span>
+            <span class="font-medium w-16">Diet</span>
+            <span class="text-slate-600 truncate">Breakfast: eggs, toast, apple, blueberries(new)</span>
+          </div>
+          <div class="row py-2 flex items-center gap-3">
+            <span class="mono text-slate-500 w-12">11:00</span>
+            <span class="dot bg-rose-500"></span>
+            <span class="font-medium w-16">Behavior</span>
+            <span class="text-slate-600 truncate">Mood 7, Energy 8, Anxiety 3 · positive</span>
+          </div>
+          <div class="row py-2 flex items-center gap-3">
+            <span class="mono text-slate-500 w-12">13:00</span>
+            <span class="dot bg-orange-500"></span>
+            <span class="font-medium w-16">Sensory</span>
+            <span class="text-slate-600 truncate">Reg 4/5, weighted blanket, deep pressure</span>
+          </div>
+          <div class="row py-2 flex items-center gap-3 text-slate-400">
+            <span class="mono w-12">20:30</span>
+            <span class="dot bg-slate-300"></span>
+            <span class="font-medium w-16">Med</span>
+            <span class="truncate italic">Melatonin 2 mg · scheduled</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel p-4">
+        <p class="font-semibold mb-3">Insights <span class="text-slate-400 font-normal">· 2 active</span></p>
+        <div class="space-y-2">
+          <div class="border-l-2 border-rose-500 pl-3 py-1">
+            <p class="text-[10px] uppercase tracking-wider text-rose-700 font-semibold">High · sensory</p>
+            <p class="font-medium">Hand-flapping +40% this week</p>
+            <p class="text-xs text-slate-500">Possible sensory overload. Suggest sensory diet review.</p>
+          </div>
+          <div class="border-l-2 border-amber-500 pl-3 py-1">
+            <p class="text-[10px] uppercase tracking-wider text-amber-700 font-semibold">Med · pattern</p>
+            <p class="font-medium">Anxiety spikes day after missed Guanfacine</p>
+            <p class="text-xs text-slate-500">3 of 4 instances correlate. Tue evening miss → Wed AM elevated anxiety.</p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+</main>
+
+</body>
+</html>
