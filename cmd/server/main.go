@@ -163,6 +163,9 @@ func main() {
 	// Wire ticket-duplicate service into admin handlers
 	adminHandler.SetTicketDuplicateService(services.TicketDuplicate)
 
+	// Wire ticket-attachment service into admin handlers
+	adminHandler.SetTicketAttachmentService(services.TicketAttachment)
+
 	// Initialize Development Mode service for SSH access control
 	// In production, devServerURL is set so session ops call the dev server remotely.
 	// On the dev server, devServerURL is empty so ops run locally.

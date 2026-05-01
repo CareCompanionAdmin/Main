@@ -46,12 +46,20 @@ type RoadmapService struct {
 	adminRepo repository.AdminRepository
 	email     *EmailService
 	db        *sql.DB
+	attach    *TicketAttachmentService
 }
 
 // NewRoadmapService constructs a RoadmapService. The raw *sql.DB is used only
 // to write into version_log, which doesn't have a dedicated repo yet.
 func NewRoadmapService(repo repository.RoadmapRepository, adminRepo repository.AdminRepository, email *EmailService, db *sql.DB) *RoadmapService {
 	return &RoadmapService{repo: repo, adminRepo: adminRepo, email: email, db: db}
+}
+
+// SetAttachmentService wires the attachment service so promote-from-ticket
+// (which closes the ticket) can trigger PHI cleanup. Optional — tests/dev
+// can run without it.
+func (s *RoadmapService) SetAttachmentService(a *TicketAttachmentService) {
+	s.attach = a
 }
 
 // CreateRoadmapInput is the payload accepted by Create / Update.
@@ -206,6 +214,10 @@ func (s *RoadmapService) AddFromTicket(ctx context.Context, ticketID, adminID uu
 	}
 	if err := s.adminRepo.UpdateTicketStatus(ctx, ticket.ID, "closed"); err != nil {
 		log.Printf("[ROADMAP] close ticket failed: %v", err)
+	}
+	// PHI cleanup: nuke any attachments on the just-closed ticket.
+	if s.attach != nil {
+		s.attach.DeleteAllForTicket(ctx, ticket.ID)
 	}
 
 	// Best-effort email; don't block the promotion if SMTP is down.

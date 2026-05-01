@@ -89,6 +89,13 @@
                 </div>
             </div>
             <div id="reply-area" class="p-4 border-t dark:border-gray-700 hidden">
+                <div class="flex flex-wrap items-center gap-2 mb-2 text-sm">
+                    <button type="button" onclick="onPickAttachClick('reply')" class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200">📎 Attach</button>
+                    <button type="button" id="recordBtnReply" onclick="onRecordClick('reply')" class="hidden px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200">🎬 Record screen + mic</button>
+                    <span id="recordHintReply" class="hidden text-xs text-amber-700 dark:text-amber-400">Tip: use the desktop website to record screen with voice — fastest path to a fix.</span>
+                </div>
+                <input type="file" id="replyAttachInput" multiple accept="image/*,video/*,.heic,.heif,.mov,.3gp,.3gpp" class="hidden" onchange="onAttachInputChange('reply')">
+                <div id="replyAttachList" class="mb-2 space-y-1"></div>
                 <form id="reply-form" class="flex gap-2">
                     <textarea id="reply-input" placeholder="Type your reply..." rows="2" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"></textarea>
                     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 self-end">
@@ -131,6 +138,20 @@
                     <option value="urgent">Urgent</option>
                 </select>
             </div>
+
+            <!-- Attachments (staged in memory until the ticket is created) -->
+            <div class="border-t pt-3">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attachments (optional)</label>
+                <div class="flex flex-wrap gap-2 mb-2">
+                    <button type="button" onclick="onPickAttachClick('new')" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200">📎 Add screenshot or video</button>
+                    <button type="button" id="recordBtnNew" onclick="onRecordClick('new')" class="hidden px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200">🎬 Record screen + mic</button>
+                </div>
+                <p id="recordHintNew" class="hidden text-xs text-amber-700 dark:text-amber-400 mb-2">Tip: for the fastest help, use the desktop website to record your screen with voice — it cuts down on back-and-forth.</p>
+                <input type="file" id="newAttachInput" multiple accept="image/*,video/*,.heic,.heif,.mov,.3gp,.3gpp" class="hidden" onchange="onAttachInputChange('new')">
+                <div id="newAttachList" class="space-y-1"></div>
+                <p id="newAttachLimits" class="text-xs text-gray-500 mt-1"></p>
+            </div>
+
             <div class="flex space-x-4 pt-2">
                 <button type="submit" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                     Create Ticket
@@ -286,12 +307,44 @@ async function selectTicket(ticketID) {
         messageArea.innerHTML = html;
         messageArea.scrollTop = messageArea.scrollHeight;
 
+        // Refresh attachments panel for this ticket
+        await renderTicketAttachments(ticketID);
+
         // Hide badge after viewing
         const desktopBadge = document.getElementById('support-badge-desktop');
         if (desktopBadge) desktopBadge.classList.add('hidden');
 
     } catch (error) {
         console.error('Error loading ticket:', error);
+    }
+}
+
+// renderTicketAttachments fetches the attachments for the open ticket and
+// renders them as inline thumbnails (images) or HTML5 video players.
+async function renderTicketAttachments(ticketID) {
+    const messageArea = document.getElementById('message-area');
+    try {
+        const r = await fetch(`/api/support/tickets/${ticketID}/attachments`, { credentials: 'include' });
+        if (!r.ok) return;
+        const atts = await r.json();
+        if (!atts || atts.length === 0) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'mt-6 border-t pt-4';
+        let html = '<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attachments</p><div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
+        atts.forEach(a => {
+            const url = '/api/support/attachments/' + a.id;
+            const safeName = escapeHtml(a.original_name || 'file');
+            if (a.kind === 'image') {
+                html += `<a href="${url}" target="_blank" class="block border rounded overflow-hidden hover:opacity-90"><img src="${url}" alt="${safeName}" class="w-full h-24 object-cover"></a>`;
+            } else {
+                html += `<div class="border rounded p-2"><video src="${url}" controls class="w-full max-h-32"></video><p class="text-xs text-gray-500 mt-1 truncate">${safeName}</p></div>`;
+            }
+        });
+        html += '</div>';
+        wrap.innerHTML = html;
+        messageArea.appendChild(wrap);
+    } catch (e) {
+        console.error('Failed to load attachments', e);
     }
 }
 
@@ -323,6 +376,12 @@ document.getElementById('reply-form').addEventListener('submit', async function(
 
         if (response.ok) {
             input.value = '';
+            // Upload any staged attachments to this existing ticket.
+            if (replyStaged.length > 0) {
+                await uploadStaged(currentTicketID, replyStaged);
+                replyStaged = [];
+                renderStagedList('reply');
+            }
             selectTicket(currentTicketID); // Refresh
         } else {
             const err = await response.json();
@@ -361,6 +420,12 @@ document.getElementById('new-ticket-form').addEventListener('submit', async func
         });
 
         if (response.ok) {
+            const created = await response.json();
+            // Upload any staged attachments before reloading. Errors here
+            // surface to the user but the ticket itself is already created.
+            if (created && created.id && newStaged.length > 0) {
+                await uploadStaged(created.id, newStaged);
+            }
             location.reload();
         } else {
             const err = await response.json();
@@ -403,6 +468,246 @@ async function checkSupportUnread() {
 
 // Poll for unread messages every 60 seconds
 setInterval(checkSupportUnread, 60000);
+
+// ============================================================================
+// ATTACHMENTS + SCREEN RECORDER
+// ============================================================================
+//
+// Two contexts share the same logic via a "scope" string:
+//   - 'new'   = staging files for a ticket that hasn't been created yet
+//   - 'reply' = uploading to an existing ticket immediately after the reply
+//
+// Files are staged in JS arrays and uploaded only after the parent
+// ticket exists (for 'new') or the message is sent (for 'reply').
+
+let newStaged = [];     // {file, kind} pairs awaiting ticket creation
+let replyStaged = [];   // {file, kind} pairs awaiting reply submission
+let phiAcknowledged = false;
+let attachLimits = { max_bytes: 25 * 1024 * 1024, max_per_ticket: 5 };
+
+(async function loadAttachLimits() {
+    try {
+        const r = await fetch('/api/support/attachment-limits', { credentials: 'include' });
+        if (!r.ok) return;
+        attachLimits = await r.json();
+        const el = document.getElementById('newAttachLimits');
+        if (el) {
+            el.textContent = `Up to ${attachLimits.max_per_ticket} files, ${(attachLimits.max_bytes / (1024*1024)).toFixed(0)}MB each.`;
+        }
+    } catch (e) {}
+})();
+
+// Hide the screen-recorder controls on devices that can't capture display.
+// iOS Safari refuses getDisplayMedia entirely; on small screens it's a
+// non-starter even on Android. Instead, surface an "use desktop" hint.
+function isMobileLike() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) return true;
+    const ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod|Android.*Mobile/i.test(ua)) return true;
+    return window.innerWidth < 700;
+}
+(function setupRecorderVisibility() {
+    const supported = !isMobileLike();
+    ['New','Reply'].forEach(suffix => {
+        const btn  = document.getElementById('recordBtn'  + suffix);
+        const hint = document.getElementById('recordHint' + suffix);
+        if (supported) {
+            if (btn) btn.classList.remove('hidden');
+        } else {
+            if (hint) hint.classList.remove('hidden');
+        }
+    });
+})();
+
+// onPickAttachClick — first-time uploaders see the PHI consent modal.
+function onPickAttachClick(scope) {
+    if (!phiAcknowledged) {
+        pendingScope = scope;
+        document.getElementById('phiModal').classList.remove('hidden');
+        return;
+    }
+    triggerFilePicker(scope);
+}
+let pendingScope = null;
+function triggerFilePicker(scope) {
+    const input = scope === 'new' ? document.getElementById('newAttachInput')
+                                   : document.getElementById('replyAttachInput');
+    input.click();
+}
+function onPhiAccept() {
+    phiAcknowledged = true;
+    document.getElementById('phiModal').classList.add('hidden');
+    if (pendingScope) {
+        triggerFilePicker(pendingScope);
+        pendingScope = null;
+    }
+}
+function onPhiCancel() {
+    document.getElementById('phiModal').classList.add('hidden');
+    pendingScope = null;
+}
+
+// onAttachInputChange — validates each picked file and stages it.
+function onAttachInputChange(scope) {
+    const input = scope === 'new' ? document.getElementById('newAttachInput')
+                                   : document.getElementById('replyAttachInput');
+    const stage = scope === 'new' ? newStaged : replyStaged;
+    Array.from(input.files).forEach(f => {
+        if (stage.length >= attachLimits.max_per_ticket) {
+            alert(`Limit reached — max ${attachLimits.max_per_ticket} files per ticket.`);
+            return;
+        }
+        if (f.size > attachLimits.max_bytes) {
+            alert(`"${f.name}" is too large. Max size is ${(attachLimits.max_bytes / (1024*1024)).toFixed(0)} MB per file.`);
+            return;
+        }
+        stage.push({ file: f, kind: '' });
+    });
+    input.value = ''; // allow re-picking same file
+    renderStagedList(scope);
+}
+
+function renderStagedList(scope) {
+    const list = scope === 'new' ? document.getElementById('newAttachList')
+                                  : document.getElementById('replyAttachList');
+    const stage = scope === 'new' ? newStaged : replyStaged;
+    list.innerHTML = stage.map((s, i) => `
+        <div class="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-700 rounded px-2 py-1">
+            <div class="truncate flex-1 mr-2">
+                <span class="text-gray-700 dark:text-gray-200">${escapeHtml(s.file.name)}</span>
+                <span class="text-xs text-gray-500 ml-2">${(s.file.size/1024).toFixed(0)} KB${s.kind === 'recording' ? ' · screen recording' : ''}</span>
+            </div>
+            <button type="button" onclick="removeStaged('${scope}', ${i})" class="text-red-600 hover:text-red-800 text-xs">Remove</button>
+        </div>
+    `).join('');
+}
+function removeStaged(scope, i) {
+    if (scope === 'new') newStaged.splice(i, 1); else replyStaged.splice(i, 1);
+    renderStagedList(scope);
+}
+
+// uploadStaged sequentially POSTs each file to /api/support/tickets/{id}/attachments.
+// Failures are surfaced individually but don't abort the rest.
+async function uploadStaged(ticketID, stage) {
+    for (const item of stage) {
+        const fd = new FormData();
+        fd.append('file', item.file, item.file.name);
+        if (item.kind) fd.append('kind', item.kind);
+        try {
+            const r = await fetch(`/api/support/tickets/${ticketID}/attachments`, {
+                method: 'POST',
+                credentials: 'include',
+                body: fd,
+            });
+            if (!r.ok) {
+                const t = await r.text();
+                console.error('Upload failed for', item.file.name, t);
+                alert(`Upload failed for "${item.file.name}": ${t}`);
+            }
+        } catch (e) {
+            console.error('Upload error', e);
+            alert(`Upload error for "${item.file.name}"`);
+        }
+    }
+}
+
+// ---- Screen recorder ----
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingScope = null;
+let recordingStream = null;
+
+async function onRecordClick(scope) {
+    if (!phiAcknowledged) {
+        pendingScope = scope;
+        document.getElementById('phiModal').classList.remove('hidden');
+        // After PHI ack we'll re-enter via onPhiAccept and start picker, not
+        // recording. Recording requires a separate explicit click; simpler.
+        return;
+    }
+    recordingScope = scope;
+    recordedChunks = [];
+    try {
+        const display = await navigator.mediaDevices.getDisplayMedia({
+            video: { frameRate: 15 },
+            audio: false,
+        });
+        let mic;
+        try {
+            mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        } catch (e) {
+            display.getTracks().forEach(t => t.stop());
+            alert('Microphone access is required for screen recording. Please grant permission and try again.');
+            return;
+        }
+        // Combine display video + mic audio into a single stream.
+        const tracks = [...display.getVideoTracks(), ...mic.getAudioTracks()];
+        recordingStream = new MediaStream(tracks);
+        const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+            ? 'video/webm;codecs=vp9,opus'
+            : 'video/webm';
+        mediaRecorder = new MediaRecorder(recordingStream, { mimeType: mime });
+        mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = onRecordingStopped;
+        // If the user clicks "Stop sharing" in the browser bar, finalize.
+        display.getVideoTracks()[0].onended = () => { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); };
+        mediaRecorder.start();
+        document.getElementById('recordingBanner').classList.remove('hidden');
+    } catch (e) {
+        console.error(e);
+        alert('Could not start screen recording: ' + (e.message || e.name || 'unknown error'));
+    }
+}
+
+function onStopRecordingClick() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+}
+
+function onRecordingStopped() {
+    document.getElementById('recordingBanner').classList.add('hidden');
+    if (recordingStream) {
+        recordingStream.getTracks().forEach(t => t.stop());
+        recordingStream = null;
+    }
+    if (recordedChunks.length === 0) return;
+    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+    if (blob.size > attachLimits.max_bytes) {
+        alert(`Recording is too large (${(blob.size/(1024*1024)).toFixed(1)} MB). Max ${(attachLimits.max_bytes/(1024*1024)).toFixed(0)} MB.`);
+        return;
+    }
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const file = new File([blob], `screen-recording-${ts}.webm`, { type: 'video/webm' });
+    const stage = recordingScope === 'new' ? newStaged : replyStaged;
+    if (stage.length >= attachLimits.max_per_ticket) {
+        alert(`Limit reached — max ${attachLimits.max_per_ticket} files per ticket.`);
+        return;
+    }
+    stage.push({ file, kind: 'recording' });
+    renderStagedList(recordingScope);
+}
 </script>
+
+<!-- PHI consent modal -->
+<div id="phiModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3">Before you upload</h3>
+        <div class="text-sm text-gray-700 dark:text-gray-200 space-y-3 mb-4">
+            <p>The screenshots, videos or screen recordings you attach may contain personal or protected health information. A support team member may view them while helping you.</p>
+            <p>To protect your privacy, <strong>all visual attachments are automatically and permanently deleted</strong> the moment your support ticket is closed or resolved.</p>
+            <p>By continuing, you confirm you understand and agree.</p>
+        </div>
+        <div class="flex space-x-3">
+            <button onclick="onPhiAccept()" class="flex-1 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">I understand, continue</button>
+            <button onclick="onPhiCancel()" class="flex-1 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Recording banner (visible while recording) -->
+<div id="recordingBanner" class="hidden fixed bottom-6 right-6 bg-red-600 text-white rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 z-50">
+    <span class="inline-block w-3 h-3 bg-white rounded-full animate-pulse"></span>
+    <span class="text-sm font-medium">Recording screen + mic...</span>
+    <button onclick="onStopRecordingClick()" class="ml-2 px-3 py-1 bg-white text-red-700 rounded text-sm font-semibold hover:bg-red-50">Stop</button>
+</div>
 </body>
 </html>

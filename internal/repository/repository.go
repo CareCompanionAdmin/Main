@@ -351,6 +351,7 @@ type Repositories struct {
 	Report       ReportRepository     // Reports and scheduled reports
 	Search       SearchRepository     // Global search
 	Roadmap      RoadmapRepository    // Product roadmap items
+	TicketAttachment TicketAttachmentRepository // Per-ticket file attachments
 }
 
 // NewRepositories creates all repository implementations
@@ -376,5 +377,6 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Report:       NewReportRepo(db),
 		Search:       NewSearchRepo(db),
 		Roadmap:      NewRoadmapRepo(db),
+		TicketAttachment: NewTicketAttachmentRepo(db),
 	}
 }

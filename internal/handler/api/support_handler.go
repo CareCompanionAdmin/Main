@@ -1,7 +1,10 @@
 package api
 
 import (
+	"errors"
+	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
@@ -12,12 +15,14 @@ import (
 // SupportHandler handles user-facing support ticket API endpoints
 type SupportHandler struct {
 	supportService *service.UserSupportService
+	attachService  *service.TicketAttachmentService
 }
 
 // NewSupportHandler creates a new support handler
-func NewSupportHandler(supportService *service.UserSupportService) *SupportHandler {
+func NewSupportHandler(supportService *service.UserSupportService, attachService *service.TicketAttachmentService) *SupportHandler {
 	return &SupportHandler{
 		supportService: supportService,
+		attachService:  attachService,
 	}
 }
 
@@ -139,6 +144,173 @@ func (h *SupportHandler) MarkRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondOK(w, map[string]string{"status": "read"})
+}
+
+// ============================================================================
+// ATTACHMENTS
+// ============================================================================
+
+// UploadAttachment accepts a multipart upload of one file under field name
+// "file". On success the persisted attachment record is returned.
+//
+// Optional `kind` form field — set to "recording" for in-browser screen+mic
+// recordings so the UI can label them appropriately.
+func (h *SupportHandler) UploadAttachment(w http.ResponseWriter, r *http.Request) {
+	if h.attachService == nil {
+		respondInternalError(w, "Attachment service unavailable")
+		return
+	}
+	ticketID, err := parseUUID(chi.URLParam(r, "ticketID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid ticket ID")
+		return
+	}
+	userID := middleware.GetUserID(r.Context())
+
+	// Verify ownership before accepting bytes — cheap, and avoids spending
+	// time uploading something we'd reject anyway.
+	if _, err := h.supportService.GetTicketByID(r.Context(), ticketID, userID); err != nil {
+		respondNotFound(w, "Ticket not found")
+		return
+	}
+
+	// Cap the multipart body. ParseMultipartForm reads up to maxMemory in
+	// memory; the rest spills to temp files. Add a safety margin (1 MB) over
+	// the configured per-file cap so headers fit.
+	maxBytes := h.attachService.MaxBytes() + 1*1024*1024
+	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+	if err := r.ParseMultipartForm(8 * 1024 * 1024); err != nil {
+		respondBadRequest(w, "Upload too large or malformed")
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		respondBadRequest(w, "Missing file field")
+		return
+	}
+	defer file.Close()
+
+	att, err := h.attachService.Upload(r.Context(), service.UploadInput{
+		TicketID:     ticketID,
+		UploaderID:   userID,
+		Filename:     header.Filename,
+		ContentType:  header.Header.Get("Content-Type"),
+		Body:         file,
+		KindOverride: r.FormValue("kind"),
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrAttachmentTooBig),
+			errors.Is(err, service.ErrAttachmentTypeNotAllowed),
+			errors.Is(err, service.ErrAttachmentLimitReached):
+			respondBadRequest(w, err.Error())
+		default:
+			respondInternalError(w, "Upload failed: "+err.Error())
+		}
+		return
+	}
+	respondCreated(w, att)
+}
+
+// ListAttachments returns the attachments visible to the calling user for a
+// ticket they own.
+func (h *SupportHandler) ListAttachments(w http.ResponseWriter, r *http.Request) {
+	if h.attachService == nil {
+		respondInternalError(w, "Attachment service unavailable")
+		return
+	}
+	ticketID, err := parseUUID(chi.URLParam(r, "ticketID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid ticket ID")
+		return
+	}
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.supportService.GetTicketByID(r.Context(), ticketID, userID); err != nil {
+		respondNotFound(w, "Ticket not found")
+		return
+	}
+	atts, err := h.attachService.List(r.Context(), ticketID)
+	if err != nil {
+		respondInternalError(w, "Failed to list attachments")
+		return
+	}
+	respondOK(w, atts)
+}
+
+// FetchAttachment streams the file bytes for a ticket the user owns.
+func (h *SupportHandler) FetchAttachment(w http.ResponseWriter, r *http.Request) {
+	if h.attachService == nil {
+		respondInternalError(w, "Attachment service unavailable")
+		return
+	}
+	attID, err := parseUUID(chi.URLParam(r, "attachmentID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid attachment ID")
+		return
+	}
+	userID := middleware.GetUserID(r.Context())
+	body, att, err := h.attachService.FetchForUser(r.Context(), attID, userID)
+	if err != nil {
+		if errors.Is(err, service.ErrAttachmentForbidden) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		if errors.Is(err, service.ErrAttachmentNotFound) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		respondInternalError(w, "Failed to open attachment")
+		return
+	}
+	defer body.Close()
+
+	w.Header().Set("Content-Type", att.ContentType)
+	w.Header().Set("Content-Disposition", "inline; filename=\""+att.OriginalName+"\"")
+	if att.SizeBytes > 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(att.SizeBytes, 10))
+	}
+	_, _ = io.Copy(w, body)
+}
+
+// DeleteAttachment lets a user remove their own attachment from their ticket.
+func (h *SupportHandler) DeleteAttachment(w http.ResponseWriter, r *http.Request) {
+	if h.attachService == nil {
+		respondInternalError(w, "Attachment service unavailable")
+		return
+	}
+	attID, err := parseUUID(chi.URLParam(r, "attachmentID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid attachment ID")
+		return
+	}
+	userID := middleware.GetUserID(r.Context())
+	if err := h.attachService.DeleteByOwner(r.Context(), attID, userID); err != nil {
+		if errors.Is(err, service.ErrAttachmentForbidden) {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		if errors.Is(err, service.ErrAttachmentNotFound) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		respondInternalError(w, "Delete failed")
+		return
+	}
+	respondOK(w, map[string]string{"status": "deleted"})
+}
+
+// GetAttachmentLimits exposes the current per-file size cap and per-ticket
+// count cap so the UI can show them in the consent modal.
+func (h *SupportHandler) GetAttachmentLimits(w http.ResponseWriter, r *http.Request) {
+	if h.attachService == nil {
+		respondInternalError(w, "Attachment service unavailable")
+		return
+	}
+	respondOK(w, map[string]interface{}{
+		"max_bytes":      h.attachService.MaxBytes(),
+		"max_per_ticket": h.attachService.MaxPerTicket(),
+	})
 }
 
 // GetUnread returns whether the user has unread support messages

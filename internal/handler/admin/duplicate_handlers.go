@@ -3,6 +3,7 @@ package admin
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -12,6 +13,9 @@ import (
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/service"
 )
+
+// ioCopy is a small alias so the handler signature reads cleanly.
+var ioCopy = io.Copy
 
 // markDuplicateRequest is the JSON body accepted by the mark-duplicate
 // endpoint. Exactly one of TargetTicketID / TargetRoadmapID must be set.
@@ -100,6 +104,51 @@ func (h *Handler) SearchDuplicateTargets(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	respondJSON(w, res)
+}
+
+// ListTicketAttachments returns the attachments on a ticket for admin view.
+func (h *Handler) ListTicketAttachments(w http.ResponseWriter, r *http.Request) {
+	if h.attachService == nil {
+		http.Error(w, "Attachment service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid ticket id", http.StatusBadRequest)
+		return
+	}
+	atts, err := h.attachService.List(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	respondJSON(w, atts)
+}
+
+// FetchTicketAttachment streams an attachment for admin view (no ownership
+// check; auth is enforced by the support / super_admin middleware).
+func (h *Handler) FetchTicketAttachment(w http.ResponseWriter, r *http.Request) {
+	if h.attachService == nil {
+		http.Error(w, "Attachment service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid attachment id", http.StatusBadRequest)
+		return
+	}
+	body, att, err := h.attachService.FetchForAdmin(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Failed to open attachment: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer body.Close()
+	w.Header().Set("Content-Type", att.ContentType)
+	w.Header().Set("Content-Disposition", "inline; filename=\""+att.OriginalName+"\"")
+	if att.SizeBytes > 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(att.SizeBytes, 10))
+	}
+	_, _ = ioCopy(w, body)
 }
 
 // ListTicketDuplicates handles GET /api/admin/support/tickets/{id}/duplicates

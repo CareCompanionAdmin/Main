@@ -21,11 +21,17 @@ type TicketDuplicateService struct {
 	adminRepo   repository.AdminRepository
 	roadmapRepo repository.RoadmapRepository
 	email       *EmailService
+	attach      *TicketAttachmentService
 }
 
 // NewTicketDuplicateService builds the service.
 func NewTicketDuplicateService(adminRepo repository.AdminRepository, roadmapRepo repository.RoadmapRepository, email *EmailService) *TicketDuplicateService {
 	return &TicketDuplicateService{adminRepo: adminRepo, roadmapRepo: roadmapRepo, email: email}
+}
+
+// SetAttachmentService wires the attachment service so dup-close can purge PHI.
+func (s *TicketDuplicateService) SetAttachmentService(a *TicketAttachmentService) {
+	s.attach = a
 }
 
 // MarkAsDuplicate marks ticketID as a duplicate of either targetTicketID OR
@@ -105,6 +111,10 @@ func (s *TicketDuplicateService) MarkAsDuplicate(
 	}
 	if err := s.adminRepo.UpdateTicketStatus(ctx, ticketID, "closed"); err != nil {
 		log.Printf("[DUP] close ticket failed: %v", err)
+	}
+	// PHI cleanup on the dup ticket itself.
+	if s.attach != nil {
+		s.attach.DeleteAllForTicket(ctx, ticketID)
 	}
 
 	// If we're duping onto something on the roadmap, enroll the user as a

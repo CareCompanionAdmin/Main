@@ -44,7 +44,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Insight:      NewInsightHandler(services.Insight, services.Child),
 		Chat:         NewChatHandler(services.Chat, services.Family, services.Push, &cfg.Storage),
 		Transparency: NewTransparencyHandler(services.Transparency),
-		Support:      NewSupportHandler(services.UserSupport),
+		Support:      NewSupportHandler(services.UserSupport, services.TicketAttachment),
 		Billing:       NewBillingHandler(services.Billing),
 		PasswordReset: NewPasswordResetHandler(services.PasswordReset),
 		Device:        NewDeviceHandler(services.Push, &cfg.App),
@@ -361,12 +361,21 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Get("/tickets", handlers.Support.ListTickets)
 			r.Post("/tickets", handlers.Support.CreateTicket)
 			r.Get("/unread", handlers.Support.GetUnread)
+			r.Get("/attachment-limits", handlers.Support.GetAttachmentLimits)
 
 			r.Route("/tickets/{ticketID}", func(r chi.Router) {
 				r.Get("/", handlers.Support.GetTicket)
 				r.Post("/messages", handlers.Support.AddMessage)
 				r.Post("/read", handlers.Support.MarkRead)
+
+				// Attachments — owner only.
+				r.Get("/attachments", handlers.Support.ListAttachments)
+				r.Post("/attachments", handlers.Support.UploadAttachment)
 			})
+			// Direct attachment access (file stream / delete). Path is flat
+			// rather than nested so the same ID works for admin views too.
+			r.Get("/attachments/{attachmentID}", handlers.Support.FetchAttachment)
+			r.Delete("/attachments/{attachmentID}", handlers.Support.DeleteAttachment)
 		})
 	})
 }

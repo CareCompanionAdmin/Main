@@ -17,6 +17,7 @@ type Handler struct {
 	pushService       *service.PushService
 	roadmapService    *service.RoadmapService
 	dupService        *service.TicketDuplicateService
+	attachService     *service.TicketAttachmentService
 }
 
 // SetPushService sets the push notification service for admin handlers
@@ -32,6 +33,11 @@ func (h *Handler) SetRoadmapService(rs *service.RoadmapService) {
 // SetTicketDuplicateService wires the dup-handling service.
 func (h *Handler) SetTicketDuplicateService(s *service.TicketDuplicateService) {
 	h.dupService = s
+}
+
+// SetTicketAttachmentService wires the attachment service.
+func (h *Handler) SetTicketAttachmentService(s *service.TicketAttachmentService) {
+	h.attachService = s
 }
 
 // NewHandler creates a new admin handler
@@ -149,6 +155,8 @@ func (h *Handler) Routes() chi.Router {
 		r.Post("/tickets/{id}/messages", h.AddTicketMessage)
 		r.Post("/tickets/{id}/mark-duplicate", h.MarkTicketDuplicate)
 		r.Get("/tickets/{id}/duplicates", h.ListTicketDuplicates)
+		r.Get("/tickets/{id}/attachments", h.ListTicketAttachments)
+		r.Get("/attachments/{id}", h.FetchTicketAttachment)
 		r.Get("/users", h.SearchUsers)
 		r.Get("/users/{id}", h.GetUser)
 		r.Put("/users/{id}/status", h.UpdateUserStatus)

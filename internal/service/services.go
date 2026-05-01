@@ -35,6 +35,8 @@ type Services struct {
 	Search            *SearchService
 	Roadmap           *RoadmapService
 	TicketDuplicate   *TicketDuplicateService
+	TicketAttachment  *TicketAttachmentService
+	AttachmentStorage AttachmentStorage
 }
 
 // NewServices creates all services with their dependencies
@@ -50,10 +52,12 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	pushService := NewPushService(repos.DeviceToken, cfg.FCM.ServerKey)
 	pushService.InitFirebase(cfg.FCM.ServiceAccountKeyFile)
 
+	attachmentStorage := NewAttachmentStorage(&cfg.Storage)
+
 	// Wire push notifications into alert service (avoids circular constructor deps)
 	alertService.SetPushService(pushService, repos.Family)
 
-	return &Services{
+	svcs := &Services{
 		Auth:              NewAuthService(repos.User, repos.Family, redis, &cfg.JWT, emailService, cfg.App.URL),
 		User:              NewUserService(repos.User, repos.Family),
 		Family:            NewFamilyService(repos.Family, repos.Child),
@@ -79,5 +83,12 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Search:            NewSearchService(repos.Search),
 		Roadmap:           NewRoadmapService(repos.Roadmap, repos.Admin, emailService, db),
 		TicketDuplicate:   NewTicketDuplicateService(repos.Admin, repos.Roadmap, emailService),
+		AttachmentStorage: attachmentStorage,
+		TicketAttachment:  NewTicketAttachmentService(repos.TicketAttachment, repos.Admin, attachmentStorage, cfg.Storage.AttachmentMaxBytes, cfg.Storage.AttachmentMaxPerTkt),
 	}
+	// Wire attachment service into the close paths so PHI is purged on
+	// every transition to closed/resolved (manual, dup, or promote).
+	svcs.Roadmap.SetAttachmentService(svcs.TicketAttachment)
+	svcs.TicketDuplicate.SetAttachmentService(svcs.TicketAttachment)
+	return svcs
 }

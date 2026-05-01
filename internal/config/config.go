@@ -23,6 +23,14 @@ type Config struct {
 type StorageConfig struct {
 	UploadDir   string
 	MaxFileSize int64
+	// Ticket attachments — separate ceiling so reports / other uploads
+	// can keep their own MaxFileSize.
+	AttachmentMaxBytes   int64
+	AttachmentMaxPerTkt  int
+	// S3 driver. If S3Bucket is empty the localfs driver is used.
+	S3Bucket string
+	S3Region string
+	S3Prefix string
 }
 
 type AppConfig struct {
@@ -128,8 +136,13 @@ func Load() (*Config, error) {
 			BatchSize:           getEnvInt("CORRELATION_BATCH_SIZE", 100),
 		},
 		Storage: StorageConfig{
-			UploadDir:   getEnv("STORAGE_UPLOAD_DIR", "./uploads"),
-			MaxFileSize: int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10*1024*1024)), // 10MB default
+			UploadDir:           getEnv("STORAGE_UPLOAD_DIR", "./uploads"),
+			MaxFileSize:         int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10*1024*1024)), // 10MB default
+			AttachmentMaxBytes:  int64(getEnvInt("ATTACHMENT_MAX_BYTES", 25*1024*1024)),  // 25MB per ticket attachment
+			AttachmentMaxPerTkt: getEnvInt("ATTACHMENT_MAX_PER_TICKET", 5),
+			S3Bucket:            getEnv("ATTACHMENT_S3_BUCKET", ""),
+			S3Region:            getEnv("ATTACHMENT_S3_REGION", "us-east-1"),
+			S3Prefix:            getEnv("ATTACHMENT_S3_PREFIX", "ticket-attachments/"),
 		},
 		FCM: FCMConfig{
 			ServerKey:             getEnv("FCM_SERVER_KEY", ""),

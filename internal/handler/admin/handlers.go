@@ -388,6 +388,10 @@ func (h *Handler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to update ticket: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		// On close/resolve, purge attachments per our PHI promise to users.
+		if (req.Status == "closed" || req.Status == "resolved") && h.attachService != nil {
+			h.attachService.DeleteAllForTicket(ctx, id)
+		}
 	}
 
 	h.logAction(r, "update_ticket", "ticket", id, map[string]interface{}{"status": req.Status})
@@ -441,6 +445,10 @@ func (h *Handler) ResolveTicket(w http.ResponseWriter, r *http.Request) {
 	if err := h.adminRepo.ResolveTicket(ctx, id, claims.UserID); err != nil {
 		http.Error(w, "Failed to resolve ticket: "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+	// PHI cleanup on resolve.
+	if h.attachService != nil {
+		h.attachService.DeleteAllForTicket(ctx, id)
 	}
 
 	h.logAction(r, "resolve_ticket", "ticket", id, nil)
