@@ -1,0 +1,344 @@
+{{define "content"}}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Family Subscriptions</h1>
+        <p class="text-sm text-gray-500 mt-1">Every family's billing state. Comp grants are first-class — paying customers and grandfathered free families don't get confused for one another.</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button onclick="openCompModal()" class="bg-emerald-600 text-white px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Comp a family</button>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow p-4 mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+    <input id="search" placeholder="Search family or parent email…" class="border rounded px-3 py-2 text-sm" oninput="debouncedReload()">
+    <select id="status-filter" class="border rounded px-3 py-2 text-sm" onchange="reloadTable()">
+        <option value="">All statuses</option>
+        <option value="active">active</option>
+        <option value="trialing">trialing</option>
+        <option value="past_due">past_due</option>
+        <option value="comped">comped</option>
+        <option value="cancelled">cancelled</option>
+        <option value="expired">expired</option>
+        <option value="paused">paused</option>
+        <option value="terminated">terminated</option>
+    </select>
+    <select id="plan-filter" class="border rounded px-3 py-2 text-sm" onchange="reloadTable()">
+        <option value="">All plans</option>
+        {{range .ActivePlans}}
+        <option value="{{.ID}}">{{.Name}}</option>
+        {{end}}
+    </select>
+    <div class="flex items-center text-xs text-gray-500" id="result-count">—</div>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <tr>
+                <th class="px-5 py-2 text-left">Family</th>
+                <th class="px-5 py-2 text-left">Parents</th>
+                <th class="px-5 py-2 text-left">Plan</th>
+                <th class="px-5 py-2 text-left">Status</th>
+                <th class="px-5 py-2 text-left">Period end</th>
+                <th class="px-5 py-2 text-left">Comp reason</th>
+                <th class="px-5 py-2 text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="subs-tbody" class="divide-y divide-gray-100">
+            <tr><td colspan="7" class="px-5 py-6 text-center text-gray-400">Loading…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- Edit modal                                                   -->
+<!-- ============================================================ -->
+<div id="edit-modal" class="hidden fixed inset-0 bg-black/40 z-40 grid place-items-center" onclick="closeEditModal(event)">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+        <h2 class="text-lg font-bold text-gray-800 mb-1" id="edit-title">Edit subscription</h2>
+        <p class="text-xs text-gray-500 mb-4" id="edit-subtitle"></p>
+        <div class="space-y-3 text-sm">
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Plan</span>
+                <select id="edit-plan" class="w-full border rounded px-3 py-2">
+                    {{range .ActivePlans}}
+                    <option value="{{.ID}}">{{.Name}} (${{printf "%.2f" (divf (float64 .PriceCents) 100.0)}}/mo)</option>
+                    {{end}}
+                </select>
+            </label>
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Status</span>
+                <select id="edit-status" class="w-full border rounded px-3 py-2">
+                    <option>active</option>
+                    <option>trialing</option>
+                    <option>past_due</option>
+                    <option>comped</option>
+                    <option>cancelled</option>
+                    <option>expired</option>
+                    <option>paused</option>
+                    <option>terminated</option>
+                </select>
+            </label>
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Period end (UTC)</span>
+                <input id="edit-period-end" type="datetime-local" class="w-full border rounded px-3 py-2">
+            </label>
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Trial end (UTC, blank to clear)</span>
+                <input id="edit-trial-end" type="datetime-local" class="w-full border rounded px-3 py-2">
+            </label>
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Comp reason (blank to clear)</span>
+                <input id="edit-comp-reason" type="text" placeholder="founders_grandfather / partner_family / qa_test / goodwill / extended_trial …" class="w-full border rounded px-3 py-2">
+            </label>
+        </div>
+        <div class="mt-5 flex justify-between items-center">
+            <button onclick="cancelSub(false)" class="text-sm text-orange-700 hover:underline">Cancel at period end</button>
+            <button onclick="cancelSub(true)" class="text-sm text-red-700 hover:underline">Cancel immediately</button>
+        </div>
+        <div class="mt-3 flex justify-end gap-2">
+            <button onclick="closeEditModal()" class="px-4 py-2 text-sm border rounded">Close</button>
+            <button onclick="saveEdit()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Comp modal                                                   -->
+<!-- ============================================================ -->
+<div id="comp-modal" class="hidden fixed inset-0 bg-black/40 z-40 grid place-items-center" onclick="closeCompModal(event)">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+        <h2 class="text-lg font-bold text-gray-800 mb-3">Comp a family</h2>
+        <div class="space-y-3 text-sm">
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Family (search by name or parent email)</span>
+                <input id="comp-search" placeholder="Type to search…" class="w-full border rounded px-3 py-2" oninput="searchCompFamilies()">
+                <div id="comp-results" class="mt-1 max-h-40 overflow-y-auto border rounded text-xs hidden"></div>
+                <input type="hidden" id="comp-family-id">
+                <div id="comp-selected" class="mt-1 text-xs text-emerald-700 hidden"></div>
+            </label>
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Plan</span>
+                <select id="comp-plan" class="w-full border rounded px-3 py-2">
+                    {{range .ActivePlans}}
+                    <option value="{{.ID}}">{{.Name}}</option>
+                    {{end}}
+                </select>
+            </label>
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Comp through (date)</span>
+                <input id="comp-until" type="date" class="w-full border rounded px-3 py-2">
+            </label>
+            <label class="block">
+                <span class="block text-xs font-medium text-gray-600 mb-1">Reason</span>
+                <select id="comp-reason" class="w-full border rounded px-3 py-2">
+                    <option value="founders_grandfather">founders_grandfather</option>
+                    <option value="partner_family">partner_family</option>
+                    <option value="qa_test">qa_test</option>
+                    <option value="goodwill">goodwill</option>
+                    <option value="extended_trial">extended_trial</option>
+                    <option value="staff">staff</option>
+                </select>
+            </label>
+        </div>
+        <div class="mt-4 flex justify-end gap-2">
+            <button onclick="closeCompModal()" class="px-4 py-2 text-sm border rounded">Close</button>
+            <button onclick="submitComp()" class="px-4 py-2 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700">Comp</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let editingFamilyID = null;
+
+const STATUS_BADGES = {
+    active:     'bg-green-100 text-green-800',
+    trialing:   'bg-blue-100 text-blue-800',
+    past_due:   'bg-orange-100 text-orange-800',
+    comped:     'bg-emerald-100 text-emerald-800',
+    cancelled:  'bg-gray-200 text-gray-700',
+    expired:    'bg-yellow-100 text-yellow-800',
+    paused:     'bg-purple-100 text-purple-800',
+    terminated: 'bg-red-100 text-red-800',
+};
+
+function fmtDate(s) {
+    if (!s) return '—';
+    const d = new Date(s);
+    return d.toISOString().slice(0, 10);
+}
+
+let reloadTimer = null;
+function debouncedReload() {
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(reloadTable, 250);
+}
+
+async function reloadTable() {
+    const q = new URLSearchParams({
+        status: document.getElementById('status-filter').value,
+        plan:   document.getElementById('plan-filter').value,
+        search: document.getElementById('search').value,
+        limit:  '100',
+    });
+    const r = await fetch('/api/admin/super/family-subscriptions?' + q.toString());
+    if (!r.ok) {
+        document.getElementById('subs-tbody').innerHTML =
+            '<tr><td colspan="7" class="px-5 py-6 text-center text-red-600">Load failed: ' + r.status + '</td></tr>';
+        return;
+    }
+    const data = await r.json();
+    document.getElementById('result-count').textContent = data.total + ' total';
+    const rows = (data.subscriptions || []).map(s => {
+        const cls = STATUS_BADGES[s.status] || 'bg-gray-100 text-gray-700';
+        return `<tr>
+            <td class="px-5 py-3 font-medium text-gray-800">${escapeHtml(s.family_name || '')}<br><span class="text-xs text-gray-400">${s.family_id.slice(0,8)}…</span></td>
+            <td class="px-5 py-3 text-xs text-gray-600">${escapeHtml(s.parent_emails || '—')}<br>${s.child_count || 0} child(ren)</td>
+            <td class="px-5 py-3">${escapeHtml(s.plan_name || '')}</td>
+            <td class="px-5 py-3"><span class="inline-block px-2 py-0.5 rounded text-xs font-medium ${cls}">${s.status}</span></td>
+            <td class="px-5 py-3">${fmtDate(s.current_period_end)}</td>
+            <td class="px-5 py-3 text-xs text-gray-600">${escapeHtml(s.comp_reason || '—')}</td>
+            <td class="px-5 py-3 text-right">
+                <button onclick="openEditModal('${s.family_id}')" class="text-xs text-blue-700 hover:underline">Edit</button>
+            </td>
+        </tr>`;
+    }).join('');
+    document.getElementById('subs-tbody').innerHTML = rows ||
+        '<tr><td colspan="7" class="px-5 py-6 text-center text-gray-400">No matches.</td></tr>';
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function openEditModal(familyID) {
+    const r = await fetch('/api/admin/super/family-subscriptions/' + familyID);
+    if (!r.ok) { alert('Failed to load: ' + r.status); return; }
+    const sub = await r.json();
+    editingFamilyID = familyID;
+    document.getElementById('edit-title').textContent = 'Edit ' + (sub.family_name || familyID);
+    document.getElementById('edit-subtitle').textContent =
+        sub.parent_emails ? 'Parents: ' + sub.parent_emails : '';
+    document.getElementById('edit-plan').value = sub.plan_id;
+    document.getElementById('edit-status').value = sub.status;
+    document.getElementById('edit-period-end').value = sub.current_period_end ? sub.current_period_end.slice(0, 16) : '';
+    document.getElementById('edit-trial-end').value = sub.trial_end ? String(sub.trial_end).slice(0, 16) : '';
+    document.getElementById('edit-comp-reason').value = sub.comp_reason || '';
+    document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function closeEditModal(ev) {
+    if (ev && ev.target.id !== 'edit-modal') return;
+    document.getElementById('edit-modal').classList.add('hidden');
+    editingFamilyID = null;
+}
+
+async function saveEdit() {
+    const peLocal = document.getElementById('edit-period-end').value;
+    const teLocal = document.getElementById('edit-trial-end').value;
+    const reason = document.getElementById('edit-comp-reason').value.trim();
+    const body = {
+        plan_id: document.getElementById('edit-plan').value,
+        status:  document.getElementById('edit-status').value,
+        current_period_end: peLocal ? new Date(peLocal).toISOString() : '',
+        trial_end:   teLocal ? new Date(teLocal).toISOString() : 'null',
+        comp_reason: reason || 'null',
+    };
+    const r = await fetch('/api/admin/super/family-subscriptions/' + editingFamilyID, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!r.ok) { alert('Save failed: ' + r.status + ' ' + (await r.text())); return; }
+    closeEditModal();
+    reloadTable();
+}
+
+async function cancelSub(immediate) {
+    if (!editingFamilyID) return;
+    const msg = immediate
+        ? 'Force-cancel this subscription IMMEDIATELY? Period end becomes now and enforcement kicks in.'
+        : 'Mark this subscription cancel-at-period-end? Family keeps access until current period end.';
+    if (!confirm(msg)) return;
+    const r = await fetch('/api/admin/super/family-subscriptions/' + editingFamilyID + '/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ immediate: immediate }),
+    });
+    if (!r.ok) { alert('Cancel failed: ' + r.status); return; }
+    closeEditModal();
+    reloadTable();
+}
+
+// ----- Comp modal -----
+function openCompModal() {
+    document.getElementById('comp-search').value = '';
+    document.getElementById('comp-family-id').value = '';
+    document.getElementById('comp-selected').classList.add('hidden');
+    document.getElementById('comp-results').classList.add('hidden');
+    // default until = 1 year from now
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    document.getElementById('comp-until').value = d.toISOString().slice(0, 10);
+    document.getElementById('comp-modal').classList.remove('hidden');
+}
+
+function closeCompModal(ev) {
+    if (ev && ev.target.id !== 'comp-modal') return;
+    document.getElementById('comp-modal').classList.add('hidden');
+}
+
+let compSearchTimer = null;
+function searchCompFamilies() {
+    clearTimeout(compSearchTimer);
+    const q = document.getElementById('comp-search').value.trim();
+    if (!q) {
+        document.getElementById('comp-results').classList.add('hidden');
+        return;
+    }
+    compSearchTimer = setTimeout(async () => {
+        const r = await fetch('/api/admin/super/family-subscriptions?search=' + encodeURIComponent(q) + '&limit=20');
+        if (!r.ok) return;
+        const data = await r.json();
+        const html = (data.subscriptions || []).map(s =>
+            `<div class="px-3 py-1.5 hover:bg-blue-50 cursor-pointer" onclick="pickCompFamily('${s.family_id}', '${escapeHtml(s.family_name || '')}', '${escapeHtml(s.parent_emails || '')}')">
+                <div class="font-medium">${escapeHtml(s.family_name || s.family_id)}</div>
+                <div class="text-gray-500">${escapeHtml(s.parent_emails || '—')}</div>
+            </div>`
+        ).join('');
+        document.getElementById('comp-results').innerHTML = html ||
+            '<div class="px-3 py-2 text-gray-400">No matches.</div>';
+        document.getElementById('comp-results').classList.remove('hidden');
+    }, 200);
+}
+
+function pickCompFamily(id, name, parents) {
+    document.getElementById('comp-family-id').value = id;
+    document.getElementById('comp-results').classList.add('hidden');
+    document.getElementById('comp-search').value = name + (parents ? '  (' + parents + ')' : '');
+    document.getElementById('comp-selected').textContent = '✓ Selected: ' + name;
+    document.getElementById('comp-selected').classList.remove('hidden');
+}
+
+async function submitComp() {
+    const familyID = document.getElementById('comp-family-id').value;
+    if (!familyID) { alert('Pick a family first.'); return; }
+    const body = {
+        plan_id:    document.getElementById('comp-plan').value,
+        reason:     document.getElementById('comp-reason').value,
+        until_date: document.getElementById('comp-until').value,
+    };
+    const r = await fetch('/api/admin/super/family-subscriptions/' + familyID + '/comp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if (!r.ok) { alert('Comp failed: ' + r.status + ' ' + (await r.text())); return; }
+    closeCompModal();
+    reloadTable();
+}
+
+reloadTable();
+</script>
+{{end}}

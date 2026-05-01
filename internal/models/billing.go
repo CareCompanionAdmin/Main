@@ -21,12 +21,14 @@ const (
 type SubscriptionStatus string
 
 const (
-	SubscriptionStatusActive    SubscriptionStatus = "active"
-	SubscriptionStatusCancelled SubscriptionStatus = "cancelled"
-	SubscriptionStatusExpired   SubscriptionStatus = "expired"
-	SubscriptionStatusPastDue   SubscriptionStatus = "past_due"
-	SubscriptionStatusTrialing  SubscriptionStatus = "trialing"
-	SubscriptionStatusPaused    SubscriptionStatus = "paused"
+	SubscriptionStatusActive     SubscriptionStatus = "active"
+	SubscriptionStatusCancelled  SubscriptionStatus = "cancelled"
+	SubscriptionStatusExpired    SubscriptionStatus = "expired"
+	SubscriptionStatusPastDue    SubscriptionStatus = "past_due"
+	SubscriptionStatusTrialing   SubscriptionStatus = "trialing"
+	SubscriptionStatusPaused     SubscriptionStatus = "paused"
+	SubscriptionStatusComped     SubscriptionStatus = "comped"     // free subscription granted by an admin (founders, partner, QA, staff)
+	SubscriptionStatusTerminated SubscriptionStatus = "terminated" // 14d read-only window expired; data in cold storage
 )
 
 type PaymentStatus string
@@ -294,11 +296,16 @@ type FamilySubscription struct {
 	StripeSubscriptionID NullString         `json:"stripe_subscription_id,omitempty"`
 	StripeCustomerID     NullString         `json:"stripe_customer_id,omitempty"`
 	PromoCodeID          NullUUID           `json:"promo_code_id,omitempty"`
+	CompReason           NullString         `json:"comp_reason,omitempty"`
+	CompedBy             NullUUID           `json:"comped_by,omitempty"`
+	CompUntil            NullTime           `json:"comp_until,omitempty"`
 	CreatedAt            time.Time          `json:"created_at"`
 	UpdatedAt            time.Time          `json:"updated_at"`
 	// Populated fields from JOINs
-	PlanName   string `json:"plan_name,omitempty"`
-	FamilyName string `json:"family_name,omitempty"`
+	PlanName       string `json:"plan_name,omitempty"`
+	FamilyName     string `json:"family_name,omitempty"`
+	ChildCount     int    `json:"child_count,omitempty"`
+	ParentEmails   string `json:"parent_emails,omitempty"`
 }
 
 // FamilyBillingInfo is the response struct for the settings page billing section

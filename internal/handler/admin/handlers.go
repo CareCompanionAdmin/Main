@@ -3,8 +3,10 @@ package admin
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -718,9 +720,28 @@ func (h *Handler) logAction(r *http.Request, action, targetType string, targetID
 	if claims == nil {
 		return
 	}
-	ip := r.RemoteAddr
+	// admin_audit_log.ip_address is INET, which doesn't accept "host:port".
+	// Strip the port if present (and prefer X-Forwarded-For when behind ALB).
+	ip := clientIP(r)
 	userAgent := r.UserAgent()
 	h.adminRepo.LogAction(ctx, claims.UserID, action, targetType, targetID, details, ip, userAgent)
+}
+
+// clientIP returns a bare IP string suitable for the INET column. Honors
+// X-Forwarded-For (first hop) when present.
+func clientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// First entry is the original client.
+		if i := strings.IndexByte(xff, ','); i > 0 {
+			return strings.TrimSpace(xff[:i])
+		}
+		return strings.TrimSpace(xff)
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return r.RemoteAddr
 }
 
 func respondJSON(w http.ResponseWriter, data interface{}) {

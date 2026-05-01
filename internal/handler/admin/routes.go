@@ -119,6 +119,13 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/financials/plans", h.GetSubscriptionPlans)
 		r.Get("/financials/report", h.GenerateFinancialReport)
 
+		// Family-subscription admin tooling (Phase 1 of billing build).
+		r.Get("/family-subscriptions", h.ListFamilySubscriptions)
+		r.Get("/family-subscriptions/{family_id}", h.GetFamilySubscription)
+		r.Put("/family-subscriptions/{family_id}", h.UpdateFamilySubscription)
+		r.Post("/family-subscriptions/{family_id}/comp", h.CompFamilySubscription)
+		r.Post("/family-subscriptions/{family_id}/cancel", h.CancelFamilySubscription)
+
 		// Promo Codes (full CRUD)
 		r.Get("/promo-codes", h.ListPromoCodes)
 		r.Post("/promo-codes", h.CreatePromoCode)
@@ -251,6 +258,7 @@ func (h *Handler) UIRoutes() chi.Router {
 			r.Get("/status", h.StatusPage)
 			r.Get("/errors", h.ErrorsPage)
 			r.Get("/financials", h.FinancialsPage)
+			r.Get("/subscriptions", h.SubscriptionsPage)
 			// Promo code create/edit (super_admin only)
 			r.Get("/promo-codes/new", h.PromoCodeNewPage)
 			r.Get("/promo-codes/{id}/edit", h.PromoCodeEditPage)

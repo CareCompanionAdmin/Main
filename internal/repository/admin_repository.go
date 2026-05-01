@@ -205,6 +205,15 @@ type AdminRepository interface {
 	GetRecentSubscriptions(ctx context.Context, page, limit int) ([]models.UserSubscription, int, error)
 	GetDailyRevenueSnapshots(ctx context.Context, startDate, endDate time.Time) ([]models.DailyRevenueSnapshot, error)
 
+	// Family-subscription admin tooling (Phase 1 of billing build).
+	// Distinct from GetRecentSubscriptions above, which queries the legacy
+	// per-user user_subscriptions table.
+	ListFamilySubscriptions(ctx context.Context, statusFilter, planFilter, search string, page, limit int) ([]models.FamilySubscription, int, error)
+	GetFamilySubscriptionByID(ctx context.Context, id uuid.UUID) (*models.FamilySubscription, error)
+	GetFamilySubscriptionByFamilyID(ctx context.Context, familyID uuid.UUID) (*models.FamilySubscription, error)
+	UpdateFamilySubscription(ctx context.Context, sub *models.FamilySubscription) error
+	CompFamilySubscription(ctx context.Context, familyID, planID, compedBy uuid.UUID, reason string, until time.Time) (*models.FamilySubscription, error)
+	CancelFamilySubscription(ctx context.Context, familyID, cancelledBy uuid.UUID, immediate bool) error
 }
 
 // adminRepo implements AdminRepository
@@ -1912,4 +1921,231 @@ func (r *adminRepo) GetDailyRevenueSnapshots(ctx context.Context, startDate, end
 // itoa is a helper function for building dynamic queries
 func itoa(n int) string {
 	return strconv.Itoa(n)
+}
+
+// ============================================================================
+// Family-subscription admin tooling
+// ============================================================================
+//
+// These methods power the /admin/super/subscriptions page. They join in the
+// family name + plan name + an aggregated parent-email string so the listing
+// view doesn't need a second round-trip per row. UpdateFamilySubscription is
+// a generic editor used by the modal; CompFamilySubscription is a convenience
+// wrapper that sets the right combination of status/comp_reason/comped_by/
+// comp_until in one call so audit trails stay consistent.
+
+const familySubscriptionListColumns = `
+    fs.id, fs.family_id, fs.plan_id, fs.status,
+    fs.current_period_start, fs.current_period_end,
+    fs.trial_end, fs.cancelled_at, fs.cancel_at_period_end,
+    fs.stripe_subscription_id, fs.stripe_customer_id, fs.promo_code_id,
+    fs.comp_reason, fs.comped_by, fs.comp_until,
+    fs.created_at, fs.updated_at,
+    sp.name AS plan_name,
+    f.name  AS family_name,
+    (SELECT count(*) FROM children c WHERE c.family_id = f.id AND c.is_active = true) AS child_count,
+    COALESCE(
+        (SELECT string_agg(u.email, ', ' ORDER BY u.email)
+         FROM family_memberships fm
+         JOIN users u ON u.id = fm.user_id
+         WHERE fm.family_id = f.id AND fm.role = 'parent' AND fm.is_active = true),
+        ''
+    ) AS parent_emails`
+
+func scanFamilySubscriptionRow(scanner interface {
+	Scan(dest ...interface{}) error
+}) (*models.FamilySubscription, error) {
+	s := &models.FamilySubscription{}
+	err := scanner.Scan(
+		&s.ID, &s.FamilyID, &s.PlanID, &s.Status,
+		&s.CurrentPeriodStart, &s.CurrentPeriodEnd,
+		&s.TrialEnd, &s.CancelledAt, &s.CancelAtPeriodEnd,
+		&s.StripeSubscriptionID, &s.StripeCustomerID, &s.PromoCodeID,
+		&s.CompReason, &s.CompedBy, &s.CompUntil,
+		&s.CreatedAt, &s.UpdatedAt,
+		&s.PlanName, &s.FamilyName, &s.ChildCount, &s.ParentEmails,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// ListFamilySubscriptions returns paginated rows + total. statusFilter and
+// planFilter are matched exactly when non-empty; search matches family name
+// or any parent email (case-insensitive substring).
+func (r *adminRepo) ListFamilySubscriptions(ctx context.Context, statusFilter, planFilter, search string, page, limit int) ([]models.FamilySubscription, int, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 200 {
+		limit = 50
+	}
+
+	whereParts := []string{"1=1"}
+	args := []interface{}{}
+	argN := 0
+	addArg := func(v interface{}) string {
+		argN++
+		args = append(args, v)
+		return "$" + itoa(argN)
+	}
+
+	if statusFilter != "" {
+		whereParts = append(whereParts, "fs.status = "+addArg(statusFilter))
+	}
+	if planFilter != "" {
+		whereParts = append(whereParts, "fs.plan_id = "+addArg(planFilter))
+	}
+	if search != "" {
+		// Match family name or any parent email substring.
+		ph := addArg("%" + strings.ToLower(search) + "%")
+		whereParts = append(whereParts,
+			"(LOWER(f.name) LIKE "+ph+
+				" OR EXISTS (SELECT 1 FROM family_memberships fm2 JOIN users u2 ON u2.id = fm2.user_id "+
+				"WHERE fm2.family_id = f.id AND fm2.role = 'parent' AND LOWER(u2.email) LIKE "+ph+"))")
+	}
+	where := strings.Join(whereParts, " AND ")
+
+	var total int
+	if err := r.db.QueryRowContext(ctx, `
+        SELECT count(*)
+        FROM family_subscriptions fs
+        JOIN families f ON f.id = fs.family_id
+        WHERE `+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * limit
+	args = append(args, limit, offset)
+	rows, err := r.db.QueryContext(ctx, `
+        SELECT `+familySubscriptionListColumns+`
+        FROM family_subscriptions fs
+        JOIN subscription_plans sp ON sp.id = fs.plan_id
+        JOIN families f            ON f.id  = fs.family_id
+        WHERE `+where+`
+        ORDER BY
+            CASE fs.status
+                WHEN 'past_due'   THEN 1
+                WHEN 'trialing'   THEN 2
+                WHEN 'active'     THEN 3
+                WHEN 'comped'     THEN 4
+                WHEN 'paused'     THEN 5
+                WHEN 'cancelled'  THEN 6
+                WHEN 'expired'    THEN 7
+                WHEN 'terminated' THEN 8
+                ELSE 9
+            END,
+            fs.current_period_end ASC
+        LIMIT $`+itoa(argN+1)+` OFFSET $`+itoa(argN+2), args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	out := []models.FamilySubscription{}
+	for rows.Next() {
+		s, err := scanFamilySubscriptionRow(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		out = append(out, *s)
+	}
+	return out, total, rows.Err()
+}
+
+func (r *adminRepo) GetFamilySubscriptionByID(ctx context.Context, id uuid.UUID) (*models.FamilySubscription, error) {
+	row := r.db.QueryRowContext(ctx, `
+        SELECT `+familySubscriptionListColumns+`
+        FROM family_subscriptions fs
+        JOIN subscription_plans sp ON sp.id = fs.plan_id
+        JOIN families f            ON f.id  = fs.family_id
+        WHERE fs.id = $1`, id)
+	return scanFamilySubscriptionRow(row)
+}
+
+func (r *adminRepo) GetFamilySubscriptionByFamilyID(ctx context.Context, familyID uuid.UUID) (*models.FamilySubscription, error) {
+	row := r.db.QueryRowContext(ctx, `
+        SELECT `+familySubscriptionListColumns+`
+        FROM family_subscriptions fs
+        JOIN subscription_plans sp ON sp.id = fs.plan_id
+        JOIN families f            ON f.id  = fs.family_id
+        WHERE fs.family_id = $1`, familyID)
+	return scanFamilySubscriptionRow(row)
+}
+
+// UpdateFamilySubscription writes the editable fields. Stripe IDs are not
+// touched here — those only change via the webhook receiver in Phase 3.
+func (r *adminRepo) UpdateFamilySubscription(ctx context.Context, sub *models.FamilySubscription) error {
+	_, err := r.db.ExecContext(ctx, `
+        UPDATE family_subscriptions SET
+            plan_id              = $2,
+            status               = $3,
+            current_period_start = $4,
+            current_period_end   = $5,
+            trial_end            = $6,
+            cancelled_at         = $7,
+            cancel_at_period_end = $8,
+            comp_reason          = $9,
+            comped_by            = $10,
+            comp_until           = $11,
+            updated_at           = NOW()
+        WHERE id = $1`,
+		sub.ID, sub.PlanID, sub.Status, sub.CurrentPeriodStart, sub.CurrentPeriodEnd,
+		sub.TrialEnd, sub.CancelledAt, sub.CancelAtPeriodEnd,
+		sub.CompReason, sub.CompedBy, sub.CompUntil,
+	)
+	return err
+}
+
+// CompFamilySubscription UPSERTs a family onto the chosen plan as comped
+// through `until`. Used by the "Comp this family" admin button. If the
+// family already has a subscription row, it's updated in place.
+func (r *adminRepo) CompFamilySubscription(ctx context.Context, familyID, planID, compedBy uuid.UUID, reason string, until time.Time) (*models.FamilySubscription, error) {
+	_, err := r.db.ExecContext(ctx, `
+        INSERT INTO family_subscriptions (
+            family_id, plan_id, status, current_period_start, current_period_end,
+            comp_reason, comped_by, comp_until, cancel_at_period_end
+        )
+        VALUES ($1, $2, 'comped', NOW(), $3, $4, $5, $3, false)
+        ON CONFLICT (family_id) DO UPDATE SET
+            plan_id              = EXCLUDED.plan_id,
+            status               = 'comped',
+            current_period_end   = EXCLUDED.current_period_end,
+            comp_reason          = EXCLUDED.comp_reason,
+            comped_by            = EXCLUDED.comped_by,
+            comp_until           = EXCLUDED.comp_until,
+            cancel_at_period_end = false,
+            cancelled_at         = NULL,
+            updated_at           = NOW()`,
+		familyID, planID, until, reason, compedBy,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return r.GetFamilySubscriptionByFamilyID(ctx, familyID)
+}
+
+// CancelFamilySubscription marks a subscription cancelled. If immediate is
+// true, the period_end is also moved to NOW() (forces enforcement to kick
+// in immediately on the next request).
+func (r *adminRepo) CancelFamilySubscription(ctx context.Context, familyID, cancelledBy uuid.UUID, immediate bool) error {
+	if immediate {
+		_, err := r.db.ExecContext(ctx, `
+            UPDATE family_subscriptions SET
+                status               = 'cancelled',
+                cancelled_at         = NOW(),
+                current_period_end   = NOW(),
+                cancel_at_period_end = false,
+                updated_at           = NOW()
+            WHERE family_id = $1`, familyID)
+		return err
+	}
+	_, err := r.db.ExecContext(ctx, `
+        UPDATE family_subscriptions SET
+            cancel_at_period_end = true,
+            cancelled_at         = NOW(),
+            updated_at           = NOW()
+        WHERE family_id = $1`, familyID)
+	return err
 }
