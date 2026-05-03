@@ -197,6 +197,209 @@ func (s *SubscriptionService) RunExpiryCheck(ctx context.Context) (transitioned 
 	return int(a + b), nil
 }
 
+// ApplyCheckoutCompleted is called from the Stripe webhook when a Checkout
+// session completes. The session metadata carries family_id + plan_id (we
+// stamped both on creation in stripe_service.go), and the resulting
+// subscription gives us the customer ID, subscription ID, and the period
+// end. Status flips to 'active' (or stays 'trialing' if Stripe issued a
+// trial). Idempotent: if the same subscription_id arrives twice, the
+// second UPDATE is a no-op.
+func (s *SubscriptionService) ApplyCheckoutCompleted(
+	ctx context.Context,
+	familyID, planID uuid.UUID,
+	stripeCustomerID, stripeSubscriptionID string,
+	status string,
+	currentPeriodEnd time.Time,
+) error {
+	_, err := s.db.ExecContext(ctx, `
+        UPDATE family_subscriptions SET
+            plan_id                = $2,
+            status                 = $3,
+            stripe_customer_id     = $4,
+            stripe_subscription_id = $5,
+            current_period_start   = NOW(),
+            current_period_end     = $6,
+            past_due_since         = NULL,
+            cancelled_at           = NULL,
+            cancel_at_period_end   = false,
+            updated_at             = NOW()
+        WHERE family_id = $1`,
+		familyID, planID, status, stripeCustomerID, stripeSubscriptionID, currentPeriodEnd,
+	)
+	if err != nil {
+		return fmt.Errorf("ApplyCheckoutCompleted: %w", err)
+	}
+	return nil
+}
+
+// ApplySubscriptionUpdated is called for customer.subscription.updated and
+// customer.subscription.deleted events. We trust Stripe's view of status,
+// period_end, and cancel_at_period_end for the matching subscription.
+func (s *SubscriptionService) ApplySubscriptionUpdated(
+	ctx context.Context,
+	stripeSubscriptionID string,
+	status string,
+	currentPeriodEnd time.Time,
+	cancelAtPeriodEnd bool,
+	cancelledAt *time.Time,
+) error {
+	var cancelledAtArg interface{}
+	if cancelledAt != nil {
+		cancelledAtArg = *cancelledAt
+	} else {
+		cancelledAtArg = nil
+	}
+	_, err := s.db.ExecContext(ctx, `
+        UPDATE family_subscriptions SET
+            status               = $2,
+            current_period_end   = $3,
+            cancel_at_period_end = $4,
+            cancelled_at         = COALESCE($5::timestamptz, cancelled_at),
+            past_due_since       = CASE WHEN $2 = 'past_due' AND past_due_since IS NULL THEN NOW() ELSE past_due_since END,
+            updated_at           = NOW()
+        WHERE stripe_subscription_id = $1`,
+		stripeSubscriptionID, status, currentPeriodEnd, cancelAtPeriodEnd, cancelledAtArg,
+	)
+	if err != nil {
+		return fmt.Errorf("ApplySubscriptionUpdated: %w", err)
+	}
+	return nil
+}
+
+// ApplyInvoicePaid extends current_period_end after a successful renewal,
+// clears past_due_since, and inserts a payments row for revenue tracking.
+// The payments row is best-effort: if insertion fails (e.g. no parent of
+// the family found) we still update the subscription state — better to
+// have correct entitlement than to fail the whole webhook for a logging
+// row.
+func (s *SubscriptionService) ApplyInvoicePaid(
+	ctx context.Context,
+	stripeSubscriptionID string,
+	currentPeriodEnd time.Time,
+	amountCents int64,
+	currency string,
+	stripeInvoiceID string,
+) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("ApplyInvoicePaid begin: %w", err)
+	}
+	defer tx.Rollback()
+
+	var subscriptionID, familyID uuid.UUID
+	err = tx.QueryRowContext(ctx, `
+        UPDATE family_subscriptions SET
+            status             = 'active',
+            current_period_end = $2,
+            past_due_since     = NULL,
+            updated_at         = NOW()
+        WHERE stripe_subscription_id = $1
+        RETURNING id, family_id`,
+		stripeSubscriptionID, currentPeriodEnd,
+	).Scan(&subscriptionID, &familyID)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Subscription not tracked locally — could be a test event for an
+		// unrelated account. Don't error.
+		return tx.Commit()
+	}
+	if err != nil {
+		return fmt.Errorf("ApplyInvoicePaid update: %w", err)
+	}
+
+	// Pick any active parent on the family for the payments.user_id FK.
+	// If the family has no parents (shouldn't happen but defensive), skip
+	// the payments row — subscription state is what matters for entitlement.
+	var ownerID uuid.UUID
+	err = tx.QueryRowContext(ctx, `
+        SELECT user_id FROM family_memberships
+        WHERE family_id = $1 AND role = 'parent' AND is_active = true
+        ORDER BY created_at ASC LIMIT 1`, familyID,
+	).Scan(&ownerID)
+	if errors.Is(err, sql.ErrNoRows) {
+		log.Printf("[STRIPE] invoice paid for family %s but no parent found — skipping payments row", familyID)
+		return tx.Commit()
+	}
+	if err != nil {
+		return fmt.Errorf("ApplyInvoicePaid find owner: %w", err)
+	}
+
+	if currency == "" {
+		currency = "USD"
+	}
+	_, err = tx.ExecContext(ctx, `
+        INSERT INTO payments (
+            subscription_id, user_id, payment_type, amount_cents, currency,
+            status, stripe_invoice_id, description
+        ) VALUES ($1, $2, 'subscription', $3, $4, 'succeeded', $5, $6)
+        ON CONFLICT DO NOTHING`,
+		subscriptionID, ownerID, amountCents, currency,
+		stripeInvoiceID, fmt.Sprintf("Subscription renewal (%s)", stripeSubscriptionID),
+	)
+	if err != nil {
+		return fmt.Errorf("ApplyInvoicePaid insert payment: %w", err)
+	}
+	return tx.Commit()
+}
+
+// ApplyInvoicePaymentFailed flips the subscription to past_due. Stamps
+// past_due_since only if it wasn't already set — the 14-day termination
+// clock should track the FIRST failure, not the latest retry.
+func (s *SubscriptionService) ApplyInvoicePaymentFailed(
+	ctx context.Context,
+	stripeSubscriptionID string,
+) error {
+	_, err := s.db.ExecContext(ctx, `
+        UPDATE family_subscriptions SET
+            status         = 'past_due',
+            past_due_since = COALESCE(past_due_since, NOW()),
+            updated_at     = NOW()
+        WHERE stripe_subscription_id = $1`,
+		stripeSubscriptionID,
+	)
+	if err != nil {
+		return fmt.Errorf("ApplyInvoicePaymentFailed: %w", err)
+	}
+	return nil
+}
+
+// LookupFamilyByStripeSubscription returns the family_id + plan_id for a
+// Stripe subscription that's already been linked. Used as a fallback when
+// the webhook event metadata is incomplete. Returns uuid.Nil twice if the
+// subscription isn't tracked (e.g. test events for an unrelated account).
+func (s *SubscriptionService) LookupFamilyByStripeSubscription(ctx context.Context, stripeSubscriptionID string) (uuid.UUID, uuid.UUID, error) {
+	var familyID, planID uuid.UUID
+	err := s.db.QueryRowContext(ctx, `
+        SELECT family_id, plan_id
+        FROM family_subscriptions
+        WHERE stripe_subscription_id = $1`, stripeSubscriptionID,
+	).Scan(&familyID, &planID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return uuid.Nil, uuid.Nil, nil
+	}
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	return familyID, planID, nil
+}
+
+// PlanIDForStripePrice resolves the local plan UUID from a Stripe price ID.
+// Used when the webhook gives us a subscription with line items but no
+// plan_id metadata (defensive — we always stamp plan_id ourselves).
+func (s *SubscriptionService) PlanIDForStripePrice(ctx context.Context, stripePriceID string) (uuid.UUID, error) {
+	var planID uuid.UUID
+	err := s.db.QueryRowContext(ctx, `
+        SELECT id FROM subscription_plans WHERE stripe_price_id = $1 LIMIT 1`,
+		stripePriceID,
+	).Scan(&planID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return uuid.Nil, nil
+	}
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return planID, nil
+}
+
 // SubscriptionScheduler runs RunExpiryCheck periodically. Hourly is plenty —
 // the user-visible state granularity is "days remaining" so there's no point
 // running more often than that.

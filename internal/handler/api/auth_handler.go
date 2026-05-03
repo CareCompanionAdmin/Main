@@ -191,6 +191,26 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		"role":       claims.Role,
 	}
 
+	// Surface subscription entitlement so the mobile app can show the right
+	// "Subscribe / Upgrade" CTA without a second round-trip to /api/family/billing.
+	ent := middleware.GetEntitlement(r.Context())
+	entJSON := map[string]interface{}{
+		"mode":             ent.Mode,
+		"status":           ent.Status,
+		"is_admin":         ent.IsAdminOverride,
+		"has_subscription": ent.HasSubscription,
+	}
+	if ent.TrialEnd != nil {
+		entJSON["trial_end"] = ent.TrialEnd.Format("2006-01-02T15:04:05Z07:00")
+	}
+	if ent.PeriodEnd != nil {
+		entJSON["period_end"] = ent.PeriodEnd.Format("2006-01-02T15:04:05Z07:00")
+	}
+	if ent.ReadOnlyUntil != nil {
+		entJSON["read_only_until"] = ent.ReadOnlyUntil.Format("2006-01-02T15:04:05Z07:00")
+	}
+	response["entitlement"] = entJSON
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

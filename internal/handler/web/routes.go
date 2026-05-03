@@ -1,14 +1,21 @@
 package web
 
 import (
+	"database/sql"
+
 	"github.com/go-chi/chi/v5"
 
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/service"
 )
 
-// SetupRoutes configures all web routes
-func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthService) {
+// SetupRoutes configures all web routes. db is required for the
+// entitlement middleware that reads family_subscriptions per request.
+func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthService, db *sql.DB) {
+	// Stripe webhook — public, no auth, no body decoding middleware.
+	// Mounted before any auth groups so middlewares can't intercept.
+	r.Post("/webhooks/stripe", handlers.StripeWebhook)
+
 	// Public routes
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.OptionalAuthMiddleware(authService))
@@ -22,6 +29,7 @@ func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthS
 	// Protected routes
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(authService))
+		r.Use(middleware.LoadEntitlement(db))
 
 		r.Get("/dashboard", handlers.Dashboard)
 		r.Get("/settings", handlers.Settings)
@@ -29,6 +37,11 @@ func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthS
 		r.Get("/support", handlers.Support)
 		r.Get("/family/new", handlers.NewFamily)
 		r.Get("/child/new", handlers.NewChild)
+
+		// Billing — Stripe Checkout flow.
+		r.Post("/billing/checkout", handlers.CheckoutPost)
+		r.Get("/billing/success", handlers.BillingSuccess)
+		r.Get("/billing/cancel", handlers.BillingCancel)
 
 		// Child-specific routes
 		r.Route("/child/{childID}", func(r chi.Router) {

@@ -19,6 +19,26 @@ type Config struct {
 	FCM              FCMConfig
 	Claude           ClaudeConfig
 	AppStoreConnect  AppStoreConnectConfig
+	Stripe           StripeConfig
+}
+
+// StripeConfig holds the test/live API keys + webhook signing secret.
+// Loaded from /home/carecomp/secrets/stripe.env (mode 600) on dev via the
+// systemd EnvironmentFile directive; from AWS Secrets Manager on prod.
+// SecretKey is the only field required to call the Stripe API; the others
+// are needed for the front-end (PublishableKey) and the webhook receiver
+// (WebhookSecret) once those land.
+type StripeConfig struct {
+	SecretKey      string // sk_test_... or sk_live_... (server-side; never exposed to client)
+	PublishableKey string // pk_test_... or pk_live_... (safe to embed in HTML)
+	WebhookSecret  string // whsec_... — verifies signatures on POST /webhooks/stripe
+}
+
+// Enabled returns true when the Stripe SDK can be invoked. SecretKey alone
+// is enough for Checkout sessions and product/price creation; the webhook
+// secret is only required when handling webhook callbacks.
+func (s StripeConfig) Enabled() bool {
+	return s.SecretKey != ""
 }
 
 // AppStoreConnectConfig holds the team-level API key Apple issues from
@@ -183,6 +203,11 @@ func Load() (*Config, error) {
 			MaxInsights:  getEnvInt("CLAUDE_MAX_INSIGHTS", 5),
 			LookbackDays: getEnvInt("CLAUDE_LOOKBACK_DAYS", 7),
 			Enabled:      getEnvBool("CLAUDE_ENABLED", false),
+		},
+		Stripe: StripeConfig{
+			SecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
+			PublishableKey: getEnv("STRIPE_PUBLISHABLE_KEY", ""),
+			WebhookSecret:  getEnv("STRIPE_WEBHOOK_SECRET", ""),
 		},
 	}
 

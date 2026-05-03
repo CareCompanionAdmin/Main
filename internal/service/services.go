@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"log"
 
@@ -42,6 +43,7 @@ type Services struct {
 	Beta              *BetaService
 	Bounty            *BountyService
 	Subscription      *SubscriptionService
+	Stripe            *StripeService
 }
 
 // NewServices creates all services with their dependencies
@@ -121,5 +123,23 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	// every transition to closed/resolved (manual, dup, or promote).
 	svcs.Roadmap.SetAttachmentService(svcs.TicketAttachment)
 	svcs.TicketDuplicate.SetAttachmentService(svcs.TicketAttachment)
+	// Stripe — enabled only when STRIPE_SECRET_KEY is set. EnsureAllPlansSynced
+	// is fire-and-forget at boot: a Stripe outage shouldn't block the app from
+	// starting (existing subscriptions keep working from DB state).
+	if cfg.Stripe.Enabled() {
+		svcs.Stripe = NewStripeService(cfg.Stripe, repos.Billing, cfg.App.URL)
+		// Webhook dispatch needs SubscriptionService; if it's nil (plan rows
+		// missing), webhook events will return an error and Stripe will retry.
+		if svcs.Subscription != nil {
+			svcs.Stripe.SetSubscriptionService(svcs.Subscription)
+		}
+		go func() {
+			if err := svcs.Stripe.EnsureAllPlansSynced(context.Background()); err != nil {
+				log.Printf("[STRIPE] plan sync failed: %v", err)
+			}
+		}()
+	} else {
+		log.Printf("[STRIPE] disabled (STRIPE_SECRET_KEY not set)")
+	}
 	return svcs
 }

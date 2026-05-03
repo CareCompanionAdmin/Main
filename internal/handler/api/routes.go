@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -54,8 +55,9 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 	}
 }
 
-// SetupRoutes configures all API routes
-func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthService) {
+// SetupRoutes configures all API routes. db is required for the
+// entitlement middleware that reads family_subscriptions per request.
+func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthService, db *sql.DB) {
 	// Public routes
 	r.Group(func(r chi.Router) {
 		r.Post("/auth/register", handlers.Auth.Register)
@@ -78,6 +80,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 	// Protected routes
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.AuthMiddleware(authService))
+		r.Use(middleware.LoadEntitlement(db))
 
 		// Auth routes
 		r.Post("/auth/logout", handlers.Auth.Logout)
@@ -111,15 +114,21 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		// Billing routes - public plans endpoint (no family context required)
 		r.Get("/billing/plans", handlers.Billing.GetPlans)
 
-		// Child routes - require family context
+		// Child routes - require family context. Writes (POST) are also
+		// gated by subscription entitlement — read-only families can list
+		// children but can't add new ones.
 		r.Route("/children", func(r chi.Router) {
 			r.Use(middleware.RequireFamilyContext())
+			r.Use(middleware.EnforceWriteEntitlement())
 			r.Get("/", handlers.Child.List)
 			r.Post("/", handlers.Child.Create)
 		})
 
-		// Child-specific routes
+		// Child-specific routes — entitlement gated. DELETE always passes
+		// in read-only mode (data deletion right). Writes other than DELETE
+		// (PUT/PATCH/POST) are blocked when read_only or blocked.
 		r.Route("/children/{childID}", func(r chi.Router) {
+			r.Use(middleware.EnforceWriteEntitlement())
 			r.Get("/", handlers.Child.Get)
 			r.Put("/", handlers.Child.Update)
 			r.Delete("/", handlers.Child.Delete)
@@ -311,9 +320,11 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Get("/image-proxy", handlers.Medication.ProxyDrugImage)
 		})
 
-		// Chat routes - require family context
+		// Chat routes - require family context AND active subscription
+		// for new messages (read-only families can still see history).
 		r.Route("/chat", func(r chi.Router) {
 			r.Use(middleware.RequireFamilyContext())
+			r.Use(middleware.EnforceWriteEntitlement())
 			r.Get("/threads", handlers.Chat.ListThreads)
 			r.Post("/threads", handlers.Chat.CreateThread)
 			r.Get("/unread", handlers.Chat.GetUnreadCount)

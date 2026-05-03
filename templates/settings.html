@@ -121,6 +121,22 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Checkout CTAs — server-side filled by loadBillingInfo() -->
+                <div id="billing-cta-row" class="hidden flex flex-col sm:flex-row gap-3 pt-2">
+                    <form id="billing-subscribe-current" method="POST" action="/billing/checkout" class="hidden flex-1">
+                        <input type="hidden" name="plan_id" value="">
+                        <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                            <span id="billing-subscribe-current-label">Subscribe</span>
+                        </button>
+                    </form>
+                    <form id="billing-upgrade-family" method="POST" action="/billing/checkout" class="hidden flex-1">
+                        <input type="hidden" name="plan_id" value="">
+                        <button type="submit" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
+                            Upgrade to Family ($15/mo)
+                        </button>
+                    </form>
+                </div>
             </div>
             <div id="billing-error" class="hidden text-center py-4">
                 <p class="text-gray-500 dark:text-gray-400">Unable to load billing information</p>
@@ -885,6 +901,58 @@ function displayBillingInfo(data) {
     if (!data.can_add_more_children && maxChildren !== -1) {
         document.getElementById('billing-upgrade-prompt').classList.remove('hidden');
     }
+
+    // Wire Stripe checkout CTAs based on subscription state.
+    wireBillingCTAs(data);
+}
+
+// wireBillingCTAs renders the Subscribe / Upgrade buttons. The /api/billing/plans
+// endpoint gives us the live plan_id values (server-side UUIDs), which we
+// inject into the hidden form inputs that POST to /billing/checkout.
+async function wireBillingCTAs(billing) {
+    let plans = [];
+    try {
+        const r = await fetch('/api/billing/plans', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (r.ok) {
+            plans = await r.json();
+        }
+    } catch (_) { /* fall through — no buttons shown if plans don't load */ }
+    if (!plans || !plans.length) return;
+
+    const single = plans.find(p => /single/i.test(p.name));
+    const family = plans.find(p => /family/i.test(p.name));
+    const status = (billing.status || '').toLowerCase();
+    const onSingle = single && billing.plan_id === single.id;
+    const onFamily = family && billing.plan_id === family.id;
+
+    const ctaRow = document.getElementById('billing-cta-row');
+    const curForm = document.getElementById('billing-subscribe-current');
+    const curInput = curForm.querySelector('input[name="plan_id"]');
+    const curLabel = document.getElementById('billing-subscribe-current-label');
+    const upForm = document.getElementById('billing-upgrade-family');
+    const upInput = upForm.querySelector('input[name="plan_id"]');
+
+    let anyShown = false;
+
+    // Subscribe-to-current-plan when not yet paying (trialing / past_due / expired).
+    if (status !== 'active' && status !== 'comped' && status !== 'cancelled' && billing.plan_id) {
+        curInput.value = billing.plan_id;
+        curLabel.textContent = `Subscribe to ${billing.plan_name} (${billing.price_display}/mo)`;
+        curForm.classList.remove('hidden');
+        anyShown = true;
+    }
+    // Upgrade-to-Family when on Single Child (trial OR active).
+    if (onSingle && family && status !== 'cancelled') {
+        upInput.value = family.id;
+        upForm.classList.remove('hidden');
+        anyShown = true;
+    }
+    // Already paying for Family — nothing to upsell. Keep row hidden.
+    if (onFamily && status === 'active') {
+        anyShown = false;
+    }
+
+    if (anyShown) ctaRow.classList.remove('hidden');
 }
 
 async function loadFamilyInfo() {

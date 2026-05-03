@@ -34,6 +34,8 @@ export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
 # Load dev environment
 set -a
 source .env.dev
+# Optional secrets file (mode 600) — Stripe test keys etc.
+[ -f /home/carecomp/secrets/stripe.env ] && source /home/carecomp/secrets/stripe.env
 set +a
 
 # Run with hot-reload

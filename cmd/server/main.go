@@ -120,11 +120,11 @@ func main() {
 	// API routes
 	r.Route("/api", func(r chi.Router) {
 		r.Use(middleware.ContentTypeJSON)
-		api.SetupRoutes(r, apiHandlers, services.Auth)
+		api.SetupRoutes(r, apiHandlers, services.Auth, db.DB)
 	})
 
 	// Web routes
-	web.SetupRoutes(r, webHandlers, services.Auth)
+	web.SetupRoutes(r, webHandlers, services.Auth, db.DB)
 
 	// Admin portal routes
 	adminHandler := admin.NewHandler(repos.Admin, services.Auth)
@@ -296,6 +296,15 @@ func main() {
 		subScheduler := service.NewSubscriptionScheduler(services.Subscription)
 		go subScheduler.Start(schedulerCtx)
 	}
+
+	// Daily revenue snapshot — aggregates yesterday's payments at 01:00 UTC
+	// and rebuilds the next-90-days expected_revenue_calendar. Reads from
+	// the same payments + family_subscriptions tables already populated by
+	// the Stripe webhooks, so it works whether or not Stripe is enabled
+	// (just produces zeros until payments start landing).
+	revSvc := service.NewRevenueSnapshotService(db.DB)
+	revScheduler := service.NewRevenueSnapshotScheduler(revSvc)
+	go revScheduler.Start(schedulerCtx)
 
 	// Graceful shutdown
 	quit := make(chan os.Signal, 1)

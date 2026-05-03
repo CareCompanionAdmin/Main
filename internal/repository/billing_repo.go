@@ -15,6 +15,7 @@ type BillingRepository interface {
 	GetFamilySubscription(ctx context.Context, familyID uuid.UUID) (*models.FamilySubscription, error)
 	GetActivePlans(ctx context.Context) ([]models.SubscriptionPlan, error)
 	GetFamilyBillingInfo(ctx context.Context, familyID uuid.UUID) (*models.FamilyBillingInfo, error)
+	UpdatePlanStripeIDs(ctx context.Context, planID uuid.UUID, productID, priceID string) error
 }
 
 type billingRepo struct {
@@ -161,4 +162,19 @@ func (r *billingRepo) GetFamilyBillingInfo(ctx context.Context, familyID uuid.UU
 	info.ExpirationDisplay = info.CurrentPeriodEnd.Format("01/02/2006")
 
 	return &info, nil
+}
+
+// UpdatePlanStripeIDs persists the Stripe Product + Price IDs after they're
+// created via the Stripe API. Used by the one-time plan-sync at startup —
+// once a plan has these set, the sync skips it on subsequent runs.
+func (r *billingRepo) UpdatePlanStripeIDs(ctx context.Context, planID uuid.UUID, productID, priceID string) error {
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE subscription_plans
+		SET stripe_product_id = $1, stripe_price_id = $2, updated_at = NOW()
+		WHERE id = $3
+	`, productID, priceID, planID)
+	if err != nil {
+		return fmt.Errorf("failed to update plan stripe ids: %w", err)
+	}
+	return nil
 }
