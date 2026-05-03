@@ -333,10 +333,13 @@
             </button>
         </div>
 
-        <!-- Build / version label. Tap 7 times in the iOS app to switch dev/prod. -->
+        <!-- Build / version label. Tap 7 times in the iOS app to switch dev/prod.
+             The .app-version span is populated at runtime by capacitor-bridge.js
+             from Capacitor.Plugins.App.getInfo() — never hard-code the version
+             here, or it will go stale every mobile release. -->
         <div class="text-center mt-12 mb-2 text-sm text-gray-400 dark:text-gray-500 select-none"
              onclick="if(window.carecompanionEnvSwitch){carecompanionEnvSwitch(this)}">
-            MyCareCompanion · v1.0.5
+            MyCareCompanion · <span class="app-version" data-fallback="web">…</span>
         </div>
     </div>
 </main>

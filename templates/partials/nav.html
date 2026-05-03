@@ -116,10 +116,12 @@
                     Logout
                 </button>
             </div>
-            <!-- Tap 7 times to switch dev/prod (QA only). Renders on every post-auth page. -->
+            <!-- Tap 7 times to switch dev/prod (QA only). Renders on every post-auth page.
+                 The .app-version span is populated at runtime by capacitor-bridge.js
+                 from Capacitor.Plugins.App.getInfo(). -->
             <div class="text-center text-sm text-gray-500 dark:text-gray-400 pt-4 pb-2 select-none"
                  onclick="if(window.carecompanionEnvSwitch){carecompanionEnvSwitch(this)}">
-                MyCareCompanion · v1.0.5
+                MyCareCompanion · <span class="app-version" data-fallback="web">…</span>
             </div>
         </div>
     </div>

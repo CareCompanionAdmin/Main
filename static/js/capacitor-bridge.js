@@ -294,4 +294,53 @@
 
     // Initialize environment banner on load
     document.addEventListener('DOMContentLoaded', showEnvironmentBanner);
+
+    // =========================================================================
+    // Version label — populate every .app-version span from the bundle's actual
+    // marketing version. Never hard-code in templates: Codemagic injects the
+    // marketing version from the git tag (mobile-vX.Y.Z), so App.getInfo() is
+    // the truth source.
+    // =========================================================================
+    function paintAppVersion() {
+        var App = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+        if (!App || !App.getInfo) return;
+        App.getInfo().then(function(info) {
+            // Only paint a proper 3-part semver. Older builds (pre-codemagic
+            // version-injection) ship with MARKETING_VERSION="1.0" which is
+            // wrong — leaving the placeholder is better than displaying a
+            // misleading version.
+            if (!info || !/^\d+\.\d+\.\d+$/.test(info.version || '')) return;
+            var label = 'v' + info.version;
+            document.querySelectorAll('.app-version').forEach(function(el) {
+                el.textContent = label;
+            });
+        }).catch(function() { /* leave fallback in place */ });
+    }
+    document.addEventListener('DOMContentLoaded', paintAppVersion);
+    // Re-paint after SPA-style nav (handleDeepLink etc.) so the label survives
+    // route changes.
+    var lastVersionedPath = window.location.pathname;
+    setInterval(function() {
+        if (window.location.pathname !== lastVersionedPath) {
+            lastVersionedPath = window.location.pathname;
+            paintAppVersion();
+        }
+    }, 1000);
+
+    // Web fallback: if not Capacitor, use the data-fallback attribute (e.g. "web").
+    // Runs on plain browsers; the early-return at the top of this IIFE means we
+    // only get here in Capacitor, so this fallback lives in a separate non-IIFE
+    // hook below the main bridge.
+})();
+
+// Plain-web fallback: when capacitor-bridge.js is loaded in a regular browser
+// (non-Capacitor), the IIFE above returns early before painting. Fill the span
+// with the data-fallback value so it doesn't read "…" forever.
+(function() {
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return;
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.app-version').forEach(function(el) {
+            el.textContent = el.getAttribute('data-fallback') || 'web';
+        });
+    });
 })();

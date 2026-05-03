@@ -42,13 +42,17 @@ workflows:
           xcode-project use-profiles --warn-only
           echo "=== pbxproj signing settings after use-profiles ==="
           grep -E "CODE_SIGN_STYLE|DEVELOPMENT_TEAM|PROVISIONING_PROFILE|CODE_SIGN_IDENTITY" App.xcodeproj/project.pbxproj || true
-      - name: Set iOS build number
+      - name: Set iOS marketing version + build number
         script: |
           cd mobile/ios/App
-          echo "Codemagic BUILD_NUMBER: $BUILD_NUMBER"
+          # Derive marketing version from the triggering tag (mobile-vX.Y.Z → X.Y.Z)
+          MARKETING_VER="${CM_TAG#mobile-v}"
+          echo "Codemagic CM_TAG=$CM_TAG -> MARKETING_VERSION=$MARKETING_VER"
+          echo "Codemagic BUILD_NUMBER=$BUILD_NUMBER"
+          sed -i '' -E "s/MARKETING_VERSION = [^;]+;/MARKETING_VERSION = $MARKETING_VER;/g" App.xcodeproj/project.pbxproj
           sed -i '' -E "s/CURRENT_PROJECT_VERSION = [0-9]+;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/g" App.xcodeproj/project.pbxproj
-          echo "=== Build number after bump ==="
-          grep "CURRENT_PROJECT_VERSION" App.xcodeproj/project.pbxproj | sort -u
+          echo "=== Versions after bump ==="
+          grep -E "(MARKETING_VERSION|CURRENT_PROJECT_VERSION)" App.xcodeproj/project.pbxproj | sort -u
       - name: Build iOS
         script: |
           cd mobile/ios/App
@@ -92,6 +96,17 @@ workflows:
           cd mobile
           mkdir -p android/app/src/main/assets/public
           npx cap sync android
+      - name: Set Android version
+        script: |
+          # Derive versionName from the triggering tag (mobile-vX.Y.Z → X.Y.Z)
+          MARKETING_VER="${CM_TAG#mobile-v}"
+          echo "Codemagic CM_TAG=$CM_TAG -> versionName=$MARKETING_VER"
+          echo "Codemagic BUILD_NUMBER=$BUILD_NUMBER"
+          cd mobile/android/app
+          sed -i -E "s/versionName \"[^\"]*\"/versionName \"$MARKETING_VER\"/g" build.gradle
+          sed -i -E "s/versionCode [0-9]+/versionCode $BUILD_NUMBER/g" build.gradle
+          echo "=== Versions after bump ==="
+          grep -E "versionCode|versionName" build.gradle
       - name: Build Android
         script: |
           cd mobile/android
