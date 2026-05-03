@@ -23,6 +23,7 @@ import (
 	"carecompanion/internal/handler/api"
 	"carecompanion/internal/handler/web"
 	"carecompanion/internal/middleware"
+	"carecompanion/internal/migrate"
 	"carecompanion/internal/repository"
 	"carecompanion/internal/service"
 )
@@ -43,6 +44,17 @@ func main() {
 	}
 	defer db.Close()
 	log.Println("Connected to PostgreSQL")
+
+	// Apply any pending DB migrations before anything else touches the schema.
+	// Fatal on failure: better to fail fast than serve traffic against a
+	// half-migrated DB. ASG keeps the previous instance up if the new one
+	// dies during boot, so a bad migration self-rolls-back the deploy.
+	migCtx, migCancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	if err := migrate.Run(migCtx, db.DB, "migrations"); err != nil {
+		migCancel()
+		log.Fatalf("Failed to apply migrations: %v", err)
+	}
+	migCancel()
 
 	// Connect to Redis
 	redis, err := database.NewRedis(&cfg.Redis)
