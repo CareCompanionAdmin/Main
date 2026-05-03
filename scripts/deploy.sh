@@ -99,9 +99,13 @@ confirm_production "ASG Instance Refresh (replace running production servers)"
 
 echo ""
 echo "3/4 Starting instance refresh..."
+# MinHealthy=100 keeps the old instance serving until the new one passes 2 ALB
+# health checks (~60s after listen). MinHealthy=0 + InstanceWarmup=120 burned
+# us on 2026-05-03: ASG declared the new instance failed before ALB had time
+# to record 2 successful checks, taking prod down for ~3min.
 REFRESH_ID=$(aws autoscaling start-instance-refresh \
     --auto-scaling-group-name $ASG_NAME \
-    --preferences '{"MinHealthyPercentage":0,"InstanceWarmup":120}' \
+    --preferences '{"MinHealthyPercentage":100,"MaxHealthyPercentage":200,"InstanceWarmup":180}' \
     --region $REGION \
     --query 'InstanceRefreshId' --output text)
 log_deployment "ASG Instance Refresh" "STARTED refresh_id=$REFRESH_ID"
