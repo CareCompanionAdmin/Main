@@ -7,39 +7,39 @@
 {{template "mascot" .}}
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+    <h1 class="display text-3xl font-medium text-stone-800 mb-6">Settings</h1>
 
     <div id="success-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300"></div>
     <div id="error-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300"></div>
 
     <div class="space-y-6">
         <!-- Profile Settings -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Profile</h2>
             <form id="profile-form" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                         <input type="text" name="first_name" value="{{.User.FirstName}}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                         <input type="text" name="last_name" value="{{.User.LastName}}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input type="email" name="email" value="{{.User.Email}}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input type="tel" name="phone" value="{{if .User.Phone.Valid}}{{.User.Phone.String}}{{end}}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
-                <button type="submit" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="px-6 py-2.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition">
                     Save Changes
                 </button>
             </form>
@@ -47,16 +47,16 @@
 
         <!-- Family Settings -->
         {{if .Families}}
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Your Families</h2>
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Your Families</h2>
             <div class="space-y-3">
                 {{range .Families}}
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center justify-between p-4 bg-white/70 border border-stone-200 rounded-2xl">
                     <div>
                         <p class="font-medium text-gray-900">{{.Family.Name}}</p>
                         <p class="text-sm text-gray-500">Role: {{.Role}}</p>
                     </div>
-                    <button onclick="switchFamily('{{.FamilyID}}')" class="px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 text-sm">
+                    <button onclick="switchFamily('{{.FamilyID}}')" class="px-4 py-2 bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200 text-sm font-medium transition">
                         Switch Family
                     </button>
                 </div>
@@ -66,8 +66,8 @@
         {{end}}
 
         <!-- Subscription & Billing -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Subscription & Billing</h2>
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Subscription & Billing</h2>
             <div id="billing-loading" class="animate-pulse">
                 <div class="h-4 bg-gray-300 rounded w-1/2 mb-3"></div>
                 <div class="h-4 bg-gray-300 rounded w-3/4 mb-3"></div>
@@ -75,7 +75,7 @@
             </div>
             <div id="billing-content" class="hidden space-y-4">
                 <!-- Plan Info -->
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center justify-between p-4 bg-white/70 border border-stone-200 rounded-2xl">
                     <div>
                         <p class="text-sm text-gray-500">Current Plan</p>
                         <p id="billing-plan-name" class="text-xl font-semibold text-gray-900">-</p>
@@ -88,18 +88,18 @@
 
                 <!-- Status & Expiration -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="p-4 bg-white/70 border border-stone-200 rounded-2xl">
                         <p class="text-sm text-gray-500">Status</p>
                         <p id="billing-status" class="font-medium text-gray-900">-</p>
                     </div>
-                    <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="p-4 bg-white/70 border border-stone-200 rounded-2xl">
                         <p class="text-sm text-gray-500">Valid Until</p>
                         <p id="billing-expiration" class="font-medium text-gray-900">-</p>
                     </div>
                 </div>
 
                 <!-- Child Usage -->
-                <div class="p-4 bg-gray-50 rounded-lg">
+                <div class="p-4 bg-white/70 border border-stone-200 rounded-2xl">
                     <div class="flex justify-between items-center mb-2">
                         <p class="text-sm text-gray-500">Children</p>
                         <p id="billing-child-count" class="text-sm font-medium text-gray-900">-</p>
@@ -144,9 +144,9 @@
         </div>
 
         <!-- Children Management -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-900">Children</h2>
+                <h2 class="display text-xl font-medium text-stone-800">Children</h2>
                 <button onclick="openAddChildModal()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -166,9 +166,9 @@
         </div>
 
         <!-- Family Members Management -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-900">Family Members</h2>
+                <h2 class="display text-xl font-medium text-stone-800">Family Members</h2>
                 <button onclick="openAddMemberModal()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -215,13 +215,13 @@
         </div>
 
         <!-- Preferences -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Preferences</h2>
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Preferences</h2>
             <form id="preferences-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
                     <select id="pref-timezone" name="timezone"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="">Auto-detect</option>
                         <option value="America/New_York">Eastern Time (ET)</option>
                         <option value="America/Chicago">Central Time (CT)</option>
@@ -260,41 +260,41 @@
                     </div>
                     <p class="text-xs text-gray-400 mt-1">How times are displayed throughout the app</p>
                 </div>
-                <button type="submit" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="px-6 py-2.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition">
                     Save Preferences
                 </button>
             </form>
         </div>
 
         <!-- Change Password -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Change Password</h2>
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Change Password</h2>
             <form id="password-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
                     <input type="password" name="current_password" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
                     <input type="password" name="new_password" required minlength="8"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
-                <button type="submit" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="px-6 py-2.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition">
                     Update Password
                 </button>
             </form>
         </div>
 
         <!-- Interaction Preferences -->
-        <div class="bg-white rounded-xl shadow-sm border p-6 transition-colors">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h2>
+        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Notification Preferences</h2>
             <p class="text-sm text-gray-500 mb-4">Configure when and how you receive questions about care changes.</p>
             <form id="interaction-prefs-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Prompt Delay (hours after a change)</label>
                     <select id="pref-delay-hours" name="treatment_change_prompt_delay_hours"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="0">Immediately</option>
                         <option value="24">After 24 hours</option>
                         <option value="48" selected>After 48 hours</option>
@@ -307,19 +307,19 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Quiet Start Time</label>
                         <input type="time" id="pref-quiet-start" name="interrogative_quiet_start" value="21:00"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Quiet End Time</label>
                         <input type="time" id="pref-quiet-end" name="interrogative_quiet_end" value="08:00"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                 </div>
                 <p class="text-xs text-gray-400 -mt-2">No questions will be shown during quiet hours</p>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Questions Per Day</label>
                     <select id="pref-max-per-day" name="max_interrogatives_per_day"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="1">1 question</option>
                         <option value="3" selected>3 questions</option>
                         <option value="5">5 questions</option>
@@ -334,14 +334,14 @@
                         Batch questions together (show all at once instead of one at a time)
                     </label>
                 </div>
-                <button type="submit" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="px-6 py-2.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition">
                     Save Preferences
                 </button>
             </form>
         </div>
 
         <!-- Danger Zone -->
-        <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6 transition-colors">
+        <div class="glass ring-soft rounded-3xl border-red-200 p-6 transition-colors">
             <h2 class="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
             <p class="text-gray-600 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
             <button onclick="confirmDelete()" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
@@ -376,13 +376,13 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                     <input type="text" id="add-member-first-name" name="first_name" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                         placeholder="First name">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                     <input type="text" id="add-member-last-name" name="last_name" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                         placeholder="Last name">
                 </div>
             </div>
@@ -410,7 +410,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select id="add-member-role" name="role" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     <option value="parent">Parent</option>
                     <option value="caregiver">Caregiver</option>
                     <option value="medical_provider">Medical Provider</option>
@@ -493,24 +493,24 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                     <input type="text" id="add-child-firstname" name="first_name" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                     <input type="text" id="add-child-lastname" name="last_name"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
                     <input type="date" id="add-child-dob" name="date_of_birth" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                     <select id="add-child-gender" name="gender"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="">Not specified</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
@@ -521,7 +521,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea id="add-child-notes" name="notes" rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="Any additional notes about your child..."></textarea>
             </div>
             <div class="flex gap-3 pt-2">
@@ -553,24 +553,24 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                     <input type="text" id="edit-child-firstname" name="first_name" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                     <input type="text" id="edit-child-lastname" name="last_name"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
                     <input type="date" id="edit-child-dob" name="date_of_birth" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                     <select id="edit-child-gender" name="gender"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="">Not specified</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
@@ -581,7 +581,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea id="edit-child-notes" name="notes" rows="2"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"></textarea>
             </div>
 
             <!-- Conditions Section -->
@@ -631,24 +631,24 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Condition Name *</label>
                 <input type="text" id="condition-name" name="condition_name" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="e.g., Autism Spectrum Disorder">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">ICD Code</label>
                 <input type="text" id="condition-icd" name="icd_code"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="e.g., F84.0">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosed Date</label>
                 <input type="date" id="condition-diagnosed" name="diagnosed_date"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea id="condition-notes" name="notes" rows="2"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="Additional details about the condition..."></textarea>
             </div>
             <div class="flex gap-3 pt-2">

@@ -18,7 +18,7 @@
     </div>
 
     <!-- View Toggle -->
-    <div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
+    <div class="glass ring-soft rounded-3xl p-4 mb-6">
         <div class="flex justify-between items-center">
             <h1 class="text-xl font-bold text-gray-900">Full Analysis</h1>
             <div class="flex bg-gray-100 rounded-lg p-1">
@@ -33,7 +33,7 @@
     </div>
 
     <!-- Alert Summary -->
-    <div id="alert-summary" class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+    <div id="alert-summary" class="glass ring-soft rounded-3xl p-6 mb-6">
         <!-- Will be populated by JavaScript -->
         <div class="animate-pulse">
             <div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
@@ -43,9 +43,9 @@
     </div>
 
     <!-- Confidence Breakdown Section -->
-    <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
+    <div class="glass ring-soft rounded-3xl overflow-hidden mb-6">
         <div class="p-6 border-b bg-gray-50">
-            <h2 class="text-lg font-semibold text-gray-900">Confidence Breakdown</h2>
+            <h2 class="display text-xl font-medium text-stone-800">Confidence Breakdown</h2>
             <p class="text-sm text-gray-500">How this insight was calculated</p>
         </div>
         <div id="confidence-section" class="p-6">
@@ -57,9 +57,9 @@
     </div>
 
     <!-- Cohort Matching Section -->
-    <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
+    <div class="glass ring-soft rounded-3xl overflow-hidden mb-6">
         <div class="p-6 border-b bg-gray-50">
-            <h2 class="text-lg font-semibold text-gray-900" id="cohort-title">Similar Families</h2>
+            <h2 class="display text-xl font-medium text-stone-800" id="cohort-title">Similar Families</h2>
             <p class="text-sm text-gray-500" id="cohort-subtitle">How your experience compares to others</p>
         </div>
         <div id="cohort-section" class="p-6">
@@ -71,9 +71,9 @@
     </div>
 
     <!-- Technical Details Section (Clinical View) -->
-    <div id="technical-section" class="bg-white rounded-xl shadow-sm border overflow-hidden mb-6 hidden">
+    <div id="technical-section" class="glass ring-soft rounded-3xl overflow-hidden mb-6 hidden">
         <div class="p-6 border-b bg-gray-50">
-            <h2 class="text-lg font-semibold text-gray-900">Technical Analysis Details</h2>
+            <h2 class="display text-xl font-medium text-stone-800">Technical Analysis Details</h2>
             <p class="text-sm text-gray-500">Methodology and statistical measures</p>
         </div>
         <div id="technical-content" class="p-6">
@@ -85,9 +85,9 @@
     </div>
 
     <!-- Citations Section -->
-    <div class="bg-white rounded-xl shadow-sm border overflow-hidden mb-6">
+    <div class="glass ring-soft rounded-3xl overflow-hidden mb-6">
         <div class="p-6 border-b bg-gray-50">
-            <h2 class="text-lg font-semibold text-gray-900">References</h2>
+            <h2 class="display text-xl font-medium text-stone-800">References</h2>
             <p class="text-sm text-gray-500">Sources used in this analysis</p>
         </div>
         <div id="citations-section" class="p-6">
@@ -99,8 +99,8 @@
     </div>
 
     <!-- Actions Section -->
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+    <div class="glass ring-soft rounded-3xl p-6 mb-6">
+        <h2 class="display text-xl font-medium text-stone-800 mb-4">Actions</h2>
         <div class="flex flex-wrap gap-3">
             <button onclick="exportAnalysis('pdf_download')" class="flex items-center px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,8 +124,8 @@
     </div>
 
     <!-- Feedback Section -->
-    <div class="bg-white rounded-xl shadow-sm border p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Was this analysis helpful?</h2>
+    <div class="glass ring-soft rounded-3xl p-6">
+        <h2 class="display text-xl font-medium text-stone-800 mb-4">Was this analysis helpful?</h2>
         <div class="flex gap-4">
             <button onclick="submitFeedback(true)" class="flex items-center px-6 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,7 +242,7 @@ function renderAnalysis() {
                     </span>
                     <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">${alert.alert_type}</span>
                 </div>
-                <h2 class="text-xl font-semibold text-gray-900">${alert.title}</h2>
+                <h2 class="display text-2xl font-medium text-stone-800">${alert.title}</h2>
                 <p class="text-gray-600 mt-2">${alert.description}</p>
                 <p class="text-sm text-gray-400 mt-2">For ${child_name || 'your child'} - ${formatDate(alert.created_at)}</p>
             </div>

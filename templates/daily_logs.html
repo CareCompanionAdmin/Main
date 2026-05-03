@@ -34,13 +34,13 @@
                 </button>
             </div>
             <input type="date" id="log-date" value="{{.Date.Format "2006-01-02"}}"
-                class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                class="px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-500"
                 onchange="window.location.href='?date=' + this.value + '&view=' + currentViewMode">
         </div>
     </div>
 
     <!-- Date Navigation -->
-    <div class="mb-6 bg-white rounded-xl shadow-sm border p-4">
+    <div class="mb-6 glass ring-soft rounded-3xl p-4">
         <div class="flex items-center justify-between">
             <button onclick="navigateDate(-1)" class="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,12 +67,12 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+    <div class="glass ring-soft rounded-3xl p-6 mb-6">
         {{if eq .ViewMode "weekly"}}
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Weekly Logs for {{.Child.FirstName}}</h1>
+        <h1 class="display text-3xl font-medium text-stone-800 mb-2">Weekly Logs for {{.Child.FirstName}}</h1>
         <p class="text-gray-500">{{.Date.Format "Mon, Jan 2"}} - {{.EndDate.Format "Mon, Jan 2, 2006"}}</p>
         {{else}}
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Daily Logs for {{.Child.FirstName}}</h1>
+        <h1 class="display text-3xl font-medium text-stone-800 mb-2">Daily Logs for {{.Child.FirstName}}</h1>
         <p class="text-gray-500">{{.Date.Format "Monday, January 2, 2006"}}</p>
         {{end}}
     </div>
@@ -107,8 +107,8 @@
     {{end}}
 
     <!-- Log Type Grid -->
-    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Entry</h2>
+    <div class="glass ring-soft rounded-3xl p-6 mb-6">
+        <h2 class="display text-xl font-medium text-stone-800 mb-4">Add Entry</h2>
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
             <!-- Behavior -->
             <button onclick="openModal('behavior')" class="flex flex-col items-center p-4 rounded-xl bg-red-50 hover:bg-red-100 transition-colors">
@@ -234,11 +234,11 @@
     </div>
 
     <!-- Today's/This Week's Logs -->
-    <div class="bg-white rounded-xl shadow-sm border p-6">
+    <div class="glass ring-soft rounded-3xl p-6">
         {{if eq .ViewMode "weekly"}}
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">This Week's Entries</h2>
+        <h2 class="display text-xl font-medium text-stone-800 mb-4">This Week's Entries</h2>
         {{else}}
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">Today's Entries</h2>
+        <h2 class="display text-xl font-medium text-stone-800 mb-4">Today's Entries</h2>
         {{end}}
 
         {{if or .Logs.BehaviorLogs .Logs.DietLogs .Logs.MedicationLogs .Logs.BowelLogs .Logs.SleepLogs .Logs.SpeechLogs .Logs.WeightLogs .Logs.SensoryLogs .Logs.SocialLogs .Logs.TherapyLogs .Logs.SeizureLogs .Logs.HealthEventLogs}}
@@ -653,7 +653,7 @@
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">Jump to Date</label>
             <input type="date" id="history-date-picker"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                 onchange="jumpToHistoryDate()">
         </div>
 
@@ -776,11 +776,11 @@
                 <div class="grid grid-cols-2 gap-3 mb-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" id="med-taken-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="date" id="med-taken-date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" id="med-taken-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" id="med-taken-time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
                 <p id="med-taken-error" class="text-sm text-red-600 mb-3 hidden"></p>
@@ -826,21 +826,21 @@ const formTemplates = {
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10)</label>
-                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="1-10">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Energy (1-10)</label>
-                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="1-10">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Anxiety (1-10)</label>
-                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
+                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="1-10">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Interpersonal Behavior</label>
-                    <select name="interpersonal_behavior" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="interpersonal_behavior" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="withdrawn">Withdrawn</option>
                         <option value="somewhat_withdrawn">Somewhat Withdrawn</option>
@@ -851,7 +851,7 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Stimming</label>
-                    <select name="stimming_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="stimming_level" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="none">None</option>
                         <option value="low">Low</option>
@@ -863,21 +863,21 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
-                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Aggression Incidents</label>
-                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Self-Injury Incidents</label>
-                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                    <select name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="toggleLocationOther(this)">
+                    <select name="location" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" onchange="toggleLocationOther(this)">
                         <option value="">Select location...</option>
                         <option value="home" selected>Home</option>
                         <option value="school">School</option>
@@ -888,19 +888,19 @@ const formTemplates = {
             </div>
             <div id="location-other-container" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Specify Location</label>
-                <input type="text" name="location_other" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter location">
+                <input type="text" name="location_other" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Enter location">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
-                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
+                <input type="text" name="triggers" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., loud noise, transition)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Behaviors</label>
-                <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
+                <input type="text" name="positive_behaviors" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., shared toy, made eye contact)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -917,11 +917,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -933,7 +933,7 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
-                    <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="meal_type" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="breakfast">Breakfast</option>
                         <option value="lunch">Lunch</option>
@@ -943,7 +943,7 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Appetite Level</label>
-                    <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="appetite_level" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="high">High</option>
                         <option value="normal">Normal</option>
@@ -954,25 +954,25 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foods Eaten</label>
-                <input type="text" name="foods_eaten" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., eggs, toast, apple)">
+                <input type="text" name="foods_eaten" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., eggs, toast, apple)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foods Refused</label>
-                <input type="text" name="foods_refused" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <input type="text" name="foods_refused" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Water Intake (oz)</label>
-                    <input type="number" name="water_intake_oz" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="oz">
+                    <input type="number" name="water_intake_oz" min="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="oz">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">New Food Tried</label>
-                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
+                    <input type="text" name="new_food_tried" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
                 </div>
             </div>
             <div id="new-food-acceptance-container" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">New Food Acceptance</label>
-                <select name="new_food_acceptance" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <select name="new_food_acceptance" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     <option value="">Select...</option>
                     <option value="touch_lips">Touch Lips</option>
                     <option value="touch_tongue">Touch Tongue</option>
@@ -982,7 +982,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Supplements Taken</label>
-                <input type="text" name="supplements_taken" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <input type="text" name="supplements_taken" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated">
             </div>
             <div class="flex items-center space-x-4">
                 <div class="flex items-center">
@@ -992,11 +992,11 @@ const formTemplates = {
             </div>
             <div id="reaction-details" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Reaction Details</label>
-                <textarea name="reaction_details" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Describe the reaction..."></textarea>
+                <textarea name="reaction_details" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Describe the reaction..."></textarea>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1013,11 +1013,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1069,7 +1069,7 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Quality</label>
-                    <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="sleep_quality" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="excellent">Excellent</option>
                         <option value="good">Good</option>
@@ -1107,7 +1107,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Night Wakings</label>
-                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
             </div>
             <div class="flex flex-wrap gap-4">
                 <div class="flex items-center">
@@ -1125,11 +1125,11 @@ const formTemplates = {
             </div>
             <div id="sleep-aid-name" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Aid Name</label>
-                <input type="text" name="sleep_aid_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Melatonin">
+                <input type="text" name="sleep_aid_name" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="e.g., Melatonin">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1146,11 +1146,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1162,12 +1162,12 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Bristol Scale (1-7)</label>
-                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     <p class="text-xs text-gray-500 mt-1">1=hard lumps, 4=smooth, 7=liquid</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Pain Level (1-10)</label>
-                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
+                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="If any">
                 </div>
             </div>
             <div class="flex flex-wrap gap-4">
@@ -1182,7 +1182,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1199,11 +1199,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1215,15 +1215,15 @@ const formTemplates = {
             <p class="text-sm text-gray-600">Log an as-needed medication dose.</p>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name</label>
-                <input type="text" name="medication_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="text" name="medication_name" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                <input type="text" name="dosage" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 10mg">
+                <input type="text" name="dosage" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="e.g., 10mg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
         </form>
@@ -1233,40 +1233,40 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Verbal Output (1-5)</label>
-                    <input type="number" name="verbal_output_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="verbal_output_level" min="1" max="5" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Clarity (1-5)</label>
-                    <input type="number" name="clarity_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="clarity_level" min="1" max="5" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">New Words</label>
-                    <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                    <input type="text" name="new_words" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Lost Words</label>
-                    <input type="text" name="lost_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                    <input type="text" name="lost_words" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Echolalia Level (0-5)</label>
-                <input type="number" name="echolalia_level" min="0" max="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0 = none, 5 = constant">
+                <input type="number" name="echolalia_level" min="0" max="5" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="0 = none, 5 = constant">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Communication Attempts</label>
-                    <input type="number" name="communication_attempts" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="communication_attempts" min="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Successful Communications</label>
-                    <input type="number" name="successful_communications" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="successful_communications" min="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1283,11 +1283,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1298,15 +1298,15 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Weight (lbs)</label>
-                <input type="number" step="0.1" name="weight_lbs" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" step="0.1" name="weight_lbs" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Height (inches)</label>
-                <input type="number" step="0.1" name="height_inches" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="number" step="0.1" name="height_inches" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1323,11 +1323,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1339,7 +1339,7 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Overall Regulation (1-5)</label>
-                    <select name="overall_regulation" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="overall_regulation" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="1">1 - Very Dysregulated</option>
                         <option value="2">2 - Dysregulated</option>
@@ -1350,24 +1350,24 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Overload Episodes</label>
-                    <input type="number" name="overload_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="overload_episodes" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Overload Triggers</label>
-                <input type="text" name="overload_triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., loud noises, bright lights)">
+                <input type="text" name="overload_triggers" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., loud noises, bright lights)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Sensory Seeking Behaviors</label>
-                <input type="text" name="sensory_seeking_behaviors" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., spinning, jumping)">
+                <input type="text" name="sensory_seeking_behaviors" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., spinning, jumping)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Calming Strategies Used</label>
-                <input type="text" name="calming_strategies_used" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., weighted blanket, quiet space)">
+                <input type="text" name="calming_strategies_used" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., weighted blanket, quiet space)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1384,11 +1384,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1400,7 +1400,7 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Eye Contact Level (1-5)</label>
-                    <select name="eye_contact_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="eye_contact_level" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="1">1 - None</option>
                         <option value="2">2 - Minimal</option>
@@ -1411,7 +1411,7 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Social Engagement (1-5)</label>
-                    <select name="social_engagement_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="social_engagement_level" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="1">1 - Withdrawn</option>
                         <option value="2">2 - Low</option>
@@ -1424,30 +1424,30 @@ const formTemplates = {
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Peer Interactions</label>
-                    <input type="number" name="peer_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="peer_interactions" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Positive Interactions</label>
-                    <input type="number" name="positive_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="positive_interactions" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Conflicts</label>
-                    <input type="number" name="conflicts" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="conflicts" min="0" value="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Parallel Play (minutes)</label>
-                    <input type="number" name="parallel_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="parallel_play_minutes" min="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cooperative Play (minutes)</label>
-                    <input type="number" name="cooperative_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="cooperative_play_minutes" min="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1464,11 +1464,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1480,7 +1480,7 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Therapy Type</label>
-                    <select name="therapy_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="therapy_type" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="aba">ABA</option>
                         <option value="speech">Speech Therapy</option>
@@ -1492,24 +1492,24 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-                    <input type="number" name="duration_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="duration_minutes" min="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Therapist Name</label>
-                <input type="text" name="therapist_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional">
+                <input type="text" name="therapist_name" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Optional">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Goals Worked On</label>
-                <input type="text" name="goals_worked_on" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
+                <input type="text" name="goals_worked_on" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Progress Notes</label>
-                <textarea name="progress_notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="How did the session go?"></textarea>
+                <textarea name="progress_notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="How did the session go?"></textarea>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Homework Assigned</label>
-                <input type="text" name="homework_assigned" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional">
+                <input type="text" name="homework_assigned" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Optional">
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1526,11 +1526,11 @@ const formTemplates = {
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1542,16 +1542,16 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Time of Seizure <span class="text-red-500">*</span></label>
-                    <input type="time" name="log_time" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="time" name="log_time" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Duration (seconds)</label>
-                    <input type="number" name="duration_seconds" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="number" name="duration_seconds" min="0" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Seizure Type</label>
-                <select name="seizure_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <select name="seizure_type" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     <option value="">Select...</option>
                     <option value="absence">Absence</option>
                     <option value="tonic_clonic">Tonic-Clonic</option>
@@ -1563,15 +1563,15 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
-                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., flashing lights, stress)">
+                <input type="text" name="triggers" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., flashing lights, stress)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Warning Signs</label>
-                <input type="text" name="warning_signs" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., aura, dizziness)">
+                <input type="text" name="warning_signs" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., aura, dizziness)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Post-Ictal Symptoms</label>
-                <input type="text" name="post_ictal_symptoms" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., confusion, fatigue)">
+                <input type="text" name="post_ictal_symptoms" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., confusion, fatigue)">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="flex items-center space-x-2">
@@ -1585,22 +1585,22 @@ const formTemplates = {
             </div>
             <div id="rescue_med_name" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Rescue Medication Name</label>
-                <input type="text" name="rescue_medication_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="text" name="rescue_medication_name" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     </div>
                 </div>
             </div>
@@ -1612,7 +1612,7 @@ const formTemplates = {
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
-                    <select name="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <select name="event_type" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                         <option value="">Select...</option>
                         <option value="illness">Illness</option>
                         <option value="injury">Injury</option>
@@ -1624,44 +1624,44 @@ const formTemplates = {
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Temperature (°F)</label>
-                    <input type="number" name="temperature_f" step="0.1" min="90" max="110" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 98.6">
+                    <input type="number" name="temperature_f" step="0.1" min="90" max="110" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="e.g., 98.6">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input type="text" name="description" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Brief description of the event">
+                <input type="text" name="description" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Brief description of the event">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Symptoms</label>
-                <input type="text" name="symptoms" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., fever, cough, headache)">
+                <input type="text" name="symptoms" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Comma separated (e.g., fever, cough, headache)">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Provider Name</label>
-                    <input type="text" name="provider_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Doctor/clinic name">
+                    <input type="text" name="provider_name" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Doctor/clinic name">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosis</label>
-                    <input type="text" name="diagnosis" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="text" name="diagnosis" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Treatment</label>
-                <input type="text" name="treatment" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Prescribed treatment or medications">
+                <input type="text" name="treatment" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Prescribed treatment or medications">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
-                    <input type="date" name="follow_up_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <input type="date" name="follow_up_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Event Date</label>
-                    <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
+                    <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" value="${getLocalDateString()}">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
@@ -1670,7 +1670,7 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <select name="status" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
                     <option value="taken">Taken</option>
                     <option value="missed">Missed</option>
                     <option value="skipped">Skipped</option>
@@ -1679,15 +1679,15 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Actual Time</label>
-                <input type="time" name="actual_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <input type="time" name="actual_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dosage Given</label>
-                <input type="text" name="dosage_given" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 10mg, 1 tablet">
+                <input type="text" name="dosage_given" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="e.g., 10mg, 1 tablet">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Any notes about this dose"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Any notes about this dose"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
@@ -3331,7 +3331,7 @@ function renderHistoryCalendar() {
         <p class="text-sm text-gray-600 mb-1">You're about to resolve:</p>
         <p id="insight-resolve-title" class="text-sm font-medium text-gray-900 mb-4"></p>
         <label for="insight-resolve-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
-        <textarea id="insight-resolve-notes" rows="3" placeholder="What did you do? Anything to remember?" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-5"></textarea>
+        <textarea id="insight-resolve-notes" rows="3" placeholder="What did you do? Anything to remember?" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl text-sm mb-5"></textarea>
         <div class="flex justify-end gap-2">
             <button type="button" onclick="closeResolveModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
             <button id="insight-resolve-confirm-btn" type="button" onclick="confirmResolve()" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50">Resolve</button>

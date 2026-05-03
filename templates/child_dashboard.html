@@ -28,86 +28,87 @@
         <style>#carousel-track::-webkit-scrollbar { display: none; }</style>
     </div>
 
-    <div class="mb-6">
-        <a href="/dashboard" class="text-orange-600 hover:text-orange-500 flex items-center">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mb-4">
+        <a href="/dashboard" class="text-stone-500 hover:text-stone-800 inline-flex items-center text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
-            Back to Family
+            Back to family
         </a>
     </div>
 
     <!-- Child Header -->
-    <div class="{{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}bg-blue-50{{else if eq .Child.Gender.String "female"}}bg-pink-50{{else}}bg-white{{end}}{{else}}bg-white{{end}} rounded-xl shadow-sm border p-6 mb-6">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}bg-blue-200{{else if eq .Child.Gender.String "female"}}bg-pink-200{{else}}bg-orange-100{{end}}{{else}}bg-orange-100{{end}} rounded-full flex items-center justify-center">
-                    <span class="text-2xl font-bold {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}text-blue-600{{else if eq .Child.Gender.String "female"}}text-pink-600{{else}}text-orange-600{{end}}{{else}}text-orange-600{{end}}">{{slice .Child.FirstName 0 1}}</span>
-                </div>
-                <div>
-                    <div class="flex items-center space-x-2">
-                        <h1 class="text-2xl font-bold text-gray-900">{{.Child.FullName}}</h1>
-                        {{if gt (len .AllChildren) 1}}
-                        <div class="relative" id="switchChildContainer">
-                            <button onclick="toggleChildDropdown()" class="inline-flex items-center px-2 py-1 text-xs text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                                </svg>
-                                Switch
-                            </button>
-                            <div id="childDropdown" class="hidden absolute left-0 mt-1 w-64 bg-white rounded-lg shadow-lg border z-50">
-                                <div class="py-1">
-                                    {{range .AllChildren}}
-                                    <a href="/child/{{.ID}}" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center justify-between {{if eq $.Child.ID .ID}}bg-orange-50 text-orange-700{{else}}text-gray-700{{end}}">
-                                        <span>{{.FullName}}</span>
-                                        {{if eq $.Child.ID .ID}}
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        {{end}}
-                                    </a>
+    <header class="mb-8">
+        <div class="flex items-start gap-4">
+            <div class="w-14 h-14 {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}bg-blue-100{{else if eq .Child.Gender.String "female"}}bg-pink-100{{else}}bg-amber-100{{end}}{{else}}bg-amber-100{{end}} rounded-2xl flex items-center justify-center flex-shrink-0">
+                <span class="display text-2xl font-medium {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}text-blue-700{{else if eq .Child.Gender.String "female"}}text-pink-700{{else}}text-amber-800{{end}}{{else}}text-amber-800{{end}}">{{slice .Child.FirstName 0 1}}</span>
+            </div>
+            <div class="min-w-0 flex-1">
+                <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">Born {{.Child.DateOfBirth.Format "January 2, 2006"}}</p>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h1 class="display text-3xl font-medium text-stone-800 leading-tight">{{.Child.FullName}}</h1>
+                    {{if gt (len .AllChildren) 1}}
+                    <div class="relative" id="switchChildContainer">
+                        <button onclick="toggleChildDropdown()" class="inline-flex items-center px-2 py-1 text-xs text-orange-700 hover:text-orange-900 hover:bg-orange-50 rounded-full transition-colors">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                            </svg>
+                            Switch
+                        </button>
+                        <div id="childDropdown" class="hidden absolute left-0 mt-1 w-64 bg-white rounded-2xl shadow-lg border border-stone-200 z-50">
+                            <div class="py-1">
+                                {{range .AllChildren}}
+                                <a href="/child/{{.ID}}" class="block w-full text-left px-4 py-2 text-sm hover:bg-orange-50 flex items-center justify-between {{if eq $.Child.ID .ID}}bg-orange-50 text-orange-700{{else}}text-stone-700{{end}}">
+                                    <span>{{.FullName}}</span>
+                                    {{if eq $.Child.ID .ID}}
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
                                     {{end}}
-                                </div>
+                                </a>
+                                {{end}}
                             </div>
                         </div>
-                        {{end}}
                     </div>
-                    <p class="text-gray-500">Born: {{.Child.DateOfBirth.Format "January 2, 2006"}}</p>
-                    <a href="/child/{{.Child.ID}}/settings" class="text-xs text-orange-600 hover:text-orange-800 flex items-center mt-1">
-                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                        </svg>
-                        Edit Profile & Conditions
-                    </a>
+                    {{end}}
                 </div>
-            </div>
-            <div class="flex space-x-2">
-                <a href="/child/{{.Child.ID}}/logs" class="px-4 py-2 bg-transparent border-2 border-orange-600 text-orange-600 rounded-lg hover:bg-orange-50">
-                    Daily Logs
-                </a>
-                <a href="/child/{{.Child.ID}}/medications" class="px-4 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100">
-                    Medications
-                </a>
-                <a href="/child/{{.Child.ID}}/alerts" class="px-4 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100">
-                    Alerts
-                </a>
-                <a href="/child/{{.Child.ID}}/insights" class="px-4 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100">
-                    Insights
-                </a>
-                <a href="/child/{{.Child.ID}}/reports" class="px-4 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100">
-                    Reports
+                <a href="/child/{{.Child.ID}}/settings" class="text-xs text-stone-500 hover:text-stone-800 inline-flex items-center mt-0.5">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                    </svg>
+                    Edit profile & conditions
                 </a>
             </div>
         </div>
-    </div>
+        <!-- Soft pill nav -->
+        <div class="mt-5 flex flex-wrap gap-2">
+            <a href="/child/{{.Child.ID}}/logs"        class="px-4 py-1.5 bg-white/70 border border-stone-200 text-stone-700 text-sm rounded-full hover:bg-white transition-colors">Daily logs</a>
+            <a href="/child/{{.Child.ID}}/medications" class="px-4 py-1.5 bg-white/70 border border-stone-200 text-stone-700 text-sm rounded-full hover:bg-white transition-colors">Medications</a>
+            <a href="/child/{{.Child.ID}}/alerts"      class="px-4 py-1.5 bg-white/70 border border-stone-200 text-stone-700 text-sm rounded-full hover:bg-white transition-colors">Alerts</a>
+            <a href="/child/{{.Child.ID}}/insights"    class="px-4 py-1.5 bg-white/70 border border-stone-200 text-stone-700 text-sm rounded-full hover:bg-white transition-colors">Insights</a>
+            <a href="/child/{{.Child.ID}}/reports"     class="px-4 py-1.5 bg-white/70 border border-stone-200 text-stone-700 text-sm rounded-full hover:bg-white transition-colors">Reports</a>
+        </div>
+    </header>
+
+    <!-- Today's bright spot -->
+    <section class="mb-8">
+        <div class="glass ring-soft rounded-3xl p-5 flex items-start gap-4">
+            <div class="text-3xl">🌼</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">Today's bright spot</p>
+                <p class="display text-xl text-stone-800 mt-0.5">{{.Child.FirstName}}'s day, in one place.</p>
+                <p class="text-sm text-stone-500 mt-1">Tap any tile below to add a note — even a small one helps the patterns surface.</p>
+            </div>
+        </div>
+    </section>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Quick Actions -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Quick Summary -->
-            <div class="bg-white rounded-xl shadow-sm border p-6">
+            <div class="glass ring-soft rounded-3xl p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Quick Summary</h2>
+                    <h2 class="display text-xl font-medium text-stone-800">Quick Summary</h2>
                     <div class="flex items-center space-x-3">
                         <!-- Category Dropdown -->
                         <select id="summary-category" onchange="loadQuickSummary()" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500">
@@ -204,8 +205,8 @@
             </div>
 
             <!-- Medications Due -->
-            <div class="bg-white rounded-xl shadow-sm border p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Medications Due Today</h2>
+            <div class="glass ring-soft rounded-3xl p-6">
+                <h2 class="display text-xl font-medium text-stone-800 mb-4">Medications Due Today</h2>
                 {{if .Dashboard.MedicationsDue}}
                 <div class="space-y-3">
                     {{range .Dashboard.MedicationsDue}}
@@ -248,8 +249,8 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Quick Add -->
-            <div class="bg-white rounded-xl shadow-sm border p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Add</h2>
+            <div class="glass ring-soft rounded-3xl p-6">
+                <h2 class="display text-xl font-medium text-stone-800 mb-4">Quick Add</h2>
                 <div class="grid grid-cols-3 gap-3">
                     <button onclick="openModal('behavior')" class="flex flex-col items-center p-3 rounded-xl bg-red-50 hover:bg-red-100 transition-colors">
                         <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mb-1">
@@ -353,8 +354,8 @@
 
             <!-- Conditions -->
             {{if .Child.Conditions}}
-            <div class="bg-white rounded-xl shadow-sm border p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Conditions</h2>
+            <div class="glass ring-soft rounded-3xl p-6">
+                <h2 class="display text-xl font-medium text-stone-800 mb-4">Conditions</h2>
                 <div class="flex flex-wrap gap-2">
                     {{range .Child.Conditions}}
                     <span class="px-3 py-1 bg-orange-100 text-orange-700 text-sm rounded-full">{{.ConditionName}}</span>
@@ -364,7 +365,24 @@
             {{end}}
         </div>
     </div>
+
+    <!-- Encouragement footer -->
+    <footer class="mt-12 mb-32 text-center">
+        <p class="text-sm text-stone-500 italic">You don't have to log everything. Even one note helps us notice patterns.</p>
+        <p class="mt-3">
+            <a href="/child/{{.Child.ID}}/logs" class="text-sm text-stone-600 hover:text-stone-900 underline decoration-stone-300 underline-offset-4">View {{.Child.FirstName}}'s full day &rarr;</a>
+        </p>
+    </footer>
 </main>
+
+<!-- Floating compose FAB -->
+<div class="fixed bottom-6 inset-x-0 px-4 z-30 pointer-events-none">
+    <div class="max-w-7xl mx-auto flex justify-end">
+        <button onclick="openModal('behavior')" class="pointer-events-auto compose-fab bg-orange-600 hover:bg-orange-700 text-white display italic font-medium text-base sm:text-lg px-5 sm:px-7 py-3 sm:py-4 rounded-full flex items-center gap-2 transition">
+            <span class="text-2xl leading-none">+</span><span class="hidden sm:inline">What just happened?</span><span class="sm:hidden">Log</span>
+        </button>
+    </div>
+</div>
 
 <!-- Modal Container -->
 <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
