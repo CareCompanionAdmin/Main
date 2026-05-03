@@ -1,0 +1,195 @@
+/* ============================================================
+   Calm Hybrid design system — parent-facing UI
+   ============================================================ */
+
+/* Font imports — keep these synced with the Calm Hybrid mockup */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+/* Force light mode regardless of OS setting — parent UI is single warm-light only.
+   The dark-mode toggle has been removed; this clears anything still emitting
+   `dark:*` rules from Tailwind. */
+html.dark { color-scheme: light !important; }
+
+:root {
+  --calm-cream-bg: #fbf6ee;
+  --calm-cream-bg-deep: #f6efe2;
+  --calm-stone: #44403c;
+  --calm-stone-soft: #78716c;
+  --calm-orange-500: #f97316;
+  --calm-orange-600: #ea580c;
+  --calm-orange-700: #c2410c;
+  --calm-orange-100: #ffedd5;
+  --calm-glass-bg: rgba(255, 255, 255, 0.55);
+  --calm-glass-border: rgba(255, 255, 255, 0.7);
+  --calm-card-shadow: 0 1px 2px rgba(60, 40, 20, 0.04), 0 8px 24px -8px rgba(60, 40, 20, 0.08);
+}
+
+/* Body / app shell ------------------------------------------ */
+
+body.calm,
+body.calm-bg {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--calm-stone);
+  background:
+    radial-gradient(circle at 15% 10%, #fde7d3 0%, transparent 35%),
+    radial-gradient(circle at 90% 5%, #d9eaff 0%, transparent 40%),
+    radial-gradient(circle at 50% 110%, #e7f4ec 0%, transparent 40%),
+    linear-gradient(180deg, var(--calm-cream-bg) 0%, var(--calm-cream-bg-deep) 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Typographic helpers -------------------------------------- */
+
+.display {
+  font-family: 'Fraunces', serif;
+  font-optical-sizing: auto;
+}
+
+.handwritten {
+  font-family: 'Caveat', cursive;
+}
+
+/* Card chrome ---------------------------------------------- */
+
+.glass {
+  background: var(--calm-glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--calm-glass-border);
+}
+
+.ring-soft {
+  box-shadow: var(--calm-card-shadow);
+}
+
+/* Make the standard "white card" pattern Calm-friendly without
+   forcing every template to opt in. Templates can still override
+   with explicit classes. */
+.calm .card,
+.calm-bg .card {
+  background: var(--calm-glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--calm-glass-border);
+  border-radius: 24px;
+  box-shadow: var(--calm-card-shadow);
+}
+
+/* Floating compose button (FAB) ---------------------------- */
+
+.compose-fab {
+  background: var(--calm-orange-500);
+  color: #fff;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  box-shadow: 0 12px 32px -6px rgba(180, 90, 30, 0.45),
+              0 4px 8px rgba(180, 90, 30, 0.2);
+}
+.compose-fab:hover { background: var(--calm-orange-600); }
+
+/* Garden-style growth ring used in the Full Day panel ----- */
+
+.grow-ring {
+  width: 88px; height: 88px;
+  border-radius: 50%;
+  background: conic-gradient(var(--c, var(--calm-orange-700))
+              calc(var(--p, 0.75) * 360deg), #f5ece0 0);
+  display: grid; place-items: center;
+  position: relative;
+}
+.grow-ring::before {
+  content: ""; position: absolute; inset: 8px;
+  background: #fff; border-radius: 50%;
+}
+.grow-ring > * { position: relative; z-index: 1; }
+
+.grow-ring-sm {
+  width: 60px; height: 60px;
+}
+.grow-ring-sm::before { inset: 6px; }
+
+/* Seed-button (quick-add) --------------------------------- */
+
+.seed-btn {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1.5px solid rgba(180, 90, 30, 0.18);
+  border-radius: 18px;
+  transition: all .18s ease;
+}
+.seed-btn:hover {
+  background: #fff;
+  border-color: rgba(180, 90, 30, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Today's bloom card -------------------------------------- */
+
+.bloom {
+  background: linear-gradient(135deg, #fdebd3 0%, #fde0c2 50%, #f7d2ad 100%);
+  border: 1px solid rgba(180, 90, 30, 0.18);
+}
+
+/* Med-row / checkbox in bottom sheet ---------------------- */
+
+.check {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid #e2d5c1; background: #fff;
+  display: grid; place-items: center; cursor: pointer;
+  transition: all .15s ease; font-size: 16px; line-height: 1;
+}
+.check:hover { border-color: var(--calm-orange-700); }
+.med-row.done { opacity: 0.55; text-decoration: line-through; }
+.med-row.done .check { background: #65a30d; border-color: #65a30d; color: #fff; }
+
+/* Animations ---------------------------------------------- */
+
+@keyframes calm-pop {
+  0%   { transform: translateY(8px) scale(0.96); opacity: 0; }
+  60%  { transform: translateY(-2px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.calm-pop { animation: calm-pop .35s ease-out; }
+
+@keyframes calm-slide-down {
+  0%   { opacity: 0; transform: translateY(-8px); max-height: 0; }
+  100% { opacity: 1; transform: translateY(0); max-height: 4000px; }
+}
+.calm-slide-down { animation: calm-slide-down .35s ease-out; overflow: hidden; }
+
+/* Form controls — soften focus rings to orange ------------ */
+
+.calm input:focus,
+.calm-bg input:focus,
+.calm textarea:focus,
+.calm-bg textarea:focus,
+.calm select:focus,
+.calm-bg select:focus {
+  outline: none;
+  border-color: var(--calm-orange-500);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+}
+
+/* HTMX indicators (kept for parity with the existing app) */
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline; }
+.htmx-request.htmx-indicator { display: inline; }
+
+/* Capacitor safe-area handling (mirrors input.css) -------- */
+body.capacitor nav.app-nav {
+  padding-top: env(safe-area-inset-top);
+  background-clip: padding-box;
+}
+body.capacitor {
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* App-nav softening — the warm look without rewriting nav.html */
+nav.app-nav {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(180, 140, 90, 0.12);
+}

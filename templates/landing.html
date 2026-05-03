@@ -18,7 +18,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81' },
+                        primary: { 50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa', 300: '#fdba74', 400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 900: '#7c2d12' },
                         secondary: { 500: '#10b981', 600: '#059669' },
                         accent: { 500: '#f59e0b', 600: '#d97706' }
                     }
@@ -30,10 +30,11 @@
         @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
         .animate-float { animation: float 4s ease-in-out infinite; }
         html { scroll-behavior: smooth; }
-        .gradient-text { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .gradient-text { background: linear-gradient(135deg, #ea580c 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     </style>
+    <link rel="stylesheet" href="/static/css/calm.css">
 </head>
-<body class="bg-white text-gray-800">
+<body class="calm-bg min-h-screen text-stone-800">
 
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 border-b border-gray-100">
@@ -81,7 +82,7 @@
                 </div>
                 <div class="relative flex justify-center lg:justify-end">
                     <div class="relative">
-                        <div class="absolute -inset-4 bg-gradient-to-r from-primary-200 to-purple-200 rounded-full blur-3xl opacity-30"></div>
+                        <div class="absolute -inset-4 bg-gradient-to-r from-primary-200 to-primary-300 rounded-full blur-3xl opacity-30"></div>
                         <img src="/static/images/mattyfullbody_clear.png" alt="Matty - Your Care Companion" class="relative h-80 lg:h-96 w-auto animate-float drop-shadow-2xl">
                     </div>
                     <div class="absolute top-4 right-0 bg-white rounded-2xl shadow-xl p-4 max-w-xs hidden lg:block">
@@ -191,7 +192,7 @@
             <div class="relative max-w-4xl mx-auto">
                 <!-- Center Hub -->
                 <div class="flex justify-center mb-8">
-                    <div class="bg-gradient-to-br from-primary-500 to-purple-600 rounded-full w-32 h-32 flex items-center justify-center shadow-2xl">
+                    <div class="bg-gradient-to-br from-primary-500 to-primary-700 rounded-full w-32 h-32 flex items-center justify-center shadow-2xl">
                         <div class="text-center text-white">
                             <svg class="w-10 h-10 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                             <span class="text-sm font-semibold">Your Child</span>
@@ -384,7 +385,7 @@
     </section>
 
     <!-- Section 6: AI Intelligence Engine (DIFFERENTIATOR) -->
-    <section class="py-20 bg-gradient-to-br from-primary-900 via-primary-800 to-purple-900 text-white">
+    <section class="py-20 bg-gradient-to-br from-primary-900 via-primary-700 to-primary-900 text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
                 <div class="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">Powered by AI</div>
@@ -558,7 +559,7 @@
 
             <!-- Trial Banner -->
             <div class="max-w-2xl mx-auto mb-12">
-                <div class="bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl p-6 text-white text-center">
+                <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 text-white text-center">
                     <div class="text-2xl font-bold mb-2">30 Days Free + 50% Off Next Month</div>
                     <p class="text-primary-100">No credit card required to start. Cancel anytime.</p>
                 </div>
@@ -748,7 +749,7 @@
 
                 <div class="flex justify-center">
                     <div class="relative">
-                        <div class="absolute -inset-4 bg-gradient-to-r from-primary-200 to-purple-200 rounded-full blur-3xl opacity-30"></div>
+                        <div class="absolute -inset-4 bg-gradient-to-r from-primary-200 to-primary-300 rounded-full blur-3xl opacity-30"></div>
                         <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="relative h-72 lg:h-80 w-auto animate-float drop-shadow-2xl">
                         <div class="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl shadow-xl p-4 whitespace-nowrap">
                             <p class="font-medium text-gray-800">"Let's do this together!"</p>

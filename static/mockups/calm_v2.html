@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CareCompanion — Calm Hybrid</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .display { font-family: 'Fraunces', serif; font-optical-sizing: auto; }
+  .handwritten { font-family: 'Caveat', cursive; }
+  .calm-bg {
+    background:
+      radial-gradient(circle at 15% 10%, #fde7d3 0%, transparent 35%),
+      radial-gradient(circle at 90% 5%, #d9eaff 0%, transparent 40%),
+      radial-gradient(circle at 50% 110%, #e7f4ec 0%, transparent 40%),
+      linear-gradient(180deg, #fbf6ee 0%, #f6efe2 100%);
+  }
+  .glass {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.7);
+  }
+  .ring-soft { box-shadow: 0 1px 2px rgba(60,40,20,0.04), 0 8px 24px -8px rgba(60,40,20,0.08); }
+  .compose-fab {
+    box-shadow: 0 12px 32px -6px rgba(180,90,30,0.45), 0 4px 8px rgba(180,90,30,0.2);
+  }
+  .grow-ring {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: conic-gradient(var(--c, #c2410c) calc(var(--p, 0.75) * 360deg), #f5ece0 0);
+    display: grid; place-items: center;
+    position: relative;
+  }
+  .grow-ring::before {
+    content: ""; position: absolute; inset: 7px; background: #fff; border-radius: 50%;
+  }
+  .grow-ring > * { position: relative; z-index: 1; }
+  .seed-btn {
+    background: rgba(255,255,255,0.78);
+    border: 1.5px solid rgba(180,90,30,0.18);
+    border-radius: 18px;
+    transition: all .18s ease;
+  }
+  .seed-btn:hover { background: #fff; border-color: rgba(180,90,30,0.4); transform: translateY(-1px); }
+  .check {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid #e2d5c1; background: #fff;
+    display: grid; place-items: center; cursor: pointer;
+    transition: all .15s ease; font-size: 16px; line-height: 1;
+  }
+  .check:hover { border-color: #c2410c; }
+  .med-row.done { opacity: 0.55; text-decoration: line-through; }
+  .med-row.done .check { background: #65a30d; border-color: #65a30d; color: #fff; }
+  @keyframes slideDown { 0% { opacity: 0; transform: translateY(-8px); max-height: 0; } 100% { opacity: 1; transform: translateY(0); max-height: 2400px; } }
+  .full-day { animation: slideDown .35s ease-out; overflow: hidden; }
+</style>
+</head>
+<body class="calm-bg min-h-screen text-stone-800">
+
+<header class="max-w-3xl mx-auto px-6 pt-8 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 font-semibold">M</div>
+    <div>
+      <p class="text-xs uppercase tracking-widest text-stone-500">Friday · May 1</p>
+      <h2 class="display text-lg font-medium leading-tight">Matty · 9</h2>
+    </div>
+  </div>
+  <button class="text-stone-500 hover:text-stone-800 text-sm">Switch child ⇅</button>
+</header>
+
+<!-- positive lead-in (with empty-state-aware messaging) -->
+<section class="max-w-3xl mx-auto px-6 pt-8">
+  <div class="glass ring-soft rounded-3xl p-5 flex items-start gap-4">
+    <div class="text-3xl">🌼</div>
+    <div class="flex-1">
+      <p class="text-xs uppercase tracking-wider text-stone-500">Today's bright spot</p>
+      <p class="display text-xl text-stone-800 mt-0.5">Five calm days in a row.</p>
+      <p class="text-sm text-stone-500 mt-1">Whatever the routine is right now, it's working. Worth holding onto.</p>
+    </div>
+  </div>
+</section>
+
+<!-- hero -->
+<section class="max-w-3xl mx-auto px-6 pt-8 pb-4">
+  <p class="display text-stone-500 text-2xl mb-3">Today, Matty is</p>
+  <div class="flex items-end gap-6">
+    <div class="display text-[10rem] sm:text-[12rem] leading-none font-medium text-stone-800 tracking-tight">8<span class="text-stone-300 text-7xl">/10</span></div>
+    <div class="pb-6">
+      <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
+        <circle cx="34" cy="34" r="18" fill="#fbbf24" />
+        <circle cx="32" cy="34" r="18" fill="#fde68a" opacity="0.6"/>
+        <ellipse cx="58" cy="58" rx="28" ry="16" fill="#ffffff" />
+        <ellipse cx="42" cy="56" rx="14" ry="10" fill="#ffffff" />
+        <ellipse cx="70" cy="54" rx="14" ry="10" fill="#ffffff" />
+      </svg>
+    </div>
+  </div>
+  <p class="display italic text-stone-600 text-xl mt-2">Calm. Morning meds in. Slept well.</p>
+</section>
+
+<!-- 3 smart cards -->
+<section class="max-w-3xl mx-auto px-6 pb-2 space-y-3">
+  <p class="text-xs uppercase tracking-widest text-stone-500 mb-3 mt-4">Three things to know</p>
+
+  <!-- next medication -->
+  <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2"><rect x="4" y="9" width="16" height="6" rx="3"/><path d="M12 9v6"/></svg>
+    </div>
+    <div class="flex-1">
+      <p class="text-xs uppercase tracking-wider text-stone-500">Next medication · in 1h 47m</p>
+      <p class="display text-xl">Clonidine — 0.1 mg</p>
+      <p class="text-sm text-stone-500">Afternoon · 4:00 pm</p>
+    </div>
+    <button id="markTakenBtn" onclick="markTaken(this)" class="text-sm font-medium text-blue-700 hover:text-blue-900 px-3 py-1.5 rounded-full bg-white/70">Mark taken</button>
+  </div>
+
+  <!-- pattern card — empty-state-aware -->
+  <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v4h-4"/></svg>
+    </div>
+    <div class="flex-1">
+      <p class="text-xs uppercase tracking-wider text-stone-500">Pattern this week</p>
+      <p class="display text-xl">No new patterns yet</p>
+      <p class="text-sm text-stone-500">Steady is good — usually means the routine is working.</p>
+    </div>
+    <button class="text-sm font-medium text-emerald-700 hover:text-emerald-900">View →</button>
+  </div>
+
+  <!-- alert / insight — empty-state-aware -->
+  <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </div>
+    <div class="flex-1">
+      <p class="text-xs uppercase tracking-wider text-stone-500">Worth noticing</p>
+      <p class="display text-xl">Sleep + meds combo is helping</p>
+      <p class="text-sm text-stone-500">Clonidine + Trazodone keeping nights steady — no waking.</p>
+    </div>
+    <button onclick="toast('Saved to journal.')" class="text-xs font-medium text-amber-800 hover:text-amber-900 px-3 py-1.5 rounded-full bg-white/70">Save</button>
+  </div>
+
+  <!-- expand / collapse full day -->
+  <div class="text-center pt-4">
+    <button id="fullDayBtn" onclick="toggleFullDay()" class="display italic text-stone-500 hover:text-stone-800">View Matty's full day →</button>
+  </div>
+</section>
+
+<!-- full day inline panel (Garden options in Calm palette) -->
+<section id="fullDayPanel" class="hidden max-w-3xl mx-auto px-6 pt-4 pb-6 full-day">
+
+  <!-- 4 plant tiles -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+    <div class="glass ring-soft rounded-3xl p-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-blue-100 grid place-items-center text-2xl">💊</div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Meds today</p>
+            <p class="display text-lg text-stone-800 leading-tight">3 of 6 given</p>
+          </div>
+        </div>
+        <div class="grow-ring" style="--c:#3b82f6; --p:0.5;">
+          <span class="display text-lg text-blue-700 font-medium">3<span class="text-xs text-blue-300">/6</span></span>
+        </div>
+      </div>
+      <button onclick="openMedsSheet()" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-full transition">
+        Open med list
+      </button>
+    </div>
+
+    <div class="glass ring-soft rounded-3xl p-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-indigo-100 grid place-items-center text-2xl">🌙</div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Last night</p>
+            <p class="display text-lg text-stone-800 leading-tight">9h 15m · restful</p>
+          </div>
+        </div>
+        <div class="grow-ring" style="--c:#6366f1; --p:0.92;">
+          <span class="display text-base text-indigo-700 font-medium">9h</span>
+        </div>
+      </div>
+      <button onclick="toast('Sleep note added.')" class="mt-4 w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-semibold py-2.5 rounded-full transition">
+        Add a sleep note
+      </button>
+    </div>
+
+    <div class="glass ring-soft rounded-3xl p-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-amber-100 grid place-items-center text-2xl">💛</div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">How Matty feels</p>
+            <p class="display text-lg text-stone-800 leading-tight">Calm · 8/10</p>
+          </div>
+        </div>
+        <div class="grow-ring" style="--c:#f59e0b; --p:0.8;">
+          <span class="text-2xl">😊</span>
+        </div>
+      </div>
+      <div class="mt-4 grid grid-cols-4 gap-2">
+        <button onclick="logMood('rough')" class="seed-btn py-2 text-xs">😞<br>Rough</button>
+        <button onclick="logMood('okay')"  class="seed-btn py-2 text-xs">😐<br>Okay</button>
+        <button onclick="logMood('good')"  class="seed-btn py-2 text-xs">🙂<br>Good</button>
+        <button onclick="logMood('great')" class="seed-btn py-2 text-xs">😊<br>Great</button>
+      </div>
+    </div>
+
+    <div class="glass ring-soft rounded-3xl p-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-rose-100 grid place-items-center text-2xl">🌟</div>
+          <div>
+            <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Worth noticing</p>
+            <p class="display text-lg text-stone-800 leading-tight">Routine is working</p>
+          </div>
+        </div>
+        <div class="grow-ring" style="--c:#f43f5e; --p:0.85;">
+          <span class="text-2xl">✨</span>
+        </div>
+      </div>
+      <button onclick="toast('Saved to Matty\\'s journal.')" class="mt-4 w-full bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold py-2.5 rounded-full transition">
+        Save this to journal
+      </button>
+    </div>
+  </div>
+
+  <!-- seeds row -->
+  <p class="handwritten text-3xl text-amber-800 mt-8 mb-3">Quick add…</p>
+  <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+    <button onclick="toast('Meal note saved.')"     class="seed-btn py-4 text-center"><div class="text-2xl">🍽️</div><div class="text-xs mt-1 font-semibold">Meal</div></button>
+    <button onclick="toast('Behavior logged.')"     class="seed-btn py-4 text-center"><div class="text-2xl">🧠</div><div class="text-xs mt-1 font-semibold">Behavior</div></button>
+    <button onclick="toast('Sensory entry added.')" class="seed-btn py-4 text-center"><div class="text-2xl">🌀</div><div class="text-xs mt-1 font-semibold">Sensory</div></button>
+    <button onclick="toast('Therapy note saved.')"  class="seed-btn py-4 text-center"><div class="text-2xl">🤝</div><div class="text-xs mt-1 font-semibold">Therapy</div></button>
+    <button onclick="toast('Bowel log added.')"     class="seed-btn py-4 text-center"><div class="text-2xl">💩</div><div class="text-xs mt-1 font-semibold">Bowel</div></button>
+    <button onclick="toast('Photo saved.')"         class="seed-btn py-4 text-center"><div class="text-2xl">📷</div><div class="text-xs mt-1 font-semibold">Photo</div></button>
+  </div>
+
+</section>
+
+<!-- bottom encouragement + robust link -->
+<section class="max-w-3xl mx-auto px-6 pb-32 pt-2">
+  <p class="text-center text-sm text-stone-500 italic">You don't have to log everything. Even one note helps us notice patterns.</p>
+  <p class="text-center text-sm mt-4">
+    <a href="#" class="text-stone-600 hover:text-stone-900 underline decoration-stone-300 underline-offset-4">Need every detail? Open the full caregiver view →</a>
+  </p>
+</section>
+
+<!-- floating compose -->
+<div class="fixed bottom-6 inset-x-0 px-6 z-40">
+  <div class="max-w-3xl mx-auto flex justify-end">
+    <button onclick="openCompose()" class="compose-fab bg-orange-500 hover:bg-orange-600 text-white display italic font-medium text-lg px-7 py-4 rounded-full flex items-center gap-2">
+      <span class="text-2xl leading-none">+</span> What just happened?
+    </button>
+  </div>
+</div>
+
+<!-- compose sheet -->
+<div id="composeBackdrop" class="hidden fixed inset-0 bg-stone-900/40 z-40" onclick="closeCompose()"></div>
+<div id="composeSheet" class="hidden fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-3xl p-6 shadow-2xl max-w-3xl mx-auto">
+  <div class="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mb-4"></div>
+  <p class="display italic text-stone-500 text-lg">What just happened?</p>
+  <textarea id="composeText" rows="3" placeholder="Tap a chip below or just type…"
+    class="w-full mt-3 rounded-2xl border border-stone-200 px-4 py-3 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 resize-none"></textarea>
+  <div class="flex flex-wrap gap-2 mt-3">
+    <button onclick="quickFill('Took meds.')" class="px-3 py-1.5 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">💊 Took meds</button>
+    <button onclick="quickFill('Had a meltdown.')" class="px-3 py-1.5 rounded-full bg-rose-100 text-rose-800 text-sm font-medium">🧠 Meltdown</button>
+    <button onclick="quickFill('Ate a good lunch.')" class="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-sm font-medium">🍽️ Meal</button>
+    <button onclick="quickFill('Slept well.')" class="px-3 py-1.5 rounded-full bg-purple-100 text-purple-800 text-sm font-medium">😴 Sleep</button>
+  </div>
+  <div class="flex gap-3 mt-5">
+    <button onclick="closeCompose()" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold py-3 rounded-full">Cancel</button>
+    <button onclick="saveCompose()" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-full">Save</button>
+  </div>
+</div>
+
+<!-- meds bottom sheet -->
+<div id="medsBackdrop" class="hidden fixed inset-0 bg-stone-900/40 z-40" onclick="closeMedsSheet()"></div>
+<div id="medsSheet" class="hidden fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-3xl p-6 shadow-2xl max-w-3xl mx-auto">
+  <div class="w-12 h-1.5 bg-stone-200 rounded-full mx-auto mb-4"></div>
+  <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">Today · Friday</p>
+  <h3 class="display text-2xl text-stone-800 mt-1">Mark Matty's meds</h3>
+  <p class="text-sm text-stone-500 mb-5">Tap each one as you give it. We'll save the time automatically.</p>
+  <div id="medList" class="space-y-2"></div>
+  <div class="flex gap-3 mt-6">
+    <button onclick="closeMedsSheet()" class="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold py-3 rounded-full">Done</button>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-5 py-3 rounded-full shadow-lg z-50">
+  <span id="toastText"></span>
+</div>
+
+<script>
+  const meds = [
+    { name: 'Leucovorin', dose: '15 mg',  time: '8:00 am',  done: true  },
+    { name: 'Fluoxetine', dose: '20 mg',  time: '8:00 am',  done: true  },
+    { name: 'Clonidine',  dose: '0.1 mg', time: '12:00 pm', done: true  },
+    { name: 'Clonidine',  dose: '0.1 mg', time: '4:00 pm',  done: false },
+    { name: 'Melatonin',  dose: '1 mg',   time: '8:30 pm',  done: false },
+    { name: 'Trazodone',  dose: '50 mg',  time: '9:00 pm',  done: false },
+  ];
+
+  function renderMeds() {
+    const list = document.getElementById('medList');
+    list.innerHTML = '';
+    meds.forEach((m, i) => {
+      const row = document.createElement('div');
+      row.className = 'med-row flex items-center gap-4 p-3 bg-stone-50 rounded-2xl' + (m.done ? ' done' : '');
+      row.innerHTML = `
+        <div class="check" data-i="${i}">${m.done ? '✓' : ''}</div>
+        <div class="flex-1">
+          <p class="font-semibold text-stone-800">${m.name} · <span class="text-stone-500">${m.dose}</span></p>
+          <p class="text-xs text-stone-500">${m.time}</p>
+        </div>
+      `;
+      row.querySelector('.check').onclick = () => {
+        meds[i].done = !meds[i].done;
+        renderMeds();
+        if (meds[i].done) toast(`${m.name} marked given.`);
+      };
+      list.appendChild(row);
+    });
+  }
+  function openMedsSheet() { renderMeds(); document.getElementById('medsBackdrop').classList.remove('hidden'); document.getElementById('medsSheet').classList.remove('hidden'); }
+  function closeMedsSheet(){ document.getElementById('medsBackdrop').classList.add('hidden'); document.getElementById('medsSheet').classList.add('hidden'); }
+
+  function toggleFullDay() {
+    const p = document.getElementById('fullDayPanel');
+    const b = document.getElementById('fullDayBtn');
+    p.classList.toggle('hidden');
+    b.textContent = p.classList.contains('hidden') ? "View Matty's full day →" : "Hide Matty's full day ↑";
+  }
+
+  function markTaken(btn) {
+    btn.disabled = true;
+    btn.textContent = '✓ Taken';
+    btn.classList.remove('text-blue-700','hover:text-blue-900','bg-white/70');
+    btn.classList.add('bg-emerald-600','text-white');
+    toast('Clonidine 0.1 mg marked taken.');
+  }
+
+  function logMood(level) {
+    const labels = { rough: 'Rough day noted — we hear you.', okay: 'Logged: today is okay.', good: 'Logged: today is good.', great: 'Logged: today is great. 🌟' };
+    toast(labels[level]);
+  }
+
+  function openCompose()  { document.getElementById('composeBackdrop').classList.remove('hidden'); document.getElementById('composeSheet').classList.remove('hidden'); }
+  function closeCompose() { document.getElementById('composeBackdrop').classList.add('hidden');    document.getElementById('composeSheet').classList.add('hidden'); }
+  function quickFill(t)   { document.getElementById('composeText').value = t; }
+  function saveCompose()  {
+    const v = document.getElementById('composeText').value.trim();
+    if (!v) { toast('Type something first.'); return; }
+    document.getElementById('composeText').value = '';
+    closeCompose();
+    toast('Saved to today.');
+  }
+  let _t;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastText').textContent = msg;
+    t.classList.remove('hidden');
+    clearTimeout(_t);
+    _t = setTimeout(() => t.classList.add('hidden'), 2000);
+  }
+</script>
+</body>
+</html>

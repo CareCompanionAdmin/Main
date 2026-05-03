@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{template "head" "Daily Logs"}}
-<body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors">
+<body class="calm-bg min-h-screen">
 
 {{template "nav" .}}
 {{template "mascot" .}}
@@ -15,7 +15,7 @@
     </div>
 
     <div class="mb-6 flex justify-between items-center">
-        <a href="/child/{{.Child.ID}}" class="text-indigo-600 hover:text-indigo-500 flex items-center">
+        <a href="/child/{{.Child.ID}}" class="text-orange-600 hover:text-orange-500 flex items-center">
             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
@@ -23,26 +23,26 @@
         </a>
         <div class="flex items-center space-x-2">
             <!-- View Mode Toggle -->
-            <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
                 <button id="daily-view-btn" onclick="setViewMode('daily')"
-                    class="px-3 py-2 text-sm font-medium bg-indigo-600 text-white">
+                    class="px-3 py-2 text-sm font-medium bg-orange-600 text-white">
                     Daily
                 </button>
                 <button id="weekly-view-btn" onclick="setViewMode('weekly')"
-                    class="px-3 py-2 text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    class="px-3 py-2 text-sm font-medium bg-white text-gray-700 hover:bg-gray-50">
                     Weekly
                 </button>
             </div>
             <input type="date" id="log-date" value="{{.Date.Format "2006-01-02"}}"
-                class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 onchange="window.location.href='?date=' + this.value + '&view=' + currentViewMode">
         </div>
     </div>
 
     <!-- Date Navigation -->
-    <div class="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4">
+    <div class="mb-6 bg-white rounded-xl shadow-sm border p-4">
         <div class="flex items-center justify-between">
-            <button onclick="navigateDate(-1)" class="flex items-center px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+            <button onclick="navigateDate(-1)" class="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors">
                 <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                 </svg>
@@ -50,7 +50,7 @@
             </button>
 
             <div class="text-center">
-                <button onclick="openHistoryModal()" class="flex items-center px-4 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors">
+                <button onclick="openHistoryModal()" class="flex items-center px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
@@ -58,7 +58,7 @@
                 </button>
             </div>
 
-            <button onclick="navigateDate(1)" class="flex items-center px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors" id="next-btn">
+            <button onclick="navigateDate(1)" class="flex items-center px-3 py-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" id="next-btn">
                 <span id="next-label">Next Day</span>
                 <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -67,34 +67,34 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
         {{if eq .ViewMode "weekly"}}
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Weekly Logs for {{.Child.FirstName}}</h1>
-        <p class="text-gray-500 dark:text-gray-400">{{.Date.Format "Mon, Jan 2"}} - {{.EndDate.Format "Mon, Jan 2, 2006"}}</p>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Weekly Logs for {{.Child.FirstName}}</h1>
+        <p class="text-gray-500">{{.Date.Format "Mon, Jan 2"}} - {{.EndDate.Format "Mon, Jan 2, 2006"}}</p>
         {{else}}
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Daily Logs for {{.Child.FirstName}}</h1>
-        <p class="text-gray-500 dark:text-gray-400">{{.Date.Format "Monday, January 2, 2006"}}</p>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Daily Logs for {{.Child.FirstName}}</h1>
+        <p class="text-gray-500">{{.Date.Format "Monday, January 2, 2006"}}</p>
         {{end}}
     </div>
 
     <!-- Medications Due -->
     {{if .MedicationsDue}}
-    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-4">Medications Due</h2>
+    <div class="bg-blue-50 rounded-xl border border-blue-200 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-blue-800 mb-4">Medications Due</h2>
         <div class="space-y-3">
             {{range .MedicationsDue}}
             {{if not .IsLogged}}
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700" id="med-card-{{.Medication.ID.String}}-{{.Schedule.ID.String}}">
+            <div class="bg-white p-4 rounded-lg border" id="med-card-{{.Medication.ID.String}}-{{.Schedule.ID.String}}">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div class="min-w-0">
-                        <p class="font-medium text-gray-900 dark:text-white break-words">{{.Medication.Name}}</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}){{end}}</p>
+                        <p class="font-medium text-gray-900 break-words">{{.Medication.Name}}</p>
+                        <p class="text-sm text-gray-500">{{.Medication.Dosage}} {{.Medication.DosageUnit}} - {{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} ({{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}){{end}}</p>
                     </div>
                     <div class="flex gap-2 w-full sm:w-auto">
                         <button onclick="openMedTakenModal('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', '{{.Medication.Name}}', '{{.Schedule.TimeOfDay}}', '{{if .Schedule.ScheduledTime.Valid}}{{.Schedule.ScheduledTime.String}}{{end}}')" class="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm text-center font-medium">
                             Taken
                         </button>
-                        <button onclick="logMedMissed('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', this)" class="flex-1 sm:flex-initial px-4 py-2 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 text-sm text-center font-medium">
+                        <button onclick="logMedMissed('{{.Medication.ID.String}}', '{{.Schedule.ID.String}}', this)" class="flex-1 sm:flex-initial px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm text-center font-medium">
                             Missed
                         </button>
                     </div>
@@ -107,8 +107,8 @@
     {{end}}
 
     <!-- Log Type Grid -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Entry</h2>
+    <div class="bg-white rounded-xl shadow-sm border p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Entry</h2>
         <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
             <!-- Behavior -->
             <button onclick="openModal('behavior')" class="flex flex-col items-center p-4 rounded-xl bg-red-50 hover:bg-red-100 transition-colors">
@@ -117,7 +117,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Behavior</span>
+                <span class="text-xs font-medium text-gray-700">Behavior</span>
             </button>
 
             <!-- Diet -->
@@ -127,7 +127,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Meal</span>
+                <span class="text-xs font-medium text-gray-700">Meal</span>
             </button>
 
             <!-- Sleep -->
@@ -137,7 +137,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Sleep</span>
+                <span class="text-xs font-medium text-gray-700">Sleep</span>
             </button>
 
             <!-- Bowel -->
@@ -147,7 +147,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Bowel</span>
+                <span class="text-xs font-medium text-gray-700">Bowel</span>
             </button>
 
             <!-- Medication -->
@@ -157,7 +157,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Medication</span>
+                <span class="text-xs font-medium text-gray-700">Medication</span>
             </button>
 
             <!-- Speech -->
@@ -167,7 +167,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Speech</span>
+                <span class="text-xs font-medium text-gray-700">Speech</span>
             </button>
 
             <!-- Weight -->
@@ -177,7 +177,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Weight</span>
+                <span class="text-xs font-medium text-gray-700">Weight</span>
             </button>
 
             <!-- Sensory -->
@@ -188,7 +188,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Sensory</span>
+                <span class="text-xs font-medium text-gray-700">Sensory</span>
             </button>
 
             <!-- Social -->
@@ -198,17 +198,17 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Social</span>
+                <span class="text-xs font-medium text-gray-700">Social</span>
             </button>
 
             <!-- Therapy -->
-            <button onclick="openModal('therapy')" class="flex flex-col items-center p-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors">
-                <div class="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center mb-2">
+            <button onclick="openModal('therapy')" class="flex flex-col items-center p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors">
+                <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center mb-2">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Therapy</span>
+                <span class="text-xs font-medium text-gray-700">Therapy</span>
             </button>
 
             <!-- Seizure -->
@@ -218,7 +218,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Seizure</span>
+                <span class="text-xs font-medium text-gray-700">Seizure</span>
             </button>
 
             <!-- Health Event -->
@@ -228,23 +228,23 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
                 </div>
-                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">Health</span>
+                <span class="text-xs font-medium text-gray-700">Health</span>
             </button>
         </div>
     </div>
 
     <!-- Today's/This Week's Logs -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+    <div class="bg-white rounded-xl shadow-sm border p-6">
         {{if eq .ViewMode "weekly"}}
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">This Week's Entries</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">This Week's Entries</h2>
         {{else}}
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Today's Entries</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Today's Entries</h2>
         {{end}}
 
         {{if or .Logs.BehaviorLogs .Logs.DietLogs .Logs.MedicationLogs .Logs.BowelLogs .Logs.SleepLogs .Logs.SpeechLogs .Logs.WeightLogs .Logs.SensoryLogs .Logs.SocialLogs .Logs.TherapyLogs .Logs.SeizureLogs .Logs.HealthEventLogs}}
         <div class="space-y-3">
             {{range .Logs.BehaviorLogs}}
-            <div id="behavior-{{.ID}}" onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            <div id="behavior-{{.ID}}" onclick="showDetails('behavior', this)" class="flex items-start space-x-3 p-3 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Behavior"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -269,24 +269,24 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Behavior</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-900">Behavior</p>
+                    <p class="text-sm text-gray-600">
                         {{if gt .Meltdowns 0}}Meltdowns: {{.Meltdowns}} {{end}}
                         {{if gt .StimmingEpisodes 0}}Stimming: {{.StimmingEpisodes}} {{end}}
                         {{if gt .AggressionIncidents 0}}Aggression: {{.AggressionIncidents}} {{end}}
                         {{if gt .SelfInjuryIncidents 0}}Self-injury: {{.SelfInjuryIncidents}} {{end}}
                         {{if .Notes.Valid}}{{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.DietLogs}}
-            <div id="diet-{{.ID}}" onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            <div id="diet-{{.ID}}" onclick="showDetails('diet', this)" class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Meal"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -308,18 +308,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Meal{{if .MealType.Valid}}: {{.MealType.String}}{{end}}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="font-medium text-gray-900">Meal{{if .MealType.Valid}}: {{.MealType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600">{{if .AppetiteLevel.Valid}}Appetite: {{.AppetiteLevel.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.SleepLogs}}
-            <div id="sleep-{{.ID}}" onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+            <div id="sleep-{{.ID}}" onclick="showDetails('sleep', this)" class="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sleep"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -340,18 +340,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Sleep</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .Bedtime.Valid}}{{formatTimeStr .Bedtime.String $.UserTimeFormat}}{{end}}{{if and .Bedtime.Valid .WakeTime.Valid}} – {{end}}{{if .WakeTime.Valid}}{{formatTimeStr .WakeTime.String $.UserTimeFormat}}{{end}}{{if and (not .Bedtime.Valid) (not .WakeTime.Valid)}}{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="font-medium text-gray-900">Sleep</p>
+                    <p class="text-sm text-gray-600">{{if .Bedtime.Valid}}{{formatTimeStr .Bedtime.String $.UserTimeFormat}}{{end}}{{if and .Bedtime.Valid .WakeTime.Valid}} – {{end}}{{if .WakeTime.Valid}}{{formatTimeStr .WakeTime.String $.UserTimeFormat}}{{end}}{{if and (not .Bedtime.Valid) (not .WakeTime.Valid)}}{{if .SleepQuality.Valid}}Quality: {{.SleepQuality.String}}{{end}}{{end}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.BowelLogs}}
-            <div id="bowel-{{.ID}}" onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+            <div id="bowel-{{.ID}}" onclick="showDetails('bowel', this)" class="flex items-start space-x-3 p-3 bg-amber-50 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Bowel Movement"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -367,18 +367,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Bowel Movement</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="font-medium text-gray-900">Bowel Movement</p>
+                    <p class="text-sm text-gray-600">{{if .BristolScale}}Bristol Scale: {{.BristolScale}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.MedicationLogs}}
-            <div id="medication_logs-{{.ID}}" onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+            <div id="medication_logs-{{.ID}}" onclick="showDetails('medication', this)" class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Medication"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -395,22 +395,22 @@
                     </svg>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-medium text-gray-900 dark:text-white break-words">{{.MedicationName}}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if eq .Status "taken"}}✓ Taken{{else if eq .Status "missed"}}✗ Missed{{else if eq .Status "skipped"}}⊘ Skipped{{else}}{{.Status}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
+                    <p class="font-medium text-gray-900 break-words">{{.MedicationName}}</p>
+                    <p class="text-sm text-gray-600">{{if eq .Status "taken"}}✓ Taken{{else if eq .Status "missed"}}✗ Missed{{else if eq .Status "skipped"}}⊘ Skipped{{else}}{{.Status}}{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
                     {{if .ActualTime.Valid}}
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 medication-time-local" data-time="{{.ActualTime.String}}">{{.ActualTime.String}}</p>
+                    <p class="text-xs text-gray-400 mt-1 medication-time-local" data-time="{{.ActualTime.String}}">{{.ActualTime.String}}</p>
                     {{else}}
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 medication-time" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}"></p>
+                    <p class="text-xs text-gray-400 mt-1 medication-time" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}"></p>
                     {{end}}
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.SpeechLogs}}
-            <div id="speech-{{.ID}}" onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
+            <div id="speech-{{.ID}}" onclick="showDetails('speech', this)" class="flex items-start space-x-3 p-3 bg-teal-50 rounded-lg cursor-pointer hover:bg-teal-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Speech"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -429,18 +429,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Speech</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="font-medium text-gray-900">Speech</p>
+                    <p class="text-sm text-gray-600">{{if .VerbalOutputLevel}}Verbal Level: {{.VerbalOutputLevel}}{{end}}{{if .Notes.Valid}} {{.Notes.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.WeightLogs}}
-            <div id="weight-{{.ID}}" onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg cursor-pointer hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors"
+            <div id="weight-{{.ID}}" onclick="showDetails('weight', this)" class="flex items-start space-x-3 p-3 bg-pink-50 rounded-lg cursor-pointer hover:bg-pink-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Weight"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -454,18 +454,18 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Weight</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="font-medium text-gray-900">Weight</p>
+                    <p class="text-sm text-gray-600">{{if .WeightLbs}}{{.WeightLbs}} lbs{{end}}{{if .Notes.Valid}} - {{.Notes.String}}{{end}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.SensoryLogs}}
-            <div id="sensory-{{.ID}}" onclick="showDetails('sensory', this)" class="flex items-start space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+            <div id="sensory-{{.ID}}" onclick="showDetails('sensory', this)" class="flex items-start space-x-3 p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Sensory"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -483,22 +483,22 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Sensory</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-900">Sensory</p>
+                    <p class="text-sm text-gray-600">
                         {{if gt .OverloadEpisodes 0}}Overload episodes: {{.OverloadEpisodes}} {{end}}
                         {{if .OverallRegulation}}{{if gt (deref .OverallRegulation) 0}}Regulation: {{deref .OverallRegulation}}/5 {{end}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.SocialLogs}}
-            <div id="social-{{.ID}}" onclick="showDetails('social', this)" class="flex items-start space-x-3 p-3 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg cursor-pointer hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors"
+            <div id="social-{{.ID}}" onclick="showDetails('social', this)" class="flex items-start space-x-3 p-3 bg-cyan-50 rounded-lg cursor-pointer hover:bg-cyan-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Social"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -517,22 +517,22 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Social</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-900">Social</p>
+                    <p class="text-sm text-gray-600">
                         {{if .PeerInteractions}}Interactions: {{.PeerInteractions}} {{end}}
                         {{if .SocialEngagementLevel}}Engagement: {{.SocialEngagementLevel}}/5 {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.TherapyLogs}}
-            <div id="therapy-{{.ID}}" onclick="showDetails('therapy', this)" class="flex items-start space-x-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+            <div id="therapy-{{.ID}}" onclick="showDetails('therapy', this)" class="flex items-start space-x-3 p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Therapy"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -543,28 +543,28 @@
                 data-entry-goalsworkedon="{{range $i, $v := .GoalsWorkedOn}}{{if $i}}, {{end}}{{$v}}{{end}}"
                 data-entry-homeworkassigned="{{if .HomeworkAssigned.Valid}}{{.HomeworkAssigned.String}}{{end}}"
                 data-entry-progressnotes="{{if .ProgressNotes.Valid}}{{.ProgressNotes.String}}{{end}}">
-                <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Therapy{{if .TherapyType.Valid}} - {{.TherapyType.String}}{{end}}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-900">Therapy{{if .TherapyType.Valid}} - {{.TherapyType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600">
                         {{if .DurationMinutes}}{{.DurationMinutes}} min {{end}}
                         {{if .TherapistName.Valid}}with {{.TherapistName.String}}{{end}}
                         {{if .ProgressNotes.Valid}} - {{.ProgressNotes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.SeizureLogs}}
-            <div id="seizure-{{.ID}}" onclick="showDetails('seizure', this)" class="flex items-start space-x-3 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors"
+            <div id="seizure-{{.ID}}" onclick="showDetails('seizure', this)" class="flex items-start space-x-3 p-3 bg-rose-50 rounded-lg cursor-pointer hover:bg-rose-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Seizure"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -584,21 +584,21 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Seizure{{if .SeizureType.Valid}} - {{.SeizureType.String}}{{end}}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-900">Seizure{{if .SeizureType.Valid}} - {{.SeizureType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600">
                         {{if .DurationSeconds}}Duration: {{.DurationSeconds}}s {{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
 
             {{range .Logs.HealthEventLogs}}
-            <div id="health_events-{{.ID}}" onclick="showDetails('health_event', this)" class="flex items-start space-x-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+            <div id="health_events-{{.ID}}" onclick="showDetails('health_event', this)" class="flex items-start space-x-3 p-3 bg-emerald-50 rounded-lg cursor-pointer hover:bg-emerald-100 transition-colors"
                 data-entry-id="{{.ID}}"
                 data-entry-type="Health Event"
                 data-entry-log-date="{{.LogDate.Format "2006-01-02"}}"
@@ -618,31 +618,31 @@
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <p class="font-medium text-gray-900 dark:text-white">Health Event{{if .EventType.Valid}} - {{.EventType.String}}{{end}}</p>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="font-medium text-gray-900">Health Event{{if .EventType.Valid}} - {{.EventType.String}}{{end}}</p>
+                    <p class="text-sm text-gray-600">
                         {{if .Description.Valid}}{{.Description.String}}{{end}}
                         {{if .Notes.Valid}} - {{.Notes.String}}{{end}}
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
+                    <p class="text-xs text-gray-400 mt-1 entry-time-utc" data-utc="{{.CreatedAt.Format "2006-01-02T15:04:05Z"}}" data-date="{{.LogDate.Format "Mon 1/2"}}">{{.LogDate.Format "Mon 1/2"}}</p>
                 </div>
-                <svg class="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
             </div>
             {{end}}
         </div>
         {{else}}
-        <p class="text-gray-500 dark:text-gray-400 text-center py-8">No entries yet today. Start logging!</p>
+        <p class="text-gray-500 text-center py-8">No entries yet today. Start logging!</p>
         {{end}}
     </div>
 </main>
 
 <!-- History Modal -->
 <div id="history-modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeHistoryModal(event)">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Log History</h2>
-            <button onclick="closeHistoryModal()" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+            <h2 class="text-xl font-bold text-gray-900">Log History</h2>
+            <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -651,34 +651,34 @@
 
         <!-- Quick Jump -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jump to Date</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Jump to Date</label>
             <input type="date" id="history-date-picker"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 onchange="jumpToHistoryDate()">
         </div>
 
         <!-- Quick Presets -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Jump</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Quick Jump</label>
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="jumpToPreset('yesterday')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">Yesterday</button>
-                <button onclick="jumpToPreset('week')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">1 Week Ago</button>
-                <button onclick="jumpToPreset('twoweeks')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">2 Weeks Ago</button>
-                <button onclick="jumpToPreset('month')" class="px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300">1 Month Ago</button>
+                <button onclick="jumpToPreset('yesterday')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">Yesterday</button>
+                <button onclick="jumpToPreset('week')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">1 Week Ago</button>
+                <button onclick="jumpToPreset('twoweeks')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">2 Weeks Ago</button>
+                <button onclick="jumpToPreset('month')" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700">1 Month Ago</button>
             </div>
         </div>
 
         <!-- Recent Dates with Data -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent Days with Data</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Recent Days with Data</label>
             <div id="recent-dates-list" class="space-y-2 max-h-64 overflow-y-auto">
-                <p class="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
+                <p class="text-gray-500 text-sm">Loading...</p>
             </div>
         </div>
 
         <!-- Calendar View -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Calendar View</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Calendar View</label>
             <div class="flex justify-between items-center mb-2">
                 <button onclick="changeHistoryMonth(-1)" class="p-1 hover:bg-gray-100 rounded">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -697,16 +697,16 @@
             </div>
         </div>
 
-        <button onclick="closeHistoryModal()" class="w-full py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Close</button>
+        <button onclick="closeHistoryModal()" class="w-full py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
     </div>
 </div>
 
 <!-- Modal Container -->
 <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-4">
-            <h2 id="modal-title" class="text-xl font-bold text-gray-900 dark:text-white">Add Entry</h2>
-            <button onclick="closeModal()" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+            <h2 id="modal-title" class="text-xl font-bold text-gray-900">Add Entry</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -718,9 +718,9 @@
 
 <!-- Medication Taken Modal -->
 <div id="med-taken-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">When was this medication taken?</h2>
+            <h2 class="text-xl font-bold text-gray-900">When was this medication taken?</h2>
             <button onclick="closeMedTakenModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -731,7 +731,7 @@
             <p id="med-taken-name" class="text-sm text-gray-600 font-medium"></p>
 
             <!-- Option 1: On-time -->
-            <button id="med-taken-ontime-btn" onclick="confirmMedTaken('on-time')" class="hidden w-full p-4 text-left border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors">
+            <button id="med-taken-ontime-btn" onclick="confirmMedTaken('on-time')" class="hidden w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors">
                 <div class="flex items-center">
                     <div class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -739,14 +739,14 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="font-medium text-gray-900 dark:text-white">On-time</p>
-                        <p id="med-taken-ontime-desc" class="text-sm text-gray-500 dark:text-gray-400">Taken at scheduled time</p>
+                        <p class="font-medium text-gray-900">On-time</p>
+                        <p id="med-taken-ontime-desc" class="text-sm text-gray-500">Taken at scheduled time</p>
                     </div>
                 </div>
             </button>
 
             <!-- Option 2: Now -->
-            <button onclick="confirmMedTaken('now')" class="w-full p-4 text-left border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
+            <button onclick="confirmMedTaken('now')" class="w-full p-4 text-left border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors">
                 <div class="flex items-center">
                     <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
                         <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -754,14 +754,14 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="font-medium text-gray-900 dark:text-white">Now</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Record as taken at current time</p>
+                        <p class="font-medium text-gray-900">Now</p>
+                        <p class="text-sm text-gray-500">Record as taken at current time</p>
                     </div>
                 </div>
             </button>
 
             <!-- Option 3: Earlier -->
-            <div class="border-2 border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div class="border-2 border-gray-200 rounded-lg p-4">
                 <div class="flex items-center mb-3">
                     <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -769,18 +769,18 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="font-medium text-gray-900 dark:text-white">Earlier</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Select when it was taken</p>
+                        <p class="font-medium text-gray-900">Earlier</p>
+                        <p class="text-sm text-gray-500">Select when it was taken</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" id="med-taken-date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" id="med-taken-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" id="med-taken-time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" id="med-taken-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
                 <p id="med-taken-error" class="text-sm text-red-600 mb-3 hidden"></p>
@@ -825,22 +825,22 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-3 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mood (1-10)</label>
-                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="1-10">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mood (1-10)</label>
+                    <input type="number" name="mood_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Energy (1-10)</label>
-                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="1-10">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Energy (1-10)</label>
+                    <input type="number" name="energy_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Anxiety (1-10)</label>
-                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="1-10">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Anxiety (1-10)</label>
+                    <input type="number" name="anxiety_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="1-10">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Interpersonal Behavior</label>
-                    <select name="interpersonal_behavior" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Interpersonal Behavior</label>
+                    <select name="interpersonal_behavior" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="withdrawn">Withdrawn</option>
                         <option value="somewhat_withdrawn">Somewhat Withdrawn</option>
@@ -850,8 +850,8 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stimming</label>
-                    <select name="stimming_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stimming</label>
+                    <select name="stimming_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="none">None</option>
                         <option value="low">Low</option>
@@ -862,22 +862,22 @@ const formTemplates = {
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meltdowns</label>
-                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meltdowns</label>
+                    <input type="number" name="meltdowns" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aggression Incidents</label>
-                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Aggression Incidents</label>
+                    <input type="number" name="aggression_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Self-Injury Incidents</label>
-                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Self-Injury Incidents</label>
+                    <input type="number" name="self_injury_incidents" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-                    <select name="location" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" onchange="toggleLocationOther(this)">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <select name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="toggleLocationOther(this)">
                         <option value="">Select location...</option>
                         <option value="home" selected>Home</option>
                         <option value="school">School</option>
@@ -888,19 +888,19 @@ const formTemplates = {
             </div>
             <div id="location-other-container" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Specify Location</label>
-                <input type="text" name="location_other" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Enter location">
+                <input type="text" name="location_other" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter location">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
-                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
+                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., loud noise, transition)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Behaviors</label>
-                <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
+                <input type="text" name="positive_behaviors" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., shared toy, made eye contact)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -916,12 +916,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -932,8 +932,8 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meal Type</label>
-                    <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Meal Type</label>
+                    <select name="meal_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="breakfast">Breakfast</option>
                         <option value="lunch">Lunch</option>
@@ -942,8 +942,8 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Appetite Level</label>
-                    <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Appetite Level</label>
+                    <select name="appetite_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="high">High</option>
                         <option value="normal">Normal</option>
@@ -954,25 +954,25 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foods Eaten</label>
-                <input type="text" name="foods_eaten" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., eggs, toast, apple)">
+                <input type="text" name="foods_eaten" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., eggs, toast, apple)">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Foods Refused</label>
-                <input type="text" name="foods_refused" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
+                <input type="text" name="foods_refused" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Water Intake (oz)</label>
-                    <input type="number" name="water_intake_oz" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="oz">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Water Intake (oz)</label>
+                    <input type="number" name="water_intake_oz" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="oz">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Food Tried</label>
-                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Food Tried</label>
+                    <input type="text" name="new_food_tried" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any" oninput="toggleNewFoodAcceptance(this)">
                 </div>
             </div>
             <div id="new-food-acceptance-container" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">New Food Acceptance</label>
-                <select name="new_food_acceptance" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <select name="new_food_acceptance" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     <option value="">Select...</option>
                     <option value="touch_lips">Touch Lips</option>
                     <option value="touch_tongue">Touch Tongue</option>
@@ -982,7 +982,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Supplements Taken</label>
-                <input type="text" name="supplements_taken" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
+                <input type="text" name="supplements_taken" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
             </div>
             <div class="flex items-center space-x-4">
                 <div class="flex items-center">
@@ -992,11 +992,11 @@ const formTemplates = {
             </div>
             <div id="reaction-details" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Reaction Details</label>
-                <textarea name="reaction_details" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Describe the reaction..."></textarea>
+                <textarea name="reaction_details" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Describe the reaction..."></textarea>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1012,12 +1012,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1028,48 +1028,48 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bedtime</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bedtime</label>
                     <input type="hidden" name="bedtime" value="">
                     <div class="flex gap-1 items-center">
-                        <select name="bedtime_hour" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('bedtime')">
+                        <select name="bedtime_hour" class="flex-1 px-2 py-2 border border-gray-300 rounded-lg text-sm" onchange="updateSleepTimeHidden('bedtime')">
                             <option value="">Hr</option>
                             ${userTimeFormat === '24h' ?
                                 Array.from({length:24}, (_,i) => '<option value="'+i+'">'+String(i).padStart(2,'0')+'</option>').join('') :
                                 Array.from({length:12}, (_,i) => '<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')
                             }
                         </select>
-                        <span class="text-gray-500 dark:text-gray-400 font-bold">:</span>
-                        <select name="bedtime_min" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('bedtime')">
+                        <span class="text-gray-500 font-bold">:</span>
+                        <select name="bedtime_min" class="flex-1 px-2 py-2 border border-gray-300 rounded-lg text-sm" onchange="updateSleepTimeHidden('bedtime')">
                             <option value="">Min</option>
                             ${Array.from({length:12}, (_,i) => '<option value="'+(i*5)+'">'+ String(i*5).padStart(2,'0')+'</option>').join('')}
                         </select>
-                        ${userTimeFormat !== '24h' ? '<select name="bedtime_ampm" class="px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden(&#39;bedtime&#39;)"><option value="PM">PM</option><option value="AM">AM</option></select>' : ''}
+                        ${userTimeFormat !== '24h' ? '<select name="bedtime_ampm" class="px-2 py-2 border border-gray-300 rounded-lg text-sm" onchange="updateSleepTimeHidden(&#39;bedtime&#39;)"><option value="PM">PM</option><option value="AM">AM</option></select>' : ''}
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Wake Time</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Wake Time</label>
                     <input type="hidden" name="wake_time" value="">
                     <div class="flex gap-1 items-center">
-                        <select name="wake_time_hour" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('wake_time')">
+                        <select name="wake_time_hour" class="flex-1 px-2 py-2 border border-gray-300 rounded-lg text-sm" onchange="updateSleepTimeHidden('wake_time')">
                             <option value="">Hr</option>
                             ${userTimeFormat === '24h' ?
                                 Array.from({length:24}, (_,i) => '<option value="'+i+'">'+String(i).padStart(2,'0')+'</option>').join('') :
                                 Array.from({length:12}, (_,i) => '<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')
                             }
                         </select>
-                        <span class="text-gray-500 dark:text-gray-400 font-bold">:</span>
-                        <select name="wake_time_min" class="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden('wake_time')">
+                        <span class="text-gray-500 font-bold">:</span>
+                        <select name="wake_time_min" class="flex-1 px-2 py-2 border border-gray-300 rounded-lg text-sm" onchange="updateSleepTimeHidden('wake_time')">
                             <option value="">Min</option>
                             ${Array.from({length:12}, (_,i) => '<option value="'+(i*5)+'">'+ String(i*5).padStart(2,'0')+'</option>').join('')}
                         </select>
-                        ${userTimeFormat !== '24h' ? '<select name="wake_time_ampm" class="px-2 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg text-sm" onchange="updateSleepTimeHidden(&#39;wake_time&#39;)"><option value="AM">AM</option><option value="PM">PM</option></select>' : ''}
+                        ${userTimeFormat !== '24h' ? '<select name="wake_time_ampm" class="px-2 py-2 border border-gray-300 rounded-lg text-sm" onchange="updateSleepTimeHidden(&#39;wake_time&#39;)"><option value="AM">AM</option><option value="PM">PM</option></select>' : ''}
                     </div>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sleep Quality</label>
-                    <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Quality</label>
+                    <select name="sleep_quality" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="excellent">Excellent</option>
                         <option value="good">Good</option>
@@ -1078,9 +1078,9 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Sleep</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Sleep</label>
                     <div class="flex gap-2">
-                        <select name="sleep_hours" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <select name="sleep_hours" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="">Hrs</option>
                             <option value="0">0 hrs</option>
                             <option value="1">1 hr</option>
@@ -1098,7 +1098,7 @@ const formTemplates = {
                             <option value="13">13 hrs</option>
                             <option value="14">14 hrs</option>
                         </select>
-                        <select name="sleep_minutes" class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <select name="sleep_minutes" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="">Min</option>
                             ${Array.from({length:12}, (_,i) => '<option value="'+(i*5)+'">'+(i*5)+' min</option>').join('')}
                         </select>
@@ -1107,7 +1107,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Night Wakings</label>
-                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <input type="number" name="night_wakings" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div class="flex flex-wrap gap-4">
                 <div class="flex items-center">
@@ -1125,11 +1125,11 @@ const formTemplates = {
             </div>
             <div id="sleep-aid-name" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Sleep Aid Name</label>
-                <input type="text" name="sleep_aid_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., Melatonin">
+                <input type="text" name="sleep_aid_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., Melatonin">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1145,12 +1145,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1161,13 +1161,13 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bristol Scale (1-7)</label>
-                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bristol Scale (1-7)</label>
+                    <input type="number" name="bristol_scale" min="1" max="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     <p class="text-xs text-gray-500 mt-1">1=hard lumps, 4=smooth, 7=liquid</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pain Level (1-10)</label>
-                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="If any">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pain Level (1-10)</label>
+                    <input type="number" name="pain_level" min="1" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="If any">
                 </div>
             </div>
             <div class="flex flex-wrap gap-4">
@@ -1182,7 +1182,7 @@ const formTemplates = {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1198,12 +1198,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1215,15 +1215,15 @@ const formTemplates = {
             <p class="text-sm text-gray-600">Log an as-needed medication dose.</p>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Medication Name</label>
-                <input type="text" name="medication_name" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <input type="text" name="medication_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                <input type="text" name="dosage" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 10mg">
+                <input type="text" name="dosage" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 10mg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
         </form>
@@ -1232,41 +1232,41 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Verbal Output (1-5)</label>
-                    <input type="number" name="verbal_output_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Verbal Output (1-5)</label>
+                    <input type="number" name="verbal_output_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Clarity (1-5)</label>
-                    <input type="number" name="clarity_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Clarity (1-5)</label>
+                    <input type="number" name="clarity_level" min="1" max="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Words</label>
-                    <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Words</label>
+                    <input type="text" name="new_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lost Words</label>
-                    <input type="text" name="lost_words" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lost Words</label>
+                    <input type="text" name="lost_words" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Echolalia Level (0-5)</label>
-                <input type="number" name="echolalia_level" min="0" max="5" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="0 = none, 5 = constant">
+                <input type="number" name="echolalia_level" min="0" max="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="0 = none, 5 = constant">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Communication Attempts</label>
-                    <input type="number" name="communication_attempts" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Communication Attempts</label>
+                    <input type="number" name="communication_attempts" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Successful Communications</label>
-                    <input type="number" name="successful_communications" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Successful Communications</label>
+                    <input type="number" name="successful_communications" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1282,12 +1282,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1298,15 +1298,15 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Weight (lbs)</label>
-                <input type="number" step="0.1" name="weight_lbs" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <input type="number" step="0.1" name="weight_lbs" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Height (inches)</label>
-                <input type="number" step="0.1" name="height_inches" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <input type="number" step="0.1" name="height_inches" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
@@ -1322,12 +1322,12 @@ const formTemplates = {
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1338,8 +1338,8 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overall Regulation (1-5)</label>
-                    <select name="overall_regulation" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Overall Regulation (1-5)</label>
+                    <select name="overall_regulation" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="1">1 - Very Dysregulated</option>
                         <option value="2">2 - Dysregulated</option>
@@ -1349,46 +1349,46 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overload Episodes</label>
-                    <input type="number" name="overload_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Overload Episodes</label>
+                    <input type="number" name="overload_episodes" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overload Triggers</label>
-                <input type="text" name="overload_triggers" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., loud noises, bright lights)">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Overload Triggers</label>
+                <input type="text" name="overload_triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., loud noises, bright lights)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sensory Seeking Behaviors</label>
-                <input type="text" name="sensory_seeking_behaviors" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., spinning, jumping)">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Sensory Seeking Behaviors</label>
+                <input type="text" name="sensory_seeking_behaviors" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., spinning, jumping)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Calming Strategies Used</label>
-                <input type="text" name="calming_strategies_used" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., weighted blanket, quiet space)">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Calming Strategies Used</label>
+                <input type="text" name="calming_strategies_used" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., weighted blanket, quiet space)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Scope</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
                 <div class="flex space-x-4 mb-3">
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Day</span>
+                        <span class="text-sm text-gray-700">Day</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Momentary</span>
+                        <span class="text-sm text-gray-700">Momentary</span>
                     </label>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1399,8 +1399,8 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Eye Contact Level (1-5)</label>
-                    <select name="eye_contact_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Eye Contact Level (1-5)</label>
+                    <select name="eye_contact_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="1">1 - None</option>
                         <option value="2">2 - Minimal</option>
@@ -1410,8 +1410,8 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Social Engagement (1-5)</label>
-                    <select name="social_engagement_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Social Engagement (1-5)</label>
+                    <select name="social_engagement_level" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="1">1 - Withdrawn</option>
                         <option value="2">2 - Low</option>
@@ -1423,52 +1423,52 @@ const formTemplates = {
             </div>
             <div class="grid grid-cols-3 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Peer Interactions</label>
-                    <input type="number" name="peer_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Peer Interactions</label>
+                    <input type="number" name="peer_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Positive Interactions</label>
-                    <input type="number" name="positive_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Positive Interactions</label>
+                    <input type="number" name="positive_interactions" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conflicts</label>
-                    <input type="number" name="conflicts" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Conflicts</label>
+                    <input type="number" name="conflicts" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parallel Play (minutes)</label>
-                    <input type="number" name="parallel_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Parallel Play (minutes)</label>
+                    <input type="number" name="parallel_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cooperative Play (minutes)</label>
-                    <input type="number" name="cooperative_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Cooperative Play (minutes)</label>
+                    <input type="number" name="cooperative_play_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Scope</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
                 <div class="flex space-x-4 mb-3">
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Day</span>
+                        <span class="text-sm text-gray-700">Day</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Momentary</span>
+                        <span class="text-sm text-gray-700">Momentary</span>
                     </label>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1479,8 +1479,8 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Therapy Type</label>
-                    <select name="therapy_type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Therapy Type</label>
+                    <select name="therapy_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="aba">ABA</option>
                         <option value="speech">Speech Therapy</option>
@@ -1491,67 +1491,67 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (minutes)</label>
-                    <input type="number" name="duration_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                    <input type="number" name="duration_minutes" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Therapist Name</label>
-                <input type="text" name="therapist_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Optional">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Therapist Name</label>
+                <input type="text" name="therapist_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Goals Worked On</label>
-                <input type="text" name="goals_worked_on" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Goals Worked On</label>
+                <input type="text" name="goals_worked_on" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Progress Notes</label>
-                <textarea name="progress_notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="How did the session go?"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Progress Notes</label>
+                <textarea name="progress_notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="How did the session go?"></textarea>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Homework Assigned</label>
-                <input type="text" name="homework_assigned" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Optional">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Homework Assigned</label>
+                <input type="text" name="homework_assigned" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Optional">
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Scope</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time Scope</label>
                 <div class="flex space-x-4 mb-3">
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="day" checked class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Day</span>
+                        <span class="text-sm text-gray-700">Day</span>
                     </label>
                     <label class="flex items-center">
                         <input type="radio" name="time_scope" value="momentary" class="mr-2" onchange="toggleTimeScope(this)">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Momentary</span>
+                        <span class="text-sm text-gray-700">Momentary</span>
                     </label>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div id="time-picker-container" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
-            <button type="submit" class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
+            <button type="submit" class="w-full py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Save</button>
         </form>
     `,
     seizure: `
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time of Seizure <span class="text-red-500">*</span></label>
-                    <input type="time" name="log_time" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Time of Seizure <span class="text-red-500">*</span></label>
+                    <input type="time" name="log_time" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (seconds)</label>
-                    <input type="number" name="duration_seconds" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Duration (seconds)</label>
+                    <input type="number" name="duration_seconds" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seizure Type</label>
-                <select name="seizure_type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Seizure Type</label>
+                <select name="seizure_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     <option value="">Select...</option>
                     <option value="absence">Absence</option>
                     <option value="tonic_clonic">Tonic-Clonic</option>
@@ -1562,45 +1562,45 @@ const formTemplates = {
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Triggers</label>
-                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., flashing lights, stress)">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Triggers</label>
+                <input type="text" name="triggers" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., flashing lights, stress)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Warning Signs</label>
-                <input type="text" name="warning_signs" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., aura, dizziness)">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Warning Signs</label>
+                <input type="text" name="warning_signs" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., aura, dizziness)">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Post-Ictal Symptoms</label>
-                <input type="text" name="post_ictal_symptoms" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., confusion, fatigue)">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Post-Ictal Symptoms</label>
+                <input type="text" name="post_ictal_symptoms" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., confusion, fatigue)">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="flex items-center space-x-2">
                     <input type="checkbox" name="rescue_medication_given" id="rescue_med_check" class="w-4 h-4" onchange="document.getElementById('rescue_med_name').classList.toggle('hidden', !this.checked)">
-                    <label for="rescue_med_check" class="text-sm font-medium text-gray-700 dark:text-gray-300">Rescue Medication Given</label>
+                    <label for="rescue_med_check" class="text-sm font-medium text-gray-700">Rescue Medication Given</label>
                 </div>
                 <div class="flex items-center space-x-2">
                     <input type="checkbox" name="called_911" id="called_911_check" class="w-4 h-4">
-                    <label for="called_911_check" class="text-sm font-medium text-gray-700 dark:text-gray-300">Called 911</label>
+                    <label for="called_911_check" class="text-sm font-medium text-gray-700">Called 911</label>
                 </div>
             </div>
             <div id="rescue_med_name" class="hidden">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rescue Medication Name</label>
-                <input type="text" name="rescue_medication_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Rescue Medication Name</label>
+                <input type="text" name="rescue_medication_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Time</label>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                        <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                        <input type="time" name="log_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                 </div>
             </div>
@@ -1611,8 +1611,8 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Type</label>
-                    <select name="event_type" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+                    <select name="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         <option value="">Select...</option>
                         <option value="illness">Illness</option>
                         <option value="injury">Injury</option>
@@ -1623,45 +1623,45 @@ const formTemplates = {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Temperature (°F)</label>
-                    <input type="number" name="temperature_f" step="0.1" min="90" max="110" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 98.6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Temperature (°F)</label>
+                    <input type="number" name="temperature_f" step="0.1" min="90" max="110" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 98.6">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <input type="text" name="description" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Brief description of the event">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <input type="text" name="description" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Brief description of the event">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Symptoms</label>
-                <input type="text" name="symptoms" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Comma separated (e.g., fever, cough, headache)">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Symptoms</label>
+                <input type="text" name="symptoms" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Comma separated (e.g., fever, cough, headache)">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Provider Name</label>
-                    <input type="text" name="provider_name" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Doctor/clinic name">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Provider Name</label>
+                    <input type="text" name="provider_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Doctor/clinic name">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Diagnosis</label>
-                    <input type="text" name="diagnosis" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosis</label>
+                    <input type="text" name="diagnosis" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Treatment</label>
-                <input type="text" name="treatment" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Prescribed treatment or medications">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Treatment</label>
+                <input type="text" name="treatment" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Prescribed treatment or medications">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Follow-up Date</label>
-                    <input type="date" name="follow_up_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Follow-up Date</label>
+                    <input type="date" name="follow_up_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Date</label>
-                    <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" value="${getLocalDateString()}">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Event Date</label>
+                    <input type="date" name="log_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${getLocalDateString()}">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
@@ -1669,8 +1669,8 @@ const formTemplates = {
     medication: `
         <form id="entry-form" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-                <select name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     <option value="taken">Taken</option>
                     <option value="missed">Missed</option>
                     <option value="skipped">Skipped</option>
@@ -1678,16 +1678,16 @@ const formTemplates = {
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Actual Time</label>
-                <input type="time" name="actual_time" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Actual Time</label>
+                <input type="time" name="actual_time" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Dosage Given</label>
-                <input type="text" name="dosage_given" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="e.g., 10mg, 1 tablet">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Dosage Given</label>
+                <input type="text" name="dosage_given" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 10mg, 1 tablet">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg" placeholder="Any notes about this dose"></textarea>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Any notes about this dose"></textarea>
             </div>
             <button type="submit" class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Save</button>
         </form>
@@ -2688,13 +2688,13 @@ function showDetails(type, element) {
             const calmingStrategies = ds.entryCalmingstrategiesused || '';
             content = `
                 <div class="space-y-3">
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overall Regulation:</span><span class="font-medium dark:text-white">${overallReg > 0 ? overallReg + '/5' : 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Overload Episodes:</span><span class="font-medium dark:text-white">${overloadEps}</span></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Overload Triggers:</span><p class="text-gray-900 dark:text-white">${overloadTriggers || 'None'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Sensory Seeking Behaviors:</span><p class="text-gray-900 dark:text-white">${sensorySeekingBehaviors || 'None'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Calming Strategies Used:</span><p class="text-gray-900 dark:text-white">${calmingStrategies || 'None'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Overall Regulation:</span><span class="font-medium">${overallReg > 0 ? overallReg + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Overload Episodes:</span><span class="font-medium">${overloadEps}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Overload Triggers:</span><p class="text-gray-900">${overloadTriggers || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Sensory Seeking Behaviors:</span><p class="text-gray-900">${sensorySeekingBehaviors || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Calming Strategies Used:</span><p class="text-gray-900">${calmingStrategies || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -2708,15 +2708,15 @@ function showDetails(type, element) {
             const cooperativePlayMins = parseInt(ds.entryCooperativeplayminutes) || 0;
             content = `
                 <div class="space-y-3">
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Eye Contact Level:</span><span class="font-medium dark:text-white">${eyeContactLevel > 0 ? eyeContactLevel + '/5' : 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Social Engagement:</span><span class="font-medium dark:text-white">${socialEngagementLevel > 0 ? socialEngagementLevel + '/5' : 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Peer Interactions:</span><span class="font-medium dark:text-white">${peerInteractions}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Positive Interactions:</span><span class="font-medium dark:text-white">${positiveInteractions}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Conflicts:</span><span class="font-medium dark:text-white">${conflictCount}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Parallel Play:</span><span class="font-medium dark:text-white">${parallelPlayMins > 0 ? parallelPlayMins + ' min' : 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Cooperative Play:</span><span class="font-medium dark:text-white">${cooperativePlayMins > 0 ? cooperativePlayMins + ' min' : 'Not recorded'}</span></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Eye Contact Level:</span><span class="font-medium">${eyeContactLevel > 0 ? eyeContactLevel + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Social Engagement:</span><span class="font-medium">${socialEngagementLevel > 0 ? socialEngagementLevel + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Peer Interactions:</span><span class="font-medium">${peerInteractions}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Positive Interactions:</span><span class="font-medium">${positiveInteractions}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Conflicts:</span><span class="font-medium">${conflictCount}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Parallel Play:</span><span class="font-medium">${parallelPlayMins > 0 ? parallelPlayMins + ' min' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Cooperative Play:</span><span class="font-medium">${cooperativePlayMins > 0 ? cooperativePlayMins + ' min' : 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -2729,13 +2729,13 @@ function showDetails(type, element) {
             const homeworkAssigned = ds.entryHomeworkassigned || '';
             content = `
                 <div class="space-y-3">
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Therapy Type:</span><span class="font-medium capitalize dark:text-white">${therapyType || 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Therapist:</span><span class="font-medium dark:text-white">${therapistName || 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span><span class="font-medium dark:text-white">${durationMins > 0 ? durationMins + ' min' : 'Not recorded'}</span></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Goals Worked On:</span><p class="text-gray-900 dark:text-white">${goalsWorkedOn || 'None'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Progress Notes:</span><p class="text-gray-900 dark:text-white">${progressNotes || 'None'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Homework Assigned:</span><p class="text-gray-900 dark:text-white">${homeworkAssigned || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Therapy Type:</span><span class="font-medium capitalize">${therapyType || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Therapist:</span><span class="font-medium">${therapistName || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Duration:</span><span class="font-medium">${durationMins > 0 ? durationMins + ' min' : 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Goals Worked On:</span><p class="text-gray-900">${goalsWorkedOn || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Progress Notes:</span><p class="text-gray-900">${progressNotes || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Homework Assigned:</span><p class="text-gray-900">${homeworkAssigned || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -2750,15 +2750,15 @@ function showDetails(type, element) {
             const called911 = ds.entryCalled911 === 'true';
             content = `
                 <div class="space-y-3">
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Seizure Type:</span><span class="font-medium capitalize dark:text-white">${seizureType || 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Duration:</span><span class="font-medium dark:text-white">${durationSecs > 0 ? durationSecs + ' seconds' : 'Not recorded'}</span></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Triggers:</span><p class="text-gray-900 dark:text-white">${seizureTriggers || 'None identified'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Warning Signs:</span><p class="text-gray-900 dark:text-white">${warningSigns || 'None'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Post-Ictal Symptoms:</span><p class="text-gray-900 dark:text-white">${postIctalSymptoms || 'None'}</p></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Rescue Medication Given:</span><span class="font-medium ${rescueMedGiven ? 'text-amber-600' : 'dark:text-white'}">${rescueMedGiven ? (rescueMedName || 'Yes') : 'No'}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Called 911:</span><span class="font-medium ${called911 ? 'text-red-600' : 'dark:text-white'}">${called911 ? 'Yes' : 'No'}</span></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Seizure Type:</span><span class="font-medium capitalize">${seizureType || 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Duration:</span><span class="font-medium">${durationSecs > 0 ? durationSecs + ' seconds' : 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Triggers:</span><p class="text-gray-900">${seizureTriggers || 'None identified'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Warning Signs:</span><p class="text-gray-900">${warningSigns || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Post-Ictal Symptoms:</span><p class="text-gray-900">${postIctalSymptoms || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Rescue Medication Given:</span><span class="font-medium ${rescueMedGiven ? 'text-amber-600' : '">${rescueMedGiven ? (rescueMedName || 'Yes') : 'No'}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Called 911:</span><span class="font-medium ${called911 ? 'text-red-600' : '">${called911 ? 'Yes' : 'No'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -2774,16 +2774,16 @@ function showDetails(type, element) {
             const followUpDate = ds.entryFollowupdate || '';
             content = `
                 <div class="space-y-3">
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Time:</span><span class="font-medium dark:text-white">${time}</span></div>
-                    <div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Event Type:</span><span class="font-medium capitalize dark:text-white">${eventType || 'Not recorded'}</span></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Description:</span><p class="text-gray-900 dark:text-white">${eventDescription || 'None'}</p></div>
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Symptoms:</span><p class="text-gray-900 dark:text-white">${symptoms || 'None'}</p></div>
-                    ${temperatureF > 0 ? `<div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Temperature:</span><span class="font-medium ${temperatureF >= 100.4 ? 'text-red-600' : 'dark:text-white'}">${temperatureF}°F</span></div>` : ''}
-                    ${providerName ? `<div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Provider:</span><span class="font-medium dark:text-white">${providerName}</span></div>` : ''}
-                    ${diagnosis ? `<div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Diagnosis:</span><p class="text-gray-900 dark:text-white">${diagnosis}</p></div>` : ''}
-                    ${treatment ? `<div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Treatment:</span><p class="text-gray-900 dark:text-white">${treatment}</p></div>` : ''}
-                    ${followUpDate ? `<div class="flex justify-between"><span class="text-gray-500 dark:text-gray-400">Follow-up Date:</span><span class="font-medium dark:text-white">${followUpDate}</span></div>` : ''}
-                    <div class="pt-2 border-t dark:border-gray-600"><span class="text-gray-500 dark:text-gray-400 block mb-1">Notes:</span><p class="text-gray-900 dark:text-white">${notes || 'None'}</p></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Time:</span><span class="font-medium">${time}</span></div>
+                    <div class="flex justify-between"><span class="text-gray-500">Event Type:</span><span class="font-medium capitalize">${eventType || 'Not recorded'}</span></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Description:</span><p class="text-gray-900">${eventDescription || 'None'}</p></div>
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Symptoms:</span><p class="text-gray-900">${symptoms || 'None'}</p></div>
+                    ${temperatureF > 0 ? `<div class="flex justify-between"><span class="text-gray-500">Temperature:</span><span class="font-medium ${temperatureF >= 100.4 ? 'text-red-600' : '">${temperatureF}°F</span></div>` : ''}
+                    ${providerName ? `<div class="flex justify-between"><span class="text-gray-500">Provider:</span><span class="font-medium">${providerName}</span></div>` : ''}
+                    ${diagnosis ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Diagnosis:</span><p class="text-gray-900">${diagnosis}</p></div>` : ''}
+                    ${treatment ? `<div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Treatment:</span><p class="text-gray-900">${treatment}</p></div>` : ''}
+                    ${followUpDate ? `<div class="flex justify-between"><span class="text-gray-500">Follow-up Date:</span><span class="font-medium">${followUpDate}</span></div>` : ''}
+                    <div class="pt-2 border-t"><span class="text-gray-500 block mb-1">Notes:</span><p class="text-gray-900">${notes || 'None'}</p></div>
                 </div>
             `;
             break;
@@ -2796,9 +2796,9 @@ function showDetails(type, element) {
     document.getElementById('modal-content').innerHTML = `
         ${content}
         <div class="mt-4 pt-4 border-t flex gap-2">
-            <button onclick="editEntry('${type}', document.querySelector('[data-entry-id=\\'${entryId}\\']'))" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Edit</button>
+            <button onclick="editEntry('${type}', document.querySelector('[data-entry-id=\\'${entryId}\\']'))" class="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Edit</button>
             <button onclick="deleteEntry('${type}', '${entryId}')" class="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
-            <button onclick="closeModal()" class="flex-1 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500">Close</button>
+            <button onclick="closeModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Close</button>
         </div>
     `;
     document.getElementById('modal-overlay').classList.remove('hidden');
@@ -3083,13 +3083,13 @@ function setViewMode(mode, navigate = true) {
 
     if (mode === 'daily') {
         dailyBtn.classList.remove('bg-white', 'text-gray-700');
-        dailyBtn.classList.add('bg-indigo-600', 'text-white');
-        weeklyBtn.classList.remove('bg-indigo-600', 'text-white');
+        dailyBtn.classList.add('bg-orange-600', 'text-white');
+        weeklyBtn.classList.remove('bg-orange-600', 'text-white');
         weeklyBtn.classList.add('bg-white', 'text-gray-700');
     } else {
         weeklyBtn.classList.remove('bg-white', 'text-gray-700');
-        weeklyBtn.classList.add('bg-indigo-600', 'text-white');
-        dailyBtn.classList.remove('bg-indigo-600', 'text-white');
+        weeklyBtn.classList.add('bg-orange-600', 'text-white');
+        dailyBtn.classList.remove('bg-orange-600', 'text-white');
         dailyBtn.classList.add('bg-white', 'text-gray-700');
     }
 
@@ -3204,9 +3204,9 @@ async function loadRecentDatesWithData() {
                     const isSelected = dateStr === currentDateStr;
                     return `
                         <button onclick="window.location.href='?date=${dateStr}&view=${currentViewMode}'"
-                            class="w-full flex justify-between items-center px-3 py-2 rounded-lg ${isSelected ? 'bg-indigo-100 border-indigo-500 border' : 'bg-gray-50 hover:bg-gray-100'}">
-                            <span class="font-medium ${isSelected ? 'text-indigo-700' : 'text-gray-700'}">${displayDate}</span>
-                            <span class="text-sm ${isSelected ? 'text-indigo-600' : 'text-gray-500'}">${dateInfo.entry_count} entries</span>
+                            class="w-full flex justify-between items-center px-3 py-2 rounded-lg ${isSelected ? 'bg-orange-100 border-orange-500 border' : 'bg-gray-50 hover:bg-gray-100'}">
+                            <span class="font-medium ${isSelected ? 'text-orange-700' : 'text-gray-700'}">${displayDate}</span>
+                            <span class="text-sm ${isSelected ? 'text-orange-600' : 'text-gray-500'}">${dateInfo.entry_count} entries</span>
                         </button>
                     `;
                 }).join('');
@@ -3234,8 +3234,8 @@ function generateFallbackDateList() {
         const isSelected = dateStr === currentDateStr;
         dates.push(`
             <button onclick="window.location.href='?date=${dateStr}&view=${currentViewMode}'"
-                class="w-full flex justify-between items-center px-3 py-2 rounded-lg ${isSelected ? 'bg-indigo-100 border-indigo-500 border' : 'bg-gray-50 hover:bg-gray-100'}">
-                <span class="font-medium ${isSelected ? 'text-indigo-700' : 'text-gray-700'}">${displayDate}</span>
+                class="w-full flex justify-between items-center px-3 py-2 rounded-lg ${isSelected ? 'bg-orange-100 border-orange-500 border' : 'bg-gray-50 hover:bg-gray-100'}">
+                <span class="font-medium ${isSelected ? 'text-orange-700' : 'text-gray-700'}">${displayDate}</span>
                 <span class="text-xs text-gray-400">${i === 0 ? 'Today' : ''}</span>
             </button>
         `);
@@ -3283,9 +3283,9 @@ function renderHistoryCalendar() {
         if (isFuture) {
             classes += 'text-gray-300 cursor-not-allowed';
         } else if (isSelected) {
-            classes += 'bg-indigo-600 text-white font-bold';
+            classes += 'bg-orange-600 text-white font-bold';
         } else if (isToday) {
-            classes += 'bg-indigo-100 text-indigo-700 font-medium hover:bg-indigo-200';
+            classes += 'bg-orange-100 text-orange-700 font-medium hover:bg-orange-200';
         } else {
             classes += 'text-gray-700 hover:bg-gray-100';
         }
@@ -3303,17 +3303,17 @@ function renderHistoryCalendar() {
 
 <!-- Insight Acknowledge Confirm Modal -->
 <div id="insight-ack-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
         <div class="flex justify-between items-center mb-3">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Acknowledge alert?</h2>
+            <h2 class="text-lg font-bold text-gray-900">Acknowledge alert?</h2>
             <button onclick="closeAckConfirm()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">You're about to acknowledge:</p>
-        <p id="insight-ack-title" class="text-sm font-medium text-gray-900 dark:text-white mb-5"></p>
+        <p class="text-sm text-gray-600 mb-1">You're about to acknowledge:</p>
+        <p id="insight-ack-title" class="text-sm font-medium text-gray-900 mb-5"></p>
         <div class="flex justify-end gap-2">
-            <button type="button" onclick="closeAckConfirm()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Cancel</button>
+            <button type="button" onclick="closeAckConfirm()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
             <button id="insight-ack-confirm-btn" type="button" onclick="confirmAck()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">Acknowledge</button>
         </div>
     </div>
@@ -3321,19 +3321,19 @@ function renderHistoryCalendar() {
 
 <!-- Insight Resolve Modal (with optional notes) -->
 <div id="insight-resolve-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
         <div class="flex justify-between items-center mb-3">
-            <h2 class="text-lg font-bold text-gray-900 dark:text-white">Mark as resolved?</h2>
+            <h2 class="text-lg font-bold text-gray-900">Mark as resolved?</h2>
             <button onclick="closeResolveModal()" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">You're about to resolve:</p>
-        <p id="insight-resolve-title" class="text-sm font-medium text-gray-900 dark:text-white mb-4"></p>
-        <label for="insight-resolve-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Notes (optional)</label>
-        <textarea id="insight-resolve-notes" rows="3" placeholder="What did you do? Anything to remember?" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm mb-5"></textarea>
+        <p class="text-sm text-gray-600 mb-1">You're about to resolve:</p>
+        <p id="insight-resolve-title" class="text-sm font-medium text-gray-900 mb-4"></p>
+        <label for="insight-resolve-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+        <textarea id="insight-resolve-notes" rows="3" placeholder="What did you do? Anything to remember?" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-5"></textarea>
         <div class="flex justify-end gap-2">
-            <button type="button" onclick="closeResolveModal()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">Cancel</button>
+            <button type="button" onclick="closeResolveModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
             <button id="insight-resolve-confirm-btn" type="button" onclick="confirmResolve()" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50">Resolve</button>
         </div>
     </div>

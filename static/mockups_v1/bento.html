@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CareCompanion — Bento Glance</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f4f0; color: #18181b; }
+  .tile { background: #fff; border-radius: 22px; border: 1px solid #ececec; padding: 18px 20px; }
+  .tile-dark { background: #18181b; color: #fafafa; border: 1px solid #18181b; }
+  .ring-track { stroke: #efefef; }
+  .num-display { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .grid-area { display:grid; grid-template-columns: repeat(12, minmax(0,1fr)); grid-auto-rows: 88px; gap: 12px; }
+  .a-mood    { grid-column: span 6; grid-row: span 3; }
+  .a-rings   { grid-column: span 3; grid-row: span 3; }
+  .a-meds    { grid-column: span 3; grid-row: span 3; }
+  .a-alert   { grid-column: span 6; grid-row: span 2; }
+  .a-quick   { grid-column: span 6; grid-row: span 2; }
+  .a-cats    { grid-column: span 8; grid-row: span 2; }
+  .a-stats   { grid-column: span 4; grid-row: span 2; }
+  @media (max-width: 900px) {
+    .a-mood, .a-rings, .a-meds, .a-alert, .a-quick, .a-cats, .a-stats { grid-column: span 12; grid-row: auto; }
+  }
+  .spark path { fill: none; stroke-width: 2; }
+  .qa-tile {
+    background: #f9f9f5; border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 4px; gap: 4px;
+    transition: background .15s ease;
+    cursor: pointer;
+  }
+  .qa-tile:hover { background: #efefe8; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- header -->
+<header class="max-w-7xl mx-auto px-6 pt-6 pb-3 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-full bg-rose-200 flex items-center justify-center text-rose-800 font-semibold text-sm">E</div>
+    <div>
+      <p class="text-[11px] uppercase tracking-widest text-stone-500">Wednesday, Apr 30 2026</p>
+      <h2 class="text-lg font-semibold leading-tight">Emma Chen <span class="text-stone-400 font-normal">· 6 yrs</span></h2>
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <button class="text-sm text-stone-500 hover:text-stone-900 px-3 py-1.5 rounded-full border border-stone-200">Reports</button>
+    <button class="text-sm text-stone-500 hover:text-stone-900 px-3 py-1.5 rounded-full border border-stone-200">Settings</button>
+    <button class="text-sm font-semibold text-white bg-stone-900 hover:bg-stone-700 px-4 py-1.5 rounded-full">+ Log</button>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 pb-12">
+  <div class="grid-area">
+
+    <!-- MOOD CARD (big) -->
+    <div class="tile a-mood flex flex-col">
+      <div class="flex items-baseline justify-between">
+        <p class="text-[11px] uppercase tracking-widest text-stone-500 font-semibold">Mood · This week</p>
+        <span class="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">+12 vs last week</span>
+      </div>
+      <div class="flex items-end gap-3 mt-2">
+        <span class="num-display text-7xl font-bold">72</span>
+        <span class="text-stone-400 text-2xl pb-2 font-medium">/100</span>
+        <span class="text-2xl pb-3">😊</span>
+      </div>
+      <!-- weekly bars -->
+      <div class="mt-auto grid grid-cols-7 gap-1.5 pt-4">
+        <!-- Mon-Sun -->
+        <div class="flex flex-col items-center"><div class="w-full bg-emerald-200 rounded" style="height:42px"></div><span class="text-[10px] mt-1 text-stone-500">M</span></div>
+        <div class="flex flex-col items-center"><div class="w-full bg-amber-300 rounded" style="height:28px"></div><span class="text-[10px] mt-1 text-stone-500">T</span></div>
+        <div class="flex flex-col items-center"><div class="w-full bg-emerald-400 rounded ring-2 ring-emerald-700" style="height:48px"></div><span class="text-[10px] mt-1 font-bold text-stone-800">W</span></div>
+        <div class="flex flex-col items-center"><div class="w-full bg-emerald-200 rounded" style="height:36px"></div><span class="text-[10px] mt-1 text-stone-500">T</span></div>
+        <div class="flex flex-col items-center"><div class="w-full bg-emerald-300 rounded" style="height:52px"></div><span class="text-[10px] mt-1 text-stone-500">F</span></div>
+        <div class="flex flex-col items-center"><div class="w-full bg-emerald-500 rounded" style="height:58px"></div><span class="text-[10px] mt-1 text-stone-500">S</span></div>
+        <div class="flex flex-col items-center"><div class="w-full bg-stone-200 rounded" style="height:14px"></div><span class="text-[10px] mt-1 text-stone-400">S</span></div>
+      </div>
+    </div>
+
+    <!-- RINGS / ADHERENCE -->
+    <div class="tile a-rings flex flex-col">
+      <p class="text-[11px] uppercase tracking-widest text-stone-500 font-semibold">Adherence</p>
+      <div class="flex-1 flex items-center justify-center">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <!-- meds outer -->
+          <circle class="ring-track" cx="70" cy="70" r="60" stroke-width="10" fill="none"/>
+          <circle cx="70" cy="70" r="60" stroke="#3b82f6" stroke-width="10" fill="none"
+            stroke-dasharray="377" stroke-dashoffset="26" stroke-linecap="round" transform="rotate(-90 70 70)"/>
+          <!-- logs middle -->
+          <circle class="ring-track" cx="70" cy="70" r="44" stroke-width="10" fill="none"/>
+          <circle cx="70" cy="70" r="44" stroke="#10b981" stroke-width="10" fill="none"
+            stroke-dasharray="276" stroke-dashoffset="55" stroke-linecap="round" transform="rotate(-90 70 70)"/>
+          <!-- sleep inner -->
+          <circle class="ring-track" cx="70" cy="70" r="28" stroke-width="10" fill="none"/>
+          <circle cx="70" cy="70" r="28" stroke="#a855f7" stroke-width="10" fill="none"
+            stroke-dasharray="176" stroke-dashoffset="22" stroke-linecap="round" transform="rotate(-90 70 70)"/>
+        </svg>
+      </div>
+      <div class="text-[11px] space-y-0.5">
+        <div class="flex items-center justify-between"><span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span>Meds</span><span class="font-semibold num-display">93%</span></div>
+        <div class="flex items-center justify-between"><span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Logs</span><span class="font-semibold num-display">80%</span></div>
+        <div class="flex items-center justify-between"><span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-purple-500"></span>Sleep</span><span class="font-semibold num-display">87%</span></div>
+      </div>
+    </div>
+
+    <!-- MEDS -->
+    <div class="tile a-meds flex flex-col">
+      <p class="text-[11px] uppercase tracking-widest text-stone-500 font-semibold mb-2">Today's meds</p>
+      <div class="space-y-2 flex-1">
+        <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-2.5">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-semibold text-sm">Guanfacine</p>
+              <p class="text-xs text-stone-500">1 mg · 8:00 am</p>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">✓ TAKEN</span>
+          </div>
+        </div>
+        <div class="rounded-xl bg-blue-50 border border-blue-100 p-2.5">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-semibold text-sm">Melatonin</p>
+              <p class="text-xs text-stone-500">2 mg · 8:30 pm</p>
+            </div>
+            <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">DUE</span>
+          </div>
+        </div>
+      </div>
+      <button class="text-xs text-stone-500 hover:text-stone-900 mt-2">View all →</button>
+    </div>
+
+    <!-- ALERT (medium) -->
+    <div class="tile a-alert tile-dark flex items-center gap-4">
+      <div class="w-11 h-11 rounded-full bg-rose-500 flex items-center justify-center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+      </div>
+      <div class="flex-1">
+        <p class="text-[10px] uppercase tracking-widest text-rose-300 font-semibold">Insight</p>
+        <p class="font-semibold leading-tight">Hand-flapping up 40% — possible sensory overload?</p>
+      </div>
+      <button class="text-xs font-medium text-stone-300 hover:text-white px-3 py-1.5 rounded-full border border-stone-700">Acknowledge</button>
+      <button class="text-xs font-semibold text-stone-900 bg-white px-3 py-1.5 rounded-full">Open</button>
+    </div>
+
+    <!-- QUICK ADD GRID -->
+    <div class="tile a-quick">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[11px] uppercase tracking-widest text-stone-500 font-semibold">Quick log</p>
+        <button class="text-xs text-stone-500 hover:text-stone-900">Customize</button>
+      </div>
+      <div class="grid grid-cols-6 gap-2">
+        <div class="qa-tile"><span class="text-xl">🧠</span><span class="text-[10px] font-medium">Behavior</span></div>
+        <div class="qa-tile"><span class="text-xl">🍽️</span><span class="text-[10px] font-medium">Meal</span></div>
+        <div class="qa-tile"><span class="text-xl">😴</span><span class="text-[10px] font-medium">Sleep</span></div>
+        <div class="qa-tile"><span class="text-xl">🌀</span><span class="text-[10px] font-medium">Sensory</span></div>
+        <div class="qa-tile"><span class="text-xl">💊</span><span class="text-[10px] font-medium">Med</span></div>
+        <div class="qa-tile"><span class="text-xl">⋯</span><span class="text-[10px] font-medium">More</span></div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES SPARKLINES -->
+    <div class="tile a-cats">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-[11px] uppercase tracking-widest text-stone-500 font-semibold">Categories · 7 days</p>
+        <span class="text-[10px] text-stone-400">tap any to drill in</span>
+      </div>
+      <div class="grid grid-cols-4 gap-x-6 gap-y-3">
+        <!-- repeat: name + sparkline -->
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Behavior</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#10b981" d="M0,16 L14,18 L28,8 L42,12 L56,6 L70,4 L84,3 L100,3"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-700 num-display">+18</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Sleep</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#a855f7" d="M0,8 L14,10 L28,14 L42,9 L56,7 L70,8 L84,5 L100,6"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-700 num-display">+4</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Diet</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#10b981" d="M0,12 L14,11 L28,9 L42,8 L56,10 L70,7 L84,7 L100,8"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-700 num-display">+6</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Sensory</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#f97316" d="M0,8 L14,10 L28,16 L42,18 L56,15 L70,12 L84,10 L100,9"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-rose-700 num-display">−12</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Speech</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#14b8a6" d="M0,14 L14,12 L28,11 L42,11 L56,10 L70,9 L84,9 L100,8"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-700 num-display">+9</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Social</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#06b6d4" d="M0,12 L14,12 L28,11 L42,9 L56,8 L70,9 L84,7 L100,7"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-700 num-display">+5</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Therapy</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#6366f1" d="M0,14 L14,14 L28,12 L42,10 L56,10 L70,8 L84,8 L100,7"/></svg>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-700 num-display">+7</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <p class="text-xs font-medium">Bowel</p>
+            <svg viewBox="0 0 100 24" class="spark w-full h-5"><path stroke="#d97706" d="M0,12 L14,11 L28,12 L42,11 L56,11 L70,12 L84,12 L100,11"/></svg>
+          </div>
+          <span class="text-[10px] text-stone-400 num-display">±0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="tile a-stats">
+      <p class="text-[11px] uppercase tracking-widest text-stone-500 font-semibold mb-3">Today</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="num-display text-2xl font-bold">5</p>
+          <p class="text-[10px] uppercase tracking-wider text-stone-500">logs entered</p>
+        </div>
+        <div>
+          <p class="num-display text-2xl font-bold">10:30</p>
+          <p class="text-[10px] uppercase tracking-wider text-stone-500">hrs sleep</p>
+        </div>
+        <div>
+          <p class="num-display text-2xl font-bold text-emerald-700">0</p>
+          <p class="text-[10px] uppercase tracking-wider text-stone-500">meltdowns</p>
+        </div>
+        <div>
+          <p class="num-display text-2xl font-bold text-stone-900">16<span class="text-sm text-stone-400">oz</span></p>
+          <p class="text-[10px] uppercase tracking-wider text-stone-500">water</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>

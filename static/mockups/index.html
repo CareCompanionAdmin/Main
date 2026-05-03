@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>CareCompanion — Dashboard Redesign Concepts</title>
+<title>CareCompanion — Dashboard Redesign · Round 2</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   body { font-family: 'Inter', system-ui, sans-serif; background: #0b0d10; color: #e5e7eb; }
-  .display { font-family: 'Fraunces', serif; }
+  .display { font-family: 'Fraunces', serif; font-optical-sizing: auto; }
   .handwritten { font-family: 'Caveat', cursive; }
-  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
 
   .frame {
     border-radius: 16px;
@@ -19,419 +18,236 @@
     transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
     background: #11161d;
   }
-  .frame:hover { border-color: #4b5563; transform: translateY(-2px); box-shadow: 0 20px 40px -20px rgba(20,184,166,0.18); }
+  .frame:hover { border-color: #4b5563; transform: translateY(-2px); box-shadow: 0 20px 40px -20px rgba(180,90,30,0.18); }
   .preview { aspect-ratio: 16 / 10; position: relative; overflow: hidden; }
 
-  /* preview-1: Calm Today */
-  .p-calm {
+  /* shared calm-warm palette across previews */
+  .warm-bg {
     background:
-      radial-gradient(circle at 12% 8%, #fde7d3 0%, transparent 35%),
-      radial-gradient(circle at 90% 5%, #d9eaff 0%, transparent 40%),
-      radial-gradient(circle at 50% 110%, #e7f4ec 0%, transparent 40%),
+      radial-gradient(circle at 15% 10%, #fde7d3 0%, transparent 35%),
+      radial-gradient(circle at 90% 5%, #f3ead8 0%, transparent 40%),
+      radial-gradient(circle at 50% 110%, #f0e6d3 0%, transparent 40%),
       linear-gradient(180deg, #fbf6ee 0%, #f6efe2 100%);
     color: #44403c;
   }
-  .p-calm .hero { font-family: 'Fraunces', serif; font-weight: 500; }
-  .p-calm .glass { background: rgba(255,255,255,0.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.7); border-radius: 16px; }
-  .p-calm .fab { background: #f97316; color: #fff; font-family: 'Fraunces', serif; font-style: italic; }
-
-  /* preview-2: Garden */
-  .p-garden {
-    background:
-      radial-gradient(circle at 10% 0%, #fef3c7 0%, transparent 35%),
-      radial-gradient(circle at 95% 8%, #d1fae5 0%, transparent 35%),
-      radial-gradient(circle at 50% 110%, #fce7f3 0%, transparent 40%),
-      linear-gradient(180deg, #fdfcf6 0%, #f4f7f0 100%);
-    color: #2f3a2e;
+  .glass { background: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.7); border-radius: 14px; backdrop-filter: blur(8px); }
+  .fab { background: #ea580c; color: #fff; font-family: 'Fraunces', serif; font-style: italic; }
+  .ring {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: conic-gradient(var(--c, #c2410c) calc(var(--p, 0.75) * 360deg), #f5ece0 0);
+    position: relative;
   }
-  .p-garden .plant { background: rgba(255,255,255,0.78); border: 1px solid rgba(255,255,255,0.9); border-radius: 14px; }
-  .p-garden .ring { width: 26px; height: 26px; border-radius: 50%; background: conic-gradient(var(--c, #84cc16) calc(var(--p, 0.75) * 360deg), #f1f5e8 0); position: relative; }
-  .p-garden .ring::before { content: ""; position: absolute; inset: 4px; background: #fff; border-radius: 50%; }
-  .p-garden .bloom { background: linear-gradient(135deg, #fef9c3, #fde68a); border: 1px solid rgba(202,138,4,0.18); }
+  .ring::before { content: ""; position: absolute; inset: 4px; background: #fff; border-radius: 50%; }
+  .bloom { background: linear-gradient(135deg, #fdebd3, #f7d2ad); border: 1px solid rgba(180,90,30,0.18); }
 
-  /* preview-3: Story */
-  .p-story {
-    background:
-      repeating-linear-gradient(0deg, transparent 0, transparent 16px, rgba(170,120,60,0.06) 16px, rgba(170,120,60,0.06) 17px),
-      #fbf7ee;
-    color: #2d2520;
-  }
-  .p-story .rail { background: linear-gradient(180deg,#d97706,#fbbf24); }
-  .p-story .card { background: #fff; border-radius: 10px; border: 1px solid #f4ecde; box-shadow: 0 4px 10px -4px rgba(160,90,30,0.15); }
-  .p-story .composer { background: #fff; border: 1.5px solid #e9dfc7; border-radius: 12px; box-shadow: 0 6px 14px -6px rgba(160,90,30,0.15); }
-  .p-story .chip { background: #fff; border: 1px solid #e9dfc7; border-radius: 999px; }
-
-  /* preview-4: Postcard */
-  .p-postcard {
-    background:
-      radial-gradient(circle at 20% 0%, #fef3c7 0%, transparent 40%),
-      radial-gradient(circle at 80% 0%, #fce7f3 0%, transparent 40%),
-      radial-gradient(circle at 50% 100%, #d1fae5 0%, transparent 40%),
-      #fffaf0;
-    color: #3a2f2a;
-    padding: 12px;
-  }
-  .p-postcard .card { background: rgba(255,255,255,0.82); border: 1px solid rgba(190,140,90,0.18); border-radius: 10px; }
-  .p-postcard .stamp { background: repeating-linear-gradient(45deg, #fff 0 6px, #fef3c7 6px 12px); border: 1.5px dashed rgba(180,130,80,0.4); border-radius: 4px; }
+  /* 3: letter paper */
+  .paper { background: linear-gradient(180deg, #fff 0%, #fffdf7 100%); border: 1px solid rgba(180,140,90,0.2); border-radius: 10px; }
 
   .tag { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
   .pros li::before { content: "+ "; color: #34d399; font-weight: 700; }
   .cons li::before { content: "− "; color: #fb7185; font-weight: 700; }
 
   .open-btn {
-    background: linear-gradient(180deg, #14b8a6 0%, #0d9488 100%);
+    background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
     color: #fff; font-weight: 600; padding: 10px 18px; border-radius: 999px;
     transition: filter .15s ease;
     display: inline-flex; align-items: center; gap: 6px;
   }
   .open-btn:hover { filter: brightness(1.1); }
+  .ghost-btn {
+    border: 1px solid #334155; color: #cbd5e1; background: transparent;
+    font-weight: 500; padding: 10px 16px; border-radius: 999px;
+  }
+  .ghost-btn:hover { border-color: #64748b; color: #fff; }
 </style>
 </head>
 <body class="min-h-screen">
 
 <header class="max-w-7xl mx-auto px-6 pt-10 pb-4">
-  <p class="text-xs uppercase tracking-widest text-teal-400 font-semibold">CareCompanion / Dashboard Redesign Concepts</p>
-  <h1 class="display text-5xl mt-2 text-white">Four directions for the family dashboard.</h1>
-  <p class="text-slate-400 mt-3 max-w-2xl">Mockups 1 and 3 use sample child <em>Emma Chen, age 6</em>. Mockups 2 and 4 use <em>real Matty Steinmetz data</em> from the dev database — actual meds, sleep, mood, and insights — so you can feel how the new flows handle a real family. Each design has a few interactive buttons wired up; click around.</p>
+  <p class="text-xs uppercase tracking-widest text-orange-400 font-semibold">CareCompanion / Dashboard Redesign · Round 2</p>
+  <h1 class="display text-5xl mt-2 text-white">Softer, simpler, less clinical.</h1>
+  <p class="text-slate-400 mt-3 max-w-3xl">
+    Round 2 takes the tester's feedback and synthesizes it: keep Calm's floating quick-log button,
+    keep Garden's encouraging bottom reminder, give every page a positive lead-in (with a fallback
+    when there's nothing to highlight yet), and add a "View Matty's Full Day" drill-in plus an
+    escape hatch to the full caregiver view. Four takes on the same vision, varying layout and voice.
+  </p>
+  <p class="text-slate-500 mt-3 text-sm">
+    All four use real Matty Steinmetz data. Round 1 (Calm Today, Garden, Story, Postcard, plus the
+    rejected Bento and Clinical) is preserved verbatim at
+    <a href="/static/mockups_v1/index.html" class="text-orange-300 underline hover:text-orange-200">/static/mockups_v1/</a>.
+  </p>
 </header>
 
 <main class="max-w-7xl mx-auto px-6 pb-16 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-  <!-- ========== 1 CALM ========== -->
-  <div class="frame">
-    <div class="preview p-calm p-5 flex flex-col">
-      <div class="text-[10px] uppercase tracking-widest text-stone-500 font-semibold">Wed · Apr 30</div>
-      <p class="hero text-stone-500 text-sm mt-1">Today, Emma is</p>
-      <div class="flex items-end gap-3">
-        <div class="hero text-7xl font-medium leading-none text-stone-800">7<span class="text-stone-300 text-3xl">/10</span></div>
-        <svg width="44" height="44" viewBox="0 0 96 96" class="mb-1">
-          <circle cx="34" cy="34" r="18" fill="#fbbf24"/>
-          <ellipse cx="58" cy="58" rx="28" ry="16" fill="#ffffff"/>
-          <ellipse cx="42" cy="56" rx="14" ry="10" fill="#ffffff"/>
-          <ellipse cx="70" cy="54" rx="14" ry="10" fill="#ffffff"/>
-        </svg>
+  <!-- ========== 1 CALM HYBRID ========== -->
+  <article class="frame">
+    <div class="preview warm-bg">
+      <div class="absolute inset-0 p-3 flex flex-col gap-2">
+        <div class="bloom rounded-lg p-2 flex items-center gap-2"><span>🌼</span><div class="text-[9px] leading-tight"><div class="font-bold uppercase tracking-wider text-orange-900/70">Today's bright spot</div><div class="display text-[12px] text-stone-800">Five calm days in a row.</div></div></div>
+        <div class="display text-[42px] leading-none text-stone-800 self-start mt-1">8<span class="text-stone-300 text-2xl">/10</span></div>
+        <div class="display italic text-[10px] text-stone-600 -mt-1">Calm. Morning meds in. Slept well.</div>
+        <div class="glass p-2 flex items-center gap-2 mt-1">
+          <div class="w-5 h-5 rounded bg-blue-100"></div>
+          <div class="text-[9px] flex-1"><div class="font-semibold text-stone-700">Clonidine 0.1 mg</div><div class="text-stone-500">in 1h 47m · 4:00 pm</div></div>
+        </div>
+        <div class="glass p-2 flex items-center gap-2"><div class="w-5 h-5 rounded bg-emerald-100"></div><div class="text-[9px] flex-1"><div class="font-semibold text-stone-700">No new patterns yet</div><div class="text-stone-500">Steady is good.</div></div></div>
+        <div class="text-center text-[9px] italic text-stone-500 mt-1">View Matty's full day →</div>
       </div>
-      <p class="hero italic text-stone-600 text-sm">Calm. Engaged. Ate well.</p>
-      <div class="mt-3 space-y-1.5 flex-1">
-        <div class="glass px-3 py-2 flex items-center gap-2 text-xs">
-          <div class="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-[10px]">Rx</div>
-          <div class="flex-1"><div class="text-[9px] uppercase tracking-wider text-stone-500">Next med · 6h</div><div class="font-medium">Melatonin 2 mg</div></div>
-        </div>
-        <div class="glass px-3 py-2 flex items-center gap-2 text-xs">
-          <div class="w-6 h-6 rounded-lg bg-amber-100"></div>
-          <div class="flex-1"><div class="text-[9px] uppercase tracking-wider text-stone-500">Pattern</div><div class="font-medium">Anxiety spiked Tue</div></div>
-        </div>
-        <div class="glass px-3 py-2 flex items-center gap-2 text-xs">
-          <div class="w-6 h-6 rounded-lg bg-rose-100"></div>
-          <div class="flex-1"><div class="text-[9px] uppercase tracking-wider text-stone-500">Insight</div><div class="font-medium">Possible sensory overload</div></div>
-        </div>
-      </div>
-      <div class="absolute bottom-3 right-3 fab text-xs px-3 py-1.5 rounded-full">+ What just happened?</div>
+      <div class="absolute bottom-2 right-2 fab text-[10px] px-2.5 py-1.5 rounded-full">+ What just happened?</div>
     </div>
     <div class="p-5">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="tag bg-orange-500/20 text-orange-300">01 · Emotional</span>
-        <span class="tag bg-slate-800 text-slate-400">Low density</span>
+      <div class="flex items-center justify-between mb-2">
+        <span class="tag bg-orange-500/15 text-orange-300">Direction 1</span>
+        <span class="text-xs text-slate-500">calm_v2.html</span>
       </div>
-      <h3 class="display text-2xl text-white">Calm Today</h3>
-      <p class="text-slate-400 mt-1 text-sm">A single editorial hero answers <em>"how is Emma right now?"</em> in one glance. Hides everything except the next action and the three things that matter today. A floating composer captures any quick log.</p>
-      <div class="grid grid-cols-2 gap-4 mt-4 text-xs">
-        <ul class="pros space-y-0.5 text-slate-300"><li>Lowest cognitive load</li><li>Warm, parent-friendly</li><li>Mobile-native feel</li></ul>
-        <ul class="cons space-y-0.5 text-slate-300"><li>Hides power features</li><li>Drilldown for any detail</li><li>Less for clinicians</li></ul>
-      </div>
-      <a href="calm.html" target="_blank" class="open-btn mt-5">Open full mockup →</a>
+      <h3 class="display text-2xl text-white">Calm Hybrid</h3>
+      <p class="text-sm text-slate-400 mt-1">Round 1's Calm, plus smart cards that handle empty insights gracefully and an inline-expandable Full Day panel.</p>
+      <ul class="text-xs text-slate-300 mt-3 space-y-0.5 pros">
+        <li>Empty-state-aware: "No new patterns" reads as good news, not a void</li>
+        <li>One-tap reveal of all data without leaving the calm</li>
+        <li>Closest evolution from current Calm — lowest-risk pick</li>
+      </ul>
+      <ul class="text-xs text-slate-400 mt-2 space-y-0.5 cons">
+        <li>Two scroll-states (collapsed vs expanded) might confuse some users</li>
+      </ul>
+      <a href="/static/mockups/calm_v2.html" class="open-btn mt-4 text-sm">Open full mockup →</a>
     </div>
-  </div>
+  </article>
 
-  <!-- ========== 2 GARDEN ========== -->
-  <div class="frame">
-    <div class="preview p-garden p-3 flex flex-col gap-2">
-      <!-- header strip with sun + cloud -->
-      <div class="flex items-start justify-between">
-        <div>
-          <p class="text-[8px] uppercase tracking-widest text-emerald-800/80 font-bold">Fri · May 1</p>
-          <p class="display text-base text-stone-800 leading-tight">Matty's garden today</p>
-          <p class="handwritten text-emerald-700 text-sm leading-none">5 calm days in a row.</p>
-        </div>
-        <svg width="50" height="40" viewBox="0 0 120 100">
-          <circle cx="34" cy="36" r="18" fill="#fcd34d"/>
-          <ellipse cx="74" cy="64" rx="28" ry="16" fill="#fff"/>
-          <ellipse cx="56" cy="62" rx="14" ry="11" fill="#fff"/>
-        </svg>
-      </div>
-
-      <!-- bloom strip -->
-      <div class="bloom rounded-md px-2 py-1 flex items-center gap-1.5">
-        <span class="text-base">🌼</span>
-        <p class="text-[9px] font-semibold text-amber-900 leading-tight">Today's bloom · mood steady at 8/10</p>
-      </div>
-
-      <!-- 4 plant cards -->
-      <div class="grid grid-cols-2 gap-1.5 flex-1">
-        <div class="plant p-1.5 flex items-center gap-1.5">
-          <div class="text-base">💊</div>
-          <div class="flex-1 leading-tight">
-            <p class="text-[8px] uppercase tracking-wider text-stone-500 font-bold">Meds</p>
-            <p class="text-[10px] font-semibold text-stone-800">3 of 5</p>
-          </div>
-          <div class="ring" style="--c:#3b82f6; --p:0.6;"></div>
-        </div>
-        <div class="plant p-1.5 flex items-center gap-1.5">
-          <div class="text-base">🌙</div>
-          <div class="flex-1 leading-tight">
-            <p class="text-[8px] uppercase tracking-wider text-stone-500 font-bold">Slept</p>
-            <p class="text-[10px] font-semibold text-stone-800">9h 15m</p>
-          </div>
-          <div class="ring" style="--c:#6366f1; --p:0.92;"></div>
-        </div>
-        <div class="plant p-1.5 flex items-center gap-1.5">
-          <div class="text-base">💛</div>
-          <div class="flex-1 leading-tight">
-            <p class="text-[8px] uppercase tracking-wider text-stone-500 font-bold">Mood</p>
-            <p class="text-[10px] font-semibold text-stone-800">Calm 8/10</p>
-          </div>
-          <div class="ring" style="--c:#f59e0b; --p:0.8;"></div>
-        </div>
-        <div class="plant p-1.5 flex items-center gap-1.5">
-          <div class="text-base">🌟</div>
-          <div class="flex-1 leading-tight">
-            <p class="text-[8px] uppercase tracking-wider text-stone-500 font-bold">Working</p>
-            <p class="text-[10px] font-semibold text-stone-800">Routine ✓</p>
-          </div>
-          <div class="ring" style="--c:#f43f5e; --p:0.85;"></div>
-        </div>
-      </div>
-
-      <!-- seeds row -->
-      <div class="grid grid-cols-6 gap-1">
-        <div class="plant text-center text-[10px] py-1">🍽️</div>
-        <div class="plant text-center text-[10px] py-1">🧠</div>
-        <div class="plant text-center text-[10px] py-1">🌀</div>
-        <div class="plant text-center text-[10px] py-1">🤝</div>
-        <div class="plant text-center text-[10px] py-1">💩</div>
-        <div class="plant text-center text-[10px] py-1">📷</div>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="tag bg-emerald-500/20 text-emerald-300">02 · Nurturing</span>
-        <span class="tag bg-slate-800 text-slate-400">Low density · warm</span>
-      </div>
-      <h3 class="display text-2xl text-white">Care Garden</h3>
-      <p class="text-slate-400 mt-1 text-sm">Each life domain is a "plant" the parent is tending — meds, sleep, mood, bright spots. Soft growth rings replace charts and big numbers. The dashboard celebrates what's logged rather than nagging about what isn't. Auto-detected positives bloom at the top.</p>
-      <div class="grid grid-cols-2 gap-4 mt-4 text-xs">
-        <ul class="pros space-y-0.5 text-slate-300"><li>Reframes "data entry" as care</li><li>Quick-add seeds for fast logging</li><li>Working meds bottom sheet to try</li></ul>
-        <ul class="cons space-y-0.5 text-slate-300"><li>Metaphor isn't for everyone</li><li>Less suited to clinician sharing</li><li>Trends require drilldown</li></ul>
-      </div>
-      <a href="garden.html" target="_blank" class="open-btn mt-5">Open full mockup →</a>
-    </div>
-  </div>
-
-  <!-- ========== 3 STORY ========== -->
-  <div class="frame">
-    <div class="preview p-story p-4 flex flex-col">
-      <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded-full bg-rose-200 flex items-center justify-center text-rose-800 text-[9px] font-bold">E</div>
-        <div>
-          <div class="text-[9px] uppercase tracking-widest text-amber-800/70 font-semibold">Wed · Apr 30</div>
-          <div class="text-sm font-bold leading-tight">Emma's day so far <span class="handwritten text-amber-700 ml-1">✨</span></div>
-        </div>
-      </div>
-      <div class="composer mt-2 px-3 py-2">
-        <p class="handwritten text-amber-800 text-base leading-none">Tell me about Emma…</p>
-        <div class="flex gap-1 mt-1.5">
-          <span class="chip text-[8px] px-2 py-0.5">🍽️ Meal</span>
-          <span class="chip text-[8px] px-2 py-0.5">😴 Sleep</span>
-          <span class="chip text-[8px] px-2 py-0.5">🧠 Behavior</span>
-          <span class="chip text-[8px] px-2 py-0.5">🌀 Sensory</span>
-          <span class="chip text-[8px] px-2 py-0.5">⋯</span>
-        </div>
-      </div>
-      <p class="handwritten text-xl text-amber-800 mt-2 mb-1">So far today…</p>
-      <div class="relative pl-5 flex-1">
-        <div class="rail absolute left-1.5 top-1 bottom-1 w-0.5 rounded-full opacity-60"></div>
-        <div class="space-y-1.5">
-          <div class="relative">
-            <div class="absolute -left-5 top-1.5 w-3 h-3 rounded-full bg-purple-500" style="box-shadow: 0 0 0 3px #fbf7ee;"></div>
-            <div class="card p-1.5">
-              <div class="flex items-center gap-1.5">
-                <span class="handwritten text-amber-700 text-xs">7:15a</span>
-                <span class="text-[8px] font-bold text-purple-700">SLEEP · 10h 30m</span>
-              </div>
-            </div>
-          </div>
-          <div class="relative">
-            <div class="absolute -left-5 top-1.5 w-3 h-3 rounded-full bg-emerald-500" style="box-shadow: 0 0 0 3px #fbf7ee;"></div>
-            <div class="card p-1.5">
-              <div class="flex items-center gap-1.5">
-                <span class="handwritten text-amber-700 text-xs">8:30a</span>
-                <span class="text-[8px] font-bold text-emerald-700">MEAL · tried blueberries 🫐</span>
-              </div>
-            </div>
-          </div>
-          <div class="relative">
-            <div class="absolute -left-5 top-1.5 w-3 h-3 rounded-full bg-rose-500" style="box-shadow: 0 0 0 3px #fbf7ee;"></div>
-            <div class="card p-1.5">
-              <div class="flex items-center gap-1.5">
-                <span class="handwritten text-amber-700 text-xs">11:00a</span>
-                <span class="text-[8px] font-bold text-rose-700">BEHAVIOR · mood 7, anxiety 3</span>
-              </div>
-            </div>
-          </div>
-          <div class="relative">
-            <div class="absolute -left-5 top-1.5 w-3 h-3 rounded-full bg-orange-500" style="box-shadow: 0 0 0 3px #fbf7ee;"></div>
-            <div class="card p-1.5">
-              <div class="flex items-center gap-1.5">
-                <span class="handwritten text-amber-700 text-xs">1:00p</span>
-                <span class="text-[8px] font-bold text-orange-700">SENSORY · regulation 4/5</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="p-5">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="tag bg-amber-500/20 text-amber-300">03 · Narrative</span>
-        <span class="tag bg-slate-800 text-slate-400">Medium density</span>
-      </div>
-      <h3 class="display text-2xl text-white">Today's Story</h3>
-      <p class="text-slate-400 mt-1 text-sm">A journal-like vertical timeline of Emma's day, with a permanent <em>"tell me about Emma…"</em> composer at top. Logging is the conversation; review is the scroll. The most natural "what happened today" mental model.</p>
-      <div class="grid grid-cols-2 gap-4 mt-4 text-xs">
-        <ul class="pros space-y-0.5 text-slate-300"><li>Logging feels like talking</li><li>Chronology = parent's brain</li><li>Emotional warmth</li></ul>
-        <ul class="cons space-y-0.5 text-slate-300"><li>Trends harder to spot</li><li>Long scroll over time</li><li>Less "dashboardy"</li></ul>
-      </div>
-      <a href="story.html" target="_blank" class="open-btn mt-5">Open full mockup →</a>
-    </div>
-  </div>
-
-  <!-- ========== 4 POSTCARD ========== -->
-  <div class="frame">
-    <div class="preview p-postcard">
-      <div class="card p-3 h-full flex flex-col relative overflow-hidden">
-        <!-- watercolor splash -->
-        <svg class="absolute -top-2 -right-3 w-24 h-20 opacity-70 pointer-events-none" viewBox="0 0 100 80">
-          <ellipse cx="60" cy="30" rx="40" ry="24" fill="#fce7f3"/>
-          <ellipse cx="40" cy="22" rx="22" ry="14" fill="#fbcfe8"/>
-        </svg>
-        <svg class="absolute -bottom-2 -left-2 w-24 h-16 opacity-70 pointer-events-none" viewBox="0 0 100 60">
-          <ellipse cx="40" cy="35" rx="46" ry="22" fill="#dbeafe"/>
-        </svg>
-
-        <!-- header -->
-        <div class="flex items-start justify-between relative">
+  <!-- ========== 2 OPEN GARDEN ========== -->
+  <article class="frame">
+    <div class="preview warm-bg">
+      <div class="absolute inset-0 p-3 flex flex-col gap-2">
+        <div class="bg-gradient-to-r from-orange-100 to-amber-50 rounded-2xl px-2 py-1.5 flex items-center justify-between">
           <div>
-            <p class="text-[7px] uppercase tracking-[0.18em] text-amber-700 font-bold">A note from CareCompanion</p>
-            <p class="display text-sm text-stone-800 leading-tight">Friday, May 1</p>
+            <div class="text-[8px] uppercase tracking-widest font-bold text-orange-900/70">Friday · May 1</div>
+            <div class="display text-[14px] text-stone-800">Matty's garden today</div>
           </div>
-          <div class="stamp w-9 h-11 grid place-items-center text-center">
-            <div>
-              <div class="text-sm leading-none">🌷</div>
-              <div class="handwritten text-amber-800 text-[8px] leading-none mt-0.5">Day 5</div>
-            </div>
-          </div>
+          <div class="text-2xl">☀️</div>
         </div>
-
-        <!-- greeting -->
-        <p class="handwritten text-amber-800 text-base leading-none mt-2 relative">Hi —</p>
-        <p class="display text-stone-800 text-[11px] leading-tight relative">Here's what's true for Matty today.</p>
-
-        <!-- 3 neighborhoods -->
-        <div class="space-y-1 mt-2 relative flex-1">
-          <div class="card p-1.5 flex gap-1.5 items-start">
-            <div class="text-sm leading-none">💊</div>
-            <div class="leading-tight">
-              <p class="text-[7px] uppercase tracking-wider text-amber-700 font-bold">Today's care</p>
-              <p class="text-[9px] font-semibold">Next: Clonidine 0.1 mg · 4 pm</p>
-            </div>
-          </div>
-          <div class="card p-1.5 flex gap-1.5 items-start">
-            <div class="text-sm leading-none">🌙</div>
-            <div class="leading-tight">
-              <p class="text-[7px] uppercase tracking-wider text-amber-700 font-bold">Last night</p>
-              <p class="text-[9px] font-semibold">9h 15m · no wake-ups</p>
-            </div>
-          </div>
-          <div class="card p-1.5 flex gap-1.5 items-start">
-            <div class="text-sm leading-none">✨</div>
-            <div class="leading-tight">
-              <p class="text-[7px] uppercase tracking-wider text-amber-700 font-bold">Bright spot</p>
-              <p class="text-[9px] font-semibold">5 calm days · mood 8/10</p>
-            </div>
-          </div>
+        <div class="bloom rounded-lg p-2 flex gap-2"><span>🌼</span><div class="text-[9px]"><div class="font-bold text-orange-900/70 uppercase tracking-wider text-[8px]">Today's bloom</div><div class="display text-stone-800 text-[10px]">Calm streak — mood steady at 8/10.</div></div></div>
+        <div class="grid grid-cols-2 gap-1.5 flex-1">
+          <div class="glass p-1.5"><div class="flex justify-between"><div class="text-[9px] font-semibold text-stone-700">💊 Meds</div><div class="ring" style="--c:#c2410c; --p:0.5;"></div></div><div class="text-[8px] text-stone-500 mt-1">3/6 given</div></div>
+          <div class="glass p-1.5"><div class="flex justify-between"><div class="text-[9px] font-semibold text-stone-700">🌙 Sleep</div><div class="ring" style="--c:#7c8aa3; --p:0.92;"></div></div><div class="text-[8px] text-stone-500 mt-1">9h 15m</div></div>
+          <div class="glass p-1.5"><div class="flex justify-between"><div class="text-[9px] font-semibold text-stone-700">💛 Mood</div><div class="ring" style="--c:#d4a373; --p:0.8;"></div></div><div class="text-[8px] text-stone-500 mt-1">Calm · 8/10</div></div>
+          <div class="glass p-1.5"><div class="flex justify-between"><div class="text-[9px] font-semibold text-stone-700">🌟 Notice</div><div class="ring" style="--c:#c08572; --p:0.85;"></div></div><div class="text-[8px] text-stone-500 mt-1">Routine works</div></div>
         </div>
-
-        <!-- signoff -->
-        <div class="mt-1 relative">
-          <p class="handwritten text-amber-800 text-xs leading-none">— with you,</p>
-        </div>
+        <div class="handwritten text-orange-800 text-sm leading-none">Plant a seed…</div>
+        <div class="grid grid-cols-6 gap-1"><div class="glass text-center text-[9px] py-1">🍽️</div><div class="glass text-center text-[9px] py-1">🧠</div><div class="glass text-center text-[9px] py-1">🌀</div><div class="glass text-center text-[9px] py-1">🤝</div><div class="glass text-center text-[9px] py-1">💩</div><div class="glass text-center text-[9px] py-1">📷</div></div>
       </div>
+      <div class="absolute bottom-2 right-2 fab text-[10px] px-2.5 py-1.5 rounded-full">+ What just happened?</div>
     </div>
     <div class="p-5">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="tag bg-rose-500/20 text-rose-300">04 · Letter-like</span>
-        <span class="tag bg-slate-800 text-slate-400">Lowest density</span>
+      <div class="flex items-center justify-between mb-2">
+        <span class="tag bg-orange-500/15 text-orange-300">Direction 2</span>
+        <span class="text-xs text-slate-500">garden_v2.html</span>
       </div>
-      <h3 class="display text-2xl text-white">Postcard Home</h3>
-      <p class="text-slate-400 mt-1 text-sm">Once-a-day "postcard" the app sends you about your child. Watercolor pastel, hand-lettered greeting, three short neighborhoods (today's care · last night · this week's bright spot). Frames the data as a friend checking in, not a clipboard.</p>
-      <div class="grid grid-cols-2 gap-4 mt-4 text-xs">
-        <ul class="pros space-y-0.5 text-slate-300"><li>Most reassuring tone of the four</li><li>Mood picker + note save are wired</li><li>Reduces the "log everything" pressure</li></ul>
-        <ul class="cons space-y-0.5 text-slate-300"><li>Not for power users</li><li>One direction at a time (today only)</li><li>Trend view requires a separate screen</li></ul>
-      </div>
-      <a href="postcard.html" target="_blank" class="open-btn mt-5">Open full mockup →</a>
+      <h3 class="display text-2xl text-white">Open Garden</h3>
+      <p class="text-sm text-slate-400 mt-1">Round 1's Garden, repainted in Calm's warm palette and with the floating compose button the tester wanted to keep.</p>
+      <ul class="text-xs text-slate-300 mt-3 space-y-0.5 pros">
+        <li>All four life domains visible at once — no drill-in needed</li>
+        <li>Bloom up top has the empty-state voice baked in</li>
+        <li>Highest-density of the four; everything is one tap away</li>
+      </ul>
+      <ul class="text-xs text-slate-400 mt-2 space-y-0.5 cons">
+        <li>Densest of the four — closest to "still feels like a dashboard"</li>
+      </ul>
+      <a href="/static/mockups/garden_v2.html" class="open-btn mt-4 text-sm">Open full mockup →</a>
     </div>
-  </div>
+  </article>
+
+  <!-- ========== 3 QUIET LETTER ========== -->
+  <article class="frame">
+    <div class="preview warm-bg">
+      <div class="absolute inset-0 p-3 flex flex-col">
+        <div class="handwritten text-orange-800 text-sm leading-none mb-1">A note about Matty today</div>
+        <div class="text-[8px] uppercase tracking-widest font-bold text-stone-500 mb-2">Friday · 2:13 pm</div>
+        <div class="paper p-3 text-[9px] leading-relaxed text-stone-700 flex-1">
+          <div class="display italic text-stone-800 text-[12px] mb-2">Matty is calm today — eight out of ten.</div>
+          <div class="mb-1">Morning meds are in. Next dose is <em>Clonidine 0.1 mg</em> at 4:00 pm.
+            <span class="inline-block bg-white border border-orange-300 rounded-full px-1.5 py-0.5 text-orange-700 font-semibold text-[8px]">💊 Mark taken</span>
+          </div>
+          <div class="mb-1">Last night: <strong>9h 15m</strong> · "fell asleep easily."
+            <span class="inline-block bg-white border border-orange-300 rounded-full px-1.5 py-0.5 text-orange-700 font-semibold text-[8px]">🌙 Add note</span>
+          </div>
+          <div class="text-stone-500">Five calm days in a row. No new patterns this week — usually means the routine is working.</div>
+        </div>
+      </div>
+      <div class="absolute bottom-2 right-2 fab text-[10px] px-2.5 py-1.5 rounded-full">+ What just happened?</div>
+    </div>
+    <div class="p-5">
+      <div class="flex items-center justify-between mb-2">
+        <span class="tag bg-orange-500/15 text-orange-300">Direction 3</span>
+        <span class="text-xs text-slate-500">letter.html</span>
+      </div>
+      <h3 class="display text-2xl text-white">Quiet Letter</h3>
+      <p class="text-sm text-slate-400 mt-1">The app writes a short, soft note about Matty's day. Inline chips let the parent act without leaving the prose.</p>
+      <ul class="text-xs text-slate-300 mt-3 space-y-0.5 pros">
+        <li>Strongest "this is for me, not a chart" feel</li>
+        <li>Empty insights become a sentence, not an empty box</li>
+        <li>Lowest visual density — least overwhelming</li>
+      </ul>
+      <ul class="text-xs text-slate-400 mt-2 space-y-0.5 cons">
+        <li>Riskiest if the auto-templated prose ever reads stilted</li>
+        <li>More words to read than skim — slower to glance</li>
+      </ul>
+      <a href="/static/mockups/letter.html" class="open-btn mt-4 text-sm">Open full mockup →</a>
+    </div>
+  </article>
+
+  <!-- ========== 4 DAILY HEADLINE ========== -->
+  <article class="frame">
+    <div class="preview warm-bg">
+      <div class="absolute inset-0 p-3 flex flex-col">
+        <div class="handwritten text-orange-800 text-sm leading-none mb-1">Today's edition</div>
+        <div class="display text-stone-900 leading-[0.95] mb-2" style="font-size:18px; font-weight:500">Matty is calm.<br><span class="text-stone-700">Eight out of ten.</span><br><span class="text-orange-800">Morning meds done.</span></div>
+        <div class="display italic text-stone-600 text-[9px] mb-2">Five calm days in a row. Next dose 4 pm.</div>
+        <div class="grid grid-cols-4 gap-1 flex-1">
+          <div class="glass p-1.5 text-[8px]"><div class="font-bold uppercase tracking-widest text-stone-500">Meds</div><div class="display text-stone-800">3/6</div></div>
+          <div class="glass p-1.5 text-[8px]"><div class="font-bold uppercase tracking-widest text-stone-500">Sleep</div><div class="display text-stone-800">9h 15m</div></div>
+          <div class="glass p-1.5 text-[8px]"><div class="font-bold uppercase tracking-widest text-stone-500">Mood</div><div class="display text-stone-800">8/10</div></div>
+          <div class="glass p-1.5 text-[8px]"><div class="font-bold uppercase tracking-widest text-stone-500">Notice</div><div class="display text-stone-800">Routine works</div></div>
+        </div>
+        <div class="grid grid-cols-6 gap-1 mt-1.5"><div class="glass text-center text-[9px] py-1">🍽️</div><div class="glass text-center text-[9px] py-1">🧠</div><div class="glass text-center text-[9px] py-1">🌀</div><div class="glass text-center text-[9px] py-1">🤝</div><div class="glass text-center text-[9px] py-1">💩</div><div class="glass text-center text-[9px] py-1">📷</div></div>
+      </div>
+      <div class="absolute bottom-2 right-2 fab text-[10px] px-2.5 py-1.5 rounded-full">+ What just happened?</div>
+    </div>
+    <div class="p-5">
+      <div class="flex items-center justify-between mb-2">
+        <span class="tag bg-orange-500/15 text-orange-300">Direction 4</span>
+        <span class="text-xs text-slate-500">headline.html</span>
+      </div>
+      <h3 class="display text-2xl text-white">Daily Headline</h3>
+      <p class="text-sm text-slate-400 mt-1">Magazine-style oversized headline carries today's signal. Garden tile panel sits below — always visible, no drill-in.</p>
+      <ul class="text-xs text-slate-300 mt-3 space-y-0.5 pros">
+        <li>Best at-a-glance: the headline alone tells you the day</li>
+        <li>No tap to "open" full data — it's just there</li>
+        <li>Most distinctive visually — feels like a product, not a tool</li>
+      </ul>
+      <ul class="text-xs text-slate-400 mt-2 space-y-0.5 cons">
+        <li>Biggest typography — small phones may need careful tuning</li>
+      </ul>
+      <a href="/static/mockups/headline.html" class="open-btn mt-4 text-sm">Open full mockup →</a>
+    </div>
+  </article>
 
 </main>
 
-<!-- research summary -->
-<section class="max-w-5xl mx-auto px-6 pb-16">
-  <h2 class="display text-3xl text-white mb-6">What the research said</h2>
-  <div class="grid md:grid-cols-2 gap-x-10 gap-y-6 text-sm text-slate-300 leading-relaxed">
-    <div>
-      <p class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-1">Caregiver burden is the #1 risk</p>
-      <p>The JAKE study (PMC6454343) found that caregivers gave 2–3 reports per week despite daily prompts. Long forms drove abandonment. <em>Single-question</em> mood capture (good day / bad day, weather icons, valence×arousal) outperformed long forms. Today's CareCompanion has 12 modal categories with 20–50 fields each — a textbook fatigue trap.</p>
-    </div>
-    <div>
-      <p class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-1">Visual metaphors beat text labels</p>
-      <p>Multiple studies on autism-app UX show icons and weather/emoji metaphors reduce comprehension load. All four mockups lean into this — sun and weather (1), garden plants and rings (2), journal stickers (3), watercolor and stamps (4) — instead of charts and acronyms.</p>
-    </div>
-    <div>
-      <p class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-1">Reframe data entry as care</p>
-      <p>Care-app research consistently shows that parents abandon when an app feels like a chart. Mockup 2 (Care Garden) reframes each life domain as a "plant" the parent is tending — logging becomes watering, not data entry. The dashboard celebrates what's logged rather than nagging about what isn't.</p>
-    </div>
-    <div>
-      <p class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-1">Reassurance over analytics</p>
-      <p>Stressed primary caregivers (typically the mother) need a daily "your child is okay" before they need a trend line. Mockup 4 (Postcard Home) treats the dashboard as a once-a-day note from a friend — three short paragraphs, hand-lettered greeting, watercolor pastels. Trends still exist; they just live a tap away rather than greeting you on open.</p>
-    </div>
-    <div>
-      <p class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-1">Calm-tech palette</p>
-      <p>Cool blues and greens evoke calm and trust; warm cream/amber feels safe and journal-like. Avoid heavy red except for genuine alerts. Today's app uses 11 category colors at equal saturation — visually loud. Each mockup picks a tighter palette.</p>
-    </div>
-    <div>
-      <p class="text-xs uppercase tracking-widest text-teal-400 font-semibold mb-1">Reduce notification fatigue</p>
-      <p>One well-timed external prompt outperformed multiple in-app interruptions in the JAKE 8-week trial. Implication: the current 5-button header (Logs / Meds / Alerts / Insights / Reports) competes for attention. All four mockups collapse it.</p>
-    </div>
-  </div>
-
-  <div class="mt-10 border-t border-slate-800 pt-6">
-    <p class="text-xs uppercase tracking-widest text-slate-500 mb-3">Tooling note</p>
-    <p class="text-sm text-slate-400 leading-relaxed">No Claude Code skill, plugin, or MCP server in your environment is specifically aimed at graphic/UX design — the installed superpowers, simplify, and update-config skills are dev-workflow oriented; the MCPs (Gmail, Drive, Calendar, CData) are auth/data only. So these mockups were hand-built from research findings rather than generated. Worth knowing if you wanted to chase a Figma-style tool — it'd be a separate add.</p>
-  </div>
-
-  <div class="mt-10 border-t border-slate-800 pt-6">
-    <p class="text-xs uppercase tracking-widest text-slate-500 mb-3">Sources</p>
-    <ul class="text-sm text-slate-400 space-y-1">
-      <li>• <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6454343/" class="hover:text-teal-300 underline" target="_blank">JMIR — Caregiver Daily Reporting in ASD (JAKE study)</a></li>
-      <li>• <a href="https://www.sciencedirect.com/science/article/pii/S0891422225000629" class="hover:text-teal-300 underline" target="_blank">Kica — WHO Caregiver Skills Training app, 2025</a></li>
-      <li>• <a href="https://www.jmir.org/2026/1/e77361/" class="hover:text-teal-300 underline" target="_blank">JMIR — Design Practices for Health Care Data Dashboards, 2026 scoping review</a></li>
-      <li>• <a href="https://www.orbix.studio/blogs/bento-grid-dashboard-design-aesthetics" class="hover:text-teal-300 underline" target="_blank">Bento Grid Dashboard Design — 2026 guide</a></li>
-      <li>• <a href="https://healthmanagement.org/c/healthmanagement/News/four-pillars-for-healthcare-dashboard-design" class="hover:text-teal-300 underline" target="_blank">Four Pillars for Healthcare Dashboard Design</a></li>
-      <li>• <a href="https://www.codebridge.tech/articles/mobile-health-apps-best-practices-for-user-centered-design" class="hover:text-teal-300 underline" target="_blank">Mobile Health Apps — UCD best practices</a></li>
-      <li>• <a href="https://yapiko.com/blog/emotional-design-principles-for-mobile-apps/" class="hover:text-teal-300 underline" target="_blank">Emotional Design Principles for Mobile Apps</a></li>
+<footer class="max-w-7xl mx-auto px-6 pb-16 text-sm text-slate-500">
+  <div class="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
+    <p class="text-slate-300 font-semibold mb-2">What every Round 2 mockup keeps</p>
+    <ul class="space-y-1 text-slate-400">
+      <li>· Floating quick-log compose button (carried from Calm)</li>
+      <li>· Positive lead-in headline at top, with empty-state-aware fallback voice when no patterns/insights exist yet</li>
+      <li>· Garden-style "options" — 4 plant tiles + 6 seed buttons — either inline-expandable or always visible, in each mockup's softened palette</li>
+      <li>· "You don't have to log everything. Even one note helps us notice patterns." reminder near the bottom</li>
+      <li>· "Need every detail? Open the full caregiver view →" escape hatch to the existing dashboard for power users</li>
     </ul>
+    <p class="text-slate-500 mt-4 text-xs">Round 1 archive (verbatim): <a href="/static/mockups_v1/index.html" class="text-orange-300 underline">/static/mockups_v1/</a></p>
   </div>
-</section>
+</footer>
 
 </body>
 </html>

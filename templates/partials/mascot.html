@@ -1,14 +1,14 @@
 {{define "mascot"}}
 <!-- Maintenance Mode Overlay -->
 <div id="maintenanceOverlay" class="fixed inset-0 bg-black bg-opacity-70 z-[100] hidden flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full mx-4 p-8 text-center">
-        <div class="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center mb-4">
-            <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-8 text-center">
+        <div class="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
             </svg>
         </div>
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Maintenance In Progress</h2>
-        <p id="maintenanceMessage" class="text-gray-600 dark:text-gray-300 mb-6">Backend functionality changes are currently being made and any unsaved data inputs may not be saved. Please log out and back in.</p>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Maintenance In Progress</h2>
+        <p id="maintenanceMessage" class="text-gray-600 mb-6">Backend functionality changes are currently being made and any unsaved data inputs may not be saved. Please log out and back in.</p>
         <a href="/login" onclick="document.cookie='access_token=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT';"
            class="inline-block px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors">
             Log Out
@@ -45,19 +45,19 @@
 <!-- Desktop Mascot (hidden on mobile) -->
 <div id="helpMascotDesktop" class="hidden md:flex fixed right-4 top-24 flex-col items-center z-40 transition-all duration-300">
     <!-- Collapse button -->
-    <button onclick="event.stopPropagation(); collapseMascot();" class="absolute -top-2 -left-2 w-6 h-6 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-full flex items-center justify-center shadow-sm z-50" title="Minimize">
-        <svg class="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button onclick="event.stopPropagation(); collapseMascot();" class="absolute -top-2 -left-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center shadow-sm z-50" title="Minimize">
+        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
         </svg>
     </button>
     <div class="cursor-pointer group" onclick="openHelpModal()">
-        <span class="text-sm text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 font-medium mb-2 block text-center">Need Help?</span>
+        <span class="text-sm text-gray-500 group-hover:text-orange-600 font-medium mb-2 block text-center">Need Help?</span>
         <img src="/static/images/mattyfullbody_clear.png" alt="Help Mascot" class="h-44 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-lg">
     </div>
 </div>
 
 <!-- Desktop Collapsed Indicator (shown when mascot is collapsed) -->
-<button id="helpMascotCollapsed" onclick="expandMascot()" class="hidden fixed right-0 top-1/3 bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-4 rounded-l-lg shadow-lg z-40 transition-all" title="Show Matty">
+<button id="helpMascotCollapsed" onclick="expandMascot()" class="hidden fixed right-0 top-1/3 bg-orange-600 hover:bg-orange-700 text-white px-2 py-4 rounded-l-lg shadow-lg z-40 transition-all" title="Show Matty">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     </svg>
@@ -72,7 +72,7 @@
         </svg>
     </button>
     <!-- Help button -->
-    <button onclick="openHelpModal()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-700 rounded-full shadow-lg flex items-center justify-center transition-all active:scale-95" title="Need Help?">
+    <button onclick="openHelpModal()" class="w-14 h-14 bg-orange-600 hover:bg-orange-700 rounded-full shadow-lg flex items-center justify-center transition-all active:scale-95" title="Need Help?">
         <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
@@ -130,9 +130,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Help Modal -->
 <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col">
         <!-- Header -->
-        <div class="p-4 border-b dark:border-gray-700 flex items-center justify-between bg-gradient-to-r from-indigo-500 to-purple-600">
+        <div class="p-4 border-b flex items-center justify-between bg-gradient-to-r from-orange-400 to-orange-600">
             <div class="flex items-center">
                 <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="w-10 h-10 mr-3 bg-white rounded-full p-1">
                 <h2 class="text-xl font-bold text-white">MyCareCompanion Help Center</h2>
@@ -145,19 +145,19 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <!-- Breadcrumb -->
-        <div id="helpBreadcrumb" class="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600 text-sm hidden">
+        <div id="helpBreadcrumb" class="px-4 py-2 bg-gray-50 border-b text-sm hidden">
             <nav class="flex items-center space-x-2">
-                <button onclick="showHelpHome()" class="text-indigo-600 dark:text-indigo-400 hover:underline">Home</button>
+                <button onclick="showHelpHome()" class="text-orange-600 hover:underline">Home</button>
                 <span id="breadcrumbSeparator" class="text-gray-400 hidden">&gt;</span>
-                <span id="breadcrumbCurrent" class="text-gray-600 dark:text-gray-300"></span>
+                <span id="breadcrumbCurrent" class="text-gray-600"></span>
             </nav>
         </div>
 
         <!-- Search -->
-        <div class="p-4 border-b dark:border-gray-700">
+        <div class="p-4 border-b">
             <div class="relative">
                 <input type="text" id="helpSearchInput" placeholder="Search help topics..."
-                       class="w-full pl-10 pr-4 py-3 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                       class="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                        oninput="searchHelp(this.value)">
                 <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -168,11 +168,11 @@ document.addEventListener('DOMContentLoaded', function() {
         <!-- Content Area -->
         <div class="flex-1 overflow-hidden flex">
             <!-- Sidebar -->
-            <div id="helpSidebar" class="w-56 border-r dark:border-gray-700 overflow-y-auto bg-gray-50 dark:bg-gray-900 hidden md:block">
+            <div id="helpSidebar" class="w-56 border-r overflow-y-auto bg-gray-50 hidden md:block">
                 <div class="p-3">
-                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Pages</h3>
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Pages</h3>
                     <nav class="space-y-1" id="sidebarPages"></nav>
-                    <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mt-4 mb-2">Entry Forms</h3>
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-4 mb-2">Entry Forms</h3>
                     <nav class="space-y-1" id="sidebarForms"></nav>
                 </div>
             </div>
@@ -182,14 +182,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <!-- Home view with categories -->
                 <div id="helpHome">
                     <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Welcome to MyCareCompanion Help</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Select a topic below or use the search to find what you need.</p>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Welcome to MyCareCompanion Help</h3>
+                        <p class="text-gray-600">Select a topic below or use the search to find what you need.</p>
                     </div>
 
-                    <h4 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Application Pages</h4>
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Application Pages</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6" id="helpPagesGrid"></div>
 
-                    <h4 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Daily Log Entry Forms</h4>
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Daily Log Entry Forms</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="helpFormsGrid"></div>
                 </div>
 
@@ -213,19 +213,19 @@ const helpData = {
             color: 'indigo',
             description: 'Your central hub for managing your family',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">The Family Dashboard is your starting point after logging in. It displays all children in your current family and provides quick access to their individual dashboards.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">The Family Dashboard is your starting point after logging in. It displays all children in your current family and provides quick access to their individual dashboards.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Features</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
-                    <li class="flex items-start"><span class="text-indigo-500 mr-2">•</span><strong>Child Cards:</strong> Each child appears as a card showing their name. Click to view their dashboard.</li>
-                    <li class="flex items-start"><span class="text-indigo-500 mr-2">•</span><strong>Add Child:</strong> Click the "+ Add Child" card to register a new child in your family.</li>
-                    <li class="flex items-start"><span class="text-indigo-500 mr-2">•</span><strong>Family Switching:</strong> If you belong to multiple families, use the dropdown to switch between them.</li>
-                    <li class="flex items-start"><span class="text-indigo-500 mr-2">•</span><strong>Navigation:</strong> Access Chat and Settings from the top navigation bar.</li>
+                <h4 class="font-semibold text-gray-900 mb-3">Features</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
+                    <li class="flex items-start"><span class="text-orange-500 mr-2">•</span><strong>Child Cards:</strong> Each child appears as a card showing their name. Click to view their dashboard.</li>
+                    <li class="flex items-start"><span class="text-orange-500 mr-2">•</span><strong>Add Child:</strong> Click the "+ Add Child" card to register a new child in your family.</li>
+                    <li class="flex items-start"><span class="text-orange-500 mr-2">•</span><strong>Family Switching:</strong> If you belong to multiple families, use the dropdown to switch between them.</li>
+                    <li class="flex items-start"><span class="text-orange-500 mr-2">•</span><strong>Navigation:</strong> Access Chat and Settings from the top navigation bar.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Tips</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Tips</h4>
+                <ul class="space-y-2 text-gray-600">
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Click on a child's card to see their detailed dashboard with health metrics.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>The greeting shows your name - click Settings to update your profile.</li>
                 </ul>
@@ -237,11 +237,11 @@ const helpData = {
             color: 'blue',
             description: 'Individual child overview and quick summary',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">The Child Dashboard provides an overview of a specific child's data, including quick summaries and navigation to detailed sections.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">The Child Dashboard provides an overview of a specific child's data, including quick summaries and navigation to detailed sections.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Features</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Features</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>Profile Header:</strong> Shows the child's name, age, and provides access to edit their profile.</li>
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>Quick Summary:</strong> Select a category (Behavior, Sleep, Diet, etc.) to see recent data at a glance.</li>
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>Navigation Tabs:</strong> Access Daily Logs, Medications, Alerts, and Insights.</li>
@@ -249,8 +249,8 @@ const helpData = {
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>Active Alerts:</strong> Important alerts appear at the top of the page.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Quick Summary Categories</h4>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Quick Summary Categories</h4>
+                <ul class="space-y-1 text-gray-600">
                     <li><strong>Behavior:</strong> Mood, energy, meltdowns, and behavioral patterns</li>
                     <li><strong>Sleep:</strong> Sleep duration, quality, and disturbances</li>
                     <li><strong>Diet:</strong> Meals, appetite, and eating patterns</li>
@@ -268,11 +268,11 @@ const helpData = {
             color: 'green',
             description: 'Record daily activities, behaviors, and observations',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Daily Logs is where you record observations about your child's day. Consistent logging helps identify patterns and provides valuable data for insights.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">Daily Logs is where you record observations about your child's day. Consistent logging helps identify patterns and provides valuable data for insights.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Features</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Features</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-green-500 mr-2">•</span><strong>Daily/Weekly View:</strong> Toggle between viewing one day or a full week.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">•</span><strong>Date Navigation:</strong> Use arrows to move between days/weeks, or click the date to jump to a specific date.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">•</span><strong>Medications Due:</strong> See scheduled medications for the day and log when given.</li>
@@ -280,8 +280,8 @@ const helpData = {
                     <li class="flex items-start"><span class="text-green-500 mr-2">•</span><strong>Entry History:</strong> View and edit past entries by clicking on them.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Entry Types</h4>
-                <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Entry Types</h4>
+                <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
                     <div><span class="text-red-500">●</span> Behavior - Mood, energy, incidents</div>
                     <div><span class="text-green-500">●</span> Diet - Meals and nutrition</div>
                     <div><span class="text-purple-500">●</span> Sleep - Rest patterns</div>
@@ -289,13 +289,13 @@ const helpData = {
                     <div><span class="text-teal-500">●</span> Speech - Communication</div>
                     <div><span class="text-orange-500">●</span> Sensory - Regulation</div>
                     <div><span class="text-cyan-500">●</span> Social - Interactions</div>
-                    <div><span class="text-indigo-500">●</span> Therapy - Sessions</div>
+                    <div><span class="text-orange-500">●</span> Therapy - Sessions</div>
                     <div><span class="text-rose-500">●</span> Seizure - Episodes</div>
                     <div><span class="text-pink-500">●</span> Weight - Growth</div>
                 </div>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mt-4 mb-3">Tips</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mt-4 mb-3">Tips</h4>
+                <ul class="space-y-2 text-gray-600">
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Log entries as close to the event as possible for accuracy.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Use "Day" scope for daily summaries, "Momentary" for specific incidents.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>The more data you log, the better the AI insights become.</li>
@@ -308,11 +308,11 @@ const helpData = {
             color: 'purple',
             description: 'Manage medications and track doses',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">The Medications page helps you manage all medications for your child, set up dosing schedules, and track when doses are given.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">The Medications page helps you manage all medications for your child, set up dosing schedules, and track when doses are given.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Features</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Features</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-purple-500 mr-2">•</span><strong>Add Medication:</strong> Search our FDA-approved database to add medications. Enter dosage and schedule information.</li>
                     <li class="flex items-start"><span class="text-purple-500 mr-2">•</span><strong>Active Medications:</strong> View all current medications with dosage and schedule at a glance.</li>
                     <li class="flex items-start"><span class="text-purple-500 mr-2">•</span><strong>Drug Interactions:</strong> Automatic alerts if potential interactions are detected between medications.</li>
@@ -320,16 +320,16 @@ const helpData = {
                     <li class="flex items-start"><span class="text-purple-500 mr-2">•</span><strong>Edit/Deactivate:</strong> Update medication details or mark medications as inactive.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Drug Interaction Alerts</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-2">When potential interactions are detected:</p>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Drug Interaction Alerts</h4>
+                <p class="text-gray-600 mb-2">When potential interactions are detected:</p>
+                <ul class="space-y-1 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-red-500 mr-2">!</span>Review the alert carefully with your healthcare provider</li>
                     <li class="flex items-start"><span class="text-red-500 mr-2">!</span>You can acknowledge the alert after consulting with your doctor</li>
                     <li class="flex items-start"><span class="text-red-500 mr-2">!</span>Never stop medications without medical guidance</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Tips</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Tips</h4>
+                <ul class="space-y-2 text-gray-600">
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Keep medication information up to date, including dosage changes.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Use the "As Needed" medication entry for PRN medications.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Log doses consistently to track adherence patterns.</li>
@@ -342,11 +342,11 @@ const helpData = {
             color: 'amber',
             description: 'AI-detected patterns and important notifications',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Alerts are AI-generated notifications based on patterns detected in your logged data. They help identify trends that might need attention.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">Alerts are AI-generated notifications based on patterns detected in your logged data. They help identify trends that might need attention.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Alert Severity Levels</h4>
-                <ul class="space-y-3 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Alert Severity Levels</h4>
+                <ul class="space-y-3 text-gray-600 mb-4">
                     <li class="flex items-start">
                         <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 mr-2">Critical</span>
                         <span>Requires immediate attention. These patterns may indicate health concerns that should be discussed with healthcare providers.</span>
@@ -361,15 +361,15 @@ const helpData = {
                     </li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Features</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Features</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-amber-500 mr-2">•</span><strong>Alert Statistics:</strong> See counts of active alerts by severity.</li>
                     <li class="flex items-start"><span class="text-amber-500 mr-2">•</span><strong>Alert Analysis:</strong> Click an alert to see detailed analysis with supporting data.</li>
                     <li class="flex items-start"><span class="text-amber-500 mr-2">•</span><strong>Parent vs Clinical View:</strong> Toggle between simplified and detailed views.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Tips</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Tips</h4>
+                <ul class="space-y-2 text-gray-600">
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Review alerts regularly, especially critical ones.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Share alert information with healthcare providers during visits.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>More logged data = more accurate pattern detection.</li>
@@ -382,11 +382,11 @@ const helpData = {
             color: 'yellow',
             description: 'Discover correlations and patterns in your data',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Insights shows correlations discovered by our AI analyzing your logged data. These patterns can help you understand cause-and-effect relationships.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">Insights shows correlations discovered by our AI analyzing your logged data. These patterns can help you understand cause-and-effect relationships.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Understanding Insights</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Understanding Insights</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-yellow-500 mr-2">•</span><strong>Correlation Strength:</strong> How strongly two factors are related (0.0 to 1.0). Higher = stronger relationship.</li>
                     <li class="flex items-start"><span class="text-yellow-500 mr-2">•</span><strong>Confidence:</strong> How certain we are about the pattern based on available data.</li>
                     <li class="flex items-start"><span class="text-yellow-500 mr-2">•</span><strong>Sample Size:</strong> Number of data points used to identify the pattern.</li>
@@ -394,16 +394,16 @@ const helpData = {
                     <li class="flex items-start"><span class="text-yellow-500 mr-2">•</span><strong>Lag Hours:</strong> Time between cause and effect (e.g., poor sleep → behavior issues 8 hours later).</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Example Insights</h4>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Example Insights</h4>
+                <ul class="space-y-1 text-gray-600 mb-4">
                     <li>"Poor sleep correlates with increased meltdowns next day"</li>
                     <li>"Sensory overload episodes increase before thunderstorms"</li>
                     <li>"Dairy consumption correlates with digestive issues"</li>
                     <li>"Therapy days show improved social interaction"</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Tips</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Tips</h4>
+                <ul class="space-y-2 text-gray-600">
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Insights require at least 2 weeks of consistent data.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Correlation doesn't always mean causation - discuss with professionals.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Use insights to guide conversations with therapists and doctors.</li>
@@ -416,11 +416,11 @@ const helpData = {
             color: 'blue',
             description: 'Communicate with family members and caregivers',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Family Chat allows all caregivers in your family to communicate securely about your children's care.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">Family Chat allows all caregivers in your family to communicate securely about your children's care.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Features</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Features</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>Conversation Threads:</strong> Create separate threads for different topics or children.</li>
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>New Thread:</strong> Click the + button to start a new conversation.</li>
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>Participants:</strong> Add or remove family members from threads.</li>
@@ -428,16 +428,16 @@ const helpData = {
                     <li class="flex items-start"><span class="text-blue-500 mr-2">•</span><strong>Unread Badges:</strong> See which threads have new messages.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Use Cases</h4>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Use Cases</h4>
+                <ul class="space-y-1 text-gray-600 mb-4">
                     <li>• Coordinate care between parents and grandparents</li>
                     <li>• Share updates with babysitters or nannies</li>
                     <li>• Discuss observations and concerns</li>
                     <li>• Plan appointments and therapy schedules</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Tips</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Tips</h4>
+                <ul class="space-y-2 text-gray-600">
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Create separate threads for different topics to stay organized.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Use @mentions to notify specific family members.</li>
                 </ul>
@@ -449,26 +449,26 @@ const helpData = {
             color: 'gray',
             description: 'Manage your profile and family settings',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">User Settings allows you to manage your personal profile, view your families, and change your password.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">User Settings allows you to manage your personal profile, view your families, and change your password.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Sections</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Sections</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-gray-500 mr-2">•</span><strong>Profile Information:</strong> Update your first name, last name, and phone number.</li>
                     <li class="flex items-start"><span class="text-gray-500 mr-2">•</span><strong>Your Families:</strong> See all families you belong to. Click to switch to that family.</li>
                     <li class="flex items-start"><span class="text-gray-500 mr-2">•</span><strong>Family Members:</strong> View and manage members of your current family.</li>
                     <li class="flex items-start"><span class="text-gray-500 mr-2">•</span><strong>Change Password:</strong> Update your account password (requires current password).</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Family Member Roles</h4>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Family Member Roles</h4>
+                <ul class="space-y-1 text-gray-600 mb-4">
                     <li><strong>Admin:</strong> Can manage family settings, add/remove members</li>
                     <li><strong>Member:</strong> Can view and log data for all children</li>
                     <li><strong>Viewer:</strong> Read-only access to child data</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Tips</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Tips</h4>
+                <ul class="space-y-2 text-gray-600">
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Keep your email address current for password recovery.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">✓</span>Add all caregivers as family members for coordinated care.</li>
                 </ul>
@@ -480,11 +480,11 @@ const helpData = {
             color: 'teal',
             description: 'Edit child profile and medical conditions',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Child Settings allows you to edit a child's profile information and manage their medical conditions.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">Child Settings allows you to edit a child's profile information and manage their medical conditions.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Profile Fields</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Profile Fields</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-teal-500 mr-2">•</span><strong>First Name:</strong> Child's first name (required).</li>
                     <li class="flex items-start"><span class="text-teal-500 mr-2">•</span><strong>Last Name:</strong> Child's last name (optional).</li>
                     <li class="flex items-start"><span class="text-teal-500 mr-2">•</span><strong>Date of Birth:</strong> Used to calculate age and track growth.</li>
@@ -492,9 +492,9 @@ const helpData = {
                     <li class="flex items-start"><span class="text-teal-500 mr-2">•</span><strong>Notes:</strong> Additional information about the child.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Conditions</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-2">Add diagnoses and conditions for better-tailored insights:</p>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300">
+                <h4 class="font-semibold text-gray-900 mb-3">Conditions</h4>
+                <p class="text-gray-600 mb-2">Add diagnoses and conditions for better-tailored insights:</p>
+                <ul class="space-y-1 text-gray-600">
                     <li>• Autism Spectrum Disorder</li>
                     <li>• ADHD</li>
                     <li>• Sensory Processing Disorder</li>
@@ -509,25 +509,25 @@ const helpData = {
             color: 'green',
             description: 'Register a new child in your family',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Add a new child to your family to start tracking their care.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">Add a new child to your family to start tracking their care.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Required Information</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Required Information</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-green-500 mr-2">•</span><strong>First Name:</strong> Required. The name shown on cards and dashboards.</li>
                     <li class="flex items-start"><span class="text-green-500 mr-2">•</span><strong>Date of Birth:</strong> Required. Used for age calculation and growth tracking.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Optional Information</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
+                <h4 class="font-semibold text-gray-900 mb-3">Optional Information</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
                     <li class="flex items-start"><span class="text-gray-500 mr-2">•</span><strong>Last Name:</strong> Can be added later in settings.</li>
                     <li class="flex items-start"><span class="text-gray-500 mr-2">•</span><strong>Gender:</strong> Affects dashboard colors (blue/pink/neutral).</li>
                     <li class="flex items-start"><span class="text-gray-500 mr-2">•</span><strong>Notes:</strong> Any additional information.</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">After Adding</h4>
-                <p class="text-gray-600 dark:text-gray-300">Once added, you can:</p>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300 mt-2">
+                <h4 class="font-semibold text-gray-900 mb-3">After Adding</h4>
+                <p class="text-gray-600">Once added, you can:</p>
+                <ul class="space-y-1 text-gray-600 mt-2">
                     <li>• Add medical conditions in Child Settings</li>
                     <li>• Set up medications</li>
                     <li>• Start logging daily observations</li>
@@ -540,25 +540,25 @@ const helpData = {
             color: 'indigo',
             description: 'Create a new family group',
             content: `
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Overview</h4>
-                <p class="text-gray-600 dark:text-gray-300 mb-4">Create a new family to organize care tracking. You can belong to multiple families if needed.</p>
+                <h4 class="font-semibold text-gray-900 mb-3">Overview</h4>
+                <p class="text-gray-600 mb-4">Create a new family to organize care tracking. You can belong to multiple families if needed.</p>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Required Information</h4>
-                <ul class="space-y-2 text-gray-600 dark:text-gray-300 mb-4">
-                    <li class="flex items-start"><span class="text-indigo-500 mr-2">•</span><strong>Family Name:</strong> A name to identify this family (e.g., "Johnson Family", "Primary Caregivers").</li>
+                <h4 class="font-semibold text-gray-900 mb-3">Required Information</h4>
+                <ul class="space-y-2 text-gray-600 mb-4">
+                    <li class="flex items-start"><span class="text-orange-500 mr-2">•</span><strong>Family Name:</strong> A name to identify this family (e.g., "Johnson Family", "Primary Caregivers").</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">After Creating</h4>
-                <p class="text-gray-600 dark:text-gray-300">Once created:</p>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300 mt-2">
+                <h4 class="font-semibold text-gray-900 mb-3">After Creating</h4>
+                <p class="text-gray-600">Once created:</p>
+                <ul class="space-y-1 text-gray-600 mt-2">
                     <li>• Add children to the family</li>
                     <li>• Invite other caregivers as family members</li>
                     <li>• Start logging and tracking</li>
                 </ul>
 
-                <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Multiple Families</h4>
-                <p class="text-gray-600 dark:text-gray-300">Use cases for multiple families:</p>
-                <ul class="space-y-1 text-gray-600 dark:text-gray-300 mt-2">
+                <h4 class="font-semibold text-gray-900 mb-3">Multiple Families</h4>
+                <p class="text-gray-600">Use cases for multiple families:</p>
+                <ul class="space-y-1 text-gray-600 mt-2">
                     <li>• Separate families for divorced/co-parenting situations</li>
                     <li>• Professional caregivers managing multiple families</li>
                     <li>• Grandparents with separate tracking for their home</li>
@@ -770,18 +770,18 @@ function initHelpContent() {
     Object.entries(helpData.pages).forEach(([key, page]) => {
         // Grid card
         pagesGrid.innerHTML += `
-            <div class="help-topic p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-${page.color}-50 dark:hover:bg-gray-600 cursor-pointer transition-colors border border-transparent hover:border-${page.color}-200" onclick="showPageHelp('${key}')">
+            <div class="help-topic p-4 bg-gray-50 rounded-lg hover:bg-${page.color}-50 cursor-pointer transition-colors border border-transparent hover:border-${page.color}-200" onclick="showPageHelp('${key}')">
                 <div class="flex items-center mb-2">
-                    <span class="text-${page.color}-600 dark:text-${page.color}-400 mr-2">${page.icon}</span>
-                    <h3 class="font-semibold text-gray-900 dark:text-white">${page.title}</h3>
+                    <span class="text-${page.color}-600 mr-2">${page.icon}</span>
+                    <h3 class="font-semibold text-gray-900">${page.title}</h3>
                 </div>
-                <p class="text-sm text-gray-600 dark:text-gray-300">${page.description}</p>
+                <p class="text-sm text-gray-600">${page.description}</p>
             </div>
         `;
 
         // Sidebar link
         sidebarPages.innerHTML += `
-            <button onclick="showPageHelp('${key}')" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center" data-page="${key}">
+            <button onclick="showPageHelp('${key}')" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-200 text-gray-700 flex items-center" data-page="${key}">
                 <span class="text-${page.color}-500 mr-2">${page.icon}</span>
                 <span class="truncate">${page.title}</span>
             </button>
@@ -795,17 +795,17 @@ function initHelpContent() {
     Object.entries(helpData.entryForms).forEach(([key, form]) => {
         // Grid card
         formsGrid.innerHTML += `
-            <div class="help-topic p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-${form.color}-50 dark:hover:bg-gray-600 cursor-pointer transition-colors border border-transparent hover:border-${form.color}-200" onclick="showFormHelp('${key}')">
+            <div class="help-topic p-3 bg-gray-50 rounded-lg hover:bg-${form.color}-50 cursor-pointer transition-colors border border-transparent hover:border-${form.color}-200" onclick="showFormHelp('${key}')">
                 <div class="flex items-center">
-                    <span class="text-${form.color}-600 dark:text-${form.color}-400 mr-2">${form.icon}</span>
-                    <h3 class="font-medium text-gray-900 dark:text-white text-sm">${form.title}</h3>
+                    <span class="text-${form.color}-600 mr-2">${form.icon}</span>
+                    <h3 class="font-medium text-gray-900 text-sm">${form.title}</h3>
                 </div>
             </div>
         `;
 
         // Sidebar link
         sidebarForms.innerHTML += `
-            <button onclick="showFormHelp('${key}')" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center" data-form="${key}">
+            <button onclick="showFormHelp('${key}')" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-200 text-gray-700 flex items-center" data-form="${key}">
                 <span class="text-${form.color}-500 mr-2">${form.icon}</span>
                 <span class="truncate">${form.title}</span>
             </button>
@@ -839,7 +839,7 @@ function showHelpHome() {
 
     // Clear active states
     document.querySelectorAll('[data-page], [data-form]').forEach(el => {
-        el.classList.remove('bg-indigo-100', 'dark:bg-indigo-900', 'text-indigo-700', 'dark:text-indigo-300');
+        el.classList.remove('bg-orange-100', ' 'text-orange-700', '
     });
 }
 
@@ -858,19 +858,19 @@ function showPageHelp(pageKey) {
 
     // Update active state in sidebar
     document.querySelectorAll('[data-page], [data-form]').forEach(el => {
-        el.classList.remove('bg-indigo-100', 'dark:bg-indigo-900', 'text-indigo-700', 'dark:text-indigo-300');
+        el.classList.remove('bg-orange-100', ' 'text-orange-700', '
     });
     const activeBtn = document.querySelector(`[data-page="${pageKey}"]`);
     if (activeBtn) {
-        activeBtn.classList.add('bg-indigo-100', 'dark:bg-indigo-900', 'text-indigo-700', 'dark:text-indigo-300');
+        activeBtn.classList.add('bg-orange-100', ' 'text-orange-700', '
     }
 
     document.getElementById('helpTopicDetail').innerHTML = `
         <div class="flex items-center mb-4">
-            <span class="text-${page.color}-600 dark:text-${page.color}-400 mr-3">${page.icon}</span>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">${page.title}</h3>
+            <span class="text-${page.color}-600 mr-3">${page.icon}</span>
+            <h3 class="text-xl font-bold text-gray-900">${page.title}</h3>
         </div>
-        <div class="prose dark:prose-invert max-w-none">
+        <div class="prose max-w-none">
             ${page.content}
         </div>
     `;
@@ -891,27 +891,27 @@ function showFormHelp(formKey) {
 
     // Update active state in sidebar
     document.querySelectorAll('[data-page], [data-form]').forEach(el => {
-        el.classList.remove('bg-indigo-100', 'dark:bg-indigo-900', 'text-indigo-700', 'dark:text-indigo-300');
+        el.classList.remove('bg-orange-100', ' 'text-orange-700', '
     });
     const activeBtn = document.querySelector(`[data-form="${formKey}"]`);
     if (activeBtn) {
-        activeBtn.classList.add('bg-indigo-100', 'dark:bg-indigo-900', 'text-indigo-700', 'dark:text-indigo-300');
+        activeBtn.classList.add('bg-orange-100', ' 'text-orange-700', '
     }
 
     let fieldsHtml = form.fields.map(field => `
-        <div class="border-b dark:border-gray-600 pb-3 last:border-0">
-            <h5 class="font-medium text-gray-900 dark:text-white mb-1">${field.name}</h5>
-            <p class="text-sm text-gray-600 dark:text-gray-300">${field.help}</p>
+        <div class="border-b pb-3 last:border-0">
+            <h5 class="font-medium text-gray-900 mb-1">${field.name}</h5>
+            <p class="text-sm text-gray-600">${field.help}</p>
         </div>
     `).join('');
 
     document.getElementById('helpTopicDetail').innerHTML = `
         <div class="flex items-center mb-4">
-            <span class="text-${form.color}-600 dark:text-${form.color}-400 mr-3">${form.icon}</span>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">${form.title}</h3>
+            <span class="text-${form.color}-600 mr-3">${form.icon}</span>
+            <h3 class="text-xl font-bold text-gray-900">${form.title}</h3>
         </div>
-        <p class="text-gray-600 dark:text-gray-300 mb-4">${form.description}</p>
-        <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Field Guide</h4>
+        <p class="text-gray-600 mb-4">${form.description}</p>
+        <h4 class="font-semibold text-gray-900 mb-3">Field Guide</h4>
         <div class="space-y-3">
             ${fieldsHtml}
         </div>
@@ -990,22 +990,22 @@ function searchHelp(query) {
                 <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <p class="text-gray-500 dark:text-gray-400">No results found for "${query}"</p>
-                <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Try different keywords</p>
+                <p class="text-gray-500">No results found for "${query}"</p>
+                <p class="text-sm text-gray-400 mt-1">Try different keywords</p>
             </div>
         `;
     } else {
         resultsContainer.innerHTML = `
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">${results.length} result${results.length !== 1 ? 's' : ''} found</p>
+            <p class="text-sm text-gray-500 mb-4">${results.length} result${results.length !== 1 ? 's' : ''} found</p>
             <div class="space-y-2">
                 ${results.map(r => `
-                    <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer" onclick="${r.type === 'page' ? `showPageHelp('${r.key}')` : `showFormHelp('${r.type === 'field' ? r.formKey : r.key}')`}">
+                    <div class="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer" onclick="${r.type === 'page' ? `showPageHelp('${r.key}')` : `showFormHelp('${r.type === 'field' ? r.formKey : r.key}')`}">
                         <div class="flex items-center mb-1">
-                            <span class="text-${r.color}-600 dark:text-${r.color}-400 mr-2">${r.icon}</span>
-                            <span class="font-medium text-gray-900 dark:text-white">${r.title}</span>
-                            <span class="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300">${r.type}</span>
+                            <span class="text-${r.color}-600 mr-2">${r.icon}</span>
+                            <span class="font-medium text-gray-900">${r.title}</span>
+                            <span class="ml-2 text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600">${r.type}</span>
                         </div>
-                        <p class="text-sm text-gray-600 dark:text-gray-300 ml-7">${r.description}</p>
+                        <p class="text-sm text-gray-600 ml-7">${r.description}</p>
                     </div>
                 `).join('')}
             </div>
