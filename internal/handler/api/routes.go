@@ -43,7 +43,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Alert:        NewAlertHandler(services.Alert, services.Child),
 		Correlation:  NewCorrelationHandler(services.Correlation, services.Child),
 		Insight:      NewInsightHandler(services.Insight, services.Child),
-		Chat:         NewChatHandler(services.Chat, services.Family, services.Push, &cfg.Storage),
+		Chat:         NewChatHandler(services.Chat, services.Family, services.Push, &cfg.Storage, services.ChatHub),
 		Transparency: NewTransparencyHandler(services.Transparency),
 		Support:      NewSupportHandler(services.UserSupport, services.TicketAttachment),
 		Billing:       NewBillingHandler(services.Billing),
@@ -95,10 +95,17 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Post("/devices/register", handlers.Device.RegisterDevice)
 		r.Delete("/devices/unregister", handlers.Device.UnregisterDevice)
 
+		// Create a new family (no family context required — user may have
+		// none yet). Routed under /families to avoid colliding with the
+		// /family subtree below, which mounts a sub-router that would
+		// otherwise shadow a same-path POST.
+		r.Post("/families", handlers.Family.Create)
+
 		// Family routes - require family context
 		r.Route("/family", func(r chi.Router) {
 			r.Use(middleware.RequireFamilyContext())
 			r.Get("/info", handlers.Family.GetInfo)
+			r.Delete("/me", handlers.Family.Leave)
 			r.Get("/members", handlers.Family.ListMembers)
 			r.Post("/members", handlers.Family.AddMember)
 			r.Post("/members/lookup", handlers.Family.LookupUser)
@@ -252,7 +259,11 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				r.Post("/feedback", handlers.Alert.CreateFeedback)
 			})
 
-			// Correlations & Insights
+			// Correlations & Insights — all under one /insights subtree so static
+			// routes (tiered, top, patterns, baselines, validations) take priority
+			// over the {insightID} wildcard. When these were in two sibling
+			// r.Route blocks, chi resolved the wildcard against the static names
+			// and 404'd /insights/tiered, /insights/top, etc.
 			r.Route("/insights", func(r chi.Router) {
 				r.Get("/", handlers.Correlation.GetInsights)
 				r.Get("/tiered", handlers.Insight.GetInsightsByTier) // Three-Tier Learning System
@@ -263,10 +274,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				r.Post("/baselines/recalculate", handlers.Correlation.RecalculateBaselines)
 				r.Get("/validations", handlers.Correlation.GetValidations)
 				r.Post("/validations", handlers.Correlation.CreateValidation)
-			})
-
-			r.Route("/insights/{insightID}", func(r chi.Router) {
-				r.Post("/validate", handlers.Insight.ValidateInsight)
+				r.Post("/{insightID}/validate", handlers.Insight.ValidateInsight)
 			})
 
 			r.Route("/correlations", func(r chi.Router) {
@@ -333,6 +341,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Route("/threads/{threadID}", func(r chi.Router) {
 				r.Get("/", handlers.Chat.GetThread)
 				r.Delete("/", handlers.Chat.DeleteThread)
+				r.Get("/events", handlers.Chat.StreamEvents)
 				r.Get("/messages", handlers.Chat.GetMessages)
 				r.Post("/messages", handlers.Chat.SendMessage)
 				r.Get("/participants", handlers.Chat.GetParticipants)

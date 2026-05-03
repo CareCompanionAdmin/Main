@@ -349,6 +349,8 @@ func (h *LogHandler) UpdateBowelLog(w http.ResponseWriter, r *http.Request) {
 
 	existing.LogTime.String = req.LogTime
 	existing.LogTime.Valid = req.LogTime != ""
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.BristolScale = req.BristolScale
 	existing.HadAccident = req.HadAccident
 	existing.PainLevel = req.PainLevel
@@ -451,6 +453,8 @@ func (h *LogHandler) UpdateSpeechLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.VerbalOutputLevel = req.VerbalOutputLevel
 	existing.ClarityLevel = req.ClarityLevel
 	existing.NewWords = req.NewWords
@@ -570,6 +574,8 @@ func (h *LogHandler) UpdateDietLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.MealType.String = req.MealType
 	existing.MealType.Valid = req.MealType != ""
 	existing.MealTime.String = req.MealTime
@@ -699,6 +705,8 @@ func (h *LogHandler) UpdateWeightLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.WeightLbs = req.WeightLbs
 	existing.HeightInches = req.HeightInches
 	existing.Notes.String = req.Notes
@@ -813,6 +821,8 @@ func (h *LogHandler) UpdateSleepLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.Bedtime.String = req.Bedtime
 	existing.Bedtime.Valid = req.Bedtime != ""
 	existing.WakeTime.String = req.WakeTime
@@ -940,6 +950,8 @@ func (h *LogHandler) UpdateSensoryLog(w http.ResponseWriter, r *http.Request) {
 
 	existing.LogTime.String = req.LogTime
 	existing.LogTime.Valid = req.LogTime != ""
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.SensorySeekingBehaviors = models.StringArray(req.SensorySeekingBehaviors)
 	existing.SensoryAvoidingBehaviors = models.StringArray(req.SensoryAvoidingBehaviors)
 	existing.OverloadTriggers = models.StringArray(req.OverloadTriggers)
@@ -1058,6 +1070,8 @@ func (h *LogHandler) UpdateSocialLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.EyeContactLevel = req.EyeContactLevel
 	existing.SocialEngagementLevel = req.SocialEngagementLevel
 	existing.PeerInteractions = req.PeerInteractions
@@ -1177,6 +1191,8 @@ func (h *LogHandler) UpdateTherapyLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.TherapyType.String = req.TherapyType
 	existing.TherapyType.Valid = req.TherapyType != ""
 	existing.TherapistName.String = req.TherapistName
@@ -1301,6 +1317,8 @@ func (h *LogHandler) UpdateSeizureLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	existing.LogTime = req.LogTime
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.SeizureType.String = req.SeizureType
 	existing.SeizureType.Valid = req.SeizureType != ""
 	existing.DurationSeconds = req.DurationSeconds
@@ -1423,6 +1441,8 @@ func (h *LogHandler) UpdateHealthEventLog(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	existing.TimeScope.String = req.TimeScope
+	existing.TimeScope.Valid = req.TimeScope != ""
 	existing.EventType.String = req.EventType
 	existing.EventType.Valid = req.EventType != ""
 	existing.Description.String = req.Description

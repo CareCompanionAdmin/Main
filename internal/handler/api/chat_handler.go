@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,9 +26,10 @@ type ChatHandler struct {
 	familyService *service.FamilyService
 	pushService   *service.PushService
 	storageConfig *config.StorageConfig
+	hub           *service.ChatHub
 }
 
-func NewChatHandler(chatService *service.ChatService, familyService *service.FamilyService, pushService *service.PushService, storageConfig *config.StorageConfig) *ChatHandler {
+func NewChatHandler(chatService *service.ChatService, familyService *service.FamilyService, pushService *service.PushService, storageConfig *config.StorageConfig, hub *service.ChatHub) *ChatHandler {
 	// Ensure upload directory exists
 	if storageConfig != nil && storageConfig.UploadDir != "" {
 		os.MkdirAll(filepath.Join(storageConfig.UploadDir, "chat"), 0755)
@@ -37,6 +39,7 @@ func NewChatHandler(chatService *service.ChatService, familyService *service.Fam
 		familyService: familyService,
 		pushService:   pushService,
 		storageConfig: storageConfig,
+		hub:           hub,
 	}
 }
 
@@ -147,6 +150,13 @@ func (h *ChatHandler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		}
 		respondInternalError(w, "Failed to send message")
 		return
+	}
+
+	// Fan out to live SSE subscribers on this thread (real-time chat).
+	// Push to other participants is handled separately below for offline
+	// recipients; SSE handles people currently viewing the thread.
+	if h.hub != nil {
+		h.hub.Broadcast(threadID, message)
 	}
 
 	// Send push notifications to other thread participants
@@ -501,4 +511,85 @@ func (h *ChatHandler) DeleteThread(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondOK(w, map[string]string{"status": "deleted"})
+}
+
+// StreamEvents holds an SSE connection open and pushes new chat messages
+// to the client as they happen. The client should reconnect on disconnect
+// (EventSource does this automatically).
+//
+// Auth comes from the same cookie/Bearer chain as everything else in the
+// chat group; SSE in browsers can't set custom headers, so callers either
+// rely on the access_token cookie or pass ?access_token=... — we accept
+// the cookie path because the rest of the app already does.
+//
+// Heartbeats every 25s as SSE comments (": keepalive\n\n") to keep the
+// connection alive through ALB/proxy idle timeouts and to detect dead
+// peers.
+func (h *ChatHandler) StreamEvents(w http.ResponseWriter, r *http.Request) {
+	threadID, err := parseUUID(chi.URLParam(r, "threadID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid thread ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+
+	// Confirm the user is actually a participant before subscribing —
+	// otherwise anyone with a thread ID could eavesdrop on its stream.
+	if _, err := h.chatService.GetThread(r.Context(), threadID, userID); err != nil {
+		if err == service.ErrNotParticipant {
+			respondForbidden(w, "Access denied")
+			return
+		}
+		respondInternalError(w, "Failed to verify access")
+		return
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no") // disable nginx buffering if present
+	w.WriteHeader(http.StatusOK)
+
+	// Greeting so the client knows the connection is live before any
+	// real message arrives — also flushes status code + headers.
+	fmt.Fprintf(w, "event: ready\ndata: {\"thread_id\":%q}\n\n", threadID.String())
+	flusher.Flush()
+
+	sub, unsub := h.hub.Subscribe(threadID, userID)
+	defer unsub()
+
+	heartbeat := time.NewTicker(25 * time.Second)
+	defer heartbeat.Stop()
+
+	ctx := r.Context()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-heartbeat.C:
+			// Comment line — clients ignore this; only purpose is to
+			// keep the TCP connection alive and detect a dead peer.
+			if _, err := io.WriteString(w, ": keepalive\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
+		case msg, ok := <-sub.Ch:
+			if !ok {
+				return
+			}
+			payload, err := json.Marshal(msg)
+			if err != nil {
+				continue
+			}
+			fmt.Fprintf(w, "event: message\ndata: %s\n\n", payload)
+			flusher.Flush()
+		}
+	}
 }

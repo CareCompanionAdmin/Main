@@ -204,16 +204,22 @@ func (a *StringArray) Scan(value interface{}) error {
 		*a = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
+	var str string
+	switch v := value.(type) {
+	case []byte:
+		str = string(v)
+	case string:
+		str = v
+	default:
 		return nil
 	}
-	str := string(bytes)
 	if str == "{}" {
 		*a = []string{}
 		return nil
 	}
-	str = str[1 : len(str)-1]
+	if len(str) >= 2 && str[0] == '{' && str[len(str)-1] == '}' {
+		str = str[1 : len(str)-1]
+	}
 	*a = parseStringArray(str)
 	return nil
 }
@@ -265,16 +271,22 @@ func (a *UUIDArray) Scan(value interface{}) error {
 		*a = nil
 		return nil
 	}
-	bytes, ok := value.([]byte)
-	if !ok {
+	var str string
+	switch v := value.(type) {
+	case []byte:
+		str = string(v)
+	case string:
+		str = v
+	default:
 		return nil
 	}
-	str := string(bytes)
 	if str == "{}" {
 		*a = []uuid.UUID{}
 		return nil
 	}
-	str = str[1 : len(str)-1]
+	if len(str) >= 2 && str[0] == '{' && str[len(str)-1] == '}' {
+		str = str[1 : len(str)-1]
+	}
 	strs := parseStringArray(str)
 	result := make([]uuid.UUID, len(strs))
 	for i, s := range strs {

@@ -44,6 +44,7 @@ type Services struct {
 	Bounty            *BountyService
 	Subscription      *SubscriptionService
 	Stripe            *StripeService
+	ChatHub           *ChatHub
 }
 
 // NewServices creates all services with their dependencies
@@ -107,6 +108,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		AppStoreConnect:   ascService,
 		Beta:              NewBetaService(repos.BetaInvitation, emailService, ascService, cfg.App.URL, "/static/docs/beta-onboarding.html"),
 		Bounty:            NewBountyService(repos.BountyAward, repos.Admin, emailService, db),
+		ChatHub:           NewChatHub(),
 	}
 	// Subscription service has to come AFTER auth/family/child services exist
 	// because we wire it INTO them below (signup → trial, add-child → bump).

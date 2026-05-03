@@ -42,7 +42,8 @@ func (s *FamilyService) SetSubscriptionService(sub *SubscriptionService) {
 
 func (s *FamilyService) Create(ctx context.Context, name string, creatorID uuid.UUID) (*models.Family, error) {
 	family := &models.Family{
-		Name: name,
+		Name:      name,
+		CreatedBy: creatorID,
 	}
 
 	if err := s.familyRepo.Create(ctx, family); err != nil {
@@ -233,6 +234,29 @@ func (s *FamilyService) RemoveMemberSafe(ctx context.Context, familyID, memberID
 	}
 
 	return s.familyRepo.RemoveMember(ctx, familyID, member.UserID)
+}
+
+// LeaveFamily lets a member remove themselves. Creators cannot leave —
+// they must delete the family or transfer ownership first. Any other role
+// can self-remove without admin intervention.
+func (s *FamilyService) LeaveFamily(ctx context.Context, familyID, userID uuid.UUID) error {
+	membership, err := s.familyRepo.GetMembership(ctx, familyID, userID)
+	if err != nil {
+		return err
+	}
+	if membership == nil {
+		return ErrNotFamilyMember
+	}
+
+	isCreator, err := s.IsCreator(ctx, familyID, userID)
+	if err != nil {
+		return err
+	}
+	if isCreator {
+		return ErrCannotRemoveCreator
+	}
+
+	return s.familyRepo.RemoveMember(ctx, familyID, userID)
 }
 
 // UpdateMemberRoleSafe updates a member's role with creator protection

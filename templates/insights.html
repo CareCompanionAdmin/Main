@@ -21,45 +21,161 @@
         <p class="text-gray-500 dark:text-gray-400">Patterns and correlations discovered from logged data</p>
     </div>
 
-    {{if .Insights.Patterns}}
-    <div class="space-y-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Discovered Patterns</h2>
-        {{range .Insights.Patterns}}
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
-            <div class="flex items-start space-x-4">
-                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                    </svg>
-                </div>
-                <div class="flex-1">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">{{if .Description.Valid}}{{.Description.String}}{{else}}{{.PatternType}}: {{.InputFactor}} → {{.OutputFactor}}{{end}}</h3>
-                    <p class="text-gray-600 dark:text-gray-300 mt-1">Correlation strength: {{printf "%.2f" .CorrelationStrength}}{{if gt .LagHours 0}} ({{.LagHours}} hour lag){{end}}</p>
-                    <div class="flex items-center mt-3 space-x-4">
-                        <span class="text-sm text-gray-500 dark:text-gray-400">Confidence: {{.ConfidencePercent}}%</span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">Confirmed: {{.TimesConfirmed}} times</span>
-                        <span class="text-sm text-gray-500 dark:text-gray-400">Sample size: {{.SampleSize}}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {{end}}
+    <div id="insights-loading" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-12 text-center">
+        <p class="text-gray-500 dark:text-gray-400">Loading insights…</p>
     </div>
-    {{else}}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-12 text-center">
+
+    <div id="insights-empty" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-12 text-center">
         <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
             </svg>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No patterns yet</h3>
-        <p class="text-gray-500 dark:text-gray-400 mb-4">Keep logging data to discover patterns and insights. The system needs at least 7 days of data.</p>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No insights yet</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Keep logging data to discover patterns. The system needs at least 7 days of data.</p>
     </div>
-    {{end}}
+
+    <div id="insights-tiers" class="hidden space-y-8"></div>
 </main>
 
 <script src="/static/js/global-search.js" defer></script>
 <script>
+const CHILD_ID = "{{.Child.ID}}";
+
+const TIER_META = {
+    personal: {
+        label: "Personal Patterns",
+        sub: "Patterns specific to {{.Child.FirstName}}, learned from logged data",
+        iconBg: "bg-purple-100 dark:bg-purple-900/30",
+        iconColor: "text-purple-600 dark:text-purple-300",
+        factorColor: "text-purple-700 dark:text-purple-300",
+        iconPath: "M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+    },
+    cohort: {
+        label: "Cohort Patterns",
+        sub: "Patterns observed in similar children",
+        iconBg: "bg-blue-100 dark:bg-blue-900/30",
+        iconColor: "text-blue-600 dark:text-blue-300",
+        factorColor: "text-blue-700 dark:text-blue-300",
+        iconPath: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+    },
+    medical: {
+        label: "Medical Insights",
+        sub: "Established medical knowledge relevant to {{.Child.FirstName}}",
+        iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+        iconColor: "text-emerald-600 dark:text-emerald-700",
+        factorColor: "text-emerald-700 dark:text-emerald-700",
+        iconPath: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+    }
+};
+
+function escapeHtml(s) {
+    if (s == null) return "";
+    return String(s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function getAuthToken() {
+    return localStorage.getItem('access_token') || (function () {
+        var v = '; ' + document.cookie;
+        var p = v.split('; access_token=');
+        return p.length === 2 ? p.pop().split(';').shift() : '';
+    })();
+}
+
+function renderInsightCard(ins, factorColor) {
+    const title = ins.title || (ins.simple_description || "Pattern detected");
+    const desc = ins.detailed_description && ins.detailed_description.Valid
+        ? ins.detailed_description.String
+        : (ins.simple_description || "");
+    const confidence = ins.confidence_score != null
+        ? Math.round(ins.confidence_score * 100) + "%"
+        : null;
+    const samples = ins.data_point_count;
+    const validations = ins.validation_count;
+    const factors = [];
+    if (Array.isArray(ins.input_factors)) factors.push(...ins.input_factors);
+    if (Array.isArray(ins.output_factors) && ins.output_factors.length) {
+        factors.push("→ " + ins.output_factors.join(", "));
+    }
+
+    return `
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+        <h3 class="text-base font-semibold text-gray-900 dark:text-white">${escapeHtml(title)}</h3>
+        ${desc ? `<p class="text-gray-600 dark:text-gray-300 mt-2">${escapeHtml(desc)}</p>` : ""}
+        ${factors.length ? `<p class="text-sm ${factorColor} mt-2">${escapeHtml(factors.join(" "))}</p>` : ""}
+        <div class="flex flex-wrap items-center mt-4 gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+            ${confidence ? `<span>Confidence: ${escapeHtml(confidence)}</span>` : ""}
+            ${samples != null ? `<span>Sample size: ${samples}</span>` : ""}
+            ${validations ? `<span>Validated ${validations} time${validations === 1 ? "" : "s"}</span>` : ""}
+        </div>
+    </div>`;
+}
+
+function renderTier(tierKey, items) {
+    if (!items || !items.length) return "";
+    const meta = TIER_META[tierKey];
+    return `
+    <section>
+        <div class="flex items-start gap-3 mb-4">
+            <div class="w-10 h-10 ${meta.iconBg} rounded-full flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 ${meta.iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${meta.iconPath}"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">${meta.label} <span class="text-gray-400 dark:text-gray-500 font-normal">(${items.length})</span></h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">${meta.sub}</p>
+            </div>
+        </div>
+        <div class="space-y-4">
+            ${items.map(i => renderInsightCard(i, meta.factorColor)).join("")}
+        </div>
+    </section>`;
+}
+
+async function loadInsights() {
+    const token = getAuthToken();
+    let resp;
+    try {
+        resp = await fetch(`/api/children/${CHILD_ID}/insights/tiered`, {
+            headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+            credentials: 'include'
+        });
+    } catch (e) {
+        document.getElementById('insights-loading').textContent = "Failed to load insights.";
+        return;
+    }
+    if (!resp.ok) {
+        document.getElementById('insights-loading').textContent = "Failed to load insights (" + resp.status + ").";
+        return;
+    }
+    const data = await resp.json();
+    const personal = data.personal_insights || [];
+    const cohort = data.cohort_insights || [];
+    const medical = data.medical_insights || [];
+
+    const totalCount = personal.length + cohort.length + medical.length;
+    document.getElementById('insights-loading').classList.add('hidden');
+
+    if (totalCount === 0) {
+        document.getElementById('insights-empty').classList.remove('hidden');
+        return;
+    }
+
+    const html = [
+        renderTier('personal', personal),
+        renderTier('cohort', cohort),
+        renderTier('medical', medical)
+    ].join("");
+    const container = document.getElementById('insights-tiers');
+    container.innerHTML = html;
+    container.classList.remove('hidden');
+}
+
+loadInsights();
+
 async function logout() {
     try {
         await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });

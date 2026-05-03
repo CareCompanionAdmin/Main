@@ -44,6 +44,14 @@ func (w *errorResponseWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+// Flush passes through to the underlying writer so streaming handlers
+// (chat SSE) work through this wrapper.
+func (w *errorResponseWriter) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 // Middleware returns the error tracking middleware
 func (et *ErrorTracker) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

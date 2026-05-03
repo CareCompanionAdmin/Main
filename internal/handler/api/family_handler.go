@@ -30,6 +30,32 @@ func NewFamilyHandler(familyService *service.FamilyService, userService *service
 	}
 }
 
+// Create makes a new family with the authenticated user as the parent.
+// Used by the /family/new web page when a user has no family yet
+// (e.g., they registered without one or left their previous family).
+func (h *FamilyHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+	if req.Name == "" {
+		respondBadRequest(w, "Family name is required")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	family, err := h.familyService.Create(r.Context(), req.Name, userID)
+	if err != nil {
+		log.Printf("[FAMILY] Create failed for user %s: %v", userID, err)
+		respondInternalError(w, "Failed to create family")
+		return
+	}
+	respondCreated(w, family)
+}
+
 // GetInfo returns family information including creator ID
 func (h *FamilyHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 	familyID := middleware.GetFamilyID(r.Context())
@@ -305,6 +331,32 @@ func (h *FamilyHandler) UpdateMemberRole(w http.ResponseWriter, r *http.Request)
 	respondOK(w, map[string]interface{}{
 		"success": true,
 		"message": "Member role updated successfully",
+	})
+}
+
+// Leave lets the authenticated user remove themselves from their current family.
+// The family creator cannot leave — they have to delete the family or transfer
+// it. Any other role (parent, caregiver, medical_provider) can self-leave.
+func (h *FamilyHandler) Leave(w http.ResponseWriter, r *http.Request) {
+	familyID := middleware.GetFamilyID(r.Context())
+	userID := middleware.GetUserID(r.Context())
+
+	if err := h.familyService.LeaveFamily(r.Context(), familyID, userID); err != nil {
+		switch err {
+		case service.ErrCannotRemoveCreator:
+			respondForbidden(w, "Family creators can't leave their own family. Transfer ownership or delete the family first.")
+		case service.ErrNotFamilyMember:
+			respondNotFound(w, "You are not a member of this family")
+		default:
+			log.Printf("[FAMILY] Leave failed for user %s family %s: %v", userID, familyID, err)
+			respondInternalError(w, "Failed to leave family")
+		}
+		return
+	}
+
+	respondOK(w, map[string]interface{}{
+		"success": true,
+		"message": "You have left the family",
 	})
 }
 

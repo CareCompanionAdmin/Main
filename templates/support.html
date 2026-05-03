@@ -190,17 +190,6 @@ function showTicketList() {
     }
 }
 
-// Mobile menu toggle
-function toggleSupportMobileMenu() {
-    const menu = document.getElementById('support-mobile-menu');
-    const openIcon = document.getElementById('support-menu-icon-open');
-    const closeIcon = document.getElementById('support-menu-icon-close');
-
-    menu.classList.toggle('hidden');
-    openIcon.classList.toggle('hidden');
-    closeIcon.classList.toggle('hidden');
-}
-
 // Handle window resize
 window.addEventListener('resize', function() {
     const ticketList = document.getElementById('ticket-list-container');
@@ -451,23 +440,6 @@ async function logout() {
     document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/api/auth/refresh;';
     window.location.href = '/login';
 }
-
-// Check for unread support messages periodically
-async function checkSupportUnread() {
-    try {
-        const response = await fetch('/api/support/unread', { credentials: 'include' });
-        if (response.ok) {
-            const data = await response.json();
-            const badge = document.getElementById('support-badge-desktop');
-            if (badge) {
-                badge.classList.toggle('hidden', !data.has_unread);
-            }
-        }
-    } catch (e) {}
-}
-
-// Poll for unread messages every 60 seconds
-setInterval(checkSupportUnread, 60000);
 
 // ============================================================================
 // ATTACHMENTS + SCREEN RECORDER

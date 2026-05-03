@@ -143,8 +143,12 @@ func (h *WebHandlers) StripeWebhook(w http.ResponseWriter, r *http.Request) {
 	sig := r.Header.Get("Stripe-Signature")
 	ev, err := h.services.Stripe.VerifyWebhookSignature(body, sig)
 	if err != nil {
-		log.Printf("[STRIPE] webhook signature verification failed: %v", err)
-		http.Error(w, "signature verification failed", http.StatusBadRequest)
+		// Surface the underlying reason in the response so a misconfig (no
+		// secret loaded) is distinguishable from a bad-signature attempt
+		// during health checks. The body is small and never reaches a
+		// real Stripe client — Stripe only inspects the status code.
+		log.Printf("[STRIPE] webhook verify failed: %v", err)
+		http.Error(w, fmt.Sprintf("webhook verify failed: %v", err), http.StatusBadRequest)
 		return
 	}
 	// Use a separate timeout from the request context — webhooks must

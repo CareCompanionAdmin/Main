@@ -78,7 +78,16 @@ document.getElementById('login-form').addEventListener('submit', async function(
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
         // Server already sets HttpOnly cookies via Set-Cookie headers
-        window.location.href = '/dashboard';
+        // Honor ?return=<path> so users land back where they were when their
+        // session expired (set by auth middleware redirect). Same-origin only —
+        // an attacker-supplied absolute URL won't redirect off our domain.
+        var returnTo = '/dashboard';
+        var qp = new URLSearchParams(window.location.search);
+        var ret = qp.get('return');
+        if (ret && ret.charAt(0) === '/' && ret.charAt(1) !== '/') {
+            returnTo = ret;
+        }
+        window.location.href = returnTo;
     } catch (error) {
         errorDiv.textContent = 'An error occurred. Please try again.';
         errorDiv.classList.remove('hidden');

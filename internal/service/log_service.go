@@ -88,6 +88,8 @@ func (s *LogService) CreateBowelLog(ctx context.Context, childID, loggedBy uuid.
 	}
 	log.LogTime.String = req.LogTime
 	log.LogTime.Valid = req.LogTime != ""
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.Notes.String = req.Notes
 	log.Notes.Valid = req.Notes != ""
 
@@ -131,6 +133,8 @@ func (s *LogService) CreateSpeechLog(ctx context.Context, childID, loggedBy uuid
 		SuccessfulCommunications: req.SuccessfulCommunications,
 		LoggedBy:                 loggedBy,
 	}
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.Notes.String = req.Notes
 	log.Notes.Valid = req.Notes != ""
 
@@ -178,8 +182,12 @@ func (s *LogService) CreateDietLog(ctx context.Context, childID, loggedBy uuid.U
 	log.MealTime.Valid = req.MealTime != ""
 	log.AppetiteLevel.String = req.AppetiteLevel
 	log.AppetiteLevel.Valid = req.AppetiteLevel != ""
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.NewFoodTried.String = req.NewFoodTried
 	log.NewFoodTried.Valid = req.NewFoodTried != ""
+	log.NewFoodAcceptance.String = req.NewFoodAcceptance
+	log.NewFoodAcceptance.Valid = req.NewFoodAcceptance != ""
 	log.ReactionDetails.String = req.ReactionDetails
 	log.ReactionDetails.Valid = req.ReactionDetails != ""
 	log.Notes.String = req.Notes
@@ -220,6 +228,8 @@ func (s *LogService) CreateWeightLog(ctx context.Context, childID, loggedBy uuid
 		HeightInches: req.HeightInches,
 		LoggedBy:     loggedBy,
 	}
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.Notes.String = req.Notes
 	log.Notes.Valid = req.Notes != ""
 
@@ -261,6 +271,8 @@ func (s *LogService) CreateSleepLog(ctx context.Context, childID, loggedBy uuid.
 		BedWetting:        req.BedWetting,
 		LoggedBy:          loggedBy,
 	}
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.Bedtime.String = req.Bedtime
 	log.Bedtime.Valid = req.Bedtime != ""
 	log.WakeTime.String = req.WakeTime
@@ -373,6 +385,8 @@ func (s *LogService) CreateSensoryLog(ctx context.Context, childID, loggedBy uui
 	}
 	log.LogTime.String = req.LogTime
 	log.LogTime.Valid = req.LogTime != ""
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.Notes.String = req.Notes
 	log.Notes.Valid = req.Notes != ""
 
@@ -425,6 +439,8 @@ func (s *LogService) CreateSocialLog(ctx context.Context, childID, loggedBy uuid
 		CooperativePlayMinutes: req.CooperativePlayMinutes,
 		LoggedBy:               loggedBy,
 	}
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.Notes.String = req.Notes
 	log.Notes.Valid = req.Notes != ""
 
@@ -463,6 +479,8 @@ func (s *LogService) CreateTherapyLog(ctx context.Context, childID, loggedBy uui
 		GoalsWorkedOn:   models.StringArray(req.GoalsWorkedOn),
 		LoggedBy:        loggedBy,
 	}
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.TherapyType.String = req.TherapyType
 	log.TherapyType.Valid = req.TherapyType != ""
 	log.TherapistName.String = req.TherapistName
@@ -514,6 +532,8 @@ func (s *LogService) CreateSeizureLog(ctx context.Context, childID, loggedBy uui
 		Called911:             req.Called911,
 		LoggedBy:              loggedBy,
 	}
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.SeizureType.String = req.SeizureType
 	log.SeizureType.Valid = req.SeizureType != ""
 	log.RescueMedicationName.String = req.RescueMedicationName
@@ -556,6 +576,8 @@ func (s *LogService) CreateHealthEventLog(ctx context.Context, childID, loggedBy
 		TemperatureF: req.TemperatureF,
 		LoggedBy:     loggedBy,
 	}
+	log.TimeScope.String = req.TimeScope
+	log.TimeScope.Valid = req.TimeScope != ""
 	log.EventType.String = req.EventType
 	log.EventType.Valid = req.EventType != ""
 	log.Description.String = req.Description

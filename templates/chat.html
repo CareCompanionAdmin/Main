@@ -238,6 +238,8 @@
 const userID = '{{.UserID}}';
 const userTimeFormat = '{{.UserTimeFormat}}';
 let currentThreadID = null;
+let currentEventSource = null;
+let renderedMessageIds = new Set();
 let currentParticipants = [];
 
 // Mobile view toggle functions
@@ -302,7 +304,19 @@ function hideNewThread() {
 }
 
 async function selectThread(threadID) {
+    const isSwitchingThread = currentThreadID !== threadID;
     currentThreadID = threadID;
+
+    // Tear down any prior live stream — this happens both on first
+    // selection and when re-selecting (we re-fetch messages on every
+    // call, then reopen the stream below).
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
+    if (isSwitchingThread) {
+        renderedMessageIds = new Set();
+    }
 
     // Update UI
     document.querySelectorAll('.thread-item').forEach(el => el.classList.remove('bg-indigo-50'));
@@ -360,16 +374,78 @@ async function selectThread(threadID) {
         }
 
         const messageArea = document.getElementById('message-area');
+        renderedMessageIds = new Set();
         if (data.messages && data.messages.length > 0) {
-            messageArea.innerHTML = data.messages.map(msg => renderMessage(msg)).join('');
+            messageArea.innerHTML = data.messages.map(msg => {
+                renderedMessageIds.add(msg.id);
+                return renderMessage(msg);
+            }).join('');
             messageArea.scrollTop = messageArea.scrollHeight;
         } else {
             messageArea.innerHTML = '<div class="text-center text-gray-500 py-8">No messages yet. Start the conversation!</div>';
         }
+
+        openMessageStream(threadID);
     } catch (error) {
         console.error('Error loading thread:', error);
     }
 }
+
+// Open an SSE connection that pushes new messages live. The browser's
+// EventSource auto-reconnects on transient drops, so we only handle the
+// "intentionally close on thread switch" case ourselves.
+//
+// We rely on the access_token cookie for auth — EventSource can't set
+// custom headers in browsers. Same auth chain as every other GET in the
+// chat group.
+function openMessageStream(threadID) {
+    if (typeof EventSource === 'undefined') return;
+
+    const url = `/api/chat/threads/${threadID}/events`;
+    const es = new EventSource(url, { withCredentials: true });
+    currentEventSource = es;
+
+    es.addEventListener('message', function (evt) {
+        // The connection might have been replaced by a thread switch —
+        // ignore late events for the wrong thread.
+        if (es !== currentEventSource) return;
+        if (!evt.data) return;
+
+        let msg;
+        try { msg = JSON.parse(evt.data); }
+        catch (e) { return; }
+
+        if (!msg || !msg.id) return;
+        if (renderedMessageIds.has(msg.id)) return;
+        renderedMessageIds.add(msg.id);
+
+        const messageArea = document.getElementById('message-area');
+        if (!messageArea) return;
+        // Clear the empty-state placeholder if it's still showing.
+        if (messageArea.querySelector('.text-center.text-gray-500')) {
+            messageArea.innerHTML = '';
+        }
+        const wasNearBottom = (messageArea.scrollHeight - messageArea.scrollTop - messageArea.clientHeight) < 50;
+        messageArea.insertAdjacentHTML('beforeend', renderMessage(msg));
+        if (wasNearBottom) {
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+    });
+
+    es.addEventListener('error', function () {
+        // EventSource will keep retrying on its own. We log only the
+        // first error to keep dev console clean.
+    });
+}
+
+// Close the live stream when leaving the page so server-side goroutines
+// terminate promptly instead of waiting on the request-context timeout.
+window.addEventListener('beforeunload', function () {
+    if (currentEventSource) {
+        currentEventSource.close();
+        currentEventSource = null;
+    }
+});
 
 function renderMessage(msg) {
     const isOwn = msg.sender_id === userID;

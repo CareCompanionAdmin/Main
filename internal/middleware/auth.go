@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
@@ -25,7 +27,14 @@ const (
 	AuthClaimsKey  contextKey = "authClaims"
 )
 
-// AuthMiddleware validates JWT tokens and sets user context
+// AuthMiddleware validates JWT tokens and sets user context.
+//
+// Failure UX: API requests (path under /api/) get a JSON body so the client
+// can detect token expiry and show a graceful "session expired" banner
+// instead of a raw 401. Web (browser) GET requests get a 303 redirect to
+// /login?return=<path> so users land on a usable page rather than seeing
+// "Unauthorized" plain text. POST/PUT/etc. on web routes still return 401
+// because a redirect to GET /login would silently drop the form submission.
 func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +57,7 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 					if strings.HasPrefix(r.URL.Path, "/api/admin") {
 						log.Printf("Auth debug [%s]: No access_token cookie found, err=%v", r.URL.Path, err)
 					}
-					http.Error(w, "Unauthorized", http.StatusUnauthorized)
+					unauthorized(w, r, "no_token")
 					return
 				}
 				authHeader = "Bearer " + cookie.Value
@@ -57,7 +66,7 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 			// Validate Bearer format
 			parts := strings.Split(authHeader, " ")
 			if len(parts) != 2 || parts[0] != "Bearer" {
-				http.Error(w, "Invalid authorization header", http.StatusUnauthorized)
+				unauthorized(w, r, "bad_header")
 				return
 			}
 
@@ -67,7 +76,7 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 				if strings.HasPrefix(r.URL.Path, "/api/admin") {
 					log.Printf("Auth debug [%s]: Token validation failed: %v", r.URL.Path, err)
 				}
-				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+				unauthorized(w, r, "expired_or_invalid")
 				return
 			}
 
@@ -139,6 +148,33 @@ func RequireRole(requiredRole models.FamilyRole) func(http.Handler) http.Handler
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// unauthorized is the single failure exit for AuthMiddleware. It picks the
+// right response shape based on the request:
+//   - /api/* → 401 + JSON `{"error":"unauthorized","reason":"..."}` so the
+//     client can show a graceful banner instead of a raw 401.
+//   - GET /<web-page> → 303 redirect to /login?return=<original-path> so a
+//     stale browser tab lands on the login form rather than plain text.
+//   - non-GET on web routes (form submits with expired session) → 401, since
+//     redirecting a POST to GET /login would silently drop the submission.
+func unauthorized(w http.ResponseWriter, r *http.Request, reason string) {
+	if strings.HasPrefix(r.URL.Path, "/api/") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		// Hand-rolled JSON to avoid pulling encoding/json into this hot path.
+		fmt.Fprintf(w, `{"error":"unauthorized","reason":%q}`, reason)
+		return
+	}
+	if r.Method == http.MethodGet {
+		ret := r.URL.Path
+		if r.URL.RawQuery != "" {
+			ret += "?" + r.URL.RawQuery
+		}
+		http.Redirect(w, r, "/login?return="+url.QueryEscape(ret), http.StatusSeeOther)
+		return
+	}
+	http.Error(w, "Unauthorized", http.StatusUnauthorized)
 }
 
 // RequireFamilyContext ensures a family context is set

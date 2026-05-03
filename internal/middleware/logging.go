@@ -28,6 +28,17 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return size, err
 }
 
+// Flush passes through to the underlying writer. Required so that streaming
+// handlers (e.g., the chat SSE endpoint) can flush events to the client
+// without waiting for the response to complete. Without this, type
+// assertions against http.Flusher fail because embedding an interface
+// doesn't forward Flusher's method set.
+func (rw *responseWriter) Flush() {
+	if f, ok := rw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 // LoggingMiddleware logs HTTP requests
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

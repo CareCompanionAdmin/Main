@@ -270,6 +270,7 @@ type CreateBehaviorLogRequest struct {
 type CreateBowelLogRequest struct {
 	LogDate      FlexDate `json:"log_date"`
 	LogTime      string    `json:"log_time,omitempty"`
+	TimeScope    string    `json:"time_scope,omitempty"`
 	BristolScale *int      `json:"bristol_scale,omitempty"`
 	HadAccident  bool      `json:"had_accident"`
 	PainLevel    *int      `json:"pain_level,omitempty"`
@@ -279,6 +280,7 @@ type CreateBowelLogRequest struct {
 
 type CreateSpeechLogRequest struct {
 	LogDate                  FlexDate `json:"log_date"`
+	TimeScope                string    `json:"time_scope,omitempty"`
 	VerbalOutputLevel        *int      `json:"verbal_output_level,omitempty"`
 	ClarityLevel             *int      `json:"clarity_level,omitempty"`
 	NewWords                 []string  `json:"new_words,omitempty"`
@@ -291,6 +293,7 @@ type CreateSpeechLogRequest struct {
 
 type CreateDietLogRequest struct {
 	LogDate           FlexDate `json:"log_date"`
+	TimeScope         string    `json:"time_scope,omitempty"`
 	MealType          string    `json:"meal_type,omitempty"`
 	MealTime          string    `json:"meal_time,omitempty"`
 	FoodsEaten        []string  `json:"foods_eaten,omitempty"`
@@ -307,6 +310,7 @@ type CreateDietLogRequest struct {
 
 type CreateWeightLogRequest struct {
 	LogDate      FlexDate `json:"log_date"`
+	TimeScope    string    `json:"time_scope,omitempty"`
 	WeightLbs    *float64  `json:"weight_lbs,omitempty"`
 	HeightInches *float64  `json:"height_inches,omitempty"`
 	Notes        string    `json:"notes,omitempty"`
@@ -314,6 +318,7 @@ type CreateWeightLogRequest struct {
 
 type CreateSleepLogRequest struct {
 	LogDate           FlexDate `json:"log_date"`
+	TimeScope         string    `json:"time_scope,omitempty"`
 	Bedtime           string    `json:"bedtime,omitempty"`
 	WakeTime          string    `json:"wake_time,omitempty"`
 	TotalSleepMinutes *int      `json:"total_sleep_minutes,omitempty"`
@@ -329,6 +334,7 @@ type CreateSleepLogRequest struct {
 type CreateSensoryLogRequest struct {
 	LogDate                  FlexDate `json:"log_date"`
 	LogTime                  string    `json:"log_time,omitempty"`
+	TimeScope                string    `json:"time_scope,omitempty"`
 	SensorySeekingBehaviors  []string  `json:"sensory_seeking_behaviors,omitempty"`
 	SensoryAvoidingBehaviors []string  `json:"sensory_avoiding_behaviors,omitempty"`
 	OverloadTriggers         []string  `json:"overload_triggers,omitempty"`
@@ -340,6 +346,7 @@ type CreateSensoryLogRequest struct {
 
 type CreateSocialLogRequest struct {
 	LogDate                FlexDate `json:"log_date"`
+	TimeScope              string    `json:"time_scope,omitempty"`
 	EyeContactLevel        *int      `json:"eye_contact_level,omitempty"`
 	SocialEngagementLevel  *int      `json:"social_engagement_level,omitempty"`
 	PeerInteractions       int       `json:"peer_interactions"`
@@ -352,6 +359,7 @@ type CreateSocialLogRequest struct {
 
 type CreateTherapyLogRequest struct {
 	LogDate          FlexDate `json:"log_date"`
+	TimeScope        string    `json:"time_scope,omitempty"`
 	TherapyType      string    `json:"therapy_type,omitempty"`
 	TherapistName    string    `json:"therapist_name,omitempty"`
 	DurationMinutes  *int      `json:"duration_minutes,omitempty"`
@@ -364,6 +372,7 @@ type CreateTherapyLogRequest struct {
 type CreateSeizureLogRequest struct {
 	LogDate               FlexDate `json:"log_date"`
 	LogTime               string    `json:"log_time"`
+	TimeScope             string    `json:"time_scope,omitempty"`
 	SeizureType           string    `json:"seizure_type,omitempty"`
 	DurationSeconds       *int      `json:"duration_seconds,omitempty"`
 	Triggers              []string  `json:"triggers,omitempty"`
@@ -377,6 +386,7 @@ type CreateSeizureLogRequest struct {
 
 type CreateHealthEventLogRequest struct {
 	LogDate      FlexDate  `json:"log_date"`
+	TimeScope    string     `json:"time_scope,omitempty"`
 	EventType    string     `json:"event_type,omitempty"`
 	Description  string     `json:"description,omitempty"`
 	Symptoms     []string   `json:"symptoms,omitempty"`
