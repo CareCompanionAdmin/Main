@@ -45,6 +45,12 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- Export compliance: app uses only exempt encryption (HTTPS/TLS to our
+	     own backend, plus standard APNs/FCM push transport). Setting this to
+	     false skips ASC's per-marketing-version export compliance prompt
+	     that otherwise blocks Codemagic's auto-submit to TestFlight. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
