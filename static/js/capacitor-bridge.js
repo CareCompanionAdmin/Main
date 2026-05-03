@@ -132,6 +132,12 @@
 
     // =========================================================================
     // Environment Switcher (QA testers - tap version 7 times)
+    //
+    // HARD RULE: the banner is derived from window.location.host (the actual
+    // origin all fetches resolve against). The banner and the data destination
+    // share ONE source of truth and cannot diverge — even if a prior switch
+    // attempt was blocked by ATS/cleartext policy. Do not reintroduce a
+    // separately-stored "current env" preference.
     // =========================================================================
     var envTapCount = 0;
     var envTapTimer = null;
@@ -139,6 +145,11 @@
         production: 'https://www.mycarecompanion.net',
         development: 'http://98.88.131.147:8090'
     };
+    var DEV_HOST_MARKER = '98.88.131.147';
+
+    function getCurrentEnvironment() {
+        return window.location.host.indexOf(DEV_HOST_MARKER) !== -1 ? 'development' : 'production';
+    }
 
     window.carecompanionEnvSwitch = function(element) {
         envTapCount++;
@@ -152,39 +163,41 @@
     };
 
     function showEnvironmentSwitcher() {
-        var Preferences = window.Capacitor.Plugins.Preferences;
-        if (!Preferences) return;
+        var currentEnv = getCurrentEnvironment();
+        var targetEnv = currentEnv === 'production' ? 'development' : 'production';
+        var targetUrl = ENVIRONMENTS[targetEnv];
 
-        Preferences.get({ key: 'server_url' }).then(function(result) {
-            var currentUrl = result.value || ENVIRONMENTS.production;
-            var currentEnv = currentUrl.includes('98.88.131.147') ? 'development' : 'production';
-            var targetEnv = currentEnv === 'production' ? 'development' : 'production';
+        if (!confirm('Switch from ' + currentEnv.toUpperCase() + ' to ' + targetEnv.toUpperCase() + '?\n\n' +
+                     'Current: ' + window.location.origin + '\n' +
+                     'Switch to: ' + targetUrl)) {
+            return;
+        }
 
-            if (confirm('Switch from ' + currentEnv.toUpperCase() + ' to ' + targetEnv.toUpperCase() + '?\n\n' +
-                         'Current: ' + currentUrl + '\n' +
-                         'Switch to: ' + ENVIRONMENTS[targetEnv])) {
-                Preferences.set({ key: 'server_url', value: ENVIRONMENTS[targetEnv] }).then(function() {
-                    window.location.href = ENVIRONMENTS[targetEnv];
-                });
+        var beforeHost = window.location.host;
+        window.location.href = targetUrl;
+
+        // Verify the navigation actually happened. iOS ATS or Android cleartext
+        // policy can silently block HTTP loads — if we don't catch that here,
+        // the banner could end up advertising one env while fetches go to the
+        // other. Loud failure is the only acceptable outcome.
+        setTimeout(function() {
+            if (window.location.host === beforeHost) {
+                alert('Switch FAILED — you are still on ' + currentEnv.toUpperCase() + '.\n\n' +
+                      'Do NOT enter test data. The mobile app likely needs a rebuild ' +
+                      'with the dev host whitelisted in iOS ATS / Android network security config.');
             }
-        });
+        }, 2000);
     }
 
-    // Show environment banner if on dev
+    // Banner reflects the live origin, not a stored preference. Truth-source.
     function showEnvironmentBanner() {
-        var Preferences = window.Capacitor.Plugins.Preferences;
-        if (!Preferences) return;
-
-        Preferences.get({ key: 'server_url' }).then(function(result) {
-            if (result.value && result.value.includes('98.88.131.147')) {
-                var banner = document.createElement('div');
-                banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99998;' +
-                    'background:#F59E0B;color:#000;text-align:center;padding:4px;font-size:12px;font-weight:bold;' +
-                    'padding-bottom:calc(4px + env(safe-area-inset-bottom))';
-                banner.textContent = 'DEVELOPMENT ENVIRONMENT';
-                document.body.appendChild(banner);
-            }
-        });
+        if (getCurrentEnvironment() !== 'development') return;
+        var banner = document.createElement('div');
+        banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99998;' +
+            'background:#F59E0B;color:#000;text-align:center;padding:4px;font-size:12px;font-weight:bold;' +
+            'padding-bottom:calc(4px + env(safe-area-inset-bottom))';
+        banner.textContent = 'DEVELOPMENT ENVIRONMENT';
+        document.body.appendChild(banner);
     }
 
     // =========================================================================

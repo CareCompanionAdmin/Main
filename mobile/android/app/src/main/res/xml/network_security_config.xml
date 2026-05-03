@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Default: HTTPS only. Production traffic is unaffected. -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Dev environment exception: the QA-only "tap version 7 times" switcher
+         points the WebView at http://98.88.131.147:8090. Cleartext is allowed
+         ONLY for that host so the navigation doesn't silently fail. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">98.88.131.147</domain>
+    </domain-config>
+</network-security-config>
