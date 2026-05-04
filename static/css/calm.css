@@ -193,3 +193,21 @@ nav.app-nav {
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(180, 140, 90, 0.12);
 }
+
+/* Calm scrollbars — used in chat/support panels and history modals */
+.calm-bg ::-webkit-scrollbar { width: 10px; height: 10px; }
+.calm-bg ::-webkit-scrollbar-track { background: transparent; }
+.calm-bg ::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.25);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.calm-bg ::-webkit-scrollbar-thumb:hover { background: rgba(120, 113, 108, 0.45); background-clip: padding-box; }
+.calm-bg * { scrollbar-color: rgba(120, 113, 108, 0.3) transparent; scrollbar-width: thin; }
+
+/* Selection color — peachy instead of harsh blue */
+.calm-bg ::selection { background: rgba(255, 183, 77, 0.45); color: #44403c; }
+
+/* Mark element used in search results */
+.calm-bg mark { background: #fde68a; color: #78350f; padding: 0 .12em; border-radius: .2em; }

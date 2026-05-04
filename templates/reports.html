@@ -5,18 +5,18 @@
 {{template "nav" .}}
 <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="mb-4">
-        <a href="/child/{{.Child.ID}}" class="text-orange-600 hover:text-orange-500 flex items-center">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <a href="/child/{{.Child.ID}}" class="text-stone-500 hover:text-stone-800 inline-flex items-center text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
             Back to {{.Child.FirstName}}
         </a>
     </div>
-    <!-- Header -->
-    <div class="mb-6">
-        <h1 class="display text-3xl font-medium text-stone-800 mb-4">{{.Child.FirstName}}'s Report Center</h1>
-        <p class="text-sm text-gray-500">Generate, download, and share care reports</p>
-    </div>
+    <header class="mb-8">
+        <p class="handwritten text-2xl text-orange-800 leading-none">Care reports</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">{{.Child.FirstName}}'s reports</h1>
+        <p class="display italic text-stone-600 text-lg mt-2">A clean PDF to hand to a doctor, therapist, or anyone who needs the picture.</p>
+    </header>
 
     <!-- Report Configuration -->
     <div id="config-panel" class="glass ring-soft rounded-3xl p-6 mb-6 no-print">
@@ -24,63 +24,63 @@
 
         <!-- Period Selection -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
+            <label class="block text-sm font-medium text-stone-700 mb-2">Time Period</label>
             <div class="flex flex-wrap gap-2">
-                <button onclick="selectPeriod('day')" class="period-btn px-4 py-2 rounded-lg border-2 text-sm font-medium border-gray-300 text-gray-700 hover:border-orange-400">Today</button>
-                <button onclick="selectPeriod('week')" class="period-btn px-4 py-2 rounded-lg border-2 text-sm font-medium border-orange-500 bg-orange-50 text-orange-700">Last 7 Days</button>
-                <button onclick="selectPeriod('month')" class="period-btn px-4 py-2 rounded-lg border-2 text-sm font-medium border-gray-300 text-gray-700 hover:border-orange-400">Last 30 Days</button>
-                <button onclick="selectPeriod('custom')" class="period-btn px-4 py-2 rounded-lg border-2 text-sm font-medium border-gray-300 text-gray-700 hover:border-orange-400">Custom</button>
+                <button onclick="selectPeriod('day')" class="period-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white/70 border border-stone-200 text-stone-700 hover:bg-white">Today</button>
+                <button onclick="selectPeriod('week')" class="period-btn px-4 py-1.5 rounded-full text-sm font-medium bg-orange-600 text-white">Last 7 Days</button>
+                <button onclick="selectPeriod('month')" class="period-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white/70 border border-stone-200 text-stone-700 hover:bg-white">Last 30 Days</button>
+                <button onclick="selectPeriod('custom')" class="period-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white/70 border border-stone-200 text-stone-700 hover:bg-white">Custom</button>
             </div>
             <div id="custom-dates" class="hidden mt-3 flex gap-3">
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">Start Date</label>
-                    <input type="date" id="start-date" class="px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl text-sm">
+                    <label class="block text-xs text-stone-500 mb-1">Start Date</label>
+                    <input type="date" id="start-date" class="px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-500 mb-1">End Date</label>
-                    <input type="date" id="end-date" class="px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl text-sm">
+                    <label class="block text-xs text-stone-500 mb-1">End Date</label>
+                    <input type="date" id="end-date" class="px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition text-sm">
                 </div>
             </div>
         </div>
 
         <!-- Data Filter Checkboxes -->
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Data Points to Include</label>
+            <label class="block text-sm font-medium text-stone-700 mb-2">Data Points to Include</label>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="behavior" checked class="data-filter mr-2 text-orange-600"> Behavior
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="sleep" checked class="data-filter mr-2 text-orange-600"> Sleep
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="diet" checked class="data-filter mr-2 text-orange-600"> Diet
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="medication" checked class="data-filter mr-2 text-orange-600"> Medications
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="bowel" checked class="data-filter mr-2 text-orange-600"> Bowel
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="sensory" checked class="data-filter mr-2 text-orange-600"> Sensory
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="social" checked class="data-filter mr-2 text-orange-600"> Social
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="therapy" checked class="data-filter mr-2 text-orange-600"> Therapy
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="speech" checked class="data-filter mr-2 text-orange-600"> Speech
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="seizure" checked class="data-filter mr-2 text-orange-600"> Seizure
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="weight" checked class="data-filter mr-2 text-orange-600"> Weight
                 </label>
-                <label class="flex items-center p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <label class="flex items-center p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors">
                     <input type="checkbox" value="health_event" checked class="data-filter mr-2 text-orange-600"> Health Events
                 </label>
             </div>
@@ -90,10 +90,10 @@
             </div>
         </div>
 
-        <button onclick="generateReport()" id="generate-btn" class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium">
+        <button onclick="generateReport()" id="generate-btn" class="px-6 py-3 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium">
             Generate Report
         </button>
-        <span id="generate-status" class="ml-3 text-sm text-gray-500 hidden"></span>
+        <span id="generate-status" class="ml-3 text-sm text-stone-500 hidden"></span>
     </div>
 
     <!-- Report Results (hidden until generated) -->
@@ -102,21 +102,21 @@
         <div class="bg-white rounded-t-xl shadow-sm border border-b-0 p-4 no-print sticky top-0 z-10">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <button onclick="closeReport()" class="text-gray-400 hover:text-gray-600">
+                    <button onclick="closeReport()" class="text-stone-400 hover:text-stone-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
-                    <h2 id="report-title" class="text-lg font-semibold text-gray-900"></h2>
+                    <h2 id="report-title" class="text-lg font-semibold text-stone-900"></h2>
                 </div>
                 <div id="report-actions" class="flex flex-wrap gap-2">
-                    <button onclick="downloadReport()" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium flex items-center">
+                    <button onclick="downloadReport()" class="px-4 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 text-sm font-medium flex items-center">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         Download PDF
                     </button>
-                    <button onclick="printReport()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-medium flex items-center">
+                    <button onclick="printReport()" class="px-4 py-2 bg-stone-600 text-white rounded-full hover:bg-stone-700 text-sm font-medium flex items-center">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         Print
                     </button>
-                    <button onclick="openShareModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center">
+                    <button onclick="openShareModal()" class="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 text-sm font-medium flex items-center">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
                         Share
                     </button>
@@ -131,7 +131,7 @@
         </div>
 
         <!-- Report Preview (paper-like container) -->
-        <div class="bg-gray-200 rounded-b-xl border border-t-0 p-4 sm:p-8 mb-6">
+        <div class="bg-stone-200 rounded-b-xl border border-t-0 p-4 sm:p-8 mb-6">
             <div id="report-paper" class="bg-white max-w-4xl mx-auto shadow-xl rounded-lg overflow-hidden">
                 <!-- Report Header (print-visible) -->
                 <div class="bg-gradient-to-r from-orange-600 to-orange-800 text-white p-8">
@@ -156,9 +156,9 @@
                 </div>
 
                 <!-- Report Footer -->
-                <div class="border-t border-gray-200 px-8 py-4 text-center">
-                    <p id="report-generated-at" class="text-xs text-gray-400"></p>
-                    <p class="text-xs text-gray-400">Generated by MyCareCompanion</p>
+                <div class="border-t border-stone-200 px-8 py-4 text-center">
+                    <p id="report-generated-at" class="text-xs text-stone-400"></p>
+                    <p class="text-xs text-stone-400">Generated by MyCareCompanion</p>
                 </div>
             </div>
         </div>
@@ -168,7 +168,7 @@
     <div class="glass ring-soft rounded-3xl p-6 mb-6 no-print">
         <h2 class="display text-xl font-medium text-stone-800 mb-4">Past Reports</h2>
         <div id="past-reports-list">
-            <p class="text-gray-500 text-sm">Loading...</p>
+            <p class="text-stone-500 text-sm">Loading...</p>
         </div>
     </div>
 
@@ -176,45 +176,45 @@
     <div class="glass ring-soft rounded-3xl p-6 no-print">
         <div class="flex items-center justify-between mb-4">
             <h2 class="display text-xl font-medium text-stone-800">Scheduled Reports</h2>
-            <button onclick="openScheduleModal()" class="px-3 py-1.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm">New Schedule</button>
+            <button onclick="openScheduleModal()" class="px-3 py-1.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 text-sm">New Schedule</button>
         </div>
         <div id="schedules-list">
-            <p class="text-gray-500 text-sm">Loading...</p>
+            <p class="text-stone-500 text-sm">Loading...</p>
         </div>
     </div>
 </main>
 
 <!-- Share Modal -->
 <div id="share-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-bold mb-4">Share Report</h3>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Send to family member:</label>
-        <select id="share-recipient" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl mb-4">
+        <label class="block text-sm font-medium text-stone-700 mb-2">Send to family member:</label>
+        <select id="share-recipient" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition mb-4">
             {{range .Members}}
             <option value="{{.UserID}}">{{if .User}}{{.User.FirstName}} {{.User.LastName}}{{else}}{{.UserID}}{{end}}</option>
             {{end}}
         </select>
         <div class="flex gap-2">
-            <button onclick="shareReport()" class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Send via Chat</button>
-            <button onclick="closeShareModal()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+            <button onclick="shareReport()" class="flex-1 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">Send via Chat</button>
+            <button onclick="closeShareModal()" class="px-4 py-2 bg-stone-200 rounded-full hover:bg-stone-300">Cancel</button>
         </div>
     </div>
 </div>
 
 <!-- Schedule Modal -->
 <div id="schedule-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-bold mb-4">Schedule Recurring Report</h3>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
-            <select id="schedule-frequency" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
+            <label class="block text-sm font-medium text-stone-700 mb-2">Frequency</label>
+            <select id="schedule-frequency" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 <option value="daily">Daily</option>
                 <option value="weekly" selected>Weekly</option>
                 <option value="monthly">Monthly</option>
             </select>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Data Points</label>
+            <label class="block text-sm font-medium text-stone-700 mb-2">Data Points</label>
             <div class="grid grid-cols-2 gap-1 text-sm max-h-40 overflow-y-auto">
                 <label class="flex items-center p-1"><input type="checkbox" value="behavior" checked class="sched-filter mr-1"> Behavior</label>
                 <label class="flex items-center p-1"><input type="checkbox" value="sleep" checked class="sched-filter mr-1"> Sleep</label>
@@ -231,16 +231,16 @@
             </div>
         </div>
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Send to (select recipients)</label>
-            <div class="max-h-32 overflow-y-auto border rounded-lg p-2">
+            <label class="block text-sm font-medium text-stone-700 mb-2">Send to (select recipients)</label>
+            <div class="max-h-32 overflow-y-auto border border-stone-200 rounded-2xl p-2">
                 {{range .Members}}
                 <label class="flex items-center p-1 text-sm"><input type="checkbox" value="{{.UserID}}" class="sched-recipient mr-2"> {{if .User}}{{.User.FirstName}} {{.User.LastName}}{{else}}{{.UserID}}{{end}}</label>
                 {{end}}
             </div>
         </div>
         <div class="flex gap-2">
-            <button onclick="createSchedule()" class="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Create Schedule</button>
-            <button onclick="closeScheduleModal()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+            <button onclick="createSchedule()" class="flex-1 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">Create Schedule</button>
+            <button onclick="closeScheduleModal()" class="px-4 py-2 bg-stone-200 rounded-full hover:bg-stone-300">Cancel</button>
         </div>
     </div>
 </div>
@@ -270,9 +270,9 @@ let chartInstances = {};
 function selectPeriod(period) {
     currentPeriod = period;
     document.querySelectorAll('.period-btn').forEach(btn => {
-        btn.className = 'period-btn px-4 py-2 rounded-lg border-2 text-sm font-medium border-gray-300 text-gray-700 hover:border-orange-400';
+        btn.className = 'period-btn px-4 py-1.5 rounded-full text-sm font-medium bg-white/70 border border-stone-200 text-stone-700 hover:bg-white';
     });
-    event.target.className = 'period-btn px-4 py-2 rounded-lg border-2 text-sm font-medium border-orange-500 bg-orange-50 text-orange-700';
+    event.target.className = 'period-btn px-4 py-1.5 rounded-full text-sm font-medium bg-orange-600 text-white';
     document.getElementById('custom-dates').classList.toggle('hidden', period !== 'custom');
 }
 
@@ -402,17 +402,17 @@ function renderCharts(data) {
         const max = Math.max(...series.map(p => p.value)).toFixed(1);
 
         const card = document.createElement('div');
-        card.className = 'chart-card bg-gray-50 rounded-xl p-5 border border-gray-100';
+        card.className = 'chart-card bg-stone-50 rounded-xl p-5 border border-stone-100';
         card.innerHTML = `
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center">
                     <div class="w-3 h-3 rounded-full mr-3" style="background:${colors.line}"></div>
-                    <h3 class="text-md font-semibold text-gray-900">${escapeHtml(label)}</h3>
+                    <h3 class="text-md font-semibold text-stone-900">${escapeHtml(label)}</h3>
                 </div>
-                <div class="flex gap-4 text-xs text-gray-500">
-                    <span>Avg: <strong class="text-gray-700">${avg}</strong></span>
-                    <span>Max: <strong class="text-gray-700">${max}</strong></span>
-                    <span>Total: <strong class="text-gray-700">${total.toFixed(0)}</strong></span>
+                <div class="flex gap-4 text-xs text-stone-500">
+                    <span>Avg: <strong class="text-stone-700">${avg}</strong></span>
+                    <span>Max: <strong class="text-stone-700">${max}</strong></span>
+                    <span>Total: <strong class="text-stone-700">${total.toFixed(0)}</strong></span>
                 </div>
             </div>
             <canvas id="chart-${colorIdx}" height="180"></canvas>
@@ -563,7 +563,7 @@ async function loadPastReports() {
         const container = document.getElementById('past-reports-list');
 
         if (!reports || reports.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">No reports generated yet.</p>';
+            container.innerHTML = '<p class="text-stone-500 text-sm">No reports generated yet.</p>';
             return;
         }
 
@@ -574,8 +574,8 @@ async function loadPastReports() {
                 : '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">' + r.status + '</span>';
             return `<div class="flex items-center justify-between py-3 border-b last:border-0">
                 <div>
-                    <p class="font-medium text-sm text-gray-900">${escapeHtml(r.title)}</p>
-                    <p class="text-xs text-gray-500">${date} ${statusBadge}</p>
+                    <p class="font-medium text-sm text-stone-900">${escapeHtml(r.title)}</p>
+                    <p class="text-xs text-stone-500">${date} ${statusBadge}</p>
                 </div>
                 <div class="flex gap-2">
                     ${r.status === 'completed' ? `<a href="/api/children/${childId}/reports/${r.id}/download" class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded text-xs hover:bg-emerald-200">Download</a>` : ''}
@@ -607,7 +607,7 @@ async function loadSchedules() {
         const container = document.getElementById('schedules-list');
 
         if (!schedules || schedules.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">No scheduled reports. Create one to receive automatic reports.</p>';
+            container.innerHTML = '<p class="text-stone-500 text-sm">No scheduled reports. Create one to receive automatic reports.</p>';
             return;
         }
 
@@ -616,9 +616,9 @@ async function loadSchedules() {
             const filters = (s.data_filters || []).join(', ');
             return `<div class="flex items-center justify-between py-3 border-b last:border-0">
                 <div>
-                    <p class="font-medium text-sm text-gray-900 capitalize">${s.frequency} Report</p>
-                    <p class="text-xs text-gray-500">Filters: ${escapeHtml(filters)}</p>
-                    <p class="text-xs text-gray-500">Next run: ${nextRun}</p>
+                    <p class="font-medium text-sm text-stone-900 capitalize">${s.frequency} Report</p>
+                    <p class="text-xs text-stone-500">Filters: ${escapeHtml(filters)}</p>
+                    <p class="text-xs text-stone-500">Next run: ${nextRun}</p>
                 </div>
                 <button onclick="deleteSchedule('${s.id}')" class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Remove</button>
             </div>`;

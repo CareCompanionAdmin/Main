@@ -71,6 +71,16 @@ type Family struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// FamilyWeekStats summarizes the family's logging activity over the last 7 days.
+// Used by the family dashboard hero.
+type FamilyWeekStats struct {
+	TotalLogs        int `json:"total_logs"`
+	ActiveDays       int `json:"active_days"`
+	ChildrenWithLogs int `json:"children_with_logs"`
+	Meltdowns        int `json:"meltdowns"`
+	MedsTaken        int `json:"meds_taken"`
+}
+
 type FamilyMembership struct {
 	ID          uuid.UUID  `json:"id"`
 	FamilyID    uuid.UUID  `json:"family_id"`

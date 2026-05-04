@@ -14,44 +14,44 @@
 <body class="calm-bg min-h-screen flex items-center justify-center p-4">
 <main class="glass ring-soft rounded-3xl max-w-xl w-full p-8">
 
-  <p class="text-xs uppercase tracking-widest text-teal-700 font-bold">Beta program</p>
-  <h1 class="display text-3xl font-medium text-stone-800 mt-1">Welcome to the My Care Companion beta.</h1>
-  <p class="text-stone-600 mt-3">Two quick steps and you'll be set:</p>
-  <ol class="list-decimal list-inside text-gray-700 mt-2 space-y-1 text-sm">
+  <p class="handwritten text-2xl text-teal-700 leading-none">Welcome aboard</p>
+  <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">You're in the beta.</h1>
+  <p class="display italic text-stone-600 text-lg mt-2">Two quick steps and you'll be set:</p>
+  <ol class="list-decimal list-inside text-stone-700 mt-2 space-y-1 text-sm">
     <li>Tell us the Apple ID (the email tied to your iPhone) you want to use for the beta.</li>
     <li>Download the short PDF guide for installing TestFlight and creating your account.</li>
   </ol>
 
   {{if .Flash}}
-  <div class="mt-6 p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm">
+  <div class="mt-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm">
     {{.Flash}}
   </div>
   {{end}}
 
   <form method="POST" action="/beta/onboard/{{.Token}}" class="mt-7 space-y-4">
     <div>
-      <label class="block text-sm font-semibold text-gray-700 mb-1">Apple ID (email)</label>
+      <label class="block text-sm font-semibold text-stone-700 mb-1">Apple ID (email)</label>
       <input type="email" name="apple_id" required value="{{.AppleID}}"
              class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-teal-500 focus:border-transparent" />
-      <p class="text-xs text-gray-500 mt-1">
+      <p class="text-xs text-stone-500 mt-1">
         Not sure which email this is? On your iPhone open <strong>Settings</strong> &rarr; tap your name at the top &rarr; the email shown is your Apple ID.
       </p>
     </div>
 
     <div class="grid grid-cols-2 gap-3">
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">First name</label>
+        <label class="block text-sm font-semibold text-stone-700 mb-1">First name</label>
         <input type="text" name="first_name" required value="{{.First}}"
                class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-teal-500 focus:border-transparent" />
       </div>
       <div>
-        <label class="block text-sm font-semibold text-gray-700 mb-1">Last name</label>
+        <label class="block text-sm font-semibold text-stone-700 mb-1">Last name</label>
         <input type="text" name="last_name" required value="{{.Last}}"
                class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-teal-500 focus:border-transparent" />
       </div>
     </div>
 
-    <p class="text-xs text-gray-500">Apple needs your name when registering you as a tester. You'll see it in the TestFlight invite email.</p>
+    <p class="text-xs text-stone-500">Apple needs your name when registering you as a tester. You'll see it in the TestFlight invite email.</p>
 
     <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-full mt-2 shadow-sm shadow-teal-600/20 transition">
       Save my Apple ID
@@ -67,7 +67,7 @@
     Open the onboarding guide &rarr;
   </a>
 
-  <p class="text-xs text-gray-400 mt-10 text-center">
+  <p class="text-xs text-stone-400 mt-10 text-center">
     This page isn't listed publicly. The link is only meaningful for you — please don't share it.
   </p>
 

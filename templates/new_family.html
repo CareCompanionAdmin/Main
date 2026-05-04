@@ -7,24 +7,25 @@
 {{template "mascot" .}}
 
 <main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="glass ring-soft rounded-3xl p-8 transition-colors">
-        <h1 class="display text-3xl font-medium text-stone-800 mb-2">Create a Family</h1>
-        <p class="text-gray-500 mb-6">A family allows you to add children and invite other caregivers.</p>
+    <div class="bloom ring-soft rounded-3xl p-8 sm:p-10 transition-colors">
+        <p class="handwritten text-2xl text-amber-700">A new chapter</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">Create a family</h1>
+        <p class="display italic text-stone-600 text-lg mt-2 mb-8">A family is the shared space where you, your kids, and any caregivers will live. You can rename it later.</p>
 
-        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6"></div>
+        <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl mb-6"></div>
 
         <form id="family-form" class="space-y-6">
             <div>
-                <label for="name" class="block text-sm font-medium text-gray-700">Family Name *</label>
+                <label for="name" class="block text-sm font-medium text-stone-700 mb-2">What should we call this family?</label>
                 <input id="name" name="name" type="text" required
-                    class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    class="block w-full px-4 py-3 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="e.g., The Smith Family">
             </div>
 
-            <div class="flex space-x-4">
+            <div>
                 <button type="submit"
-                    class="flex-1 py-3 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition-colors">
-                    Create Family
+                    class="seed-btn w-full py-3 px-4 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium transition-colors">
+                    Create our family
                 </button>
             </div>
         </form>

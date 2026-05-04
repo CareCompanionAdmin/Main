@@ -7,32 +7,40 @@
 {{template "mascot" .}}
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-6">
-        <a href="/child/{{.Child.ID}}" class="text-orange-600 hover:text-orange-500 flex items-center">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mb-4">
+        <a href="/child/{{.Child.ID}}" class="text-stone-500 hover:text-stone-800 inline-flex items-center text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
             Back to {{.Child.FirstName}}
         </a>
     </div>
 
-    <div class="glass ring-soft rounded-3xl p-6 mb-6">
-        <h1 class="display text-3xl font-medium text-stone-800">Insights for {{.Child.FirstName}}</h1>
-        <p class="text-gray-500">Patterns and correlations discovered from logged data</p>
-    </div>
+    <header class="mb-8">
+        <p class="handwritten text-2xl text-orange-800 leading-none">Patterns we notice</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">{{.Child.FirstName}}'s insights</h1>
+        <p class="display italic text-stone-600 text-lg mt-2">Quiet correlations the system surfaces from the daily notes — read them as suggestions, not verdicts.</p>
+    </header>
 
-    <div id="insights-loading" class="glass ring-soft rounded-3xl p-12 text-center">
-        <p class="text-gray-500">Loading insights…</p>
-    </div>
-
-    <div id="insights-empty" class="hidden glass ring-soft rounded-3xl p-12 text-center">
-        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+    <div id="insights-loading" class="bloom ring-soft rounded-3xl p-12 text-center">
+        <div class="w-14 h-14 rounded-full bg-amber-100/70 flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 6.5C9 9 7 11 7 13.5A5 5 0 0017 13.5C17 11 15 9 12 6.5z"></path>
             </svg>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No insights yet</h3>
-        <p class="text-gray-500 mb-4">Keep logging data to discover patterns. The system needs at least 7 days of data.</p>
+        <p class="handwritten text-2xl text-amber-700">Quietly looking…</p>
+        <p class="display italic text-stone-600 mt-1">Reading {{.Child.FirstName}}'s notes</p>
+    </div>
+
+    <div id="insights-empty" class="hidden bloom ring-soft rounded-3xl p-12 text-center">
+        <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 6.5C9 9 7 11 7 13.5A5 5 0 0017 13.5C17 11 15 9 12 6.5z"></path>
+            </svg>
+        </div>
+        <p class="handwritten text-2xl text-amber-700">Nothing surfacing yet</p>
+        <h3 class="display text-2xl font-medium text-stone-800 mt-1">Patterns take time to bloom</h3>
+        <p class="text-stone-600 mt-3 max-w-md mx-auto">Keep jotting down the small things — meals, sleep, mood, meltdowns. After about a week of notes, quiet correlations start to surface here.</p>
     </div>
 
     <div id="insights-tiers" class="hidden space-y-8"></div>
@@ -84,7 +92,7 @@ function getAuthToken() {
     })();
 }
 
-function renderInsightCard(ins, factorColor) {
+function renderInsightCard(ins, factorColor, tierKey) {
     const title = ins.title || (ins.simple_description || "Pattern detected");
     const desc = ins.detailed_description && ins.detailed_description.Valid
         ? ins.detailed_description.String
@@ -99,13 +107,21 @@ function renderInsightCard(ins, factorColor) {
     if (Array.isArray(ins.output_factors) && ins.output_factors.length) {
         factors.push("→ " + ins.output_factors.join(", "));
     }
+    // Personal-tier patterns get the warmer "bloom" treatment so the tiers
+    // read visually (this child's patterns vs. cohort/medical knowledge).
+    const cardClass = tierKey === 'personal'
+        ? 'bloom ring-soft rounded-3xl p-6'
+        : 'glass ring-soft rounded-3xl p-6';
+    const titleClass = tierKey === 'personal'
+        ? 'display text-lg font-medium text-stone-800'
+        : 'text-base font-semibold text-stone-900';
 
     return `
-    <div class="glass ring-soft rounded-3xl p-6">
-        <h3 class="text-base font-semibold text-gray-900">${escapeHtml(title)}</h3>
-        ${desc ? `<p class="text-gray-600 mt-2">${escapeHtml(desc)}</p>` : ""}
+    <div class="${cardClass}">
+        <h3 class="${titleClass}">${escapeHtml(title)}</h3>
+        ${desc ? `<p class="text-stone-700 mt-2">${escapeHtml(desc)}</p>` : ""}
         ${factors.length ? `<p class="text-sm ${factorColor} mt-2">${escapeHtml(factors.join(" "))}</p>` : ""}
-        <div class="flex flex-wrap items-center mt-4 gap-x-4 gap-y-1 text-xs text-gray-500">
+        <div class="flex flex-wrap items-center mt-4 gap-x-4 gap-y-1 text-xs text-stone-600">
             ${confidence ? `<span>Confidence: ${escapeHtml(confidence)}</span>` : ""}
             ${samples != null ? `<span>Sample size: ${samples}</span>` : ""}
             ${validations ? `<span>Validated ${validations} time${validations === 1 ? "" : "s"}</span>` : ""}
@@ -125,14 +141,27 @@ function renderTier(tierKey, items) {
                 </svg>
             </div>
             <div>
-                <h2 class="display text-xl font-medium text-stone-800">${meta.label} <span class="text-gray-400 font-normal">(${items.length})</span></h2>
-                <p class="text-sm text-gray-500">${meta.sub}</p>
+                <h2 class="display text-xl font-medium text-stone-800">${meta.label} <span class="text-stone-400 font-normal">(${items.length})</span></h2>
+                <p class="text-sm text-stone-500">${meta.sub}</p>
             </div>
         </div>
         <div class="space-y-4">
-            ${items.map(i => renderInsightCard(i, meta.factorColor)).join("")}
+            ${items.map(i => renderInsightCard(i, meta.factorColor, tierKey)).join("")}
         </div>
     </section>`;
+}
+
+function showInsightsError(msg) {
+    const el = document.getElementById('insights-loading');
+    el.innerHTML = `
+        <div class="w-14 h-14 rounded-full bg-stone-200/70 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 9v2m0 4h.01M5.07 19h13.86A2 2 0 0020.66 16L13.73 4a2 2 0 00-3.46 0L3.34 16A2 2 0 005.07 19z"></path>
+            </svg>
+        </div>
+        <p class="handwritten text-2xl text-stone-700">A little hiccup</p>
+        <p class="text-stone-600 mt-2">${msg}</p>
+    `;
 }
 
 async function loadInsights() {
@@ -144,11 +173,11 @@ async function loadInsights() {
             credentials: 'include'
         });
     } catch (e) {
-        document.getElementById('insights-loading').textContent = "Failed to load insights.";
+        showInsightsError("We couldn't reach the insights service. Try again in a moment.");
         return;
     }
     if (!resp.ok) {
-        document.getElementById('insights-loading').textContent = "Failed to load insights (" + resp.status + ").";
+        showInsightsError("We couldn't load insights right now (" + resp.status + ").");
         return;
     }
     const data = await resp.json();

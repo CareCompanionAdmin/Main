@@ -7,12 +7,19 @@
 {{template "mascot" .}}
 
 <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-    <div class="flex flex-col md:flex-row gap-4 md:gap-6 h-[calc(100vh-8rem)] md:h-[calc(100vh-12rem)]">
+
+    <header class="mb-6">
+        <p class="handwritten text-2xl text-orange-800 leading-none">Tell us what happened</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">Support</h1>
+        <p class="display italic text-stone-600 text-base sm:text-lg mt-2">Bugs, feature ideas, billing — open a ticket and we'll write back. Screenshots help.</p>
+    </header>
+
+    <div class="flex flex-col md:flex-row gap-4 md:gap-6 h-[calc(100vh-16rem)] md:h-[calc(100vh-18rem)]">
         <!-- Ticket List -->
         <div id="ticket-list-container" class="w-full md:w-80 glass ring-soft rounded-3xl overflow-hidden flex flex-col flex-1 md:flex-none">
             <div class="p-4 border-b flex justify-between items-center">
-                <h2 class="font-semibold text-gray-900">Support Tickets</h2>
-                <button onclick="showNewTicket()" class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg">
+                <h2 class="font-semibold text-stone-900">Support Tickets</h2>
+                <button onclick="showNewTicket()" class="p-2 text-orange-600 hover:bg-orange-50 rounded-full">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -21,19 +28,19 @@
             <div id="ticket-list" class="flex-1 overflow-y-auto">
                 {{if .Tickets}}
                 {{range .Tickets}}
-                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ticket-item" data-ticket-id="{{.ID}}" onclick="selectTicket('{{.ID}}')">
+                <div class="p-4 border-b hover:bg-stone-50 cursor-pointer ticket-item" data-ticket-id="{{.ID}}" onclick="selectTicket('{{.ID}}')">
                     <div class="flex justify-between items-start gap-2">
                         <div class="flex-1 min-w-0">
-                            <h3 class="font-medium text-gray-900 truncate">{{.Subject}}</h3>
-                            <p class="text-xs text-gray-500 mt-1 flex flex-wrap gap-1">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            <h3 class="font-medium text-stone-900 truncate">{{.Subject}}</h3>
+                            <p class="text-xs text-stone-500 mt-1 flex flex-wrap gap-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                                     {{if eq .Status "open"}}bg-green-100 text-green-800
                                     {{else if eq .Status "in_progress"}}bg-yellow-100 text-yellow-800
-                                    {{else if eq .Status "resolved"}}bg-gray-100 text-gray-800
-                                    {{else}}bg-gray-100 text-gray-800{{end}}">
+                                    {{else if eq .Status "resolved"}}bg-stone-100 text-stone-800
+                                    {{else}}bg-stone-100 text-stone-800{{end}}">
                                     {{.Status}}
                                 </span>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                                     {{if eq .Type "bug_report"}}bg-red-100 text-red-800
                                     {{else if eq .Type "feature_request"}}bg-purple-100 text-purple-800
                                     {{else if eq .Type "billing"}}bg-amber-100 text-amber-800
@@ -46,12 +53,16 @@
                 </div>
                 {{end}}
                 {{else}}
-                <div class="p-8 text-center text-gray-500">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <p>No support tickets yet</p>
-                    <button onclick="showNewTicket()" class="mt-4 text-orange-600 hover:text-orange-700">Create a ticket</button>
+                <div class="p-8 text-center">
+                    <div class="w-14 h-14 rounded-full bg-emerald-100/70 flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <p class="handwritten text-xl text-emerald-700">All clear</p>
+                    <p class="display text-stone-800 mt-1">No tickets open</p>
+                    <p class="text-sm text-stone-500 mt-2 max-w-xs mx-auto">If something feels off or you have a question, we're a click away.</p>
+                    <button onclick="showNewTicket()" class="seed-btn mt-4 inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm font-medium">Create a ticket</button>
                 </div>
                 {{end}}
             </div>
@@ -62,42 +73,44 @@
             <div id="ticket-header" class="p-4 border-b hidden">
                 <div class="flex items-center">
                     <!-- Mobile Back Button -->
-                    <button onclick="showTicketList()" class="md:hidden mr-3 p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+                    <button onclick="showTicketList()" class="md:hidden mr-3 p-2 -ml-2 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-full">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                     </button>
                     <div class="flex-1 min-w-0">
-                        <h2 id="ticket-subject" class="font-semibold text-gray-900 truncate"></h2>
+                        <h2 id="ticket-subject" class="font-semibold text-stone-900 truncate"></h2>
                         <div class="flex items-center gap-2 mt-1 flex-wrap">
-                            <span id="ticket-status" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"></span>
-                            <span id="ticket-type" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"></span>
-                            <span id="ticket-created" class="text-sm text-gray-500"></span>
+                            <span id="ticket-status" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"></span>
+                            <span id="ticket-type" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"></span>
+                            <span id="ticket-created" class="text-sm text-stone-500"></span>
                         </div>
                     </div>
                 </div>
             </div>
             <div id="message-area" class="flex-1 overflow-y-auto p-4">
-                <div class="flex items-center justify-center h-full text-gray-500">
+                <div class="flex items-center justify-center h-full">
                     <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                        <p>Select a ticket to view messages</p>
-                        <p class="text-sm mt-2">or <button onclick="showNewTicket()" class="text-orange-600 hover:text-orange-700">create a new ticket</button></p>
+                        <div class="w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-7 h-7 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-4v4m0 4h.01"></path>
+                            </svg>
+                        </div>
+                        <p class="handwritten text-xl text-stone-600">Pick a ticket to read</p>
+                        <p class="text-sm text-stone-500 mt-1">or <button onclick="showNewTicket()" class="text-orange-700 hover:text-orange-800 underline">open a new one</button></p>
                     </div>
                 </div>
             </div>
             <div id="reply-area" class="p-4 border-t hidden">
                 <div class="flex flex-wrap items-center gap-2 mb-2 text-sm">
-                    <button type="button" onclick="onPickAttachClick('reply')" class="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">📎 Attach</button>
-                    <button type="button" id="recordBtnReply" onclick="onRecordClick('reply')" class="hidden px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200">🎬 Record screen + mic</button>
+                    <button type="button" onclick="onPickAttachClick('reply')" class="px-2 py-1 text-xs bg-stone-100 text-stone-700 rounded hover:bg-stone-200">📎 Attach</button>
+                    <button type="button" id="recordBtnReply" onclick="onRecordClick('reply')" class="hidden px-2 py-1 text-xs bg-stone-100 text-stone-700 rounded hover:bg-stone-200">🎬 Record screen + mic</button>
                     <span id="recordHintReply" class="hidden text-xs text-amber-700">Tip: use the desktop website to record screen with voice — fastest path to a fix.</span>
                 </div>
                 <input type="file" id="replyAttachInput" multiple accept="image/*,video/*,.heic,.heif,.mov,.3gp,.3gpp" class="hidden" onchange="onAttachInputChange('reply')">
                 <div id="replyAttachList" class="mb-2 space-y-1"></div>
                 <form id="reply-form" class="flex gap-2">
-                    <textarea id="reply-input" placeholder="Type your reply..." rows="2" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"></textarea>
+                    <textarea id="reply-input" placeholder="Type your reply..." rows="2" class="flex-1 px-4 py-2 border border-stone-300 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"></textarea>
                     <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition self-end">
                         Send
                     </button>
@@ -109,20 +122,20 @@
 
 <!-- New Ticket Modal -->
 <div id="new-ticket-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-lg w-full mx-4">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Create Support Ticket</h2>
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-lg w-full mx-4">
+        <h2 class="display text-2xl font-medium text-stone-800 mb-4">Create Support Ticket</h2>
         <form id="new-ticket-form" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                <input type="text" name="subject" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Brief description of your issue">
+                <label class="block text-sm font-medium text-stone-700 mb-1">Subject</label>
+                <input type="text" name="subject" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent" placeholder="Brief description of your issue">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea name="description" required rows="4" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent" placeholder="Please describe your issue in detail"></textarea>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Description</label>
+                <textarea name="description" required rows="4" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent" placeholder="Please describe your issue in detail"></textarea>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select name="type" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <label class="block text-sm font-medium text-stone-700 mb-1">Type</label>
+                <select name="type" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent">
                     <option value="general" selected>General</option>
                     <option value="bug_report">Bug Report</option>
                     <option value="feature_request">Feature Request</option>
@@ -130,8 +143,8 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                <select name="priority" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <label class="block text-sm font-medium text-stone-700 mb-1">Priority</label>
+                <select name="priority" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent">
                     <option value="low">Low</option>
                     <option value="normal" selected>Normal</option>
                     <option value="high">High</option>
@@ -141,22 +154,22 @@
 
             <!-- Attachments (staged in memory until the ticket is created) -->
             <div class="border-t pt-3">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Attachments (optional)</label>
+                <label class="block text-sm font-medium text-stone-700 mb-2">Attachments (optional)</label>
                 <div class="flex flex-wrap gap-2 mb-2">
-                    <button type="button" onclick="onPickAttachClick('new')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200">📎 Add screenshot or video</button>
-                    <button type="button" id="recordBtnNew" onclick="onRecordClick('new')" class="hidden px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200">🎬 Record screen + mic</button>
+                    <button type="button" onclick="onPickAttachClick('new')" class="px-3 py-1.5 text-sm bg-stone-100 text-stone-700 rounded hover:bg-stone-200">📎 Add screenshot or video</button>
+                    <button type="button" id="recordBtnNew" onclick="onRecordClick('new')" class="hidden px-3 py-1.5 text-sm bg-stone-100 text-stone-700 rounded hover:bg-stone-200">🎬 Record screen + mic</button>
                 </div>
                 <p id="recordHintNew" class="hidden text-xs text-amber-700 mb-2">Tip: for the fastest help, use the desktop website to record your screen with voice — it cuts down on back-and-forth.</p>
                 <input type="file" id="newAttachInput" multiple accept="image/*,video/*,.heic,.heif,.mov,.3gp,.3gpp" class="hidden" onchange="onAttachInputChange('new')">
                 <div id="newAttachList" class="space-y-1"></div>
-                <p id="newAttachLimits" class="text-xs text-gray-500 mt-1"></p>
+                <p id="newAttachLimits" class="text-xs text-stone-500 mt-1"></p>
             </div>
 
             <div class="flex space-x-4 pt-2">
-                <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                     Create Ticket
                 </button>
-                <button type="button" onclick="hideNewTicket()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <button type="button" onclick="hideNewTicket()" class="flex-1 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
                     Cancel
                 </button>
             </div>
@@ -220,8 +233,8 @@ async function selectTicket(ticketID) {
     currentTicketID = ticketID;
 
     // Update UI
-    document.querySelectorAll('.ticket-item').forEach(el => el.classList.remove('bg-orange-50', '
-    document.querySelector(`[data-ticket-id="${ticketID}"]`)?.classList.add('bg-orange-50', '
+    document.querySelectorAll('.ticket-item').forEach(el => el.classList.remove('bg-orange-50', 'border-l-orange-400'));
+    document.querySelector(`[data-ticket-id="${ticketID}"]`)?.classList.add('bg-orange-50', 'border-l-orange-400');
 
     document.getElementById('ticket-header').classList.remove('hidden');
     document.getElementById('reply-area').classList.remove('hidden');
@@ -242,34 +255,34 @@ async function selectTicket(ticketID) {
 
         const statusEl = document.getElementById('ticket-status');
         statusEl.textContent = ticket.status;
-        statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ';
+        statusEl.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ';
         if (ticket.status === 'open') {
-            statusEl.className += 'bg-green-100 text-green-800
+            statusEl.className += 'bg-green-100 text-green-800';
         } else if (ticket.status === 'in_progress') {
-            statusEl.className += 'bg-yellow-100 text-yellow-800
+            statusEl.className += 'bg-yellow-100 text-yellow-800';
         } else {
-            statusEl.className += 'bg-gray-100 text-gray-800
+            statusEl.className += 'bg-stone-100 text-stone-800';
         }
 
         const typeEl = document.getElementById('ticket-type');
         const typeMap = {
-            'bug_report':      ['Bug',     'bg-red-100 text-red-800
-            'feature_request': ['Feature', 'bg-purple-100 text-purple-800
-            'billing':         ['Billing', 'bg-amber-100 text-amber-800
-            'general':         ['General', 'bg-blue-100 text-blue-800
+            'bug_report':      ['Bug',     'bg-red-100 text-red-800'],
+            'feature_request': ['Feature', 'bg-purple-100 text-purple-800'],
+            'billing':         ['Billing', 'bg-amber-100 text-amber-800'],
+            'general':         ['General', 'bg-blue-100 text-blue-800'],
         };
         const t = typeMap[ticket.type] || typeMap['general'];
         typeEl.textContent = t[0];
-        typeEl.className = 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ' + t[1];
+        typeEl.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + t[1];
 
         document.getElementById('ticket-created').textContent = 'Created ' + new Date(ticket.created_at).toLocaleDateString();
 
         // Render messages
         const messageArea = document.getElementById('message-area');
         let html = `
-            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                <p class="text-sm text-gray-500 mb-1">Original Description</p>
-                <p class="text-gray-900 whitespace-pre-wrap">${escapeHtml(ticket.description)}</p>
+            <div class="mb-6 p-4 bg-stone-50 rounded-2xl">
+                <p class="text-sm text-stone-500 mb-1">Original Description</p>
+                <p class="text-stone-900 whitespace-pre-wrap">${escapeHtml(ticket.description)}</p>
             </div>
         `;
 
@@ -280,17 +293,17 @@ async function selectTicket(ticketID) {
                 const time = new Date(msg.created_at).toLocaleString();
                 html += `
                     <div class="${isUser ? 'text-right' : ''}">
-                        <div class="inline-block max-w-[80%] ${isUser ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-900} rounded-lg px-4 py-2">
-                            ${!isUser ? `<p class="text-xs font-medium ${isUser ? 'text-orange-200' : 'text-orange-600} mb-1">${escapeHtml(msg.sender_name || 'Support')}</p>` : ''}
+                        <div class="inline-block max-w-[80%] ${isUser ? 'bg-orange-600 text-white' : 'bg-stone-100 text-stone-900'} rounded-2xl px-4 py-2">
+                            ${!isUser ? `<p class="text-xs font-medium ${isUser ? 'text-orange-200' : 'text-orange-600'} mb-1">${escapeHtml(msg.sender_name || 'Support')}</p>` : ''}
                             <p class="whitespace-pre-wrap">${escapeHtml(msg.message)}</p>
-                            <p class="text-xs ${isUser ? 'text-orange-200' : 'text-gray-400'} mt-1">${time}</p>
+                            <p class="text-xs ${isUser ? 'text-orange-200' : 'text-stone-400'} mt-1">${time}</p>
                         </div>
                     </div>
                 `;
             });
             html += '</div>';
         } else {
-            html += '<p class="text-center text-gray-500 mt-4">No replies yet. Our support team will respond soon.</p>';
+            html += '<p class="text-center text-stone-500 mt-4">No replies yet. Our support team will respond soon.</p>';
         }
 
         messageArea.innerHTML = html;
@@ -319,14 +332,14 @@ async function renderTicketAttachments(ticketID) {
         if (!atts || atts.length === 0) return;
         const wrap = document.createElement('div');
         wrap.className = 'mt-6 border-t pt-4';
-        let html = '<p class="text-sm font-medium text-gray-700 mb-2">Attachments</p><div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
+        let html = '<p class="text-sm font-medium text-stone-700 mb-2">Attachments</p><div class="grid grid-cols-2 sm:grid-cols-3 gap-3">';
         atts.forEach(a => {
             const url = '/api/support/attachments/' + a.id;
             const safeName = escapeHtml(a.original_name || 'file');
             if (a.kind === 'image') {
                 html += `<a href="${url}" target="_blank" class="block border rounded overflow-hidden hover:opacity-90"><img src="${url}" alt="${safeName}" class="w-full h-24 object-cover"></a>`;
             } else {
-                html += `<div class="border rounded p-2"><video src="${url}" controls class="w-full max-h-32"></video><p class="text-xs text-gray-500 mt-1 truncate">${safeName}</p></div>`;
+                html += `<div class="border rounded p-2"><video src="${url}" controls class="w-full max-h-32"></video><p class="text-xs text-stone-500 mt-1 truncate">${safeName}</p></div>`;
             }
         });
         html += '</div>';
@@ -544,10 +557,10 @@ function renderStagedList(scope) {
                                   : document.getElementById('replyAttachList');
     const stage = scope === 'new' ? newStaged : replyStaged;
     list.innerHTML = stage.map((s, i) => `
-        <div class="flex items-center justify-between text-sm bg-gray-50 rounded px-2 py-1">
+        <div class="flex items-center justify-between text-sm bg-stone-50 rounded px-2 py-1">
             <div class="truncate flex-1 mr-2">
-                <span class="text-gray-700">${escapeHtml(s.file.name)}</span>
-                <span class="text-xs text-gray-500 ml-2">${(s.file.size/1024).toFixed(0)} KB${s.kind === 'recording' ? ' · screen recording' : ''}</span>
+                <span class="text-stone-700">${escapeHtml(s.file.name)}</span>
+                <span class="text-xs text-stone-500 ml-2">${(s.file.size/1024).toFixed(0)} KB${s.kind === 'recording' ? ' · screen recording' : ''}</span>
             </div>
             <button type="button" onclick="removeStaged('${scope}', ${i})" class="text-red-600 hover:text-red-800 text-xs">Remove</button>
         </div>
@@ -661,22 +674,22 @@ function onRecordingStopped() {
 
 <!-- PHI consent modal -->
 <div id="phiModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-bold text-gray-900 mb-3">Before you upload</h3>
-        <div class="text-sm text-gray-700 space-y-3 mb-4">
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
+        <h3 class="display text-xl font-medium text-stone-800 mb-3">Before you upload</h3>
+        <div class="text-sm text-stone-700 space-y-3 mb-4">
             <p>The screenshots, videos or screen recordings you attach may contain personal or protected health information. A support team member may view them while helping you.</p>
             <p>To protect your privacy, <strong>all visual attachments are automatically and permanently deleted</strong> the moment your support ticket is closed or resolved.</p>
             <p>By continuing, you confirm you understand and agree.</p>
         </div>
         <div class="flex space-x-3">
             <button onclick="onPhiAccept()" class="flex-1 py-2 bg-orange-600 text-white rounded hover:bg-orange-700">I understand, continue</button>
-            <button onclick="onPhiCancel()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">Cancel</button>
+            <button onclick="onPhiCancel()" class="flex-1 py-2 bg-stone-100 text-stone-700 rounded hover:bg-stone-200">Cancel</button>
         </div>
     </div>
 </div>
 
 <!-- Recording banner (visible while recording) -->
-<div id="recordingBanner" class="hidden fixed bottom-6 right-6 bg-red-600 text-white rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 z-50">
+<div id="recordingBanner" class="hidden fixed bottom-6 right-6 bg-red-600 text-white rounded-full shadow-lg px-4 py-3 flex items-center gap-3 z-50">
     <span class="inline-block w-3 h-3 bg-white rounded-full animate-pulse"></span>
     <span class="text-sm font-medium">Recording screen + mic...</span>
     <button onclick="onStopRecordingClick()" class="ml-2 px-3 py-1 bg-white text-red-700 rounded text-sm font-semibold hover:bg-red-50">Stop</button>

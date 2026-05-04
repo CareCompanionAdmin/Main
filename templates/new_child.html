@@ -7,45 +7,47 @@
 {{template "mascot" .}}
 
 <main class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8">
-        <a href="/dashboard" class="text-orange-600 hover:text-orange-500 flex items-center">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mb-4">
+        <a href="/dashboard" class="text-stone-500 hover:text-stone-800 inline-flex items-center text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
-            Back to Dashboard
+            Back to dashboard
         </a>
     </div>
 
-    <div class="glass ring-soft rounded-3xl p-8 transition-colors">
-        <h1 class="display text-3xl font-medium text-stone-800 mb-6">Add a Child</h1>
+    <div class="bloom ring-soft rounded-3xl p-8 sm:p-10 transition-colors">
+        <p class="handwritten text-2xl text-amber-700">Tell us about them</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">Add a child</h1>
+        <p class="display italic text-stone-600 text-lg mt-2 mb-8">Just the basics for now — you can add notes, conditions, and meds later from their dashboard.</p>
 
-        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6"></div>
+        <div id="error-message" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl mb-6"></div>
 
         <form id="child-form" class="space-y-6">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label for="first_name" class="block text-sm font-medium text-gray-700">First name *</label>
+                    <label for="first_name" class="block text-sm font-medium text-stone-700 mb-2">First name *</label>
                     <input id="first_name" name="first_name" type="text" required
-                        class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        class="block w-full px-4 py-3 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
-                    <label for="last_name" class="block text-sm font-medium text-gray-700">Last name</label>
+                    <label for="last_name" class="block text-sm font-medium text-stone-700 mb-2">Last name</label>
                     <input id="last_name" name="last_name" type="text"
-                        class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        class="block w-full px-4 py-3 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
             </div>
 
             <div>
-                <label for="date_of_birth" class="block text-sm font-medium text-gray-700">Date of birth *</label>
+                <label for="date_of_birth" class="block text-sm font-medium text-stone-700 mb-2">Date of birth *</label>
                 <input id="date_of_birth" name="date_of_birth" type="date" required
-                    class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    class="block w-full px-4 py-3 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
             </div>
 
             <div>
-                <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                <label for="gender" class="block text-sm font-medium text-stone-700 mb-2">Gender</label>
                 <select id="gender" name="gender"
-                    class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                    <option value="">Select...</option>
+                    class="block w-full px-4 py-3 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
+                    <option value="">Select…</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                     <option value="other">Other</option>
@@ -53,21 +55,21 @@
             </div>
 
             <div>
-                <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
+                <label for="notes" class="block text-sm font-medium text-stone-700 mb-2">Anything we should know?</label>
                 <textarea id="notes" name="notes" rows="3"
-                    class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="Any additional information about your child..."></textarea>
+                    class="block w-full px-4 py-3 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
+                    placeholder="Things to keep in mind, sensitivities, anything that helps us understand them…"></textarea>
             </div>
 
-            <div class="flex space-x-4">
-                <button type="submit"
-                    class="flex-1 py-3 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium transition-colors">
-                    Add Child
-                </button>
+            <div class="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pt-2">
                 <a href="/dashboard"
-                    class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium text-center transition-colors">
+                    class="sm:flex-1 py-3 px-4 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 font-medium text-center transition-colors">
                     Cancel
                 </a>
+                <button type="submit"
+                    class="seed-btn sm:flex-1 py-3 px-4 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium transition-colors">
+                    Add this child
+                </button>
             </div>
         </form>
     </div>

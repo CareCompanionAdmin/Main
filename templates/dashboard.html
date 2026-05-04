@@ -8,7 +8,7 @@
 <!-- Intro Video Overlay -->
 <div id="introVideoOverlay" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex items-center justify-center" onclick="closeIntroVideo()">
     <div class="relative" onclick="event.stopPropagation()">
-        <button onclick="closeIntroVideo()" class="absolute -top-12 right-0 text-white hover:text-gray-300 text-lg font-medium flex items-center">
+        <button onclick="closeIntroVideo()" class="absolute -top-12 right-0 text-white hover:text-stone-300 text-lg font-medium flex items-center">
             <span>Skip</span>
             <svg class="w-6 h-6 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -25,46 +25,115 @@
 
 <main class="max-w-3xl mx-auto px-6 sm:px-8 py-10">
 
-    <!-- Header: family name + switch + add child -->
+    <!-- Header: a quiet welcome -->
     <header class="mb-8">
         <p class="handwritten text-2xl text-orange-800 leading-none">Welcome back{{if .FirstName}}, {{.FirstName}}{{end}}.</p>
-        <h1 class="display text-4xl font-medium text-stone-800 mt-1">Your family today</h1>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
-            <div class="flex items-center gap-2 min-w-0">
-                <p class="text-stone-500 truncate">{{.Dashboard.Family.Name}}</p>
-                {{if gt (len .Families) 1}}
-                <div class="relative flex-shrink-0" id="switchFamilyContainer">
-                    <button onclick="toggleFamilyDropdown()" class="inline-flex items-center px-2 py-1 text-xs text-orange-700 hover:text-orange-900 hover:bg-orange-50 rounded-full transition-colors">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                        </svg>
-                        Switch Family
-                    </button>
-                    <div id="familyDropdown" class="hidden absolute left-0 mt-1 w-64 bg-white rounded-2xl shadow-lg border border-stone-200 z-50">
-                        <div class="py-1">
-                            {{range .Families}}
-                            <button onclick="switchFamily('{{.FamilyID}}')" class="w-full text-left px-4 py-2 text-sm hover:bg-orange-50 flex items-center justify-between {{if eq $.FamilyID .FamilyID}}bg-orange-50 text-orange-700{{else}}text-stone-700{{end}}">
-                                <span>{{.FamilyName}}</span>
-                                {{if eq $.FamilyID .FamilyID}}
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                                {{end}}
-                            </button>
+        <h1 class="display text-4xl sm:text-5xl font-medium text-stone-800 mt-1 tracking-tight">Your family today</h1>
+        <div class="flex items-center gap-2 mt-3 min-w-0">
+            <p class="text-stone-500 truncate">{{.Dashboard.Family.Name}}</p>
+            {{if gt (len .Families) 1}}
+            <div class="relative flex-shrink-0" id="switchFamilyContainer">
+                <button onclick="toggleFamilyDropdown()" class="inline-flex items-center px-2 py-1 text-xs text-orange-700 hover:text-orange-900 hover:bg-orange-50 rounded-full transition-colors">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                    </svg>
+                    Switch family
+                </button>
+                <div id="familyDropdown" class="hidden absolute left-0 mt-1 w-64 bg-white rounded-2xl shadow-lg border border-stone-200 z-50">
+                    <div class="py-1">
+                        {{range .Families}}
+                        <button onclick="switchFamily('{{.FamilyID}}')" class="w-full text-left px-4 py-2 text-sm hover:bg-orange-50 flex items-center justify-between {{if eq $.FamilyID .FamilyID}}bg-orange-50 text-orange-700{{else}}text-stone-700{{end}}">
+                            <span>{{.FamilyName}}</span>
+                            {{if eq $.FamilyID .FamilyID}}
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
                             {{end}}
-                        </div>
+                        </button>
+                        {{end}}
                     </div>
                 </div>
-                {{end}}
             </div>
-            <a href="/child/new" class="inline-flex items-center justify-center px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm font-medium transition-colors">
-                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add Child
-            </a>
+            {{end}}
         </div>
     </header>
+
+    {{if .Dashboard.Children}}
+    {{$ws := .Dashboard.WeekStats}}
+
+    <!-- This week's bright spot — derived from family week stats -->
+    {{if gt $ws.TotalLogs 0}}
+    <section class="mb-6">
+        {{if and (eq $ws.Meltdowns 0) (ge $ws.ActiveDays 5)}}
+        <div class="glass ring-soft rounded-3xl p-5 flex items-start gap-4">
+            <div class="text-3xl">🌼</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">This week's bright spot</p>
+                <p class="display text-xl text-stone-800 mt-0.5">A calm stretch — {{$ws.ActiveDays}} days running.</p>
+                <p class="text-sm text-stone-500 mt-1">Whatever the rhythm is right now, it's working.</p>
+            </div>
+        </div>
+        {{else if ge $ws.ActiveDays 6}}
+        <div class="glass ring-soft rounded-3xl p-5 flex items-start gap-4">
+            <div class="text-3xl">📓</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">This week's bright spot</p>
+                <p class="display text-xl text-stone-800 mt-0.5">{{$ws.ActiveDays}} days of notes — every day this week.</p>
+                <p class="text-sm text-stone-500 mt-1">That's how patterns get surfaced. Quietly impressive.</p>
+            </div>
+        </div>
+        {{else if and (gt $ws.MedsTaken 0) (eq $ws.Meltdowns 0)}}
+        <div class="glass ring-soft rounded-3xl p-5 flex items-start gap-4">
+            <div class="text-3xl">💊</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">This week's bright spot</p>
+                <p class="display text-xl text-stone-800 mt-0.5">Meds steady, no hard moments logged.</p>
+                <p class="text-sm text-stone-500 mt-1">A quiet week is a win — worth noticing.</p>
+            </div>
+        </div>
+        {{else}}
+        <div class="glass ring-soft rounded-3xl p-5 flex items-start gap-4">
+            <div class="text-3xl">🌱</div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">This week so far</p>
+                <p class="display text-xl text-stone-800 mt-0.5">{{$ws.TotalLogs}} moment{{if ne $ws.TotalLogs 1}}s{{end}} captured.</p>
+                <p class="text-sm text-stone-500 mt-1">Every entry helps the system understand the rhythm of your week.</p>
+            </div>
+        </div>
+        {{end}}
+    </section>
+    {{end}}
+
+    <!-- This week's family hero -->
+    <section class="mb-8">
+        {{if gt $ws.TotalLogs 0}}
+        <p class="display text-stone-500 text-2xl sm:text-3xl mb-3">This week, your family</p>
+        <div class="flex items-end gap-4 sm:gap-6 flex-wrap">
+            <div class="display text-[6rem] sm:text-[10rem] leading-[0.85] font-medium text-stone-800 tracking-tight">{{$ws.TotalLogs}}<span class="text-stone-300 text-3xl sm:text-5xl block sm:inline mt-2 sm:mt-0 sm:ml-2">moments</span></div>
+            <!-- Garden growth-ring: days-of-week activity -->
+            <div class="pb-3">
+                <div class="grow-ring" style="--c:#ea580c; --p:{{printf "%.2f" (div_f $ws.ActiveDays 7)}};">
+                    <div class="flex flex-col items-center leading-none">
+                        <span class="display text-2xl text-orange-700 font-medium">{{$ws.ActiveDays}}</span>
+                        <span class="text-[10px] uppercase tracking-widest text-stone-500 font-semibold mt-0.5">/ 7 days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="display italic text-stone-600 text-lg sm:text-xl mt-3">
+            {{$ws.ChildrenWithLogs}} of {{len .Dashboard.Children}} {{if eq (len .Dashboard.Children) 1}}child{{else}}kids{{end}} tracked.
+            {{if gt $ws.MedsTaken 0}} {{$ws.MedsTaken}} med{{if ne $ws.MedsTaken 1}}s{{end}} given.{{end}}
+            {{if gt $ws.Meltdowns 0}} {{$ws.Meltdowns}} hard moment{{if ne $ws.Meltdowns 1}}s{{end}} weathered.{{end}}
+        </p>
+        {{else}}
+        <div class="bloom ring-soft rounded-3xl p-8 text-center">
+            <p class="handwritten text-2xl text-amber-700">A fresh page</p>
+            <p class="display text-2xl text-stone-800 mt-1">Nothing logged this week — yet</p>
+            <p class="text-stone-600 mt-3 max-w-md mx-auto">Open any child below and jot the first small thing. The week starts to fill in as you do.</p>
+        </div>
+        {{end}}
+    </section>
+    {{end}}
 
     <!-- Pending Interrogatives -->
     <div id="interrogatives-section" class="hidden mb-6">
@@ -87,7 +156,15 @@
     {{if .Dashboard.Children}}
     <!-- Children -->
     <section class="mb-10">
-        <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold mb-3">Your kids</p>
+        <div class="flex items-baseline justify-between mb-3">
+            <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">{{if eq (len .Dashboard.Children) 1}}Your kid{{else}}Your kids{{end}}</p>
+            <a href="/child/new" class="text-xs text-orange-700 hover:text-orange-900 inline-flex items-center gap-1 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6"></path>
+                </svg>
+                Add another
+            </a>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {{range .Dashboard.Children}}
             <a href="/child/{{.ID}}" class="glass ring-soft rounded-3xl p-5 hover:bg-white/80 transition-colors block">
@@ -115,15 +192,16 @@
     {{else}}
     <!-- Empty state -->
     <section class="mb-10">
-        <div class="glass ring-soft rounded-3xl p-12 text-center">
-            <div class="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        <div class="bloom ring-soft rounded-3xl p-12 text-center">
+            <div class="w-16 h-16 bg-amber-100/70 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 6.5C9 9 7 11 7 13.5A5 5 0 0017 13.5C17 11 15 9 12 6.5z"></path>
                 </svg>
             </div>
-            <h3 class="display text-2xl text-stone-800 mb-2">No children yet</h3>
-            <p class="text-stone-500 mb-6">Add your first child to start tracking their care.</p>
-            <a href="/child/new" class="inline-flex items-center px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm font-medium">
+            <p class="handwritten text-2xl text-amber-700">Let's begin</p>
+            <h3 class="display text-2xl font-medium text-stone-800 mt-1">Add your first child</h3>
+            <p class="text-stone-600 mt-3 mb-6 max-w-md mx-auto">Once they're here, you can start jotting moments — meals, mood, sleep, the small wins.</p>
+            <a href="/child/new" class="seed-btn inline-flex items-center px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm font-medium">
                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>

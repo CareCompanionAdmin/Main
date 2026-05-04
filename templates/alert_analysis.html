@@ -20,12 +20,12 @@
     <!-- View Toggle -->
     <div class="glass ring-soft rounded-3xl p-4 mb-6">
         <div class="flex justify-between items-center">
-            <h1 class="text-xl font-bold text-gray-900">Full Analysis</h1>
-            <div class="flex bg-gray-100 rounded-lg p-1">
-                <button id="view-parent" onclick="setViewMode('parent')" class="px-4 py-2 text-sm font-medium rounded-md bg-white shadow text-gray-900">
+            <h1 class="display text-2xl font-medium text-stone-800">Full Analysis</h1>
+            <div class="flex bg-stone-100 rounded-full p-1">
+                <button id="view-parent" onclick="setViewMode('parent')" class="px-4 py-2 text-sm font-medium rounded-md bg-white shadow text-stone-900">
                     Parent View
                 </button>
-                <button id="view-clinical" onclick="setViewMode('clinical')" class="px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-900">
+                <button id="view-clinical" onclick="setViewMode('clinical')" class="px-4 py-2 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900">
                     Clinical View
                 </button>
             </div>
@@ -36,64 +36,64 @@
     <div id="alert-summary" class="glass ring-soft rounded-3xl p-6 mb-6">
         <!-- Will be populated by JavaScript -->
         <div class="animate-pulse">
-            <div class="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
-            <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+            <div class="h-6 bg-stone-200 rounded w-3/4 mb-4"></div>
+            <div class="h-4 bg-stone-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-stone-200 rounded w-5/6"></div>
         </div>
     </div>
 
     <!-- Confidence Breakdown Section -->
     <div class="glass ring-soft rounded-3xl overflow-hidden mb-6">
-        <div class="p-6 border-b bg-gray-50">
+        <div class="p-6 border-b bg-stone-50">
             <h2 class="display text-xl font-medium text-stone-800">Confidence Breakdown</h2>
-            <p class="text-sm text-gray-500">How this insight was calculated</p>
+            <p class="text-sm text-stone-500">How this insight was calculated</p>
         </div>
         <div id="confidence-section" class="p-6">
             <div class="animate-pulse space-y-4">
-                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-stone-200 rounded w-1/2"></div>
+                <div class="h-4 bg-stone-200 rounded w-3/4"></div>
             </div>
         </div>
     </div>
 
     <!-- Cohort Matching Section -->
     <div class="glass ring-soft rounded-3xl overflow-hidden mb-6">
-        <div class="p-6 border-b bg-gray-50">
+        <div class="p-6 border-b bg-stone-50">
             <h2 class="display text-xl font-medium text-stone-800" id="cohort-title">Similar Families</h2>
-            <p class="text-sm text-gray-500" id="cohort-subtitle">How your experience compares to others</p>
+            <p class="text-sm text-stone-500" id="cohort-subtitle">How your experience compares to others</p>
         </div>
         <div id="cohort-section" class="p-6">
             <div class="animate-pulse space-y-4">
-                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-stone-200 rounded w-1/2"></div>
+                <div class="h-4 bg-stone-200 rounded w-3/4"></div>
             </div>
         </div>
     </div>
 
     <!-- Technical Details Section (Clinical View) -->
     <div id="technical-section" class="glass ring-soft rounded-3xl overflow-hidden mb-6 hidden">
-        <div class="p-6 border-b bg-gray-50">
+        <div class="p-6 border-b bg-stone-50">
             <h2 class="display text-xl font-medium text-stone-800">Technical Analysis Details</h2>
-            <p class="text-sm text-gray-500">Methodology and statistical measures</p>
+            <p class="text-sm text-stone-500">Methodology and statistical measures</p>
         </div>
         <div id="technical-content" class="p-6">
             <div class="animate-pulse space-y-4">
-                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-stone-200 rounded w-1/2"></div>
+                <div class="h-4 bg-stone-200 rounded w-3/4"></div>
             </div>
         </div>
     </div>
 
     <!-- Citations Section -->
     <div class="glass ring-soft rounded-3xl overflow-hidden mb-6">
-        <div class="p-6 border-b bg-gray-50">
+        <div class="p-6 border-b bg-stone-50">
             <h2 class="display text-xl font-medium text-stone-800">References</h2>
-            <p class="text-sm text-gray-500">Sources used in this analysis</p>
+            <p class="text-sm text-stone-500">Sources used in this analysis</p>
         </div>
         <div id="citations-section" class="p-6">
             <div class="animate-pulse space-y-4">
-                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-                <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div class="h-4 bg-stone-200 rounded w-1/2"></div>
+                <div class="h-4 bg-stone-200 rounded w-3/4"></div>
             </div>
         </div>
     </div>
@@ -102,19 +102,19 @@
     <div class="glass ring-soft rounded-3xl p-6 mb-6">
         <h2 class="display text-xl font-medium text-stone-800 mb-4">Actions</h2>
         <div class="flex flex-wrap gap-3">
-            <button onclick="exportAnalysis('pdf_download')" class="flex items-center px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200">
+            <button onclick="exportAnalysis('pdf_download')" class="flex items-center px-4 py-2 bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 Download PDF
             </button>
-            <button onclick="exportAnalysis('share_to_provider')" class="flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200">
+            <button onclick="exportAnalysis('share_to_provider')" class="flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
                 </svg>
                 Share with Provider
             </button>
-            <button onclick="window.print()" class="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            <button onclick="window.print()" class="flex items-center px-4 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                 </svg>
@@ -127,13 +127,13 @@
     <div class="glass ring-soft rounded-3xl p-6">
         <h2 class="display text-xl font-medium text-stone-800 mb-4">Was this analysis helpful?</h2>
         <div class="flex gap-4">
-            <button onclick="submitFeedback(true)" class="flex items-center px-6 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100">
+            <button onclick="submitFeedback(true)" class="flex items-center px-6 py-3 bg-green-50 text-green-700 rounded-full hover:bg-green-100">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
                 </svg>
                 Yes, helpful
             </button>
-            <button onclick="submitFeedback(false)" class="flex items-center px-6 py-3 bg-red-50 text-red-700 rounded-lg hover:bg-red-100">
+            <button onclick="submitFeedback(false)" class="flex items-center px-6 py-3 bg-red-50 text-red-700 rounded-full hover:bg-red-100">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"></path>
                 </svg>
@@ -203,16 +203,16 @@ function setViewMode(mode) {
     const clinicalBtn = document.getElementById('view-clinical');
 
     if (mode === 'parent') {
-        parentBtn.classList.add('bg-white', 'shadow', 'text-gray-900');
-        parentBtn.classList.remove('text-gray-600');
-        clinicalBtn.classList.remove('bg-white', 'shadow', 'text-gray-900');
-        clinicalBtn.classList.add('text-gray-600');
+        parentBtn.classList.add('bg-white', 'shadow', 'text-stone-900');
+        parentBtn.classList.remove('text-stone-600');
+        clinicalBtn.classList.remove('bg-white', 'shadow', 'text-stone-900');
+        clinicalBtn.classList.add('text-stone-600');
         document.getElementById('technical-section').classList.add('hidden');
     } else {
-        clinicalBtn.classList.add('bg-white', 'shadow', 'text-gray-900');
-        clinicalBtn.classList.remove('text-gray-600');
-        parentBtn.classList.remove('bg-white', 'shadow', 'text-gray-900');
-        parentBtn.classList.add('text-gray-600');
+        clinicalBtn.classList.add('bg-white', 'shadow', 'text-stone-900');
+        clinicalBtn.classList.remove('text-stone-600');
+        parentBtn.classList.remove('bg-white', 'shadow', 'text-stone-900');
+        parentBtn.classList.add('text-stone-600');
         document.getElementById('technical-section').classList.remove('hidden');
     }
 
@@ -240,16 +240,16 @@ function renderAnalysis() {
                     <span class="px-2 py-1 text-xs font-medium rounded-full ${getSeverityClass(alert.severity)}">
                         ${alert.severity}
                     </span>
-                    <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">${alert.alert_type}</span>
+                    <span class="px-2 py-1 text-xs font-medium bg-stone-100 text-stone-600 rounded-full">${alert.alert_type}</span>
                 </div>
                 <h2 class="display text-2xl font-medium text-stone-800">${alert.title}</h2>
-                <p class="text-gray-600 mt-2">${alert.description}</p>
-                <p class="text-sm text-gray-400 mt-2">For ${child_name || 'your child'} - ${formatDate(alert.created_at)}</p>
+                <p class="text-stone-600 mt-2">${alert.description}</p>
+                <p class="text-sm text-stone-400 mt-2">For ${child_name || 'your child'} - ${formatDate(alert.created_at)}</p>
             </div>
             ${alert.confidence_score ? `
             <div class="text-center">
                 <div class="text-2xl mb-1">${renderConfidenceDots(alert.confidence_score)}</div>
-                <p class="text-sm text-gray-600">${(alert.confidence_score * 100).toFixed(0)}% confidence</p>
+                <p class="text-sm text-stone-600">${(alert.confidence_score * 100).toFixed(0)}% confidence</p>
             </div>
             ` : ''}
         </div>
@@ -276,26 +276,26 @@ function renderConfidenceFactors(factors) {
 
     if (!factors || factors.length === 0) {
         container.innerHTML = `
-            <p class="text-gray-500 text-center py-4">Detailed confidence breakdown not yet available.</p>
+            <p class="text-stone-500 text-center py-4">Detailed confidence breakdown not yet available.</p>
         `;
         return;
     }
 
     container.innerHTML = factors.map(factor => `
         <div class="mb-4 last:mb-0">
-            <div class="flex items-start bg-gray-50 rounded-lg p-4">
+            <div class="flex items-start bg-stone-50 rounded-2xl p-4">
                 <span class="text-2xl mr-4">${getFactorIcon(factor.factor_type)}</span>
                 <div class="flex-1">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="font-medium text-gray-900">${getFactorLabel(factor.factor_type)}</span>
+                        <span class="font-medium text-stone-900">${getFactorLabel(factor.factor_type)}</span>
                         <span class="text-sm font-medium ${getContributionColor(factor.contribution)}">${(factor.contribution * 100).toFixed(0)}%</span>
                     </div>
-                    <p class="text-sm text-gray-600 mb-2">${factor.description}</p>
-                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <p class="text-sm text-stone-600 mb-2">${factor.description}</p>
+                    <div class="h-2 bg-stone-200 rounded-full overflow-hidden">
                         <div class="h-full bg-orange-500 rounded-full transition-all" style="width: ${factor.contribution * 100}%"></div>
                     </div>
                     ${factor.cohort ? `
-                    <p class="text-xs text-gray-500 mt-2">Based on ${factor.cohort_sample_size || 'multiple'} similar families</p>
+                    <p class="text-xs text-stone-500 mt-2">Based on ${factor.cohort_sample_size || 'multiple'} similar families</p>
                     ` : ''}
                 </div>
             </div>
@@ -308,35 +308,35 @@ function renderCohortMatching(cohortMatching) {
 
     if (!cohortMatching || cohortMatching.length === 0) {
         container.innerHTML = `
-            <p class="text-gray-500 text-center py-4">No cohort matching data available for this alert.</p>
+            <p class="text-stone-500 text-center py-4">No cohort matching data available for this alert.</p>
         `;
         return;
     }
 
     container.innerHTML = cohortMatching.map(match => `
-        <div class="bg-gray-50 rounded-lg p-4 mb-4 last:mb-0">
+        <div class="bg-stone-50 rounded-2xl p-4 mb-4 last:mb-0">
             <div class="flex justify-between items-start mb-3">
                 <div>
-                    <h3 class="font-medium text-gray-900">${match.cohort?.name || 'Similar Group'}</h3>
-                    <p class="text-sm text-gray-500">${match.cohort_size} families in this group</p>
+                    <h3 class="font-medium text-stone-900">${match.cohort?.name || 'Similar Group'}</h3>
+                    <p class="text-sm text-stone-500">${match.cohort_size} families in this group</p>
                 </div>
                 <div class="text-right">
                     <div class="text-lg font-semibold text-orange-600">${(match.confirmation_rate * 100).toFixed(0)}%</div>
-                    <p class="text-xs text-gray-500">confirmation rate</p>
+                    <p class="text-xs text-stone-500">confirmation rate</p>
                 </div>
             </div>
             <div class="grid grid-cols-3 gap-4 text-center text-sm">
                 <div class="bg-green-50 rounded p-2">
                     <div class="font-medium text-green-700">${match.pattern_confirmations}</div>
-                    <div class="text-gray-500">Confirmed</div>
+                    <div class="text-stone-500">Confirmed</div>
                 </div>
                 <div class="bg-red-50 rounded p-2">
                     <div class="font-medium text-red-700">${match.pattern_denials}</div>
-                    <div class="text-gray-500">Not seen</div>
+                    <div class="text-stone-500">Not seen</div>
                 </div>
-                <div class="bg-gray-100 rounded p-2">
-                    <div class="font-medium text-gray-700">${match.pattern_no_response}</div>
-                    <div class="text-gray-500">No response</div>
+                <div class="bg-stone-100 rounded p-2">
+                    <div class="font-medium text-stone-700">${match.pattern_no_response}</div>
+                    <div class="text-stone-500">No response</div>
                 </div>
             </div>
         </div>
@@ -351,7 +351,7 @@ function renderTechnicalDetails(details, terms) {
 
     if (!viewContent && !details.data_points_used) {
         container.innerHTML = `
-            <p class="text-gray-500 text-center py-4">Technical details not available for this analysis.</p>
+            <p class="text-stone-500 text-center py-4">Technical details not available for this analysis.</p>
         `;
         return;
     }
@@ -364,8 +364,8 @@ function renderTechnicalDetails(details, terms) {
         if (viewContent.summary) {
             html += `
                 <div>
-                    <h3 class="font-medium text-gray-900 mb-2">Summary</h3>
-                    <p class="text-gray-600">${viewContent.summary}</p>
+                    <h3 class="font-medium text-stone-900 mb-2">Summary</h3>
+                    <p class="text-stone-600">${viewContent.summary}</p>
                 </div>
             `;
         }
@@ -374,8 +374,8 @@ function renderTechnicalDetails(details, terms) {
         if (viewContent.key_findings && viewContent.key_findings.length > 0) {
             html += `
                 <div>
-                    <h3 class="font-medium text-gray-900 mb-2">Key Findings</h3>
-                    <ul class="list-disc list-inside space-y-1 text-gray-600">
+                    <h3 class="font-medium text-stone-900 mb-2">Key Findings</h3>
+                    <ul class="list-disc list-inside space-y-1 text-stone-600">
                         ${viewContent.key_findings.map(finding => `<li>${finding}</li>`).join('')}
                     </ul>
                 </div>
@@ -386,8 +386,8 @@ function renderTechnicalDetails(details, terms) {
         if (viewContent.methodology) {
             html += `
                 <div>
-                    <h3 class="font-medium text-gray-900 mb-2">Methodology</h3>
-                    <p class="text-gray-600">${viewContent.methodology}</p>
+                    <h3 class="font-medium text-stone-900 mb-2">Methodology</h3>
+                    <p class="text-stone-600">${viewContent.methodology}</p>
                 </div>
             `;
         }
@@ -396,12 +396,12 @@ function renderTechnicalDetails(details, terms) {
         if (viewContent.statistical_measures) {
             html += `
                 <div>
-                    <h3 class="font-medium text-gray-900 mb-2">Statistical Measures</h3>
-                    <div class="bg-blue-50 rounded-lg p-4">
+                    <h3 class="font-medium text-stone-900 mb-2">Statistical Measures</h3>
+                    <div class="bg-blue-50 rounded-2xl p-4">
                         <dl class="grid grid-cols-2 gap-4 text-sm">
                             ${Object.entries(viewContent.statistical_measures).map(([key, value]) => `
                                 <div class="flex justify-between">
-                                    <dt class="text-gray-600">${formatLabel(key)}</dt>
+                                    <dt class="text-stone-600">${formatLabel(key)}</dt>
                                     <dd class="font-semibold text-blue-700">${
                                         Array.isArray(value)
                                             ? '[' + value.map(v => typeof v === 'number' ? v.toFixed(2) : v).join(', ') + ']'
@@ -419,8 +419,8 @@ function renderTechnicalDetails(details, terms) {
         if (viewContent.limitations && viewContent.limitations.length > 0) {
             html += `
                 <div>
-                    <h3 class="font-medium text-gray-900 mb-2">Limitations</h3>
-                    <ul class="list-disc list-inside space-y-1 text-gray-600">
+                    <h3 class="font-medium text-stone-900 mb-2">Limitations</h3>
+                    <ul class="list-disc list-inside space-y-1 text-stone-600">
                         ${viewContent.limitations.map(lim => `<li>${lim}</li>`).join('')}
                     </ul>
                 </div>
@@ -431,12 +431,12 @@ function renderTechnicalDetails(details, terms) {
         if (viewContent.confidence_intervals) {
             html += `
                 <div>
-                    <h3 class="font-medium text-gray-900 mb-2">Confidence Intervals</h3>
-                    <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="font-medium text-stone-900 mb-2">Confidence Intervals</h3>
+                    <div class="bg-stone-50 rounded-2xl p-4">
                         <dl class="space-y-2 text-sm">
                             ${Object.entries(viewContent.confidence_intervals).map(([key, value]) => `
                                 <div class="flex justify-between">
-                                    <dt class="text-gray-500">${formatLabel(key)}</dt>
+                                    <dt class="text-stone-500">${formatLabel(key)}</dt>
                                     <dd class="font-medium">${typeof value === 'number' ? value.toFixed(2) : value}</dd>
                                 </div>
                             `).join('')}
@@ -451,25 +451,25 @@ function renderTechnicalDetails(details, terms) {
     if (currentViewMode === 'clinical') {
         html += `
             <div class="pt-4 border-t">
-                <h3 class="font-medium text-gray-900 mb-3">Analysis Metadata</h3>
+                <h3 class="font-medium text-stone-900 mb-3">Analysis Metadata</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <dl class="space-y-2 text-sm">
                         <div class="flex justify-between">
-                            <dt class="text-gray-500">Data points used</dt>
+                            <dt class="text-stone-500">Data points used</dt>
                             <dd class="font-medium">${details.data_points_used || 'N/A'}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-gray-500">Analysis window</dt>
+                            <dt class="text-stone-500">Analysis window</dt>
                             <dd class="font-medium">${details.analysis_window_days ? details.analysis_window_days + ' days' : 'N/A'}</dd>
                         </div>
                     </dl>
                     <dl class="space-y-2 text-sm">
                         <div class="flex justify-between">
-                            <dt class="text-gray-500">Algorithm version</dt>
+                            <dt class="text-stone-500">Algorithm version</dt>
                             <dd class="font-medium">${details.algorithm_version || 'v1.0'}</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-gray-500">Processing time</dt>
+                            <dt class="text-stone-500">Processing time</dt>
                             <dd class="font-medium">${details.processing_time_ms ? details.processing_time_ms + 'ms' : 'N/A'}</dd>
                         </div>
                     </dl>
@@ -492,15 +492,15 @@ function renderCitations(factors) {
 
     if (citations.length === 0) {
         container.innerHTML = `
-            <p class="text-gray-500 text-center py-4">No external references used for this analysis.</p>
+            <p class="text-stone-500 text-center py-4">No external references used for this analysis.</p>
         `;
         return;
     }
 
     container.innerHTML = citations.map(citation => `
         <div class="border-l-4 border-orange-500 pl-4 py-2 mb-4 last:mb-0">
-            <p class="font-medium text-gray-900">${citation.publication_title}</p>
-            <p class="text-sm text-gray-600">${citation.authority_name}</p>
+            <p class="font-medium text-stone-900">${citation.publication_title}</p>
+            <p class="text-sm text-stone-600">${citation.authority_name}</p>
             ${citation.url ? `
             <a href="${citation.url}" target="_blank" class="text-sm text-orange-600 hover:underline">View source</a>
             ` : ''}
@@ -516,7 +516,7 @@ function renderConfidenceDots(score) {
     for (let i = 0; i < 5; i++) {
         html += i < filled
             ? `<span class="${colorClass}">●</span>`
-            : '<span class="text-gray-300">○</span>';
+            : '<span class="text-stone-300">○</span>';
     }
     return html;
 }
@@ -558,7 +558,7 @@ function getFactorLabel(type) {
 function getContributionColor(contribution) {
     if (contribution >= 0.3) return 'text-green-600';
     if (contribution >= 0.15) return 'text-yellow-600';
-    return 'text-gray-600';
+    return 'text-stone-600';
 }
 
 function formatDate(dateStr) {

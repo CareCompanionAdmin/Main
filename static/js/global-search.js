@@ -89,7 +89,7 @@
 
     function renderResults(data) {
         if (!data.categories || data.total_count === 0) {
-            dropdown.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No results found</div>';
+            dropdown.innerHTML = '<div class="px-4 py-6 text-center"><p class="handwritten text-lg text-stone-600">Nothing matches</p><p class="text-xs text-stone-500 mt-1">Try a different word.</p></div>';
             dropdown.classList.remove('hidden');
             return;
         }
@@ -98,19 +98,19 @@
         data.categories.forEach(function(cat) {
             if (!cat.results || cat.results.length === 0) return;
             var iconPath = categoryIcons[cat.key] || categoryIcons.alerts;
-            html += '<div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50 dark:bg-gray-900/50 flex items-center">';
-            html += '<svg class="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="' + iconPath + '"></path></svg>';
+            html += '<div class="px-3 py-2 text-xs font-semibold text-stone-500 uppercase tracking-widest bg-stone-50/70 flex items-center">';
+            html += '<svg class="w-3.5 h-3.5 mr-1.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="' + iconPath + '"></path></svg>';
             html += escapeHtml(cat.name) + '</div>';
 
             cat.results.forEach(function(r) {
-                html += '<a href="' + escapeHtml(r.url) + '" class="search-result flex items-start px-3 py-2.5 hover:bg-indigo-50 dark:hover:bg-gray-700/50 cursor-pointer border-b border-gray-100 dark:border-gray-700/50 last:border-0 transition-colors" data-url="' + escapeHtml(r.url) + '">';
+                html += '<a href="' + escapeHtml(r.url) + '" class="search-result flex items-start px-3 py-2.5 hover:bg-orange-50 cursor-pointer border-b border-stone-100 last:border-0 transition-colors" data-url="' + escapeHtml(r.url) + '">';
                 html += '<div class="flex-1 min-w-0">';
-                html += '<div class="text-sm text-gray-900 dark:text-gray-100 truncate">' + highlightMatch(escapeHtml(r.snippet), currentQuery) + '</div>';
-                html += '<div class="text-xs text-gray-400 mt-0.5">';
+                html += '<div class="text-sm text-stone-800 truncate">' + highlightMatch(escapeHtml(r.snippet), currentQuery) + '</div>';
+                html += '<div class="text-xs text-stone-500 mt-0.5">';
                 if (r.child_name) html += escapeHtml(r.child_name) + ' &middot; ';
                 html += escapeHtml(r.date);
                 html += '</div></div>';
-                html += '<svg class="w-4 h-4 text-gray-300 ml-2 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+                html += '<svg class="w-4 h-4 text-stone-300 ml-2 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
                 html += '</a>';
             });
         });
@@ -123,17 +123,17 @@
         if (!query) return text;
         var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         var regex = new RegExp('(' + escaped + ')', 'gi');
-        return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-700/50 text-inherit rounded px-0.5">$1</mark>');
+        return text.replace(regex, '<mark class="bg-amber-100 text-amber-900 rounded px-0.5">$1</mark>');
     }
 
     function navigateResults(dir) {
         var items = dropdown.querySelectorAll('.search-result');
         if (items.length === 0) return;
-        items.forEach(function(el) { el.classList.remove('search-result-active', 'bg-indigo-50'); });
+        items.forEach(function(el) { el.classList.remove('search-result-active', 'bg-orange-50'); });
         activeIndex += dir;
         if (activeIndex < 0) activeIndex = items.length - 1;
         if (activeIndex >= items.length) activeIndex = 0;
-        items[activeIndex].classList.add('search-result-active', 'bg-indigo-50');
+        items[activeIndex].classList.add('search-result-active', 'bg-orange-50');
         items[activeIndex].scrollIntoView({ block: 'nearest' });
     }
 
@@ -152,9 +152,9 @@
             var el = document.getElementById(highlight);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.style.outline = '3px solid #4F46E5';
+                el.style.outline = '3px solid #ea580c';
                 el.style.outlineOffset = '4px';
-                el.style.borderRadius = '8px';
+                el.style.borderRadius = '16px';
                 el.style.transition = 'outline-color 0.5s';
                 setTimeout(function() {
                     el.style.outlineColor = 'transparent';
@@ -169,7 +169,7 @@
         setTimeout(function() {
             var el = document.querySelector(window.location.hash);
             if (el) {
-                el.style.outline = '3px solid #4F46E5';
+                el.style.outline = '3px solid #ea580c';
                 el.style.outlineOffset = '4px';
                 el.style.transition = 'outline-color 0.5s';
                 setTimeout(function() {

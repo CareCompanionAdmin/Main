@@ -7,48 +7,51 @@
 {{template "mascot" .}}
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-6">
-        <a href="/child/{{.Child.ID}}" class="text-orange-600 hover:text-orange-500 flex items-center">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mb-4">
+        <a href="/child/{{.Child.ID}}" class="text-stone-500 hover:text-stone-800 inline-flex items-center text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
             Back to {{.Child.FirstName}}
         </a>
     </div>
 
-    <div class="glass ring-soft rounded-3xl p-6 mb-6">
-        <h1 class="display text-3xl font-medium text-stone-800">{{.Child.FirstName}}'s Settings</h1>
-    </div>
+    <header class="mb-8">
+        <p class="handwritten text-2xl text-orange-800 leading-none">About this child</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">{{.Child.FirstName}}'s profile</h1>
+        <p class="display italic text-stone-600 text-lg mt-2">Identity, conditions, and the small details that shape every entry below.</p>
+    </header>
 
     <!-- Profile Section -->
     <div class="glass ring-soft rounded-3xl p-6 mb-6">
-        <h2 class="display text-2xl font-medium text-stone-800 mb-6">Profile Information</h2>
+        <h2 class="display text-2xl font-medium text-stone-800 mb-1">Profile</h2>
+        <p class="text-sm text-stone-500 mb-6">Name, birthday, and any quick notes you'd like the team to see.</p>
         <form id="profile-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">First Name *</label>
                     <input type="text" name="first_name" id="profile-first-name" required
                         value="{{.Child.FirstName}}"
-                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-400">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Last Name</label>
                     <input type="text" name="last_name" id="profile-last-name"
                         value="{{if .Child.LastName.Valid}}{{.Child.LastName.String}}{{end}}"
-                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-400">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Date of Birth *</label>
                     <input type="date" name="date_of_birth" id="profile-dob" required
                         value="{{.Child.DateOfBirth.Format "2006-01-02"}}"
-                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-400">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Gender</label>
                     <select name="gender" id="profile-gender"
-                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-400">
                         <option value="">Select...</option>
                         <option value="male" {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "male"}}selected{{end}}{{end}}>Male</option>
                         <option value="female" {{if .Child.Gender.Valid}}{{if eq .Child.Gender.String "female"}}selected{{end}}{{end}}>Female</option>
@@ -57,9 +60,9 @@
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Notes</label>
                 <textarea name="notes" id="profile-notes" rows="3"
-                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
                     placeholder="Any additional notes...">{{if .Child.Notes.Valid}}{{.Child.Notes.String}}{{end}}</textarea>
             </div>
             <div class="flex justify-end">
@@ -82,18 +85,18 @@
         {{if .Conditions}}
         <div class="space-y-4" id="conditions-list">
             {{range .Conditions}}
-            <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onclick="showEditCondition('{{.ID}}', '{{.ConditionName}}', '{{if .ICDCode.Valid}}{{.ICDCode.String}}{{end}}', '{{if .DiagnosedBy.Valid}}{{.DiagnosedBy.String}}{{end}}', '{{if .Severity.Valid}}{{.Severity.String}}{{end}}', '{{if .Notes.Valid}}{{.Notes.String}}{{end}}', {{.IsActive}})">
+            <div class="border border-stone-200 rounded-2xl p-4 hover:bg-stone-50 cursor-pointer transition-colors" onclick="showEditCondition('{{.ID}}', '{{.ConditionName}}', '{{if .ICDCode.Valid}}{{.ICDCode.String}}{{end}}', '{{if .DiagnosedBy.Valid}}{{.DiagnosedBy.String}}{{end}}', '{{if .Severity.Valid}}{{.Severity.String}}{{end}}', '{{if .Notes.Valid}}{{.Notes.String}}{{end}}', {{.IsActive}})">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900">{{.ConditionName}}</h3>
+                        <h3 class="text-lg font-medium text-stone-900">{{.ConditionName}}</h3>
                         {{if .ICDCode.Valid}}
-                        <p class="text-sm text-gray-500">ICD Code: {{.ICDCode.String}}</p>
+                        <p class="text-sm text-stone-500">ICD Code: {{.ICDCode.String}}</p>
                         {{end}}
                         {{if .DiagnosedBy.Valid}}
-                        <p class="text-sm text-gray-500">Diagnosed by: {{.DiagnosedBy.String}}</p>
+                        <p class="text-sm text-stone-500">Diagnosed by: {{.DiagnosedBy.String}}</p>
                         {{end}}
                         {{if .Notes.Valid}}
-                        <p class="text-sm text-gray-600 mt-2">{{.Notes.String}}</p>
+                        <p class="text-sm text-stone-600 mt-2">{{.Notes.String}}</p>
                         {{end}}
                     </div>
                     <div class="flex items-center space-x-2">
@@ -102,11 +105,11 @@
                             {{if eq .Severity.String "mild"}}bg-green-100 text-green-700
                             {{else if eq .Severity.String "moderate"}}bg-yellow-100 text-yellow-700
                             {{else if eq .Severity.String "severe"}}bg-red-100 text-red-700
-                            {{else}}bg-gray-100 text-gray-700{{end}}">
+                            {{else}}bg-stone-100 text-stone-700{{end}}">
                             {{.Severity.String}}
                         </span>
                         {{end}}
-                        <span class="px-2 py-1 text-xs rounded-full {{if .IsActive}}bg-green-100 text-green-700{{else}}bg-gray-100 text-gray-500{{end}}">
+                        <span class="px-2 py-1 text-xs rounded-full {{if .IsActive}}bg-green-100 text-green-700{{else}}bg-stone-100 text-stone-500{{end}}">
                             {{if .IsActive}}Active{{else}}Inactive{{end}}
                         </span>
                     </div>
@@ -115,16 +118,17 @@
             {{end}}
         </div>
         {{else}}
-        <div class="text-center py-8">
-            <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        <div class="bloom ring-soft rounded-3xl p-10 text-center">
+            <div class="w-14 h-14 bg-amber-100/70 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-7 h-7 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No conditions recorded</h3>
-            <p class="text-gray-500 mb-4">Add conditions to track diagnoses and help with care coordination.</p>
-            <button onclick="showAddCondition()" class="px-6 py-2.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition">
-                Add First Condition
+            <p class="handwritten text-2xl text-amber-700">Nothing recorded yet</p>
+            <h3 class="display text-xl text-stone-800 mt-1 mb-2">No conditions on file</h3>
+            <p class="text-stone-600 mb-5 max-w-md mx-auto">Adding diagnoses helps the system look for patterns and gives caregivers and providers shared context.</p>
+            <button onclick="showAddCondition()" class="seed-btn px-6 py-2.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition">
+                Add the first one
             </button>
         </div>
         {{end}}
@@ -136,24 +140,24 @@
     <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
-            <div class="bg-white rounded-xl p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Add Condition</h2>
+            <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="display text-2xl font-medium text-stone-800 mb-4">Add a condition</h2>
                 <form id="add-condition-form" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Condition Name *</label>
-                        <input type="text" name="condition_name" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="e.g., Autism Spectrum Disorder">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Condition Name *</label>
+                        <input type="text" name="condition_name" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition" placeholder="e.g., Autism Spectrum Disorder">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ICD Code</label>
-                        <input type="text" name="icd_code" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="e.g., F84.0">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">ICD Code</label>
+                        <input type="text" name="icd_code" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition" placeholder="e.g., F84.0">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosed By</label>
-                        <input type="text" name="diagnosed_by" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="e.g., Dr. Smith">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Diagnosed By</label>
+                        <input type="text" name="diagnosed_by" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition" placeholder="e.g., Dr. Smith">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
-                        <select name="severity" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Severity</label>
+                        <select name="severity" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                             <option value="">Select severity</option>
                             <option value="mild">Mild</option>
                             <option value="moderate">Moderate</option>
@@ -161,14 +165,14 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                        <textarea name="notes" rows="3" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl" placeholder="Additional notes..."></textarea>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Notes</label>
+                        <textarea name="notes" rows="3" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition" placeholder="Additional notes..."></textarea>
                     </div>
                     <div class="flex space-x-4">
-                        <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                        <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                             Add Condition
                         </button>
-                        <button type="button" onclick="hideAddCondition()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                        <button type="button" onclick="hideAddCondition()" class="flex-1 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
                             Cancel
                         </button>
                     </div>
@@ -183,25 +187,25 @@
     <div class="fixed inset-0 bg-black bg-opacity-50"></div>
     <div class="fixed inset-0 overflow-y-auto">
         <div class="flex min-h-full items-center justify-center p-4">
-            <div class="bg-white rounded-xl p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Edit Condition</h2>
+            <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full relative shadow-xl" onclick="event.stopPropagation()">
+                <h2 class="display text-2xl font-medium text-stone-800 mb-4">Edit condition</h2>
                 <form id="edit-condition-form" class="space-y-4">
                     <input type="hidden" name="condition_id" id="edit-condition-id">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Condition Name *</label>
-                        <input type="text" name="condition_name" id="edit-condition-name" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Condition Name *</label>
+                        <input type="text" name="condition_name" id="edit-condition-name" required class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">ICD Code</label>
-                        <input type="text" name="icd_code" id="edit-icd-code" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">ICD Code</label>
+                        <input type="text" name="icd_code" id="edit-icd-code" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosed By</label>
-                        <input type="text" name="diagnosed_by" id="edit-diagnosed-by" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Diagnosed By</label>
+                        <input type="text" name="diagnosed_by" id="edit-diagnosed-by" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Severity</label>
-                        <select name="severity" id="edit-severity" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl">
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Severity</label>
+                        <select name="severity" id="edit-severity" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                             <option value="">Select severity</option>
                             <option value="mild">Mild</option>
                             <option value="moderate">Moderate</option>
@@ -209,23 +213,23 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                        <textarea name="notes" id="edit-notes" rows="3" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl"></textarea>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Notes</label>
+                        <textarea name="notes" id="edit-notes" rows="3" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"></textarea>
                     </div>
                     <div class="flex items-center">
                         <input type="checkbox" name="is_active" id="edit-is-active" class="mr-2">
-                        <label for="edit-is-active" class="text-sm text-gray-700">Active condition</label>
+                        <label for="edit-is-active" class="text-sm text-stone-700">Active condition</label>
                     </div>
                     <div class="flex space-x-4">
-                        <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                        <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                             Save Changes
                         </button>
-                        <button type="button" onclick="hideEditCondition()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                        <button type="button" onclick="hideEditCondition()" class="flex-1 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
                             Cancel
                         </button>
                     </div>
                     <div class="pt-4 border-t">
-                        <button type="button" onclick="deleteCondition()" class="w-full py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200">
+                        <button type="button" onclick="deleteCondition()" class="w-full py-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 border border-red-200">
                             Delete Condition
                         </button>
                     </div>

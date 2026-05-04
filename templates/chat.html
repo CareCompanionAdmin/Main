@@ -7,12 +7,19 @@
 {{template "mascot" .}}
 
 <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-    <div class="flex flex-col md:flex-row gap-4 md:gap-6 h-[calc(100vh-8rem)] md:h-[calc(100vh-12rem)]">
+
+    <header class="mb-6">
+        <p class="handwritten text-2xl text-orange-800 leading-none">Family chat</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">Conversations</h1>
+        <p class="display italic text-stone-600 text-base sm:text-lg mt-2">A quiet place for the people in this family — caregivers, parents, providers — to keep each other in the loop.</p>
+    </header>
+
+    <div class="flex flex-col md:flex-row gap-4 md:gap-6 h-[calc(100vh-16rem)] md:h-[calc(100vh-18rem)]">
         <!-- Thread List -->
         <div id="thread-list-container" class="w-full md:w-80 glass ring-soft rounded-3xl overflow-hidden flex flex-col flex-1 md:flex-none">
             <div class="p-4 border-b flex justify-between items-center">
-                <h2 class="font-semibold text-gray-900">Conversations</h2>
-                <button onclick="showNewThread()" class="p-2 text-orange-600 hover:bg-orange-50 rounded-lg">
+                <h2 class="font-semibold text-stone-900">Conversations</h2>
+                <button onclick="showNewThread()" class="p-2 text-orange-600 hover:bg-orange-50 rounded-full">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -21,11 +28,11 @@
             <div id="thread-list" class="flex-1 overflow-y-auto">
                 {{if .Threads}}
                 {{range .Threads}}
-                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer thread-item" data-thread-id="{{.ID}}" onclick="selectThread('{{.ID}}')">
+                <div class="p-4 border-b hover:bg-stone-50 cursor-pointer thread-item" data-thread-id="{{.ID}}" onclick="selectThread('{{.ID}}')">
                     <div class="flex justify-between items-start gap-2">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2">
-                                <h3 class="font-medium text-gray-900 truncate">
+                                <h3 class="font-medium text-stone-900 truncate">
                                     {{if .Participants}}
                                         {{range $i, $p := .Participants}}{{if $i}}, {{end}}{{if $p.User}}{{$p.User.FirstName}} {{$p.User.LastName}}{{end}}{{end}}
                                     {{else if .Title.Valid}}
@@ -46,12 +53,15 @@
                 </div>
                 {{end}}
                 {{else}}
-                <div class="p-8 text-center text-gray-500">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                    </svg>
-                    <p>No conversations yet</p>
-                    <button onclick="showNewThread()" class="mt-4 text-orange-600 hover:text-orange-700">Start a conversation</button>
+                <div class="p-8 text-center">
+                    <div class="w-14 h-14 rounded-full bg-amber-100/70 flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                    </div>
+                    <p class="handwritten text-xl text-amber-700">Quiet so far</p>
+                    <p class="display text-stone-800 mt-1">No conversations yet</p>
+                    <button onclick="showNewThread()" class="seed-btn mt-4 inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm font-medium">Start a conversation</button>
                 </div>
                 {{end}}
             </div>
@@ -62,22 +72,22 @@
             <div id="message-header" class="p-4 border-b hidden">
                 <div class="flex justify-between items-center">
                     <!-- Mobile Back Button -->
-                    <button onclick="showThreadList()" class="md:hidden mr-3 p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg" title="Back to conversations">
+                    <button onclick="showThreadList()" class="md:hidden mr-3 p-2 -ml-2 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-full" title="Back to conversations">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                         </svg>
                     </button>
                     <div class="flex-1 min-w-0">
-                        <h2 id="thread-title" class="font-semibold text-gray-900 truncate"></h2>
-                        <p id="thread-participants" class="text-sm text-gray-500 truncate"></p>
+                        <h2 id="thread-title" class="font-semibold text-stone-900 truncate"></h2>
+                        <p id="thread-participants" class="text-sm text-stone-500 truncate"></p>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button onclick="showManageMembers()" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg" title="Manage Members">
+                        <button onclick="showManageMembers()" class="p-2 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-full" title="Manage Members">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
                             </svg>
                         </button>
-                        <button id="delete-thread-btn" onclick="deleteThread()" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg hidden" title="Delete Conversation">
+                        <button id="delete-thread-btn" onclick="deleteThread()" class="p-2 text-stone-500 hover:text-red-600 hover:bg-red-50 rounded-full hidden" title="Delete Conversation">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>
@@ -86,26 +96,29 @@
                 </div>
             </div>
             <div id="message-area" class="flex-1 overflow-y-auto p-4">
-                <div class="flex items-center justify-center h-full text-gray-500">
+                <div class="flex items-center justify-center h-full">
                     <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
-                        <p>Select a conversation to view messages</p>
+                        <div class="w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-7 h-7 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                        </div>
+                        <p class="handwritten text-xl text-stone-600">Pick one to read</p>
+                        <p class="text-sm text-stone-500 mt-1">Tap a conversation on the left to open it.</p>
                     </div>
                 </div>
             </div>
             <div id="message-input-area" class="p-4 border-t hidden">
                 <!-- Attachment preview -->
-                <div id="attachment-preview" class="hidden mb-2 p-2 bg-gray-100 rounded-lg flex items-center gap-2">
+                <div id="attachment-preview" class="hidden mb-2 p-2 bg-stone-100 rounded-2xl flex items-center gap-2">
                     <img id="attachment-preview-img" class="hidden w-16 h-16 object-cover rounded">
                     <div id="attachment-preview-file" class="hidden flex items-center gap-2">
-                        <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-8 h-8 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        <span id="attachment-preview-name" class="text-sm text-gray-700"></span>
+                        <span id="attachment-preview-name" class="text-sm text-stone-700"></span>
                     </div>
-                    <button type="button" onclick="clearAttachment()" class="ml-auto p-1 text-gray-500 hover:text-red-500">
+                    <button type="button" onclick="clearAttachment()" class="ml-auto p-1 text-stone-500 hover:text-red-500">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -113,12 +126,12 @@
                 </div>
                 <form id="message-form" class="flex gap-2 items-end">
                     <input type="file" id="file-input" class="hidden" accept="image/*,.pdf,.txt" onchange="handleFileSelect(event)">
-                    <button type="button" onclick="document.getElementById('file-input').click()" class="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg flex-shrink-0" title="Attach file">
+                    <button type="button" onclick="document.getElementById('file-input').click()" class="px-3 py-2 text-stone-500 hover:text-stone-700 hover:bg-stone-100 rounded-full flex-shrink-0" title="Attach file">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
                         </svg>
                     </button>
-                    <textarea id="message-input" placeholder="Type a message... (Shift+Enter for new line)" rows="1" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none overflow-hidden" style="min-height: 40px; max-height: 120px;"></textarea>
+                    <textarea id="message-input" placeholder="Type a message... (Shift+Enter for new line)" rows="1" class="flex-1 px-4 py-2 border border-stone-300 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent resize-none overflow-hidden" style="min-height: 40px; max-height: 120px;"></textarea>
                     <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition flex-shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
@@ -132,39 +145,39 @@
 
 <!-- New Thread Modal -->
 <div id="new-thread-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">New Conversation</h2>
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
+        <h2 class="display text-2xl font-medium text-stone-800 mb-4">New Conversation</h2>
         <form id="new-thread-form" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Who do you want to chat with?</label>
-                <div class="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                <label class="block text-sm font-medium text-stone-700 mb-2">Who do you want to chat with?</label>
+                <div class="space-y-2 max-h-48 overflow-y-auto border border-stone-200 rounded-2xl p-3">
                     {{if .Members}}
                     {{range .Members}}
                     {{if .User}}
-                    <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer participant-option" data-user-id="{{.UserID}}" data-name="{{.User.FirstName}}">
-                        <input type="checkbox" name="participants" value="{{.UserID}}" class="w-4 h-4 text-orange-600 rounded focus:ring-orange-500">
+                    <label class="flex items-center gap-3 p-2 hover:bg-stone-50 rounded cursor-pointer participant-option" data-user-id="{{.UserID}}" data-name="{{.User.FirstName}}">
+                        <input type="checkbox" name="participants" value="{{.UserID}}" class="w-4 h-4 text-orange-600 rounded focus:ring-orange-300">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-sm font-medium">
                                 {{if .User.FirstName}}{{slice .User.FirstName 0 1}}{{end}}{{if .User.LastName}}{{slice .User.LastName 0 1}}{{end}}
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-900">{{.User.FirstName}} {{.User.LastName}}</p>
-                                <p class="text-xs text-gray-500">{{.Role}}</p>
+                                <p class="text-sm font-medium text-stone-900">{{.User.FirstName}} {{.User.LastName}}</p>
+                                <p class="text-xs text-stone-500">{{.Role}}</p>
                             </div>
                         </div>
                     </label>
                     {{end}}
                     {{end}}
                     {{else}}
-                    <p class="text-sm text-gray-500 text-center py-2">No other family members yet</p>
+                    <p class="text-sm text-stone-500 text-center py-2">No other family members yet</p>
                     {{end}}
                 </div>
                 <p id="participant-error" class="hidden text-sm text-red-500 mt-1">Please select at least one person</p>
             </div>
             {{if .Children}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">About which child? (Optional)</label>
-                <select name="child_id" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                <label class="block text-sm font-medium text-stone-700 mb-1">About which child? (Optional)</label>
+                <select name="child_id" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent">
                     <option value="">Not specific to a child</option>
                     {{range .Children}}
                     <option value="{{.ID}}">{{.FirstName}}{{if .LastName.Valid}} {{.LastName.String}}{{end}}</option>
@@ -173,10 +186,10 @@
             </div>
             {{end}}
             <div class="flex space-x-4 pt-2">
-                <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="flex-1 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                     Start Chat
                 </button>
-                <button type="button" onclick="hideNewThread()" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <button type="button" onclick="hideNewThread()" class="flex-1 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
                     Cancel
                 </button>
             </div>
@@ -186,32 +199,32 @@
 
 <!-- Manage Members Modal -->
 <div id="manage-members-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Manage Members</h2>
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
+        <h2 class="display text-2xl font-medium text-stone-800 mb-4">Manage Members</h2>
 
         <!-- Current Members -->
         <div class="mb-4">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Current Members</h3>
-            <div id="current-members-list" class="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
+            <h3 class="text-sm font-medium text-stone-700 mb-2">Current Members</h3>
+            <div id="current-members-list" class="space-y-2 max-h-40 overflow-y-auto border border-stone-200 rounded-2xl p-3">
                 <!-- Populated dynamically -->
             </div>
         </div>
 
         <!-- Add New Member -->
         <div class="mb-4">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Add Member</h3>
-            <div id="add-member-list" class="space-y-2 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-3">
+            <h3 class="text-sm font-medium text-stone-700 mb-2">Add Member</h3>
+            <div id="add-member-list" class="space-y-2 max-h-40 overflow-y-auto border border-stone-200 rounded-2xl p-3">
                 {{if .Members}}
                 {{range .Members}}
                 {{if .User}}
-                <div class="add-member-option hidden flex items-center justify-between p-2 hover:bg-gray-50 rounded" data-user-id="{{.UserID}}">
+                <div class="add-member-option hidden flex items-center justify-between p-2 hover:bg-stone-50 rounded" data-user-id="{{.UserID}}">
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-sm font-medium">
                             {{if .User.FirstName}}{{slice .User.FirstName 0 1}}{{end}}{{if .User.LastName}}{{slice .User.LastName 0 1}}{{end}}
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-900">{{.User.FirstName}} {{.User.LastName}}</p>
-                            <p class="text-xs text-gray-500">{{.Role}}</p>
+                            <p class="text-sm font-medium text-stone-900">{{.User.FirstName}} {{.User.LastName}}</p>
+                            <p class="text-xs text-stone-500">{{.Role}}</p>
                         </div>
                     </div>
                     <button type="button" onclick="addMember('{{.UserID}}')" class="text-orange-600 hover:text-orange-700 text-sm font-medium">
@@ -221,12 +234,12 @@
                 {{end}}
                 {{end}}
                 {{end}}
-                <p id="no-members-to-add" class="hidden text-sm text-gray-500 text-center py-2">All family members are in this conversation</p>
+                <p id="no-members-to-add" class="hidden text-sm text-stone-500 text-center py-2">All family members are in this conversation</p>
             </div>
         </div>
 
         <div class="flex justify-end">
-            <button type="button" onclick="hideManageMembers()" class="py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+            <button type="button" onclick="hideManageMembers()" class="py-2 px-4 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
                 Done
             </button>
         </div>
@@ -382,7 +395,7 @@ async function selectThread(threadID) {
             }).join('');
             messageArea.scrollTop = messageArea.scrollHeight;
         } else {
-            messageArea.innerHTML = '<div class="text-center text-gray-500 py-8">No messages yet. Start the conversation!</div>';
+            messageArea.innerHTML = '<div class="text-center text-stone-500 py-8">No messages yet. Start the conversation!</div>';
         }
 
         openMessageStream(threadID);
@@ -422,7 +435,7 @@ function openMessageStream(threadID) {
         const messageArea = document.getElementById('message-area');
         if (!messageArea) return;
         // Clear the empty-state placeholder if it's still showing.
-        if (messageArea.querySelector('.text-center.text-gray-500')) {
+        if (messageArea.querySelector('.text-center.text-stone-500')) {
             messageArea.innerHTML = '';
         }
         const wasNearBottom = (messageArea.scrollHeight - messageArea.scrollTop - messageArea.clientHeight) < 50;
@@ -481,11 +494,11 @@ function renderMessage(msg) {
 
     return `
         <div class="mb-4 ${isOwn ? 'text-right' : ''}">
-            <div class="inline-block max-w-[70%] ${isOwn ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg px-4 py-2">
-                ${!isOwn ? `<p class="text-xs font-medium ${isOwn ? 'text-orange-200' : 'text-gray-500'} mb-1">${name}</p>` : ''}
+            <div class="inline-block max-w-[70%] ${isOwn ? 'bg-orange-600 text-white' : 'bg-stone-100 text-stone-900'} rounded-2xl px-4 py-2">
+                ${!isOwn ? `<p class="text-xs font-medium ${isOwn ? 'text-orange-200' : 'text-stone-500'} mb-1">${name}</p>` : ''}
                 ${msg.message_text ? `<p>${msg.message_text}</p>` : ''}
                 ${attachmentsHtml}
-                <p class="text-xs ${isOwn ? 'text-orange-200' : 'text-gray-400'} mt-1">${time}</p>
+                <p class="text-xs ${isOwn ? 'text-orange-200' : 'text-stone-400'} mt-1">${time}</p>
             </div>
         </div>
     `;
@@ -700,7 +713,7 @@ function hideManageMembers() {
 function renderCurrentMembers() {
     const container = document.getElementById('current-members-list');
     if (currentParticipants.length === 0) {
-        container.innerHTML = '<p class="text-sm text-gray-500 text-center py-2">No members</p>';
+        container.innerHTML = '<p class="text-sm text-stone-500 text-center py-2">No members</p>';
         return;
     }
 
@@ -712,14 +725,14 @@ function renderCurrentMembers() {
         const isCurrentUser = p.user_id === userID;
 
         return `
-            <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+            <div class="flex items-center justify-between p-2 hover:bg-stone-50 rounded">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-sm font-medium">
                         ${initials}
                     </div>
                     <div>
-                        <p class="text-sm font-medium text-gray-900">${firstName} ${lastName}${isCurrentUser ? ' (You)' : ''}</p>
-                        <p class="text-xs text-gray-500">${p.role}</p>
+                        <p class="text-sm font-medium text-stone-900">${firstName} ${lastName}${isCurrentUser ? ' (You)' : ''}</p>
+                        <p class="text-xs text-stone-500">${p.role}</p>
                     </div>
                 </div>
                 ${!isCurrentUser ? `

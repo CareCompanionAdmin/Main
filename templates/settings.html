@@ -7,35 +7,50 @@
 {{template "mascot" .}}
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h1 class="display text-3xl font-medium text-stone-800 mb-6">Settings</h1>
 
-    <div id="success-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300"></div>
-    <div id="error-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-6 py-3 rounded-lg shadow-lg transition-opacity duration-300"></div>
+    <header class="mb-6">
+        <p class="handwritten text-2xl text-orange-800 leading-none">A few small dials</p>
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">Settings</h1>
+        <p class="display italic text-stone-600 text-lg mt-2">Account, plan, people, preferences. Skip ahead with the chips below.</p>
+        <nav class="mt-4 flex flex-wrap gap-2 text-sm">
+            <a href="#section-profile"  class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Profile</a>
+            <a href="#section-billing"  class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Plan</a>
+            <a href="#section-children" class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Children</a>
+            <a href="#section-members"  class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Members</a>
+            <a href="#section-prefs"    class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Preferences</a>
+            <a href="#section-password" class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Password</a>
+            <a href="#section-notify"   class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Notifications</a>
+            <a href="#section-danger"   class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 transition-colors">Danger zone</a>
+        </nav>
+    </header>
+
+    <div id="success-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-100 border border-green-400 text-green-700 px-6 py-3 rounded-full shadow-lg transition-opacity duration-300"></div>
+    <div id="error-message" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-6 py-3 rounded-full shadow-lg transition-opacity duration-300"></div>
 
     <div class="space-y-6">
         <!-- Profile Settings -->
-        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+        <div id="section-profile" class="glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
             <h2 class="display text-xl font-medium text-stone-800 mb-4">Profile</h2>
             <form id="profile-form" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">First Name</label>
                         <input type="text" name="first_name" value="{{.User.FirstName}}"
                             class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Last Name</label>
                         <input type="text" name="last_name" value="{{.User.LastName}}"
                             class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Email</label>
                     <input type="email" name="email" value="{{.User.Email}}"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Phone</label>
                     <input type="tel" name="phone" value="{{if .User.Phone.Valid}}{{.User.Phone.String}}{{end}}"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
@@ -48,13 +63,13 @@
         <!-- Family Settings -->
         {{if .Families}}
         <div class="glass ring-soft rounded-3xl p-6 transition-colors">
-            <h2 class="display text-xl font-medium text-stone-800 mb-4">Your Families</h2>
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Families</h2>
             <div class="space-y-3">
                 {{range .Families}}
                 <div class="flex items-center justify-between p-4 bg-white/70 border border-stone-200 rounded-2xl">
                     <div>
-                        <p class="font-medium text-gray-900">{{.Family.Name}}</p>
-                        <p class="text-sm text-gray-500">Role: {{.Role}}</p>
+                        <p class="font-medium text-stone-900">{{.Family.Name}}</p>
+                        <p class="text-sm text-stone-500">Role: {{.Role}}</p>
                     </div>
                     <button onclick="switchFamily('{{.FamilyID}}')" class="px-4 py-2 bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200 text-sm font-medium transition">
                         Switch Family
@@ -66,22 +81,22 @@
         {{end}}
 
         <!-- Subscription & Billing -->
-        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
-            <h2 class="display text-xl font-medium text-stone-800 mb-4">Subscription & Billing</h2>
+        <div id="section-billing" class="glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Plan & billing</h2>
             <div id="billing-loading" class="animate-pulse">
-                <div class="h-4 bg-gray-300 rounded w-1/2 mb-3"></div>
-                <div class="h-4 bg-gray-300 rounded w-3/4 mb-3"></div>
-                <div class="h-4 bg-gray-300 rounded w-1/3"></div>
+                <div class="h-4 bg-stone-300 rounded w-1/2 mb-3"></div>
+                <div class="h-4 bg-stone-300 rounded w-3/4 mb-3"></div>
+                <div class="h-4 bg-stone-300 rounded w-1/3"></div>
             </div>
             <div id="billing-content" class="hidden space-y-4">
                 <!-- Plan Info -->
                 <div class="flex items-center justify-between p-4 bg-white/70 border border-stone-200 rounded-2xl">
                     <div>
-                        <p class="text-sm text-gray-500">Current Plan</p>
-                        <p id="billing-plan-name" class="text-xl font-semibold text-gray-900">-</p>
+                        <p class="text-sm text-stone-500">Current Plan</p>
+                        <p id="billing-plan-name" class="text-xl font-semibold text-stone-900">-</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-gray-500">Monthly Price</p>
+                        <p class="text-sm text-stone-500">Monthly Price</p>
                         <p id="billing-price" class="text-xl font-semibold text-orange-600">-</p>
                     </div>
                 </div>
@@ -89,28 +104,28 @@
                 <!-- Status & Expiration -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="p-4 bg-white/70 border border-stone-200 rounded-2xl">
-                        <p class="text-sm text-gray-500">Status</p>
-                        <p id="billing-status" class="font-medium text-gray-900">-</p>
+                        <p class="text-sm text-stone-500">Status</p>
+                        <p id="billing-status" class="font-medium text-stone-900">-</p>
                     </div>
                     <div class="p-4 bg-white/70 border border-stone-200 rounded-2xl">
-                        <p class="text-sm text-gray-500">Valid Until</p>
-                        <p id="billing-expiration" class="font-medium text-gray-900">-</p>
+                        <p class="text-sm text-stone-500">Valid Until</p>
+                        <p id="billing-expiration" class="font-medium text-stone-900">-</p>
                     </div>
                 </div>
 
                 <!-- Child Usage -->
                 <div class="p-4 bg-white/70 border border-stone-200 rounded-2xl">
                     <div class="flex justify-between items-center mb-2">
-                        <p class="text-sm text-gray-500">Children</p>
-                        <p id="billing-child-count" class="text-sm font-medium text-gray-900">-</p>
+                        <p class="text-sm text-stone-500">Children</p>
+                        <p id="billing-child-count" class="text-sm font-medium text-stone-900">-</p>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="w-full bg-stone-200 rounded-full h-2">
                         <div id="billing-child-progress" class="bg-orange-600 h-2 rounded-full transition-all" style="width: 0%"></div>
                     </div>
                 </div>
 
                 <!-- Upgrade Prompt (shown when at limit) -->
-                <div id="billing-upgrade-prompt" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div id="billing-upgrade-prompt" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-2xl">
                     <div class="flex items-start gap-3">
                         <svg class="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
@@ -126,28 +141,28 @@
                 <div id="billing-cta-row" class="hidden flex flex-col sm:flex-row gap-3 pt-2">
                     <form id="billing-subscribe-current" method="POST" action="/billing/checkout" class="hidden flex-1">
                         <input type="hidden" name="plan_id" value="">
-                        <button type="submit" class="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium">
+                        <button type="submit" class="w-full px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium">
                             <span id="billing-subscribe-current-label">Subscribe</span>
                         </button>
                     </form>
                     <form id="billing-upgrade-family" method="POST" action="/billing/checkout" class="hidden flex-1">
                         <input type="hidden" name="plan_id" value="">
-                        <button type="submit" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium">
+                        <button type="submit" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 font-medium">
                             Upgrade to Family ($15/mo)
                         </button>
                     </form>
                 </div>
             </div>
             <div id="billing-error" class="hidden text-center py-4">
-                <p class="text-gray-500">Unable to load billing information</p>
+                <p class="text-stone-500">Unable to load billing information</p>
             </div>
         </div>
 
         <!-- Children Management -->
-        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+        <div id="section-children" class="glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="display text-xl font-medium text-stone-800">Children</h2>
-                <button onclick="openAddChildModal()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm flex items-center gap-2">
+                <button onclick="openAddChildModal()" class="px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
@@ -155,21 +170,21 @@
                 </button>
             </div>
             <div id="children-list" class="space-y-3">
-                <div class="animate-pulse flex space-x-4 p-4 bg-gray-50 rounded-lg">
-                    <div class="rounded-full bg-gray-300 h-12 w-12"></div>
+                <div class="animate-pulse flex space-x-4 p-4 bg-stone-50 rounded-2xl">
+                    <div class="rounded-full bg-stone-300 h-12 w-12"></div>
                     <div class="flex-1 space-y-2 py-1">
-                        <div class="h-4 bg-gray-300 rounded w-3/4"></div>
-                        <div class="h-3 bg-gray-300 rounded w-1/2"></div>
+                        <div class="h-4 bg-stone-300 rounded w-3/4"></div>
+                        <div class="h-3 bg-stone-300 rounded w-1/2"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Family Members Management -->
-        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+        <div id="section-members" class="glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="display text-xl font-medium text-stone-800">Family Members</h2>
-                <button onclick="openAddMemberModal()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm flex items-center gap-2">
+                <h2 class="display text-xl font-medium text-stone-800">Members</h2>
+                <button onclick="openAddMemberModal()" class="px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
@@ -177,20 +192,20 @@
                 </button>
             </div>
             <div id="members-list" class="space-y-3">
-                <div class="animate-pulse flex space-x-4 p-4 bg-gray-50 rounded-lg">
-                    <div class="rounded-full bg-gray-300 h-10 w-10"></div>
+                <div class="animate-pulse flex space-x-4 p-4 bg-stone-50 rounded-2xl">
+                    <div class="rounded-full bg-stone-300 h-10 w-10"></div>
                     <div class="flex-1 space-y-2 py-1">
-                        <div class="h-4 bg-gray-300 rounded w-3/4"></div>
-                        <div class="h-3 bg-gray-300 rounded w-1/2"></div>
+                        <div class="h-4 bg-stone-300 rounded w-3/4"></div>
+                        <div class="h-3 bg-stone-300 rounded w-1/2"></div>
                     </div>
                 </div>
             </div>
             <div id="leave-family-row" class="hidden mt-6 pt-4 border-t flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-900">Leave this family</p>
-                    <p class="text-xs text-gray-500">You'll lose access to this family's children and logs. The creator can't leave.</p>
+                    <p class="text-sm font-medium text-stone-900">Leave this family</p>
+                    <p class="text-xs text-stone-500">You'll lose access to this family's children and logs. The creator can't leave.</p>
                 </div>
-                <button type="button" id="leave-family-btn" onclick="openLeaveFamilyModal()" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm">
+                <button type="button" id="leave-family-btn" onclick="openLeaveFamilyModal()" class="px-4 py-2 border border-red-300 text-red-600 rounded-full hover:bg-red-50 text-sm">
                     Leave Family
                 </button>
             </div>
@@ -198,16 +213,16 @@
 
         <!-- Leave Family Confirmation Modal -->
         <div id="leave-family-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-            <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Leave family?</h3>
-                <p class="text-sm text-gray-600 mb-4" id="leave-family-modal-text">
+            <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-md w-full mx-4 p-6">
+                <h3 class="text-lg font-semibold text-stone-900 mb-2">Leave family?</h3>
+                <p class="text-sm text-stone-600 mb-4" id="leave-family-modal-text">
                     You will lose access to this family's children, medications, and logs. You can rejoin later only if a parent in the family invites you again.
                 </p>
                 <div class="flex gap-3 justify-end">
-                    <button type="button" onclick="closeLeaveFamilyModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    <button type="button" onclick="closeLeaveFamilyModal()" class="px-4 py-2 border border-stone-300 text-stone-700 rounded-full hover:bg-stone-50">
                         Cancel
                     </button>
-                    <button type="button" id="confirm-leave-family-btn" onclick="leaveFamily()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <button type="button" id="confirm-leave-family-btn" onclick="leaveFamily()" class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700">
                         Yes, leave family
                     </button>
                 </div>
@@ -215,11 +230,11 @@
         </div>
 
         <!-- Preferences -->
-        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
+        <div id="section-prefs" class="glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
             <h2 class="display text-xl font-medium text-stone-800 mb-4">Preferences</h2>
             <form id="preferences-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Timezone</label>
                     <select id="pref-timezone" name="timezone"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="">Auto-detect</option>
@@ -242,23 +257,23 @@
                         <option value="Australia/Melbourne">Melbourne (AEST)</option>
                         <option value="Pacific/Auckland">Auckland (NZST)</option>
                     </select>
-                    <p class="text-xs text-gray-400 mt-1">Used for displaying times and scheduling</p>
+                    <p class="text-xs text-stone-400 mt-1">Used for displaying times and scheduling</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Time Format</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Time Format</label>
                     <div class="flex gap-3">
                         <button type="button" onclick="setTimeFormat('12h')" id="time-format-12h-btn"
-                            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-colors">
+                            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-2xl transition-colors">
                             <span class="font-medium">12h</span>
-                            <span class="text-sm text-gray-500">3:30 PM</span>
+                            <span class="text-sm text-stone-500">3:30 PM</span>
                         </button>
                         <button type="button" onclick="setTimeFormat('24h')" id="time-format-24h-btn"
-                            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-colors">
+                            class="flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-2xl transition-colors">
                             <span class="font-medium">24h</span>
-                            <span class="text-sm text-gray-500">15:30</span>
+                            <span class="text-sm text-stone-500">15:30</span>
                         </button>
                     </div>
-                    <p class="text-xs text-gray-400 mt-1">How times are displayed throughout the app</p>
+                    <p class="text-xs text-stone-400 mt-1">How times are displayed throughout the app</p>
                 </div>
                 <button type="submit" class="px-6 py-2.5 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium shadow-sm shadow-orange-600/20 transition">
                     Save Preferences
@@ -267,16 +282,16 @@
         </div>
 
         <!-- Change Password -->
-        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
-            <h2 class="display text-xl font-medium text-stone-800 mb-4">Change Password</h2>
+        <div id="section-password" class="glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Password</h2>
             <form id="password-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Current Password</label>
                     <input type="password" name="current_password" required
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">New Password</label>
                     <input type="password" name="new_password" required minlength="8"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
@@ -287,12 +302,12 @@
         </div>
 
         <!-- Interaction Preferences -->
-        <div class="glass ring-soft rounded-3xl p-6 transition-colors">
-            <h2 class="display text-xl font-medium text-stone-800 mb-4">Notification Preferences</h2>
-            <p class="text-sm text-gray-500 mb-4">Configure when and how you receive questions about care changes.</p>
+        <div id="section-notify" class="glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
+            <h2 class="display text-xl font-medium text-stone-800 mb-4">Notifications</h2>
+            <p class="text-sm text-stone-500 mb-4">Configure when and how you receive questions about care changes.</p>
             <form id="interaction-prefs-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Prompt Delay (hours after a change)</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Prompt Delay (hours after a change)</label>
                     <select id="pref-delay-hours" name="treatment_change_prompt_delay_hours"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="0">Immediately</option>
@@ -301,23 +316,23 @@
                         <option value="72">After 72 hours</option>
                         <option value="168">After 1 week</option>
                     </select>
-                    <p class="text-xs text-gray-400 mt-1">Wait this long after a change before asking questions</p>
+                    <p class="text-xs text-stone-400 mt-1">Wait this long after a change before asking questions</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Quiet Start Time</label>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Quiet Start Time</label>
                         <input type="time" id="pref-quiet-start" name="interrogative_quiet_start" value="21:00"
                             class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Quiet End Time</label>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Quiet End Time</label>
                         <input type="time" id="pref-quiet-end" name="interrogative_quiet_end" value="08:00"
                             class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     </div>
                 </div>
-                <p class="text-xs text-gray-400 -mt-2">No questions will be shown during quiet hours</p>
+                <p class="text-xs text-stone-400 -mt-2">No questions will be shown during quiet hours</p>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Questions Per Day</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Maximum Questions Per Day</label>
                     <select id="pref-max-per-day" name="max_interrogatives_per_day"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="1">1 question</option>
@@ -329,8 +344,8 @@
                 </div>
                 <div class="flex items-center">
                     <input type="checkbox" id="pref-batch" name="batch_interrogatives"
-                        class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
-                    <label for="pref-batch" class="ml-2 block text-sm text-gray-700">
+                        class="h-4 w-4 text-orange-600 focus:ring-orange-300 border-stone-300 rounded">
+                    <label for="pref-batch" class="ml-2 block text-sm text-stone-700">
                         Batch questions together (show all at once instead of one at a time)
                     </label>
                 </div>
@@ -341,10 +356,10 @@
         </div>
 
         <!-- Danger Zone -->
-        <div class="glass ring-soft rounded-3xl border-red-200 p-6 transition-colors">
+        <div id="section-danger" class="glass ring-soft rounded-3xl border-red-200 p-6 transition-colors scroll-mt-6">
             <h2 class="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
-            <p class="text-gray-600 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
-            <button onclick="confirmDelete()" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+            <p class="text-stone-600 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+            <button onclick="confirmDelete()" class="px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700">
                 Delete Account
             </button>
         </div>
@@ -353,7 +368,7 @@
              The .app-version span is populated at runtime by capacitor-bridge.js
              from Capacitor.Plugins.App.getInfo() — never hard-code the version
              here, or it will go stale every mobile release. -->
-        <div class="text-center mt-12 mb-2 text-sm text-gray-400 select-none"
+        <div class="text-center mt-12 mb-2 text-sm text-stone-400 select-none"
              onclick="if(window.carecompanionEnvSwitch){carecompanionEnvSwitch(this)}">
             MyCareCompanion · <span class="app-version" data-fallback="web">…</span>
         </div>
@@ -362,10 +377,10 @@
 
 <!-- Add Member Modal -->
 <div id="add-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Add Family Member</h3>
-            <button onclick="closeAddMemberModal()" class="text-gray-400 hover:text-gray-600">
+            <h3 class="text-lg font-semibold text-stone-900">Add Family Member</h3>
+            <button onclick="closeAddMemberModal()" class="text-stone-400 hover:text-stone-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -374,41 +389,41 @@
         <form id="add-member-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">First Name</label>
                     <input type="text" id="add-member-first-name" name="first_name" required
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                         placeholder="First name">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Last Name</label>
                     <input type="text" id="add-member-last-name" name="last_name" required
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                         placeholder="Last name">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Email Address</label>
                 <div class="flex gap-2">
                     <input type="email" id="add-member-email" name="email" required
-                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        class="flex-1 px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300"
                         placeholder="Enter email address">
-                    <button type="button" onclick="lookupUser()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                    <button type="button" onclick="lookupUser()" class="px-4 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
                         Find
                     </button>
                 </div>
             </div>
             <div id="user-lookup-result" class="hidden">
-                <div id="user-found" class="hidden p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div id="user-found" class="hidden p-3 bg-green-50 border border-green-200 rounded-2xl">
                     <p class="text-sm text-green-800">
                         <span class="font-medium">Found:</span> <span id="found-user-name"></span>
                     </p>
                 </div>
-                <div id="user-not-found" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div id="user-not-found" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-2xl">
                     <p class="text-sm text-amber-800">User not found. An invitation will be sent to this email address.</p>
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Role</label>
                 <select id="add-member-role" name="role" required
                     class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                     <option value="parent">Parent</option>
@@ -417,10 +432,10 @@
                 </select>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="button" onclick="closeAddMemberModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                <button type="button" onclick="closeAddMemberModal()" class="flex-1 px-4 py-2 border border-stone-300 text-stone-700 rounded-full hover:bg-stone-50">
                     Cancel
                 </button>
-                <button type="submit" id="add-member-submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <button type="submit" id="add-member-submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     Add Member
                 </button>
             </div>
@@ -430,46 +445,46 @@
 
 <!-- Edit Member Modal -->
 <div id="edit-member-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Edit Member</h3>
-            <button onclick="closeEditMemberModal()" class="text-gray-400 hover:text-gray-600">
+            <h3 class="text-lg font-semibold text-stone-900">Edit Member</h3>
+            <button onclick="closeEditMemberModal()" class="text-stone-400 hover:text-stone-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
             </button>
         </div>
         <div class="mb-4">
-            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center gap-3 p-3 bg-stone-50 rounded-2xl">
                 <div id="edit-member-avatar" class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium"></div>
                 <div>
-                    <p id="edit-member-name" class="font-medium text-gray-900"></p>
-                    <p id="edit-member-email" class="text-sm text-gray-500"></p>
+                    <p id="edit-member-name" class="font-medium text-stone-900"></p>
+                    <p id="edit-member-email" class="text-sm text-stone-500"></p>
                 </div>
             </div>
         </div>
-        <div id="creator-warning" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <div id="creator-warning" class="hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-2xl">
             <p class="text-sm text-amber-800">This is the family creator. Their role cannot be changed and they cannot be removed.</p>
         </div>
         <form id="edit-member-form" class="space-y-4">
             <input type="hidden" id="edit-member-id" name="member_id">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Role</label>
                 <select id="edit-member-role" name="role"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                    class="w-full px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:bg-stone-100 disabled:cursor-not-allowed">
                     <option value="parent">Parent</option>
                     <option value="caregiver">Caregiver</option>
                     <option value="medical_provider">Medical Provider</option>
                 </select>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="button" id="remove-member-btn" onclick="confirmRemoveMember()" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
+                <button type="button" id="remove-member-btn" onclick="confirmRemoveMember()" class="px-4 py-2 border border-red-300 text-red-600 rounded-full hover:bg-red-50">
                     Remove
                 </button>
-                <button type="button" onclick="closeEditMemberModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                <button type="button" onclick="closeEditMemberModal()" class="flex-1 px-4 py-2 border border-stone-300 text-stone-700 rounded-full hover:bg-stone-50">
                     Cancel
                 </button>
-                <button type="submit" id="save-member-btn" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" id="save-member-btn" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                     Save
                 </button>
             </div>
@@ -479,10 +494,10 @@
 
 <!-- Add Child Modal -->
 <div id="add-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-md w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Add Child</h3>
-            <button onclick="closeAddChildModal()" class="text-gray-400 hover:text-gray-600">
+            <h3 class="text-lg font-semibold text-stone-900">Add Child</h3>
+            <button onclick="closeAddChildModal()" class="text-stone-400 hover:text-stone-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -491,24 +506,24 @@
         <form id="add-child-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">First Name *</label>
                     <input type="text" id="add-child-firstname" name="first_name" required
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Last Name</label>
                     <input type="text" id="add-child-lastname" name="last_name"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Date of Birth *</label>
                     <input type="date" id="add-child-dob" name="date_of_birth" required
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Gender</label>
                     <select id="add-child-gender" name="gender"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="">Not specified</option>
@@ -519,16 +534,16 @@
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Notes</label>
                 <textarea id="add-child-notes" name="notes" rows="3"
                     class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="Any additional notes about your child..."></textarea>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="button" onclick="closeAddChildModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                <button type="button" onclick="closeAddChildModal()" class="flex-1 px-4 py-2 border border-stone-300 text-stone-700 rounded-full hover:bg-stone-50">
                     Cancel
                 </button>
-                <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                     Add Child
                 </button>
             </div>
@@ -538,10 +553,10 @@
 
 <!-- Edit Child Modal -->
 <div id="edit-child-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Edit Child</h3>
-            <button onclick="closeEditChildModal()" class="text-gray-400 hover:text-gray-600">
+            <h3 class="text-lg font-semibold text-stone-900">Edit Child</h3>
+            <button onclick="closeEditChildModal()" class="text-stone-400 hover:text-stone-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -551,24 +566,24 @@
             <input type="hidden" id="edit-child-id" name="child_id">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">First Name *</label>
                     <input type="text" id="edit-child-firstname" name="first_name" required
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Last Name</label>
                     <input type="text" id="edit-child-lastname" name="last_name"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth *</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Date of Birth *</label>
                     <input type="date" id="edit-child-dob" name="date_of_birth" required
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Gender</label>
                     <select id="edit-child-gender" name="gender"
                         class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
                         <option value="">Not specified</option>
@@ -579,7 +594,7 @@
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Notes</label>
                 <textarea id="edit-child-notes" name="notes" rows="2"
                     class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"></textarea>
             </div>
@@ -587,7 +602,7 @@
             <!-- Conditions Section -->
             <div class="border-t pt-4 mt-4">
                 <div class="flex items-center justify-between mb-3">
-                    <h4 class="text-sm font-semibold text-gray-900">Conditions</h4>
+                    <h4 class="text-sm font-semibold text-stone-900">Conditions</h4>
                     <button type="button" onclick="openAddConditionModal()" class="text-sm text-orange-600 hover:text-orange-800 flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -596,18 +611,18 @@
                     </button>
                 </div>
                 <div id="edit-child-conditions" class="space-y-2 max-h-40 overflow-y-auto">
-                    <p class="text-sm text-gray-500 text-center py-2">Loading conditions...</p>
+                    <p class="text-sm text-stone-500 text-center py-2">Loading conditions...</p>
                 </div>
             </div>
 
             <div class="flex gap-3 pt-2">
-                <button type="button" id="remove-child-btn" onclick="confirmRemoveChild()" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
+                <button type="button" id="remove-child-btn" onclick="confirmRemoveChild()" class="px-4 py-2 border border-red-300 text-red-600 rounded-full hover:bg-red-50">
                     Remove
                 </button>
-                <button type="button" onclick="closeEditChildModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                <button type="button" onclick="closeEditChildModal()" class="flex-1 px-4 py-2 border border-stone-300 text-stone-700 rounded-full hover:bg-stone-50">
                     Cancel
                 </button>
-                <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                     Save
                 </button>
             </div>
@@ -617,10 +632,10 @@
 
 <!-- Add/Edit Condition Modal -->
 <div id="condition-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[60]">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-md w-full mx-4 p-6" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between mb-4">
-            <h3 id="condition-modal-title" class="text-lg font-semibold text-gray-900">Add Condition</h3>
-            <button onclick="closeConditionModal()" class="text-gray-400 hover:text-gray-600">
+            <h3 id="condition-modal-title" class="text-lg font-semibold text-stone-900">Add Condition</h3>
+            <button onclick="closeConditionModal()" class="text-stone-400 hover:text-stone-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -629,36 +644,36 @@
         <form id="condition-form" class="space-y-4">
             <input type="hidden" id="condition-id" name="condition_id">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Condition Name *</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Condition Name *</label>
                 <input type="text" id="condition-name" name="condition_name" required
                     class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="e.g., Autism Spectrum Disorder">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">ICD Code</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">ICD Code</label>
                 <input type="text" id="condition-icd" name="icd_code"
                     class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="e.g., F84.0">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Diagnosed Date</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Diagnosed Date</label>
                 <input type="date" id="condition-diagnosed" name="diagnosed_date"
                     class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Notes</label>
                 <textarea id="condition-notes" name="notes" rows="2"
                     class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"
                     placeholder="Additional details about the condition..."></textarea>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="button" id="delete-condition-btn" onclick="confirmDeleteCondition()" class="hidden px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50">
+                <button type="button" id="delete-condition-btn" onclick="confirmDeleteCondition()" class="hidden px-4 py-2 border border-red-300 text-red-600 rounded-full hover:bg-red-50">
                     Delete
                 </button>
-                <button type="button" onclick="closeConditionModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                <button type="button" onclick="closeConditionModal()" class="flex-1 px-4 py-2 border border-stone-300 text-stone-700 rounded-full hover:bg-stone-50">
                     Cancel
                 </button>
-                <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <button type="submit" class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700">
                     Save
                 </button>
             </div>
@@ -863,11 +878,11 @@ function displayBillingInfo(data) {
     statusEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
 
     if (status === 'active') {
-        statusEl.classList.add('text-green-600', '
+        statusEl.classList.add('text-green-600', 'font-semibold');
     } else if (status === 'expired' || status === 'cancelled') {
-        statusEl.classList.add('text-red-600', '
+        statusEl.classList.add('text-red-600', 'font-semibold');
     } else {
-        statusEl.classList.add('text-yellow-600', '
+        statusEl.classList.add('text-yellow-600', 'font-semibold');
     }
 
     // Expiration date
@@ -979,11 +994,11 @@ async function loadFamilyMembers() {
             currentMembers = await response.json();
             renderMembers();
         } else {
-            document.getElementById('members-list').innerHTML = '<p class="text-gray-500 text-center py-4">Failed to load members</p>';
+            document.getElementById('members-list').innerHTML = '<p class="text-stone-500 text-center py-4">Failed to load members</p>';
         }
     } catch (error) {
         console.error('Failed to load members:', error);
-        document.getElementById('members-list').innerHTML = '<p class="text-gray-500 text-center py-4">Failed to load members</p>';
+        document.getElementById('members-list').innerHTML = '<p class="text-stone-500 text-center py-4">Failed to load members</p>';
     }
 }
 
@@ -997,18 +1012,18 @@ async function loadChildren() {
             currentChildren = await response.json() || [];
             renderChildren();
         } else {
-            document.getElementById('children-list').innerHTML = '<p class="text-gray-500 text-center py-4">Failed to load children</p>';
+            document.getElementById('children-list').innerHTML = '<p class="text-stone-500 text-center py-4">Failed to load children</p>';
         }
     } catch (error) {
         console.error('Failed to load children:', error);
-        document.getElementById('children-list').innerHTML = '<p class="text-gray-500 text-center py-4">Failed to load children</p>';
+        document.getElementById('children-list').innerHTML = '<p class="text-stone-500 text-center py-4">Failed to load children</p>';
     }
 }
 
 function renderChildren() {
     const container = document.getElementById('children-list');
     if (!currentChildren || currentChildren.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-4">No children added yet. Click "Add Child" to get started.</p>';
+        container.innerHTML = '<p class="text-stone-500 text-center py-4">No children added yet. Click "Add Child" to get started.</p>';
         return;
     }
 
@@ -1020,18 +1035,18 @@ function renderChildren() {
         const genderIcon = gender === 'male' ? '♂' : gender === 'female' ? '♀' : '';
 
         return `
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+            <div class="flex items-center justify-between p-4 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors"
                  onclick="openEditChildModal('${child.id}')">
                 <div class="flex items-center gap-3">
                     <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-medium text-lg">
                         ${initials.toUpperCase()}
                     </div>
                     <div>
-                        <p class="font-medium text-gray-900">${name}</p>
-                        <p class="text-sm text-gray-500">${age} years old ${genderIcon}</p>
+                        <p class="font-medium text-stone-900">${name}</p>
+                        <p class="text-sm text-stone-500">${age} years old ${genderIcon}</p>
                     </div>
                 </div>
-                <a href="/child/${child.id}" onclick="event.stopPropagation()" class="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200">
+                <a href="/child/${child.id}" onclick="event.stopPropagation()" class="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded-full hover:bg-orange-200">
                     View Dashboard
                 </a>
             </div>
@@ -1145,7 +1160,7 @@ function openEditChildModal(childID) {
 // Conditions Management
 async function loadConditions(childID) {
     const container = document.getElementById('edit-child-conditions');
-    container.innerHTML = '<p class="text-sm text-gray-500 text-center py-2">Loading conditions...</p>';
+    container.innerHTML = '<p class="text-sm text-stone-500 text-center py-2">Loading conditions...</p>';
 
     try {
         const response = await fetch(`/api/children/${childID}/conditions`, {
@@ -1166,20 +1181,20 @@ async function loadConditions(childID) {
 function renderConditions() {
     const container = document.getElementById('edit-child-conditions');
     if (!currentConditions || currentConditions.length === 0) {
-        container.innerHTML = '<p class="text-sm text-gray-500 text-center py-2">No conditions added yet.</p>';
+        container.innerHTML = '<p class="text-sm text-stone-500 text-center py-2">No conditions added yet.</p>';
         return;
     }
 
     container.innerHTML = currentConditions.map(condition => {
         const statusClass = condition.is_active
             ? 'bg-green-100 text-green-700'
-            : 'bg-gray-100 text-gray-500';
+            : 'bg-stone-100 text-stone-500';
         return `
-            <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
+            <div class="flex items-center justify-between p-2 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100"
                  onclick="openEditConditionModal('${condition.id}')">
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">${condition.condition_name}</p>
-                    ${condition.icd_code ? `<p class="text-xs text-gray-500">ICD: ${condition.icd_code}</p>` : ''}
+                    <p class="text-sm font-medium text-stone-900 truncate">${condition.condition_name}</p>
+                    ${condition.icd_code ? `<p class="text-xs text-stone-500">ICD: ${condition.icd_code}</p>` : ''}
                 </div>
                 <span class="px-2 py-0.5 text-xs rounded-full ${statusClass}">
                     ${condition.is_active ? 'Active' : 'Inactive'}
@@ -1409,7 +1424,7 @@ async function confirmRemoveChild() {
 function renderMembers() {
     const container = document.getElementById('members-list');
     if (!currentMembers || currentMembers.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-4">No members found</p>';
+        container.innerHTML = '<p class="text-stone-500 text-center py-4">No members found</p>';
         return;
     }
 
@@ -1422,7 +1437,7 @@ function renderMembers() {
         const roleColor = getRoleColor(member.role);
 
         return `
-            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+            <div class="flex items-center justify-between p-4 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors"
                  onclick="openEditMemberModal('${member.id}')">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-medium">
@@ -1430,10 +1445,10 @@ function renderMembers() {
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <p class="font-medium text-gray-900">${name}</p>
-                            ${isCreator ? '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">Creator</span>' : ''}
+                            <p class="font-medium text-stone-900">${name}</p>
+                            ${isCreator ? '<span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Creator</span>' : ''}
                         </div>
-                        <p class="text-sm text-gray-500">${user.email || ''}</p>
+                        <p class="text-sm text-stone-500">${user.email || ''}</p>
                     </div>
                 </div>
                 <span class="px-3 py-1 text-sm rounded-full ${roleColor}">${roleLabel}</span>
@@ -1523,7 +1538,7 @@ function getRoleColor(role) {
         'caregiver': 'bg-green-100 text-green-700',
         'medical_provider': 'bg-purple-100 text-purple-700'
     };
-    return colors[role] || 'bg-gray-100 text-gray-700';
+    return colors[role] || 'bg-stone-100 text-stone-700';
 }
 
 // Add Member Modal
@@ -1857,12 +1872,12 @@ function updateThemeButtons() {
         system: document.getElementById('theme-system-btn')
     };
 
-    const activeClasses = 'border-orange-500 bg-orange-50 text-orange-700
-    const inactiveClasses = 'border-gray-300 text-gray-700 hover:bg-gray-50
+    const activeClasses = 'border-orange-500 bg-orange-50 text-orange-700';
+    const inactiveClasses = 'border-stone-300 text-stone-700 hover:bg-stone-50';
 
     Object.keys(buttons).forEach(key => {
         if (buttons[key]) {
-            buttons[key].className = 'flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-colors ' +
+            buttons[key].className = 'flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-2xl transition-colors ' +
                 (key === theme ? activeClasses : inactiveClasses);
         }
     });
@@ -1890,12 +1905,12 @@ function updateTimeFormatButtons() {
         '24h': document.getElementById('time-format-24h-btn')
     };
 
-    const activeClasses = 'border-orange-500 bg-orange-50 text-orange-700
-    const inactiveClasses = 'border-gray-300 text-gray-700 hover:bg-gray-50
+    const activeClasses = 'border-orange-500 bg-orange-50 text-orange-700';
+    const inactiveClasses = 'border-stone-300 text-stone-700 hover:bg-stone-50';
 
     Object.keys(buttons).forEach(key => {
         if (buttons[key]) {
-            buttons[key].className = 'flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg transition-colors ' +
+            buttons[key].className = 'flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-2xl transition-colors ' +
                 (key === currentTimeFormat ? activeClasses : inactiveClasses);
         }
     });

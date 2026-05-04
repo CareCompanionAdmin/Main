@@ -256,6 +256,78 @@ var templateFuncs = template.FuncMap{
 			return ptr
 		}
 	},
+	// div divides a by b, returning an int (truncated). Returns 0 if b is 0.
+	"div": func(a, b interface{}) int {
+		toInt := func(x interface{}) int {
+			switch v := x.(type) {
+			case int:
+				return v
+			case *int:
+				if v == nil {
+					return 0
+				}
+				return *v
+			case float64:
+				return int(v)
+			case int64:
+				return int(v)
+			}
+			return 0
+		}
+		ai, bi := toInt(a), toInt(b)
+		if bi == 0 {
+			return 0
+		}
+		return ai / bi
+	},
+	// div_f divides a by b as float64. Returns 0 if b is 0.
+	"div_f": func(a, b interface{}) float64 {
+		toFloat := func(x interface{}) float64 {
+			switch v := x.(type) {
+			case float64:
+				return v
+			case int:
+				return float64(v)
+			case *int:
+				if v == nil {
+					return 0
+				}
+				return float64(*v)
+			case int64:
+				return float64(v)
+			}
+			return 0
+		}
+		af, bf := toFloat(a), toFloat(b)
+		if bf == 0 {
+			return 0
+		}
+		return af / bf
+	},
+	// mod returns a%b for ints. Returns 0 if b is 0.
+	"mod": func(a, b interface{}) int {
+		toInt := func(x interface{}) int {
+			switch v := x.(type) {
+			case int:
+				return v
+			case *int:
+				if v == nil {
+					return 0
+				}
+				return *v
+			case float64:
+				return int(v)
+			case int64:
+				return int(v)
+			}
+			return 0
+		}
+		ai, bi := toInt(a), toInt(b)
+		if bi == 0 {
+			return 0
+		}
+		return ai % bi
+	},
 	// mul multiplies two numbers
 	"mul": func(a, b interface{}) float64 {
 		var af, bf float64
@@ -322,6 +394,19 @@ var templateFuncs = template.FuncMap{
 			}
 		}
 		return strings.Join(words, " ")
+	},
+	// list creates a new []string for templating composition
+	"list": func() []string { return []string{} },
+	// append appends a string to a []string
+	"append": func(slice []string, s string) []string { return append(slice, s) },
+	// join joins a []string with a separator
+	"join": func(slice []string, sep string) string { return strings.Join(slice, sep) },
+	// pluralize returns "s" if n != 1, else ""
+	"pluralize": func(n int) string {
+		if n == 1 {
+			return ""
+		}
+		return "s"
 	},
 	// formatDate formats a date in the given timezone with the specified layout
 	// Usage: {{formatDate .LogDate $.UserTimezone "Jan 2, 2006"}}

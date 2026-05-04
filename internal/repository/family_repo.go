@@ -287,3 +287,49 @@ func (r *familyRepo) AcceptInvitation(ctx context.Context, invitationID uuid.UUI
 	_, err := r.db.ExecContext(ctx, query, invitationID)
 	return err
 }
+
+// GetWeekStats counts log activity across all of a family's children for the
+// last 7 days. Used by the family dashboard hero. Best-effort — the caller
+// treats a nil/error return as zeroed stats and renders the empty state.
+func (r *familyRepo) GetWeekStats(ctx context.Context, familyID uuid.UUID) (*models.FamilyWeekStats, error) {
+	query := `
+		WITH family_kids AS (
+			SELECT id FROM children WHERE family_id = $1 AND is_active = true
+		),
+		all_logs AS (
+			SELECT child_id, log_date, 0 AS meltdowns, 0 AS meds_taken FROM diet_logs
+				WHERE child_id IN (SELECT id FROM family_kids) AND log_date >= CURRENT_DATE - INTERVAL '6 days'
+			UNION ALL
+			SELECT child_id, log_date, COALESCE(meltdowns,0), 0 FROM behavior_logs
+				WHERE child_id IN (SELECT id FROM family_kids) AND log_date >= CURRENT_DATE - INTERVAL '6 days'
+			UNION ALL
+			SELECT child_id, log_date, 0, 0 FROM sleep_logs
+				WHERE child_id IN (SELECT id FROM family_kids) AND log_date >= CURRENT_DATE - INTERVAL '6 days'
+			UNION ALL
+			SELECT child_id, log_date, 0, 0 FROM bowel_logs
+				WHERE child_id IN (SELECT id FROM family_kids) AND log_date >= CURRENT_DATE - INTERVAL '6 days'
+			UNION ALL
+			SELECT child_id, log_date, 0, CASE WHEN status='taken' THEN 1 ELSE 0 END FROM medication_logs
+				WHERE child_id IN (SELECT id FROM family_kids) AND log_date >= CURRENT_DATE - INTERVAL '6 days'
+		)
+		SELECT
+			COUNT(*) AS total_logs,
+			COUNT(DISTINCT log_date) AS active_days,
+			COUNT(DISTINCT child_id) AS children_with_logs,
+			COALESCE(SUM(meltdowns), 0) AS meltdowns,
+			COALESCE(SUM(meds_taken), 0) AS meds_taken
+		FROM all_logs
+	`
+	var stats models.FamilyWeekStats
+	err := r.db.QueryRowContext(ctx, query, familyID).Scan(
+		&stats.TotalLogs,
+		&stats.ActiveDays,
+		&stats.ChildrenWithLogs,
+		&stats.Meltdowns,
+		&stats.MedsTaken,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &stats, nil
+}

@@ -154,9 +154,10 @@ func hasRequiredRole(actual, required models.FamilyRole) bool {
 
 // FamilyDashboard represents the family overview
 type FamilyDashboard struct {
-	Family   models.Family            `json:"family"`
-	Members  []models.FamilyMembership `json:"members"`
-	Children []models.Child           `json:"children"`
+	Family    models.Family             `json:"family"`
+	Members   []models.FamilyMembership `json:"members"`
+	Children  []models.Child            `json:"children"`
+	WeekStats models.FamilyWeekStats    `json:"week_stats"`
 }
 
 func (s *FamilyService) GetDashboard(ctx context.Context, familyID uuid.UUID) (*FamilyDashboard, error) {
@@ -178,10 +179,17 @@ func (s *FamilyService) GetDashboard(ctx context.Context, familyID uuid.UUID) (*
 		return nil, err
 	}
 
+	stats, err := s.familyRepo.GetWeekStats(ctx, familyID)
+	if err != nil || stats == nil {
+		// Stats are best-effort — never fail the dashboard if the aggregate breaks
+		stats = &models.FamilyWeekStats{}
+	}
+
 	return &FamilyDashboard{
-		Family:   *family,
-		Members:  members,
-		Children: children,
+		Family:    *family,
+		Members:   members,
+		Children:  children,
+		WeekStats: *stats,
 	}, nil
 }
 

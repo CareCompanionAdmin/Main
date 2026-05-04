@@ -41,6 +41,9 @@ type FamilyRepository interface {
 	CreateInvitation(ctx context.Context, familyID uuid.UUID, email, firstName, lastName string, role models.FamilyRole) error
 	GetPendingInvitations(ctx context.Context, email string) ([]models.FamilyInvitation, error)
 	AcceptInvitation(ctx context.Context, invitationID uuid.UUID) error
+
+	// Aggregate stats
+	GetWeekStats(ctx context.Context, familyID uuid.UUID) (*models.FamilyWeekStats, error)
 }
 
 // ChildRepository handles child data operations

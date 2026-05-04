@@ -7,45 +7,37 @@
 {{template "mascot" .}}
 
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-6">
-        <a href="/child/{{.Child.ID}}" class="text-orange-600 hover:text-orange-500 flex items-center">
-            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="mb-4">
+        <a href="/child/{{.Child.ID}}" class="text-stone-500 hover:text-stone-800 inline-flex items-center text-sm">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
             Back to {{.Child.FirstName}}
         </a>
     </div>
 
-    <div class="glass ring-soft rounded-3xl p-6 mb-6">
-        <h1 class="display text-3xl font-medium text-stone-800">Alerts for {{.Child.FirstName}}</h1>
-        <p class="text-gray-500">Pattern-based insights and notifications</p>
-    </div>
-
-    <!-- Alert Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div class="glass ring-soft rounded-3xl p-4 text-center">
-            <p class="text-3xl font-bold text-gray-900">{{.AlertsPage.AlertStats.TotalActive}}</p>
-            <p class="text-sm text-gray-500">Active Alerts</p>
+    {{$as := .AlertsPage.AlertStats}}
+    <header class="mb-10">
+        <p class="handwritten text-2xl text-orange-800 leading-none">Worth noticing</p>
+        {{if eq $as.TotalActive 0}}
+        <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">All quiet for {{.Child.FirstName}}</h1>
+        <p class="display italic text-stone-600 text-lg mt-2">Nothing flagged right now — quiet days matter too.</p>
+        {{else}}
+        <div class="flex items-end gap-4 sm:gap-6 mt-2">
+            <div class="display text-[6rem] sm:text-[10rem] leading-[0.85] font-medium text-stone-800 tracking-tight">{{$as.TotalActive}}<span class="text-stone-300 text-3xl sm:text-5xl block sm:inline mt-2 sm:mt-0 sm:ml-2">{{if eq $as.TotalActive 1}}thing{{else}}things{{end}}</span></div>
         </div>
-        <div class="glass ring-soft rounded-3xl p-4 text-center">
-            <p class="text-3xl font-bold text-gray-900">{{.AlertsPage.AlertStats.TotalThisWeek}}</p>
-            <p class="text-sm text-gray-500">This Week</p>
+        <p class="display italic text-stone-600 text-lg sm:text-xl mt-3">
+            {{if gt $as.CriticalCount 0}}{{$as.CriticalCount}} need{{if eq $as.CriticalCount 1}}s{{end}} a closer look. {{end}}
+            {{if gt $as.TotalThisWeek 0}}{{$as.TotalThisWeek}} surfaced this week.{{end}}
+        </p>
+        <div class="mt-4 flex flex-wrap gap-2">
+            {{if gt $as.CriticalCount 0}}<span class="px-3 py-1 text-xs uppercase tracking-wider rounded-full bg-red-100 text-red-700 font-semibold">{{$as.CriticalCount}} critical</span>{{end}}
+            {{if gt $as.WarningCount 0}}<span class="px-3 py-1 text-xs uppercase tracking-wider rounded-full bg-yellow-100 text-yellow-700 font-semibold">{{$as.WarningCount}} warning</span>{{end}}
+            {{if gt $as.InfoCount 0}}<span class="px-3 py-1 text-xs uppercase tracking-wider rounded-full bg-blue-100 text-blue-700 font-semibold">{{$as.InfoCount}} info</span>{{end}}
+            {{if gt $as.TotalThisMonth 0}}<span class="px-3 py-1 text-xs uppercase tracking-wider rounded-full bg-stone-100 text-stone-700 font-semibold">{{$as.TotalThisMonth}} this month</span>{{end}}
         </div>
-        <div class="glass ring-soft rounded-3xl p-4 text-center">
-            <div class="flex justify-center gap-4">
-                {{if gt .AlertsPage.AlertStats.CriticalCount 0}}
-                <span class="text-red-600 font-medium">{{.AlertsPage.AlertStats.CriticalCount}} critical</span>
-                {{end}}
-                {{if gt .AlertsPage.AlertStats.WarningCount 0}}
-                <span class="text-yellow-600 font-medium">{{.AlertsPage.AlertStats.WarningCount}} warning</span>
-                {{end}}
-                {{if gt .AlertsPage.AlertStats.InfoCount 0}}
-                <span class="text-blue-600 font-medium">{{.AlertsPage.AlertStats.InfoCount}} info</span>
-                {{end}}
-            </div>
-            <p class="text-sm text-gray-500 mt-1">By Severity</p>
-        </div>
-    </div>
+        {{end}}
+    </header>
 
     {{if .AlertsPage.ActiveAlerts}}
     <div class="space-y-4">
@@ -58,7 +50,7 @@
                             <span class="px-2 py-1 text-xs font-medium rounded-full {{if eq .Severity "critical"}}bg-red-100 text-red-700{{else if eq .Severity "warning"}}bg-yellow-100 text-yellow-700{{else}}bg-blue-100 text-blue-700{{end}}">
                                 {{.Severity}}
                             </span>
-                            <span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">{{.AlertType}}</span>
+                            <span class="px-2 py-1 text-xs font-medium bg-stone-100 text-stone-600 rounded-full">{{.AlertType}}</span>
                             {{if .ConfidenceScore}}
                             <!-- Layer 1: Confidence Meter -->
                             <button onclick="showConfidenceBreakdown('{{.ID}}')"
@@ -72,9 +64,9 @@
                             </button>
                             {{end}}
                         </div>
-                        <h3 class="text-lg font-medium text-gray-900">{{.Title}}</h3>
-                        <p class="text-gray-600 mt-1">{{.Description}}</p>
-                        <p class="text-sm text-gray-400 mt-2">{{.CreatedAt.Format "Jan 2, 2006"}} {{formatTimeStr (.CreatedAt.Format "15:04") $.UserTimeFormat}}</p>
+                        <h3 class="text-lg font-medium text-stone-900">{{.Title}}</h3>
+                        <p class="text-stone-600 mt-1">{{.Description}}</p>
+                        <p class="text-sm text-stone-400 mt-2">{{.CreatedAt.Format "Jan 2, 2006"}} {{formatTimeStr (.CreatedAt.Format "15:04") $.UserTimeFormat}}</p>
                     </div>
                     <button onclick="toggleAlertDetails('{{.ID}}')" class="text-orange-600 hover:text-orange-700 text-sm">
                         View Details
@@ -83,34 +75,34 @@
             </div>
 
             <!-- Alert Details (hidden by default) -->
-            <div id="alert-details-{{.ID}}" class="hidden border-t bg-gray-50 p-6">
+            <div id="alert-details-{{.ID}}" class="hidden border-t bg-stone-50 p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Related Pattern Info -->
                     <div>
-                        <h4 class="font-medium text-gray-900 mb-2">Pattern Information</h4>
+                        <h4 class="font-medium text-stone-900 mb-2">Pattern Information</h4>
                         {{if .CorrelationID.Valid}}
-                        <p class="text-sm text-gray-600">This alert is based on a detected pattern (ID: {{.CorrelationID.UUID}})</p>
+                        <p class="text-sm text-stone-600">This alert is based on a detected pattern (ID: {{.CorrelationID.UUID}})</p>
                         {{else}}
-                        <p class="text-sm text-gray-500">No specific pattern correlation</p>
+                        <p class="text-sm text-stone-500">No specific pattern correlation</p>
                         {{end}}
                         {{if .DateRangeStart.Valid}}
-                        <p class="text-sm text-gray-600 mt-1">Date Range: {{.DateRangeStart.Time.Format "Jan 2"}} - {{if .DateRangeEnd.Valid}}{{.DateRangeEnd.Time.Format "Jan 2"}}{{else}}Present{{end}}</p>
+                        <p class="text-sm text-stone-600 mt-1">Date Range: {{.DateRangeStart.Time.Format "Jan 2"}} - {{if .DateRangeEnd.Valid}}{{.DateRangeEnd.Time.Format "Jan 2"}}{{else}}Present{{end}}</p>
                         {{end}}
                     </div>
 
                     <!-- Actions -->
                     <div>
-                        <h4 class="font-medium text-gray-900 mb-2">Actions</h4>
+                        <h4 class="font-medium text-stone-900 mb-2">Actions</h4>
                         <div class="space-y-2">
                             {{if not .AcknowledgedAt.Valid}}
-                            <button onclick="acknowledgeAlert('{{.ID}}')" class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+                            <button onclick="acknowledgeAlert('{{.ID}}')" class="w-full px-4 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 text-sm">
                                 Acknowledge
                             </button>
                             {{else}}
                             <p class="text-green-600 text-sm">Acknowledged {{.AcknowledgedAt.Time.Format "Jan 2"}} {{formatTimeStr (.AcknowledgedAt.Time.Format "15:04") $.UserTimeFormat}}</p>
                             {{end}}
                             {{if not .ResolvedAt.Valid}}
-                            <button onclick="resolveAlert('{{.ID}}')" class="w-full px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm">
+                            <button onclick="resolveAlert('{{.ID}}')" class="w-full px-4 py-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200 text-sm">
                                 Mark as Resolved
                             </button>
                             {{end}}
@@ -120,15 +112,15 @@
 
                 <!-- Feedback Section -->
                 <div class="mt-4 pt-4 border-t">
-                    <h4 class="font-medium text-gray-900 mb-2">Was this alert helpful?</h4>
+                    <h4 class="font-medium text-stone-900 mb-2">Was this alert helpful?</h4>
                     <div class="flex gap-4">
-                        <button onclick="submitFeedback('{{.ID}}', true)" class="flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100">
+                        <button onclick="submitFeedback('{{.ID}}', true)" class="flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-full hover:bg-green-100">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path>
                             </svg>
                             Yes, helpful
                         </button>
-                        <button onclick="submitFeedback('{{.ID}}', false)" class="flex items-center px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100">
+                        <button onclick="submitFeedback('{{.ID}}', false)" class="flex items-center px-4 py-2 bg-red-50 text-red-700 rounded-full hover:bg-red-100">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"></path>
                             </svg>
@@ -144,16 +136,16 @@
     <!-- Recent Alerts Section -->
     {{if .AlertsPage.RecentAlerts}}
     <div class="mt-8">
-        <h2 class="display text-xl font-medium text-stone-800 mb-4">Recent Alerts (Last 30 Days)</h2>
+        <h2 class="display text-xl font-medium text-stone-800 mb-4">Recent — last 30 days</h2>
         <div class="space-y-2">
             {{range .AlertsPage.RecentAlerts}}
             <div class="glass ring-soft rounded-2xl border p-4 opacity-75">
                 <div class="flex justify-between items-center">
                     <div>
-                        <span class="text-sm font-medium text-gray-900">{{.Title}}</span>
-                        <span class="ml-2 px-2 py-0.5 text-xs rounded-full {{if eq .Status "resolved"}}bg-green-100 text-green-700{{else if eq .Status "acknowledged"}}bg-blue-100 text-blue-700{{else}}bg-gray-100 text-gray-600{{end}}">{{.Status}}</span>
+                        <span class="text-sm font-medium text-stone-900">{{.Title}}</span>
+                        <span class="ml-2 px-2 py-0.5 text-xs rounded-full {{if eq .Status "resolved"}}bg-green-100 text-green-700{{else if eq .Status "acknowledged"}}bg-blue-100 text-blue-700{{else}}bg-stone-100 text-stone-600{{end}}">{{.Status}}</span>
                     </div>
-                    <span class="text-xs text-gray-400">{{.CreatedAt.Format "Jan 2"}}</span>
+                    <span class="text-xs text-stone-400">{{.CreatedAt.Format "Jan 2"}}</span>
                 </div>
             </div>
             {{end}}
@@ -161,28 +153,29 @@
     </div>
     {{end}}
     {{else}}
-    <div class="glass ring-soft rounded-3xl p-12 text-center">
-        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+    <div class="bloom ring-soft rounded-3xl p-12 text-center">
+        <div class="w-16 h-16 bg-emerald-100/70 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M5 13l4 4L19 7"></path>
             </svg>
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No alerts</h3>
-        <p class="text-gray-500">Everything looks good! No pattern alerts at this time.</p>
+        <p class="handwritten text-2xl text-emerald-700">All quiet</p>
+        <h3 class="display text-2xl font-medium text-stone-800 mt-1">Nothing needs your attention</h3>
+        <p class="text-stone-600 mt-3 max-w-md mx-auto">No patterns are flagging right now. We'll surface anything worth a closer look the moment it shows up.</p>
     </div>
     {{end}}
 </main>
 
 <!-- Layer 2: Confidence Breakdown Modal -->
 <div id="confidence-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b">
             <div class="flex justify-between items-start">
                 <div>
                     <h2 class="display text-2xl font-medium text-stone-800">How We Determined This</h2>
-                    <p class="text-sm text-gray-500 mt-1">Confidence breakdown for this insight</p>
+                    <p class="text-sm text-stone-500 mt-1">Confidence breakdown for this insight</p>
                 </div>
-                <button onclick="closeConfidenceModal()" class="text-gray-400 hover:text-gray-600">
+                <button onclick="closeConfidenceModal()" class="text-stone-400 hover:text-stone-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -194,15 +187,15 @@
             <!-- Overall Confidence -->
             <div class="text-center mb-6">
                 <div id="modal-confidence-meter" class="text-3xl mb-2"></div>
-                <p id="modal-confidence-text" class="text-gray-600"></p>
+                <p id="modal-confidence-text" class="text-stone-600"></p>
             </div>
 
             <!-- Confidence Factors -->
             <div id="modal-factors" class="space-y-4">
                 <!-- Factors will be populated by JavaScript -->
                 <div class="animate-pulse">
-                    <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div class="h-3 bg-gray-200 rounded w-full"></div>
+                    <div class="h-4 bg-stone-200 rounded w-3/4 mb-2"></div>
+                    <div class="h-3 bg-stone-200 rounded w-full"></div>
                 </div>
             </div>
 
@@ -247,7 +240,7 @@ function renderConfidenceDots(score) {
         if (i < filled) {
             html += `<span class="${colorClass}">●</span>`;
         } else {
-            html += '<span class="text-gray-300">○</span>';
+            html += '<span class="text-stone-300">○</span>';
         }
     }
     return html;
@@ -295,17 +288,17 @@ async function showConfidenceBreakdown(alertId) {
         const factorsContainer = document.getElementById('modal-factors');
         if (data.factors && data.factors.length > 0) {
             factorsContainer.innerHTML = data.factors.map(factor => `
-                <div class="bg-gray-50 rounded-lg p-4">
+                <div class="bg-stone-50 rounded-2xl p-4">
                     <div class="flex items-start">
                         <span class="text-xl mr-3">${factor.icon}</span>
                         <div class="flex-1">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="font-medium text-gray-900">${factor.label}</span>
-                                <span class="text-sm text-gray-500">${factor.percentage.toFixed(0)}%</span>
+                                <span class="font-medium text-stone-900">${factor.label}</span>
+                                <span class="text-sm text-stone-500">${factor.percentage.toFixed(0)}%</span>
                             </div>
-                            <p class="text-sm text-gray-600">${factor.description}</p>
+                            <p class="text-sm text-stone-600">${factor.description}</p>
                             <!-- Progress bar -->
-                            <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="mt-2 h-2 bg-stone-200 rounded-full overflow-hidden">
                                 <div class="h-full bg-orange-500 rounded-full" style="width: ${factor.percentage}%"></div>
                             </div>
                         </div>
@@ -314,7 +307,7 @@ async function showConfidenceBreakdown(alertId) {
             `).join('');
         } else {
             factorsContainer.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
+                <div class="text-center py-8 text-stone-500">
                     <p>Detailed confidence breakdown not yet available for this alert.</p>
                 </div>
             `;
