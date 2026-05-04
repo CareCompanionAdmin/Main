@@ -185,6 +185,16 @@ body.capacitor {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
+/* position:fixed elements don't inherit body padding, so they need their
+   own safe-area handling. Without this the FAB overlaps the home indicator
+   on iPhone X+ and bottom-sheet content tucks under it. */
+body.capacitor #compose-fab-wrap {
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+body.capacitor #compose-sheet,
+body.capacitor #meds-tray-sheet {
+  padding-bottom: env(safe-area-inset-bottom);
+}
 
 /* App-nav softening — the warm look without rewriting nav.html */
 nav.app-nav {

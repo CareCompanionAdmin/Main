@@ -22,8 +22,10 @@
     // =========================================================================
     if (window.Capacitor.Plugins.StatusBar) {
         var StatusBar = window.Capacitor.Plugins.StatusBar;
-        StatusBar.setBackgroundColor({ color: '#4F46E5' }).catch(function() {});
-        StatusBar.setStyle({ style: 'LIGHT' }).catch(function() {});
+        // Calm Hybrid: status bar matches the cream nav so it reads as
+        // one continuous surface. Dark icons because the bar is light.
+        StatusBar.setBackgroundColor({ color: '#fbf6ee' }).catch(function() {});
+        StatusBar.setStyle({ style: 'DARK' }).catch(function() {});
     }
 
     // =========================================================================

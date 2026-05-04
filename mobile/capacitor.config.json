@@ -14,11 +14,11 @@
     "SplashScreen": {
       "launchAutoHide": true,
       "launchShowDuration": 2000,
-      "backgroundColor": "#4F46E5"
+      "backgroundColor": "#fbf6ee"
     },
     "StatusBar": {
-      "style": "LIGHT",
-      "backgroundColor": "#4F46E5"
+      "style": "DARK",
+      "backgroundColor": "#fbf6ee"
     },
     "PushNotifications": {
       "presentationOptions": ["badge", "sound", "alert"]
