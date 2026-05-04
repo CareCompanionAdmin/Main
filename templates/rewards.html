@@ -2,109 +2,104 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>My Care Companion — Bug & Feature Rewards</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/css/calm.css">
 <style>
-  body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, sans-serif;
-    color: #2d2520;
-    line-height: 1.6;
-    margin: 0;
-    padding: 32px 16px 64px;
+  /* Long-form prose sized to match privacy/terms */
+  .prose h2 {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 1.375rem; line-height: 1.3;
+    color: #44403c; margin-top: 2rem; margin-bottom: .75rem;
+    padding-bottom: .35rem; border-bottom: 1px solid rgba(180,140,90,0.18);
   }
-  body { background:
-      radial-gradient(circle at 15% 10%, #fde7d3 0%, transparent 35%),
-      radial-gradient(circle at 90% 5%, #d9eaff 0%, transparent 40%),
-      radial-gradient(circle at 50% 110%, #e7f4ec 0%, transparent 40%),
-      linear-gradient(180deg, #fbf6ee 0%, #f6efe2 100%);
-    min-height: 100vh; }
-  h1 { font-family: 'Fraunces', serif; font-weight: 500; }
-  h2 { font-family: 'Fraunces', serif; font-weight: 500; }
-  main { backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.7); }
-  main {
-    max-width: 720px; margin: 0 auto;
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 40px 48px;
-    box-shadow: 0 4px 24px rgba(160,90,30,0.08);
-  }
-  .eyebrow {
-    text-transform: uppercase; letter-spacing: 0.18em; font-size: 11px;
-    font-weight: 700; color: #b45309;
-  }
-  h1 { font-size: 30px; line-height: 1.2; margin: 6px 0 14px; }
-  h2 { font-size: 20px; margin: 30px 0 8px; padding-bottom: 6px; border-bottom: 1px solid #f4ecde; }
-  p, li { font-size: 15px; }
-  ul { padding-left: 22px; }
-  ul li { margin: 6px 0; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-  .card {
-    background: #fef9e7; border: 1px solid #fce8a3; border-radius: 12px; padding: 18px;
-  }
-  .card h3 { margin: 0 0 6px; font-size: 16px; color: #92400e; }
-  .card p { margin: 0; font-size: 14px; color: #6b5430; }
-  .criteria { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 18px 22px; margin-top: 18px; }
-  .small { font-size: 13px; color: #6b5430; }
-  .signoff { margin-top: 38px; padding-top: 16px; border-top: 1px solid #f4ecde; color: #6b5430; font-size: 13px; }
-  a { color: #b45309; }
+  .prose p, .prose li { color: #57534e; line-height: 1.7; }
+  .prose ul, .prose ol { margin: .75rem 0; padding-left: 1.5rem; }
+  .prose ul { list-style-type: disc; }
+  .prose ol { list-style-type: decimal; }
+  .prose li { margin: .35rem 0; }
+  .prose strong { color: #44403c; }
 </style>
-    <link rel="stylesheet" href="/static/css/calm.css">
 </head>
-<body>
-<main>
-  <p class="eyebrow">My Care Companion</p>
-  <h1>Bug & Feature Rewards</h1>
-  <p>The app gets better when you tell us what's broken or missing. To say thank you, every month we pick the most significant bug reports and feature requests and credit those users with a free month of My Care Companion.</p>
+<body class="calm-bg min-h-screen">
 
-  <h2>How it works</h2>
-  <div class="grid">
-    <div class="card">
-      <h3>🐛 Top 5 bug reports</h3>
-      <p>Each calendar month we pick up to <strong>five bug reports</strong> as the most significant. Each pick earns the reporter <strong>one free month</strong>.</p>
-    </div>
-    <div class="card">
-      <h3>💡 Top 5 feature requests</h3>
-      <p>Each month we pick up to <strong>five feature requests</strong> that shipped to production. Each pick earns the requester <strong>one free month</strong>.</p>
+<!-- Header -->
+<header class="bg-white/70 backdrop-blur-md border-b border-stone-200/60">
+  <div class="max-w-3xl mx-auto px-4 py-6">
+    <div class="flex items-center justify-between">
+      <a href="/" class="flex items-center space-x-3">
+        <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="h-10 w-auto">
+        <span class="display text-2xl font-medium text-stone-800">My Care Companion</span>
+      </a>
+      <a href="/" class="text-orange-700 hover:text-orange-800 font-medium transition">
+        &larr; Back to Home
+      </a>
     </div>
   </div>
+</header>
 
-  <h2>What "most significant" means</h2>
-  <div class="criteria">
-    <p style="margin-top:0;">When the team reviews each month's submissions, we weigh four things:</p>
-    <ul style="margin-bottom:0;">
-      <li><strong>Impact on user safety or care</strong> — anything affecting medication tracking, alerts, or PHI gets the most weight.</li>
-      <li><strong>How many users were affected</strong> — bugs we'd been hearing about from multiple families rank higher than one-off issues.</li>
-      <li><strong>Originality</strong> — feature ideas we hadn't already planned ourselves rank higher than ones already on our roadmap.</li>
-      <li><strong>Quality of the writeup</strong> — clear steps to reproduce, screenshots or screen recordings, and a description of what you expected vs what happened make a report easier to act on.</li>
-    </ul>
-  </div>
+<main class="max-w-3xl mx-auto px-4 py-10">
+  <div class="glass ring-soft rounded-3xl p-8 md:p-12">
+    <p class="handwritten text-2xl text-orange-800 leading-none">A small thank-you</p>
+    <h1 class="display text-3xl md:text-4xl font-medium text-stone-800 mt-1 mb-3">Bug &amp; Feature Rewards</h1>
+    <p class="text-stone-700 text-lg leading-relaxed">
+      The app gets better when you tell us what's broken or missing. To say thank you, every month we pick the most significant bug reports and feature requests and credit those users with a free month of My Care Companion.
+    </p>
 
-  <h2>How to submit</h2>
-  <ol>
-    <li>From any screen, open the <strong>Support</strong> page.</li>
-    <li>Click <strong>+ New Ticket</strong>.</li>
-    <li>Pick <strong>Bug Report</strong> or <strong>Feature Request</strong> from the type dropdown.</li>
-    <li>Describe what happened. Adding screenshots or a short screen recording (desktop only) makes the report dramatically more useful.</li>
-    <li>Submit. That's it — you're in the running for that month.</li>
-  </ol>
+    <div class="prose mt-2">
+      <h2>How it works</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 not-prose">
+        <div class="bloom ring-soft rounded-2xl p-5">
+          <h3 class="display text-lg font-medium text-stone-800 mb-1">Top 5 bug reports</h3>
+          <p class="text-stone-700 text-sm">Each calendar month we pick up to <strong>five bug reports</strong> as the most significant. Each pick earns the reporter <strong>one free month</strong>.</p>
+        </div>
+        <div class="bloom ring-soft rounded-2xl p-5">
+          <h3 class="display text-lg font-medium text-stone-800 mb-1">Top 5 feature requests</h3>
+          <p class="text-stone-700 text-sm">Each month we pick up to <strong>five feature requests</strong> that shipped to production. Each pick earns the requester <strong>one free month</strong>.</p>
+        </div>
+      </div>
 
-  <h2>What if I don't get picked?</h2>
-  <p>If we receive a real bug report or thoughtful feature request and it doesn't make the top 5 that month, you'll still hear back from us — usually a quick canned message thanking you for the time. Your submission isn't ignored; we just couldn't credit everyone, and we wanted you to know it landed.</p>
+      <h2>What "most significant" means</h2>
+      <div class="bg-white/60 border border-stone-200 rounded-2xl p-5 not-prose">
+        <p class="text-stone-700 mb-3">When the team reviews each month's submissions, we weigh four things:</p>
+        <ul class="space-y-2 list-disc pl-5 text-stone-700">
+          <li><strong>Impact on user safety or care</strong> — anything affecting medication tracking, alerts, or PHI gets the most weight.</li>
+          <li><strong>How many users were affected</strong> — bugs we'd been hearing about from multiple families rank higher than one-off issues.</li>
+          <li><strong>Originality</strong> — feature ideas we hadn't already planned ourselves rank higher than ones already on our roadmap.</li>
+          <li><strong>Quality of the writeup</strong> — clear steps to reproduce, screenshots or screen recordings, and a description of what you expected vs. what happened make a report easier to act on.</li>
+        </ul>
+      </div>
 
-  <h2>Fine print</h2>
-  <ul>
-    <li>The free month is delivered as a single-use promo code locked to your account, valid for 90 days.</li>
-    <li>Only the canonical reporter of a unique bug is eligible (if your report was marked a duplicate of someone else's, the credit goes to the original reporter — but you'll automatically be notified when the issue is fixed).</li>
-    <li>For feature requests, all users who requested the same feature are eligible when it ships.</li>
-    <li>Account must be in good standing.</li>
-    <li>We reserve the right to skip a category if a month doesn't produce any qualifying submissions.</li>
-  </ul>
+      <h2>How to submit</h2>
+      <ol>
+        <li>From any screen, open the <strong>Support</strong> page.</li>
+        <li>Click <strong>+ New Ticket</strong>.</li>
+        <li>Pick <strong>Bug Report</strong> or <strong>Feature Request</strong> from the type dropdown.</li>
+        <li>Describe what happened. Adding screenshots or a short screen recording (desktop only) makes the report dramatically more useful.</li>
+        <li>Submit. That's it — you're in the running for that month.</li>
+      </ol>
 
-  <div class="signoff">
-    Thank you for being part of this. Feedback like yours is the reason My Care Companion gets to be a thoughtful, careful product instead of a generic one.
-    <br><br>
-    — The My Care Companion team
+      <h2>What if I don't get picked?</h2>
+      <p>If we receive a real bug report or thoughtful feature request and it doesn't make the top 5 that month, you'll still hear back from us — usually a quick canned message thanking you for the time. Your submission isn't ignored; we just couldn't credit everyone, and we wanted you to know it landed.</p>
+
+      <h2>Fine print</h2>
+      <ul>
+        <li>The free month is delivered as a single-use promo code locked to your account, valid for 90 days.</li>
+        <li>Only the canonical reporter of a unique bug is eligible (if your report was marked a duplicate of someone else's, the credit goes to the original reporter — but you'll automatically be notified when the issue is fixed).</li>
+        <li>For feature requests, all users who requested the same feature are eligible when it ships.</li>
+        <li>Account must be in good standing.</li>
+        <li>We reserve the right to skip a category if a month doesn't produce any qualifying submissions.</li>
+      </ul>
+    </div>
+
+    <div class="mt-10 pt-6 border-t border-stone-200/70 text-stone-500 text-sm">
+      Thank you for being part of this. Feedback like yours is the reason My Care Companion gets to be a thoughtful, careful product instead of a generic one.
+      <br><br>
+      — The My Care Companion team
+    </div>
   </div>
 </main>
+
 </body>
 </html>
