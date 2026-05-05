@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 
 	"carecompanion/internal/models"
 )
@@ -150,6 +151,7 @@ type AdminRepository interface {
 	UpdateTicketStatus(ctx context.Context, id uuid.UUID, status string) error
 	AssignTicket(ctx context.Context, ticketID, assigneeID uuid.UUID) error
 	ResolveTicket(ctx context.Context, ticketID, resolverID uuid.UUID) error
+	DeleteTickets(ctx context.Context, ids []uuid.UUID) (int64, error)
 	GetTicketMessages(ctx context.Context, ticketID uuid.UUID) ([]TicketMessage, error)
 	AddTicketMessage(ctx context.Context, ticketID, senderID uuid.UUID, message string, isInternal bool) error
 
@@ -573,6 +575,28 @@ func (r *adminRepo) ResolveTicket(ctx context.Context, ticketID, resolverID uuid
 	query := `UPDATE support_tickets SET status = 'resolved', resolved_at = NOW(), resolved_by = $2, updated_at = NOW() WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, ticketID, resolverID)
 	return err
+}
+
+// DeleteTickets removes the given tickets. ticket_messages and
+// ticket_attachments cascade automatically; error_logs / roadmap_items /
+// bounty_awards / sibling-duplicate references are SET NULL by FK rules.
+// Returns the number of rows actually deleted (caller can compare to len(ids)).
+func (r *adminRepo) DeleteTickets(ctx context.Context, ids []uuid.UUID) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	idStrs := make([]string, len(ids))
+	for i, id := range ids {
+		idStrs[i] = id.String()
+	}
+	res, err := r.db.ExecContext(ctx,
+		`DELETE FROM support_tickets WHERE id = ANY($1::uuid[])`,
+		pq.Array(idStrs),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 func (r *adminRepo) GetTicketMessages(ctx context.Context, ticketID uuid.UUID) ([]TicketMessage, error) {

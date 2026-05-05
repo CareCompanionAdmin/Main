@@ -458,6 +458,68 @@ func (h *Handler) ResolveTicket(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"success": true}`))
 }
 
+type DeleteTicketsRequest struct {
+	IDs []string `json:"ids"`
+}
+
+// DeleteTickets handles DELETE /api/admin/support/tickets — bulk-removes
+// the given tickets. Each id is also routed through the attachment service
+// so S3 objects get cleaned up; ticket_messages and ticket_attachments rows
+// cascade automatically. Audit-logged with the count + ids for forensics.
+func (h *Handler) DeleteTickets(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req DeleteTicketsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	if len(req.IDs) == 0 {
+		http.Error(w, "ids must be a non-empty array", http.StatusBadRequest)
+		return
+	}
+	if len(req.IDs) > 200 {
+		http.Error(w, "Refusing to delete more than 200 tickets in one request", http.StatusBadRequest)
+		return
+	}
+
+	ids := make([]uuid.UUID, 0, len(req.IDs))
+	for _, s := range req.IDs {
+		id, err := uuid.Parse(s)
+		if err != nil {
+			http.Error(w, "Invalid ticket ID: "+s, http.StatusBadRequest)
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	// Storage cleanup first — once the ticket row is gone the attachment
+	// rows are also gone (CASCADE), and we'd have no path to the S3 objects.
+	if h.attachService != nil {
+		for _, id := range ids {
+			h.attachService.DeleteAllForTicket(ctx, id)
+		}
+	}
+
+	deleted, err := h.adminRepo.DeleteTickets(ctx, ids)
+	if err != nil {
+		http.Error(w, "Failed to delete tickets: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	claims := middleware.GetAuthClaims(ctx)
+	h.logAction(r, "bulk_delete_tickets", "ticket", claims.UserID, map[string]interface{}{
+		"requested": len(ids),
+		"deleted":   deleted,
+		"ids":       req.IDs,
+	})
+
+	respondJSON(w, map[string]interface{}{
+		"requested": len(ids),
+		"deleted":   deleted,
+	})
+}
+
 func (h *Handler) GetTicketMessages(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id, err := uuid.Parse(chi.URLParam(r, "id"))

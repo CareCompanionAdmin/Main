@@ -20,10 +20,34 @@
     </div>
 </div>
 
+{{$canBulkDelete := eq .CurrentUser.SystemRole "super_admin"}}
+
+{{if $canBulkDelete}}
+<!-- Bulk action bar — super-admin only; visible once at least one ticket is selected. -->
+<div id="bulkBar" class="hidden mb-4 flex items-center justify-between bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+    <div class="text-sm text-red-800">
+        <span id="bulkCount" class="font-semibold">0</span> ticket(s) selected
+    </div>
+    <div class="flex items-center space-x-2">
+        <button type="button" onclick="clearBulkSelection()" class="px-3 py-1.5 text-sm bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
+            Clear
+        </button>
+        <button type="button" onclick="bulkDeleteSelected()" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+            Delete selected
+        </button>
+    </div>
+</div>
+{{end}}
+
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>
+                {{if $canBulkDelete}}
+                <th class="px-4 py-3 text-left">
+                    <input type="checkbox" id="selectAllTickets" onclick="toggleSelectAll(event)" class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500" aria-label="Select all tickets">
+                </th>
+                {{end}}
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
@@ -38,6 +62,11 @@
         <tbody class="bg-white divide-y divide-gray-200">
             {{range .Data.tickets}}
             <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='/admin/tickets/{{.ID}}'">
+                {{if $canBulkDelete}}
+                <td class="px-4 py-4 whitespace-nowrap" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="ticket-checkbox h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500" data-id="{{.ID}}" onchange="updateBulkBar()" aria-label="Select ticket {{slice .ID.String 0 8}}">
+                </td>
+                {{end}}
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{slice .ID.String 0 8}}...</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900">{{.Subject}}</div>
@@ -82,7 +111,7 @@
             </tr>
             {{else}}
             <tr>
-                <td colspan="9" class="px-6 py-4 text-center text-gray-500">No tickets found</td>
+                <td colspan="{{if $canBulkDelete}}10{{else}}9{{end}}" class="px-6 py-4 text-center text-gray-500">No tickets found</td>
             </tr>
             {{end}}
         </tbody>
@@ -107,5 +136,86 @@ function filterTickets() {
     if (s) document.getElementById('statusFilter').value = s;
     if (t) document.getElementById('typeFilter').value = t;
 })();
+
+// --- Bulk select / delete (super-admin only; helpers no-op when the
+// header checkbox isn't rendered) -------------------------------------------
+
+function selectedTicketIds() {
+    return Array.from(document.querySelectorAll('.ticket-checkbox'))
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.id);
+}
+
+function updateBulkBar() {
+    const bar = document.getElementById('bulkBar');
+    if (!bar) return; // non-super-admins don't get the bulk UI
+    const ids = selectedTicketIds();
+    const count = document.getElementById('bulkCount');
+    count.textContent = ids.length;
+    bar.classList.toggle('hidden', ids.length === 0);
+
+    // Keep the header checkbox visually in sync — checked when all rows are
+    // selected, indeterminate when only some are.
+    const all = document.querySelectorAll('.ticket-checkbox');
+    const selectAll = document.getElementById('selectAllTickets');
+    if (!selectAll) return;
+    if (all.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+        return;
+    }
+    if (ids.length === 0) {
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
+    } else if (ids.length === all.length) {
+        selectAll.checked = true;
+        selectAll.indeterminate = false;
+    } else {
+        selectAll.checked = false;
+        selectAll.indeterminate = true;
+    }
+}
+
+function toggleSelectAll(e) {
+    const checked = e.target.checked;
+    document.querySelectorAll('.ticket-checkbox').forEach(cb => { cb.checked = checked; });
+    updateBulkBar();
+}
+
+function clearBulkSelection() {
+    document.querySelectorAll('.ticket-checkbox').forEach(cb => { cb.checked = false; });
+    updateBulkBar();
+}
+
+async function bulkDeleteSelected() {
+    const ids = selectedTicketIds();
+    if (ids.length === 0) return;
+    const msg = `Permanently delete ${ids.length} ticket${ids.length === 1 ? '' : 's'}? This also removes all messages and attachments. This cannot be undone.`;
+    if (!confirm(msg)) return;
+
+    try {
+        const resp = await fetch('/api/admin/super/tickets', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ ids })
+        });
+        if (!resp.ok) {
+            const text = await resp.text();
+            alert(`Delete failed (${resp.status}): ${text}`);
+            return;
+        }
+        const data = await resp.json();
+        // Reload to refresh the list — keeps the page logic simple and shows
+        // the actual updated counts/filters.
+        window.location.reload();
+        // Best-effort UX touch in case reload is slow.
+        if (data && typeof data.deleted === 'number') {
+            console.log(`Deleted ${data.deleted} ticket(s).`);
+        }
+    } catch (err) {
+        alert('Delete failed: ' + (err.message || err));
+    }
+}
 </script>
 {{end}}

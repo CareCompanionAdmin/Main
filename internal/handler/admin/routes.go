@@ -157,6 +157,9 @@ func (h *Handler) Routes() chi.Router {
 		r.Post("/roadmap/{id}/mark-live-prod", h.MarkRoadmapLiveProd)
 		// Promotion endpoint lives under super because it triggers a ticket close + email.
 		r.Post("/tickets/{id}/add-to-roadmap", h.AddRoadmapFromTicket)
+
+		// Bulk-delete tickets — destructive, super-admin only.
+		r.Delete("/tickets", h.DeleteTickets)
 	})
 
 	// Support routes
