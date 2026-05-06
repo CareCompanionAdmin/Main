@@ -3,7 +3,7 @@
   "appName": "MyCareCompanion",
   "webDir": "www",
   "server": {
-    "url": "https://www.mycarecompanion.net",
+    "url": "https://www.mycarecompanion.net/dashboard",
     "allowNavigation": [
       "www.mycarecompanion.net",
       "mycarecompanion.net",
