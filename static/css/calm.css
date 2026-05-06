@@ -175,8 +175,13 @@ body.calm-bg {
 .htmx-request .htmx-indicator { display: inline; }
 .htmx-request.htmx-indicator { display: inline; }
 
-/* Capacitor safe-area handling (mirrors input.css) -------- */
-body.capacitor nav.app-nav {
+/* Safe-area handling — applies to every shell, not just Capacitor.
+   env(safe-area-inset-*) returns 0 on regular mobile Safari (harmless),
+   and the real inset on Capacitor, on PWA / Add-to-Home-Screen mode, and
+   on any future webview shell. Without this, the top of the nav (brand,
+   chat, hamburger) was tucking under the iPhone status bar / Dynamic
+   Island in any context that extended the page under the safe area. */
+nav.app-nav {
   padding-top: env(safe-area-inset-top);
   background-clip: padding-box;
 }
