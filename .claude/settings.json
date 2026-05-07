@@ -1,0 +1,14 @@
+{
+  "enabledPlugins": {
+    "gsd@gsd-plugin": false
+  },
+  "permissions": {
+    "deny": [
+      "Read(/home/carecomp/temp-terminal/**)",
+      "Edit(/home/carecomp/temp-terminal/**)",
+      "Write(/home/carecomp/temp-terminal/**)",
+      "Bash(* /home/carecomp/temp-terminal*)",
+      "Bash(*cd /home/carecomp/temp-terminal*)"
+    ]
+  }
+}

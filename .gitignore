@@ -83,8 +83,16 @@ testdata.sql
 
 # Claude Code (keep commands for shared slash commands)
 .claude/settings.*
+!.claude/settings.json
 .claude/plans/
 .claude/todos/
+.claude/*.lock
+
+# GSD plugin state files (defensive — plugin is disabled for this project,
+# but keep these excluded so any accidental cross-project invocation can't
+# leak workflow state into the repo)
+.planning/
+.gsd/
 
 # Go workspace
 go.work

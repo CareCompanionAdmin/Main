@@ -1,3 +1,28 @@
+# 🟢 PROJECT SCOPE: CareCompanion
+
+**This is the CareCompanion project.** All file reads, searches, edits,
+and bash commands MUST stay within `/home/carecomp/carecompanion/`,
+EXCEPT for shared infrastructure noted below. Do not access the
+following sibling projects from this session:
+
+- `/home/carecomp/temp-terminal/` (temp-terminal — separate project)
+
+Shared infrastructure that IS allowed (cross-cutting, not a project):
+
+- `/home/carecomp/claude-memory/` — canonical memory dir + sync scripts.
+  Memory file edits (e.g., updating CareCompanion-related memory) and
+  running the sync hooks are legitimate from this session.
+
+Remote projects (markettrader, stofleapps, legal-assistant,
+marketing-assistant) live on Lightsail and are out of scope here. If a
+task references one of them, STOP and instruct the user to relaunch
+Claude Code in that project's working tree (typically via
+`ssh stofleapps`).
+
+If unsure whether a path or command is in-scope, ask before proceeding.
+
+---
+
 # CareCompanion Project
 
 ## Overview
@@ -130,3 +155,18 @@ Admin templates are in `templates/admin/`. The layout is `layout.html` and conte
 
 ## Documentation
 Additional documentation files are in `/home/carecomp/carecompanion/docs/`
+
+---
+
+## Plugin posture for this project
+
+GSD (`gsd@gsd-plugin`) is **disabled for CareCompanion** via this project's
+`.claude/settings.json`. The framework's hook footprint (PreToolUse on Edit
+and Write, PostToolUse on most tools) adds friction in a near-launch
+codebase where every edit must be predictable.
+
+Never reach for `/gsd:*` commands when working in this directory. Use
+`superpowers:writing-plans` (in-session) or inline planning instead.
+
+State files `.planning/` and `.gsd/` are gitignored as belt-and-suspenders
+against accidental cross-project state bleed.
