@@ -109,12 +109,12 @@
                 <p class="text-sm text-stone-500 mt-1">Whatever the routine is, it's working. Worth holding onto.</p>
             </div>
         </div>
-        {{else if ge $ws.MedicationAdherence 0.9}}
+        {{else if ge $ws.MedicationAdherence 90.0}}
         <div class="glass ring-soft rounded-3xl p-5 flex items-start gap-4">
             <div class="text-3xl">💊</div>
             <div class="flex-1 min-w-0">
                 <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold">Today's bright spot</p>
-                <p class="display text-xl text-stone-800 mt-0.5">Meds steady all week — {{printf "%.0f" (mul $ws.MedicationAdherence 100.0)}}% on time.</p>
+                <p class="display text-xl text-stone-800 mt-0.5">Meds steady all week — {{printf "%.0f" $ws.MedicationAdherence}}% on time.</p>
                 <p class="text-sm text-stone-500 mt-1">Consistency matters more than perfection. Quietly proud of you.</p>
             </div>
         </div>
