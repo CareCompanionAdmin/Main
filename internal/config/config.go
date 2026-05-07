@@ -166,8 +166,12 @@ func Load() (*Config, error) {
 			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		JWT: JWTConfig{
-			Secret:        getEnv("JWT_SECRET", ""),
-			AccessExpiry:  getEnvDuration("JWT_ACCESS_EXPIRY", 15*time.Minute),
+			Secret: getEnv("JWT_SECRET", ""),
+			// Access token TTL: long-ish so the silent-refresh flow in
+			// session_guard.js rarely has to fire. Refresh tokens (7d)
+			// keep "remember me" behavior. Bumped from 15m → 8h on
+			// 2026-05-07 to fix Joe Steinmetz's mid-input logout.
+			AccessExpiry:  getEnvDuration("JWT_ACCESS_EXPIRY", 8*time.Hour),
 			RefreshExpiry: getEnvDuration("JWT_REFRESH_EXPIRY", 7*24*time.Hour),
 		},
 		Correlation: CorrelationConfig{
