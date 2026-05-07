@@ -83,6 +83,13 @@ type DatabaseConfig struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
+
+	// SupportDSN, when non-empty, overrides where the support-ticket repos
+	// (admin / user-support / ticket-attachment) connect for support_tickets,
+	// ticket_messages, and ticket_attachments. The main DB is still used for
+	// every other table including users-lookup-for-denorm. When empty, the
+	// main DB is used for support too. Set on dev to share prod's tickets.
+	SupportDSN string
 }
 
 type RedisConfig struct {
@@ -150,6 +157,7 @@ func Load() (*Config, error) {
 			MaxOpenConns:    getEnvInt("DB_MAX_OPEN_CONNS", 25),
 			MaxIdleConns:    getEnvInt("DB_MAX_IDLE_CONNS", 5),
 			ConnMaxLifetime: getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute),
+			SupportDSN:      getEnv("SUPPORT_DB_DSN", ""),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "172.28.0.30"),

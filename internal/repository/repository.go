@@ -359,8 +359,15 @@ type Repositories struct {
 	BountyAward      BountyAwardRepository      // Monthly top-5+5 bounty rewards
 }
 
-// NewRepositories creates all repository implementations
-func NewRepositories(db *sql.DB) *Repositories {
+// NewRepositories creates all repository implementations.
+//
+// supportDB is the connection pool for the three shared support-ticket
+// tables (support_tickets, ticket_messages, ticket_attachments). Pass the
+// same handle as `db` for environments that don't share tickets across
+// envs; the admin/user-support/ticket-attachment repos route those three
+// tables to supportDB while continuing to use db for everything else
+// (users lookup for denorm, audit log, etc.).
+func NewRepositories(db, supportDB *sql.DB) *Repositories {
 	return &Repositories{
 		User:         NewUserRepo(db),
 		Family:       NewFamilyRepo(db),
@@ -373,8 +380,8 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Cohort:       NewCohortRepo(db),
 		Chat:         NewChatRepo(db),
 		Transparency: NewTransparencyRepository(db),
-		Admin:        NewAdminRepo(db),
-		UserSupport:  NewUserSupportRepo(db),
+		Admin:        NewAdminRepo(db, supportDB),
+		UserSupport:  NewUserSupportRepo(db, supportDB),
 		Marketing:    NewMarketingRepo(db),
 		DevMode:      NewDevModeRepo(db),
 		Billing:      NewBillingRepo(db),
@@ -382,7 +389,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 		Report:       NewReportRepo(db),
 		Search:       NewSearchRepo(db),
 		Roadmap:      NewRoadmapRepo(db),
-		TicketAttachment: NewTicketAttachmentRepo(db),
+		TicketAttachment: NewTicketAttachmentRepo(db, supportDB),
 		BetaInvitation:   NewBetaInvitationRepo(db),
 		BountyAward:      NewBountyAwardRepo(db),
 	}

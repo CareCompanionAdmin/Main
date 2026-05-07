@@ -45,6 +45,28 @@ func main() {
 	defer db.Close()
 	log.Println("Connected to PostgreSQL")
 
+	// Optional: a separate connection pool for the support-ticket tables.
+	// When SUPPORT_DB_DSN is set, the admin/user-support/ticket-attachment
+	// repos read+write tickets through this pool while still using the main
+	// pool for everything else (users lookup, audit log, etc.). This is how
+	// dev shares prod's ticket DB. When unset (the prod default), the
+	// support pool is the same handle as the main pool — no behavior change.
+	supportDB := db.DB
+	if cfg.Database.SupportDSN != "" {
+		s, err := database.NewWithDSN(
+			cfg.Database.SupportDSN,
+			cfg.Database.MaxOpenConns,
+			cfg.Database.MaxIdleConns,
+			cfg.Database.ConnMaxLifetime,
+		)
+		if err != nil {
+			log.Fatalf("Failed to connect to support database: %v", err)
+		}
+		defer s.Close()
+		supportDB = s.DB
+		log.Println("Connected to separate support PostgreSQL (SUPPORT_DB_DSN set)")
+	}
+
 	// Apply any pending DB migrations before anything else touches the schema.
 	// Fatal on failure: better to fail fast than serve traffic against a
 	// half-migrated DB. ASG keeps the previous instance up if the new one
@@ -65,7 +87,7 @@ func main() {
 	log.Println("Connected to Redis")
 
 	// Initialize repositories
-	repos := repository.NewRepositories(db.DB)
+	repos := repository.NewRepositories(db.DB, supportDB)
 
 	// Initialize services
 	services := service.NewServices(repos, redis, cfg, db.DB)

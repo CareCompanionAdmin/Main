@@ -220,12 +220,34 @@ type AdminRepository interface {
 
 // adminRepo implements AdminRepository
 type adminRepo struct {
-	db *sql.DB
+	db        *sql.DB // main DB — used for everything except support tables
+	supportDB *sql.DB // support_tickets / ticket_messages / ticket_attachments
 }
 
-// NewAdminRepo creates a new admin repository
-func NewAdminRepo(db *sql.DB) AdminRepository {
-	return &adminRepo{db: db}
+// NewAdminRepo creates a new admin repository.
+// supportDB may be the same handle as db (default) or a separate pool when
+// dev is configured to share prod's support tickets via SUPPORT_DB_DSN.
+func NewAdminRepo(db, supportDB *sql.DB) AdminRepository {
+	if supportDB == nil {
+		supportDB = db
+	}
+	return &adminRepo{db: db, supportDB: supportDB}
+}
+
+// lookupUserDenorm fetches a user's email + name from the LOCAL users table
+// for denormalizing into a support-ticket row. The lookup always hits r.db
+// (not r.supportDB), so on dev the denorm reflects the dev-side identity of
+// the current actor — that's the right answer for "who created this ticket"
+// when the row is then visible from prod via the shared support DB.
+func (r *adminRepo) lookupUserDenorm(ctx context.Context, userID uuid.UUID) (email, firstName, lastName string) {
+	if userID == uuid.Nil {
+		return "", "", ""
+	}
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COALESCE(email,''), COALESCE(first_name,''), COALESCE(last_name,'') FROM users WHERE id = $1",
+		userID,
+	).Scan(&email, &firstName, &lastName)
+	return
 }
 
 // ============================================================================
@@ -443,16 +465,19 @@ func (r *adminRepo) CreateTicket(ctx context.Context, userID uuid.UUID, subject,
 	if ticketType == "" {
 		ticketType = "general"
 	}
+	// Resolve denorm fields from the LOCAL users table so cross-env viewers
+	// can render the original creator without joining a foreign users table.
+	email, firstName, lastName := r.lookupUserDenorm(ctx, userID)
 	query := `
-		INSERT INTO support_tickets (id, user_id, subject, description, priority, type, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+		INSERT INTO support_tickets (id, user_id, subject, description, priority, type, created_at, updated_at, user_email, user_first_name, user_last_name)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8, $9, $10)
 		RETURNING id
 	`
 	var userIDPtr *uuid.UUID
 	if userID != uuid.Nil {
 		userIDPtr = &userID
 	}
-	err := r.db.QueryRowContext(ctx, query, id, userIDPtr, subject, description, priority, ticketType, now).Scan(&id)
+	err := r.supportDB.QueryRowContext(ctx, query, id, userIDPtr, subject, description, priority, ticketType, now, email, firstName, lastName).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +505,7 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 
 	countSQL := "SELECT COUNT(*) FROM support_tickets" + whereClause
 	var total int
-	if err := r.db.QueryRowContext(ctx, countSQL, filterArgs...).Scan(&total); err != nil {
+	if err := r.supportDB.QueryRowContext(ctx, countSQL, filterArgs...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -498,11 +523,17 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 	args = append(args, limit, offset)
 	limitPlaceholder := fmt.Sprintf("$%d", len(args)-1)
 	offsetPlaceholder := fmt.Sprintf("$%d", len(args))
+	// COALESCE chain prefers the denorm column (post-migration 00027), then
+	// the JOIN result for legacy rows, then empty. The JOIN runs against the
+	// support DB's users table — when dev shares prod's tickets, that's
+	// prod's users and only resolves users who exist on prod. Either way the
+	// denorm column carries the correct email regardless of which env the
+	// row originated from.
 	query := `
 		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
-		       COALESCE(u.email, '') as user_email,
+		       COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
 		       (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
 		FROM support_tickets t
@@ -510,7 +541,7 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 		LEFT JOIN users a ON t.assigned_to = a.id` + selectWhere +
 		" ORDER BY t.created_at DESC LIMIT " + limitPlaceholder + " OFFSET " + offsetPlaceholder
 
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	rows, err := r.supportDB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -535,7 +566,7 @@ func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTi
 		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
-		       COALESCE(u.email, '') as user_email,
+		       COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
 		       COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
 		       (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
 		FROM support_tickets t
@@ -544,7 +575,7 @@ func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTi
 		WHERE t.id = $1
 	`
 	t := &SupportTicket{}
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.supportDB.QueryRowContext(ctx, query, id).Scan(
 		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 		&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 		&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
@@ -561,19 +592,19 @@ func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTi
 
 func (r *adminRepo) UpdateTicketStatus(ctx context.Context, id uuid.UUID, status string) error {
 	query := `UPDATE support_tickets SET status = $2, updated_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id, status)
+	_, err := r.supportDB.ExecContext(ctx, query, id, status)
 	return err
 }
 
 func (r *adminRepo) AssignTicket(ctx context.Context, ticketID, assigneeID uuid.UUID) error {
 	query := `UPDATE support_tickets SET assigned_to = $2, status = 'in_progress', updated_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, ticketID, assigneeID)
+	_, err := r.supportDB.ExecContext(ctx, query, ticketID, assigneeID)
 	return err
 }
 
 func (r *adminRepo) ResolveTicket(ctx context.Context, ticketID, resolverID uuid.UUID) error {
 	query := `UPDATE support_tickets SET status = 'resolved', resolved_at = NOW(), resolved_by = $2, updated_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, ticketID, resolverID)
+	_, err := r.supportDB.ExecContext(ctx, query, ticketID, resolverID)
 	return err
 }
 
@@ -589,7 +620,7 @@ func (r *adminRepo) DeleteTickets(ctx context.Context, ids []uuid.UUID) (int64, 
 	for i, id := range ids {
 		idStrs[i] = id.String()
 	}
-	res, err := r.db.ExecContext(ctx,
+	res, err := r.supportDB.ExecContext(ctx,
 		`DELETE FROM support_tickets WHERE id = ANY($1::uuid[])`,
 		pq.Array(idStrs),
 	)
@@ -602,14 +633,16 @@ func (r *adminRepo) DeleteTickets(ctx context.Context, ids []uuid.UUID) (int64, 
 func (r *adminRepo) GetTicketMessages(ctx context.Context, ticketID uuid.UUID) ([]TicketMessage, error) {
 	query := `
 		SELECT m.id, m.ticket_id, m.sender_id, m.message, m.is_internal, m.created_at,
-		       COALESCE(u.first_name || ' ' || u.last_name, '') as sender_name,
-		       COALESCE(u.email, '') as sender_email
+		       COALESCE(NULLIF(TRIM(BOTH ' ' FROM (m.sender_first_name || ' ' || m.sender_last_name)), ''),
+		                NULLIF(TRIM(BOTH ' ' FROM (u.first_name || ' ' || u.last_name)), ''),
+		                '') as sender_name,
+		       COALESCE(NULLIF(m.sender_email, ''), u.email, '') as sender_email
 		FROM ticket_messages m
 		LEFT JOIN users u ON m.sender_id = u.id
 		WHERE m.ticket_id = $1
 		ORDER BY m.created_at ASC
 	`
-	rows, err := r.db.QueryContext(ctx, query, ticketID)
+	rows, err := r.supportDB.QueryContext(ctx, query, ticketID)
 	if err != nil {
 		return nil, err
 	}
@@ -629,13 +662,14 @@ func (r *adminRepo) GetTicketMessages(ctx context.Context, ticketID uuid.UUID) (
 
 func (r *adminRepo) AddTicketMessage(ctx context.Context, ticketID, senderID uuid.UUID, message string, isInternal bool) error {
 	id := uuid.New()
-	query := `INSERT INTO ticket_messages (id, ticket_id, sender_id, message, is_internal, created_at) VALUES ($1, $2, $3, $4, $5, NOW())`
-	_, err := r.db.ExecContext(ctx, query, id, ticketID, senderID, message, isInternal)
+	email, firstName, lastName := r.lookupUserDenorm(ctx, senderID)
+	query := `INSERT INTO ticket_messages (id, ticket_id, sender_id, message, is_internal, created_at, sender_email, sender_first_name, sender_last_name) VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8)`
+	_, err := r.supportDB.ExecContext(ctx, query, id, ticketID, senderID, message, isInternal, email, firstName, lastName)
 	if err != nil {
 		return err
 	}
 	// Update ticket updated_at
-	_, err = r.db.ExecContext(ctx, "UPDATE support_tickets SET updated_at = NOW() WHERE id = $1", ticketID)
+	_, err = r.supportDB.ExecContext(ctx, "UPDATE support_tickets SET updated_at = NOW() WHERE id = $1", ticketID)
 	return err
 }
 
@@ -646,7 +680,7 @@ func (r *adminRepo) SetTicketDuplicate(ctx context.Context, ticketID uuid.UUID, 
 	if dupTicketID != nil && dupRoadmapID != nil {
 		return fmt.Errorf("ticket can be a duplicate of either a ticket or a roadmap item, not both")
 	}
-	_, err := r.db.ExecContext(ctx, `
+	_, err := r.supportDB.ExecContext(ctx, `
         UPDATE support_tickets
         SET duplicate_of_ticket_id  = $2,
             duplicate_of_roadmap_id = $3,
@@ -675,11 +709,11 @@ func (r *adminRepo) SearchTicketsByText(ctx context.Context, query string, limit
 		limit = 10
 	}
 	pattern := "%" + strings.ToLower(query) + "%"
-	rows, err := r.db.QueryContext(ctx, `
+	rows, err := r.supportDB.QueryContext(ctx, `
         SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
                t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
                t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
-               COALESCE(u.email, '') as user_email,
+               COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
                COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
                (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
         FROM support_tickets t
@@ -703,7 +737,7 @@ func (r *adminRepo) queryTicketsBy(ctx context.Context, whereClause string, arg 
         SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
                t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
                t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
-               COALESCE(u.email, '') as user_email,
+               COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
                COALESCE(a.first_name || ' ' || a.last_name, '') as assignee_name,
                (SELECT COUNT(*) FROM support_tickets d WHERE d.duplicate_of_ticket_id = t.id) AS duplicate_count
         FROM support_tickets t
@@ -712,7 +746,7 @@ func (r *adminRepo) queryTicketsBy(ctx context.Context, whereClause string, arg 
         WHERE ` + whereClause + `
         ORDER BY t.created_at DESC
     `
-	rows, err := r.db.QueryContext(ctx, q, arg)
+	rows, err := r.supportDB.QueryContext(ctx, q, arg)
 	if err != nil {
 		return nil, err
 	}
@@ -1039,7 +1073,7 @@ func (r *adminRepo) GetAuditLog(ctx context.Context, adminID uuid.UUID, action s
 func (r *adminRepo) GetOpenTicketCount(ctx context.Context) (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM support_tickets WHERE status = 'open'`
-	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	err := r.supportDB.QueryRowContext(ctx, query).Scan(&count)
 	return count, err
 }
 
