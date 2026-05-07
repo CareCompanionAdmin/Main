@@ -65,7 +65,9 @@
 </button>
 
 <!-- Mobile Mascot (shown only on mobile) -->
-<div id="helpMascotMobile" class="md:hidden fixed right-4 bottom-20 z-40">
+<!-- Positioned high enough to clear the compose FAB at bottom-6 on pages
+     that render it (child_dashboard, daily_logs, etc.) -->
+<div id="helpMascotMobile" class="md:hidden fixed right-4 bottom-28 z-40">
     <!-- Dismiss button -->
     <button onclick="event.stopPropagation(); dismissMobileMascot();" class="absolute -top-2 -left-2 w-6 h-6 bg-stone-700 hover:bg-stone-600 rounded-full flex items-center justify-center shadow-sm z-50" title="Dismiss">
         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,6 +81,15 @@
         </svg>
     </button>
 </div>
+
+<!-- Mobile Collapsed Indicator: small pill in the right margin that brings
+     back the help button after dismiss. Mirrors the desktop pattern so the
+     help is never truly gone for the session. -->
+<button id="helpMascotMobileCollapsed" onclick="showMobileMascot()" class="hidden md:!hidden fixed right-0 top-1/3 bg-orange-600 hover:bg-orange-700 text-white px-2 py-3 rounded-l-lg shadow-lg z-40" title="Show Help">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+</button>
 
 <script>
 // Desktop mascot collapse/expand functionality
@@ -102,16 +113,26 @@ function expandMascot() {
     sessionStorage.removeItem('mascotCollapsed');
 }
 
-// Mobile mascot dismiss functionality
+// Mobile mascot dismiss functionality. Hides the floating help button and
+// reveals a small right-margin pill that can bring it back. Without the pill
+// the user has no way to re-show help in the session — bug 538d8d09.
 function dismissMobileMascot() {
     const mascot = document.getElementById('helpMascotMobile');
-    mascot.classList.add('hidden');
+    const collapsed = document.getElementById('helpMascotMobileCollapsed');
+    if (mascot) mascot.classList.add('hidden');
+    if (collapsed) {
+        collapsed.classList.remove('hidden');
+        collapsed.classList.remove('md:!hidden');
+        collapsed.classList.add('md:hidden');
+    }
     sessionStorage.setItem('mobileMascotDismissed', 'true');
 }
 
 function showMobileMascot() {
     const mascot = document.getElementById('helpMascotMobile');
-    mascot.classList.remove('hidden');
+    const collapsed = document.getElementById('helpMascotMobileCollapsed');
+    if (mascot) mascot.classList.remove('hidden');
+    if (collapsed) collapsed.classList.add('hidden');
     sessionStorage.removeItem('mobileMascotDismissed');
 }
 
@@ -121,10 +142,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sessionStorage.getItem('mascotCollapsed') === 'true') {
         collapseMascot();
     }
-    // Mobile dismissed state
+    // Mobile dismissed state — restore both the hidden mascot AND the visible
+    // collapsed pill so the user can re-summon help.
     if (sessionStorage.getItem('mobileMascotDismissed') === 'true') {
         const mascot = document.getElementById('helpMascotMobile');
+        const collapsed = document.getElementById('helpMascotMobileCollapsed');
         if (mascot) mascot.classList.add('hidden');
+        if (collapsed) {
+            collapsed.classList.remove('hidden');
+            collapsed.classList.remove('md:!hidden');
+            collapsed.classList.add('md:hidden');
+        }
     }
 });
 </script>

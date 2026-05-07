@@ -102,10 +102,14 @@
         <div class="bg-white rounded-t-xl shadow-sm border border-b-0 p-4 no-print sticky top-0 z-10">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <button onclick="closeReport()" class="text-stone-400 hover:text-stone-600">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <!-- Labeled "Back" button — replaces the small unlabeled X
+                         that users couldn't find on mobile, leading them to
+                         force-quit the app to escape the reports view. -->
+                    <button onclick="closeReport()" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-full transition-colors" title="Back to report options">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        Back
                     </button>
-                    <h2 id="report-title" class="text-lg font-semibold text-stone-900"></h2>
+                    <h2 id="report-title" class="text-lg font-semibold text-stone-900 hidden sm:block"></h2>
                 </div>
                 <div id="report-actions" class="flex flex-wrap gap-2">
                     <button onclick="downloadReport()" class="px-4 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 text-sm font-medium flex items-center">

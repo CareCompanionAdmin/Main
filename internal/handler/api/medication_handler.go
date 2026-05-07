@@ -126,10 +126,14 @@ func (h *MedicationHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check for interactions with existing medications
+	// Check for interactions with existing medications. Bound the whole
+	// interaction-check phase to 5s so a slow / timing-out FDA API call can't
+	// hang the medication-create response. The medication is already saved
+	// at this point; interactions are best-effort metadata.
 	var interactions []service.InteractionWarning
 	if h.drugDBService != nil {
-		existingMeds, err := h.medService.GetByChildID(r.Context(), childID, true)
+		interactionCtx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		existingMeds, err := h.medService.GetByChildID(interactionCtx, childID, true)
 		if err == nil && len(existingMeds) > 0 {
 			// Build list of all medication names (excluding the one just added)
 			var medNames []string
@@ -142,7 +146,7 @@ func (h *MedicationHandler) Create(w http.ResponseWriter, r *http.Request) {
 			medNames = append(medNames, med.Name)
 
 			// Check for interactions
-			interactions, _ = h.drugDBService.CheckInteractions(r.Context(), medNames)
+			interactions, _ = h.drugDBService.CheckInteractions(interactionCtx, medNames)
 
 			// Filter to only show interactions involving the new medication
 			var relevantInteractions []service.InteractionWarning
@@ -153,6 +157,7 @@ func (h *MedicationHandler) Create(w http.ResponseWriter, r *http.Request) {
 			}
 			interactions = relevantInteractions
 		}
+		cancel()
 	}
 
 	response := MedicationCreateResponse{

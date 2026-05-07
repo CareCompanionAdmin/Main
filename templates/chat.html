@@ -673,7 +673,11 @@ document.getElementById('new-thread-form').addEventListener('submit', async func
         });
 
         if (response.ok) {
-            location.reload();
+            const newThread = await response.json();
+            // Navigate to /chat with the new thread auto-selected via query param
+            // (a plain location.reload() would land on the chat page with the new
+            // thread in the list but no thread selected, hiding the message input)
+            window.location.href = '/chat?thread=' + encodeURIComponent(newThread.id);
         } else {
             const err = await response.json();
             alert(err.error || 'Failed to create conversation');
@@ -684,6 +688,18 @@ document.getElementById('new-thread-form').addEventListener('submit', async func
         alert('An error occurred');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Conversation';
+    }
+});
+
+// Auto-select thread on page load when a ?thread=<id> query param is present.
+// Used after creating a new conversation so the user lands directly in their
+// new thread with the message input visible.
+window.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    const threadFromURL = params.get('thread');
+    if (threadFromURL) {
+        // Slight delay to let the thread list finish initial render.
+        setTimeout(function() { selectThread(threadFromURL); }, 50);
     }
 });
 
