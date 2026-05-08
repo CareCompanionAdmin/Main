@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"log"
 	"fmt"
 	"image/color"
 	"image/png"
+	"io"
+	"log"
 	"math"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -29,19 +29,17 @@ type ReportService struct {
 	logRepo    repository.LogRepository
 	childRepo  repository.ChildRepository
 	chatRepo   repository.ChatRepository
-	storageDir string
+	storage    BlobStorage
 }
 
 // NewReportService creates a new report service
-func NewReportService(reportRepo repository.ReportRepository, logRepo repository.LogRepository, childRepo repository.ChildRepository, chatRepo repository.ChatRepository, storageDir string) *ReportService {
-	dir := filepath.Join(storageDir, "reports")
-	os.MkdirAll(dir, 0755)
+func NewReportService(reportRepo repository.ReportRepository, logRepo repository.LogRepository, childRepo repository.ChildRepository, chatRepo repository.ChatRepository, storage BlobStorage) *ReportService {
 	return &ReportService{
 		reportRepo: reportRepo,
 		logRepo:    logRepo,
 		childRepo:  childRepo,
 		chatRepo:   chatRepo,
-		storageDir: dir,
+		storage:    storage,
 	}
 }
 
@@ -93,18 +91,19 @@ func (s *ReportService) GenerateReport(ctx context.Context, childID, familyID, u
 	chartData := s.aggregateChartData(logs, req.DataFilters, startDate, endDate)
 
 	// Generate PDF
-	filePath, fileSize, err := s.generatePDF(child, startDate, endDate, req.DataFilters, chartData, logs)
+	driver, storagePath, fileSize, err := s.generatePDF(ctx, report.ID, child, startDate, endDate, req.DataFilters, chartData, logs)
 	if err != nil {
 		s.reportRepo.UpdateError(ctx, report.ID, err.Error())
 		return nil, fmt.Errorf("failed to generate PDF: %w", err)
 	}
 
-	if err := s.reportRepo.UpdateStatus(ctx, report.ID, "completed", filePath, fileSize); err != nil {
+	if err := s.reportRepo.UpdateStatus(ctx, report.ID, "completed", driver, storagePath, fileSize); err != nil {
 		return nil, err
 	}
 
 	report.Status = "completed"
-	report.FilePath = models.NullString{NullString: sql.NullString{String: filePath, Valid: true}}
+	report.StorageDriver = models.NullString{NullString: sql.NullString{String: driver, Valid: true}}
+	report.StoragePath = models.NullString{NullString: sql.NullString{String: storagePath, Valid: true}}
 	sz := fileSize
 	report.FileSize = &sz
 	return report, nil
@@ -135,9 +134,21 @@ func (s *ReportService) GetViewData(ctx context.Context, report *models.Report) 
 	}, nil
 }
 
-// GetFilePath returns the full file path for a report
+// OpenPDF returns a reader for the report's PDF, picking the driver from
+// the row. Caller must close the reader.
+func (s *ReportService) OpenPDF(ctx context.Context, report *models.Report) (io.ReadCloser, error) {
+	if !report.StoragePath.Valid {
+		return nil, fmt.Errorf("report has no stored PDF")
+	}
+	return s.storage.Open(ctx, report.StoragePath.String)
+}
+
+// GetFilePath is retained as a transitional shim so handlers that haven't
+// been migrated to OpenPDF still compile. It returns the legacy file_path
+// only if it's set on the row; new rows will return empty string. Task 8
+// removes the last caller.
 func (s *ReportService) GetFilePath(report *models.Report) string {
-	if !report.FilePath.Valid {
+	if report == nil || !report.FilePath.Valid {
 		return ""
 	}
 	return report.FilePath.String
@@ -155,6 +166,15 @@ func (s *ReportService) GetByID(ctx context.Context, id uuid.UUID) (*models.Repo
 
 // DeleteReport deletes a report record
 func (s *ReportService) DeleteReport(ctx context.Context, id uuid.UUID) error {
+	report, err := s.reportRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if report != nil && report.StoragePath.Valid {
+		if err := s.storage.Delete(ctx, report.StoragePath.String); err != nil {
+			log.Printf("[REPORT] storage delete failed for %s: %v", id, err)
+		}
+	}
 	return s.reportRepo.Delete(ctx, id)
 }
 
@@ -495,7 +515,7 @@ func renderChartImage(series []models.ChartDataPoint, title string, width, heigh
 }
 
 // generatePDF creates a PDF report with charts and detail tables
-func (s *ReportService) generatePDF(child *models.Child, startDate, endDate time.Time, filters []string, chartData map[string][]models.ChartDataPoint, logs *models.DailyLogPage) (string, int64, error) {
+func (s *ReportService) generatePDF(ctx context.Context, reportID uuid.UUID, child *models.Child, startDate, endDate time.Time, filters []string, chartData map[string][]models.ChartDataPoint, logs *models.DailyLogPage) (driver string, storagePath string, size int64, err error) {
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetAutoPageBreak(true, 20)
 
@@ -666,19 +686,35 @@ func (s *ReportService) generatePDF(child *models.Child, startDate, endDate time
 		})
 	}
 
-	// Save PDF
-	filename := fmt.Sprintf("%s.pdf", uuid.New().String())
-	filePath := filepath.Join(s.storageDir, filename)
-	if err := pdf.OutputFileAndClose(filePath); err != nil {
-		return "", 0, fmt.Errorf("failed to write PDF: %w", err)
-	}
-
-	info, err := os.Stat(filePath)
+	// Render to a temp file, then hand the bytes to BlobStorage. Temp is
+	// removed on the way out — never persisted on the EC2 instance.
+	tmp, err := os.CreateTemp("", "report-*.pdf")
 	if err != nil {
-		return "", 0, err
+		return "", "", 0, fmt.Errorf("create temp PDF: %w", err)
 	}
+	tmpPath := tmp.Name()
+	defer func() {
+		tmp.Close()
+		os.Remove(tmpPath)
+	}()
+	if err := pdf.Output(tmp); err != nil {
+		return "", "", 0, fmt.Errorf("write PDF: %w", err)
+	}
+	if _, err := tmp.Seek(0, io.SeekStart); err != nil {
+		return "", "", 0, fmt.Errorf("seek temp PDF: %w", err)
+	}
+	info, err := tmp.Stat()
+	if err != nil {
+		return "", "", 0, err
+	}
+	size = info.Size()
 
-	return filePath, info.Size(), nil
+	filename := fmt.Sprintf("%s.pdf", uuid.New().String())
+	storagePath, _, err = s.storage.Save(ctx, reportID.String(), filename, "application/pdf", tmp)
+	if err != nil {
+		return "", "", 0, fmt.Errorf("upload PDF: %w", err)
+	}
+	return s.storage.Driver(), storagePath, size, nil
 }
 
 // addDetailPage adds a detail table page to the PDF

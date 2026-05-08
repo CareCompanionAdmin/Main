@@ -61,6 +61,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	pushService.InitFirebase(cfg.FCM.ServiceAccountKeyFile)
 
 	attachmentStorage := NewAttachmentStorage(&cfg.Storage)
+	reportStorage := NewBlobStorage(&cfg.Storage, "reports", cfg.Storage.ReportS3Prefix)
 
 	// App Store Connect — nil when env vars are unset; BetaService falls back
 	// to manual-add in that case rather than failing.
@@ -99,7 +100,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Email:             emailService,
 		PasswordReset:     NewPasswordResetService(db, repos.User, emailService, cfg.App.URL),
 		Push:              pushService,
-		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, cfg.Storage.UploadDir),
+		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, reportStorage),
 		Search:            NewSearchService(repos.Search),
 		Roadmap:           NewRoadmapService(repos.Roadmap, repos.Admin, emailService, db),
 		TicketDuplicate:   NewTicketDuplicateService(repos.Admin, repos.Roadmap, emailService),

@@ -15,7 +15,7 @@ type ReportRepository interface {
 	Create(ctx context.Context, report *models.Report) error
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Report, error)
 	GetByChildID(ctx context.Context, childID uuid.UUID, limit int) ([]models.Report, error)
-	UpdateStatus(ctx context.Context, id uuid.UUID, status, filePath string, fileSize int64) error
+	UpdateStatus(ctx context.Context, id uuid.UUID, status, storageDriver, storagePath string, fileSize int64) error
 	UpdateError(ctx context.Context, id uuid.UUID, errMsg string) error
 	Delete(ctx context.Context, id uuid.UUID) error
 
@@ -54,7 +54,8 @@ func (r *reportRepo) Create(ctx context.Context, report *models.Report) error {
 
 func (r *reportRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Report, error) {
 	query := `SELECT id, child_id, family_id, created_by, title, report_type, period_type,
-		start_date, end_date, data_filters, file_path, file_size, status, error_message, created_at, completed_at
+		start_date, end_date, data_filters, file_path, file_size, status, error_message, created_at, completed_at,
+		storage_driver, storage_path
 		FROM reports WHERE id = $1`
 
 	var report models.Report
@@ -64,7 +65,8 @@ func (r *reportRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Report,
 		&report.Title, &report.ReportType, &report.PeriodType,
 		&report.StartDate, &report.EndDate, &report.DataFilters,
 		&report.FilePath, &fileSize, &report.Status, &report.ErrorMessage,
-		&report.CreatedAt, &report.CompletedAt)
+		&report.CreatedAt, &report.CompletedAt,
+		&report.StorageDriver, &report.StoragePath)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -79,7 +81,8 @@ func (r *reportRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Report,
 
 func (r *reportRepo) GetByChildID(ctx context.Context, childID uuid.UUID, limit int) ([]models.Report, error) {
 	query := `SELECT id, child_id, family_id, created_by, title, report_type, period_type,
-		start_date, end_date, data_filters, file_path, file_size, status, error_message, created_at, completed_at
+		start_date, end_date, data_filters, file_path, file_size, status, error_message, created_at, completed_at,
+		storage_driver, storage_path
 		FROM reports WHERE child_id = $1 ORDER BY created_at DESC LIMIT $2`
 
 	rows, err := r.db.QueryContext(ctx, query, childID, limit)
@@ -97,7 +100,8 @@ func (r *reportRepo) GetByChildID(ctx context.Context, childID uuid.UUID, limit 
 			&rpt.Title, &rpt.ReportType, &rpt.PeriodType,
 			&rpt.StartDate, &rpt.EndDate, &rpt.DataFilters,
 			&rpt.FilePath, &fileSize, &rpt.Status, &rpt.ErrorMessage,
-			&rpt.CreatedAt, &rpt.CompletedAt); err != nil {
+			&rpt.CreatedAt, &rpt.CompletedAt,
+			&rpt.StorageDriver, &rpt.StoragePath); err != nil {
 			return nil, err
 		}
 		if fileSize.Valid {
@@ -108,9 +112,12 @@ func (r *reportRepo) GetByChildID(ctx context.Context, childID uuid.UUID, limit 
 	return reports, rows.Err()
 }
 
-func (r *reportRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status, filePath string, fileSize int64) error {
-	query := `UPDATE reports SET status = $2, file_path = $3, file_size = $4, completed_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id, status, filePath, fileSize)
+func (r *reportRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status, storageDriver, storagePath string, fileSize int64) error {
+	query := `UPDATE reports
+	          SET status = $2, storage_driver = $3, storage_path = $4, file_size = $5,
+	              completed_at = NOW()
+	          WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id, status, storageDriver, storagePath, fileSize)
 	return err
 }
 
