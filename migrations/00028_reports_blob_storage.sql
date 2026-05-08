@@ -4,8 +4,13 @@
 -- Existing local-disk reports get backfilled so they keep working on dev.
 -- Production rows from before the migration may have unreachable PDFs
 -- (the bug being fixed); their metadata is preserved either way.
+--
+-- Rollback (run by hand on the affected DB if reverting this migration):
+--
+--   ALTER TABLE reports
+--       DROP COLUMN IF EXISTS storage_path,
+--       DROP COLUMN IF EXISTS storage_driver;
 
--- +goose Up
 ALTER TABLE reports
     ADD COLUMN IF NOT EXISTS storage_driver VARCHAR(20),
     ADD COLUMN IF NOT EXISTS storage_path   TEXT;
@@ -25,8 +30,3 @@ SET storage_driver = 'localfs',
 WHERE storage_driver IS NULL
   AND file_path IS NOT NULL
   AND file_path ~ '\.pdf$';
-
--- +goose Down
-ALTER TABLE reports
-    DROP COLUMN IF EXISTS storage_path,
-    DROP COLUMN IF EXISTS storage_driver;
