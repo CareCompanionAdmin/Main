@@ -18,8 +18,10 @@ type Report struct {
 	StartDate    time.Time   `json:"start_date"`
 	EndDate      time.Time   `json:"end_date"`
 	DataFilters  StringArray `json:"data_filters"`
-	FilePath     NullString  `json:"file_path,omitempty"`
-	FileSize     *int64      `json:"file_size,omitempty"`
+	FilePath      NullString  `json:"file_path,omitempty"`
+	StoragePath   NullString  `json:"storage_path,omitempty"`
+	StorageDriver NullString  `json:"storage_driver,omitempty"`
+	FileSize      *int64      `json:"file_size,omitempty"`
 	Status       string      `json:"status"`
 	ErrorMessage NullString  `json:"error_message,omitempty"`
 	CreatedAt    time.Time   `json:"created_at"`
