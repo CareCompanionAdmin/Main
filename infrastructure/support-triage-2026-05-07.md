@@ -72,7 +72,7 @@ All 8 bugs triaged. Code fixes live on dev only — none deployed to prod yet.
 | 43dfd616 | Sleep chart shows yesterday twice | Could not reproduce on test data; likely a TZ-boundary issue but needs the user's actual log timestamps. | none | waiting_on_user |
 | 538d8d09 | Log/help button overlap, can't reopen mascot | Help-mascot floated under the compose-FAB and had no re-open affordance. | partials/mascot.html: lifted to bottom-28 + collapsed pill that swaps in on dismiss | resolved |
 | b99dd240 | Stuck in reports, must restart app | The only exit was an unlabeled X icon; on long PDFs the top "Back" link scrolls offscreen on mobile. | reports.html: replaced X with labeled "Back" button next to title | resolved |
-| df835d04 | Shared-report error | Architectural: report PDFs live on EC2 ephemeral disk, so any deploy or cross-instance LB hop loses them. Real engineering fix needed (mirror ticket-attachments S3 path). | none in this session — kicked back to engineering | in_progress |
+| df835d04 | Shared-report error | Architectural: report PDFs live on EC2 ephemeral disk, so any deploy or cross-instance LB hop loses them. Real engineering fix needed (mirror ticket-attachments S3 path). | 2026-05-08: refactor landed on dev — see commits b979019…811025c. Pending prod ship + multi-instance verify. | in_progress |
 
 ### Pending follow-ups
 
@@ -81,7 +81,7 @@ All 8 bugs triaged. Code fixes live on dev only — none deployed to prod yet.
   - `templates/chat.html`
   - `templates/partials/mascot.html`
   - `templates/reports.html`
-- `df835d04` needs the report-storage refactor (~4-6 hours): generalize `internal/service/attachment_storage.go` to also handle report PDFs, route writes/reads through it, drop the local-FS-only paths in `report_service.go` and `report_handler.go::ServeReportFile`.
+- `df835d04` — DONE on dev 2026-05-08. The 8-commit refactor (b979019 → 811025c) generalized `internal/service/attachment_storage.go` into `BlobStorage`, instantiated a second namespace for reports (`reports/` localfs root, `REPORT_S3_PREFIX` for S3), added `storage_driver`/`storage_path` columns on `reports`, and rewired `ServeReportFile` → `ServeReportPDF` (`/api/reports/{reportID}/file`). End-to-end verified on dev: generate → fetch → share → recipient fetch (md5 match) → legacy backfilled row → delete. Pending: prod ship + multi-instance verify on real ASG before marking the ticket resolved.
 - `2aac7344` / `9d104e20` / `43dfd616` are blocked on user repro details. Triage role does not have read access to `error_logs`; if those come back without more info, escalate to a role that does.
 
 ### Revert SQL (Phase 2)
