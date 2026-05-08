@@ -143,17 +143,6 @@ func (s *ReportService) OpenPDF(ctx context.Context, report *models.Report) (io.
 	return s.storage.Open(ctx, report.StoragePath.String)
 }
 
-// GetFilePath is retained as a transitional shim so handlers that haven't
-// been migrated to OpenPDF still compile. It returns the legacy file_path
-// only if it's set on the row; new rows will return empty string. Task 8
-// removes the last caller.
-func (s *ReportService) GetFilePath(report *models.Report) string {
-	if report == nil || !report.FilePath.Valid {
-		return ""
-	}
-	return report.FilePath.String
-}
-
 // ListReports returns past reports for a child
 func (s *ReportService) ListReports(ctx context.Context, childID uuid.UUID) ([]models.Report, error) {
 	return s.reportRepo.GetByChildID(ctx, childID, 50)

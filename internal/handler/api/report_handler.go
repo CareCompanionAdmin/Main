@@ -1,10 +1,8 @@
 package api
 
 import (
+	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -151,15 +149,16 @@ func (h *ReportHandler) DownloadReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fp := h.reportService.GetFilePath(report)
-	if fp == "" {
+	rc, err := h.reportService.OpenPDF(r.Context(), report)
+	if err != nil {
 		respondNotFound(w, "Report file not available")
 		return
 	}
+	defer rc.Close()
 
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+report.Title+".pdf\"")
 	w.Header().Set("Content-Type", "application/pdf")
-	http.ServeFile(w, r, fp)
+	io.Copy(w, rc)
 }
 
 // ViewReportData returns chart data for the HTML view
@@ -263,11 +262,6 @@ func (h *ReportHandler) DeleteReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete the PDF file
-	if report.FilePath.Valid {
-		os.Remove(report.FilePath.String)
-	}
-
 	if err := h.reportService.DeleteReport(r.Context(), reportID); err != nil {
 		respondInternalError(w, "Failed to delete report")
 		return
@@ -357,27 +351,45 @@ func (h *ReportHandler) DeleteSchedule(w http.ResponseWriter, r *http.Request) {
 	respondNoContent(w)
 }
 
-// ServeReportFile serves a report PDF file
-func (h *ReportHandler) ServeReportFile(w http.ResponseWriter, r *http.Request) {
-	filename := chi.URLParam(r, "filename")
-	if filename == "" || strings.Contains(filename, "..") || strings.Contains(filename, "/") {
-		respondBadRequest(w, "Invalid filename")
-		return
-	}
-
-	// Check auth
+// ServeReportPDF streams a report PDF from blob storage. Routed by reportID
+// instead of filename so we don't have to look up storage_path by basename.
+func (h *ReportHandler) ServeReportPDF(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	if userID == [16]byte{} {
 		respondError(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	fp := filepath.Join("uploads", "reports", filename)
-	if _, err := os.Stat(fp); os.IsNotExist(err) {
-		respondNotFound(w, "File not found")
+	reportID, err := parseUUID(chi.URLParam(r, "reportID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid report ID")
 		return
 	}
 
+	report, err := h.reportService.GetByID(r.Context(), reportID)
+	if err != nil || report == nil {
+		respondNotFound(w, "Report not found")
+		return
+	}
+
+	// Same access check used elsewhere — the user must have access to the
+	// child the report is about.
+	if _, err := h.childService.VerifyChildAccess(r.Context(), report.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	rc, err := h.reportService.OpenPDF(r.Context(), report)
+	if err != nil {
+		respondNotFound(w, "Report file not available")
+		return
+	}
+	defer rc.Close()
+
 	w.Header().Set("Content-Type", "application/pdf")
-	http.ServeFile(w, r, fp)
+	w.Header().Set("Content-Disposition", "inline; filename=\""+report.Title+".pdf\"")
+	if _, err := io.Copy(w, rc); err != nil {
+		// Connection drop / write error; nothing useful to send back.
+		return
+	}
 }

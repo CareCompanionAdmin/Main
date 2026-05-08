@@ -316,7 +316,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		})
 
 		// Report file serving
-		r.Get("/reports/files/{filename}", handlers.Report.ServeReportFile)
+		r.Get("/reports/{reportID}/file", handlers.Report.ServeReportPDF)
 
 		// Medication reference search
 		r.Get("/medication-references", handlers.Medication.SearchReferences)

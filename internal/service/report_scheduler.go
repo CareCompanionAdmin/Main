@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"path/filepath"
 	"time"
 
 	"github.com/google/uuid"
@@ -119,7 +118,7 @@ func ComputeFirstRun(frequency string) time.Time {
 
 // ShareViaChat shares a report PDF as a chat message
 func (s *ReportService) ShareViaChat(ctx context.Context, report *models.Report, senderID, recipientID uuid.UUID) error {
-	if !report.FilePath.Valid {
+	if !report.StoragePath.Valid {
 		return fmt.Errorf("report has no PDF file")
 	}
 
@@ -167,9 +166,9 @@ func (s *ReportService) ShareViaChat(ctx context.Context, report *models.Report,
 		Attachments: models.Attachments{
 			{
 				Filename:    report.Title + ".pdf",
-				StoredName:  filepath.Base(report.FilePath.String),
+				StoredName:  report.ID.String() + ".pdf",
 				ContentType: "application/pdf",
-				URL:         "/api/reports/files/" + filepath.Base(report.FilePath.String),
+				URL:         "/api/reports/" + report.ID.String() + "/file",
 			},
 		},
 	}
