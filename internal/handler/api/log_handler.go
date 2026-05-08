@@ -6,6 +6,7 @@ import (
 	stdlog "log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"carecompanion/internal/middleware"
@@ -1252,6 +1253,11 @@ func (h *LogHandler) CreateSeizureLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if strings.TrimSpace(req.LogTime) == "" {
+		respondBadRequest(w, "Time of seizure is required.")
+		return
+	}
+
 	log, err := h.logService.CreateSeizureLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		stdlog.Printf("Failed to create seizure log: %v", err)
@@ -1313,6 +1319,11 @@ func (h *LogHandler) UpdateSeizureLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSeizureLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if strings.TrimSpace(req.LogTime) == "" {
+		respondBadRequest(w, "Time of seizure is required.")
 		return
 	}
 

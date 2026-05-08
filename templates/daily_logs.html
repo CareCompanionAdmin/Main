@@ -1588,17 +1588,8 @@ const formTemplates = {
                 <textarea name="notes" rows="2" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition"></textarea>
             </div>
             <div class="border-t pt-4 mt-4">
-                <label class="block text-sm font-medium text-stone-700 mb-2">Time</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-stone-700 mb-1">Date</label>
-                        <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition" value="${getLocalDateString()}">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-stone-700 mb-1">Time</label>
-                        <input type="time" name="log_time" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition">
-                    </div>
-                </div>
+                <label class="block text-sm font-medium text-stone-700 mb-1">Date</label>
+                <input type="date" name="log_date" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition" value="${getLocalDateString()}">
             </div>
             <button type="submit" class="w-full py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700">Save</button>
         </form>
