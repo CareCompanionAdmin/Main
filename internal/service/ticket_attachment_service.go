@@ -110,7 +110,7 @@ func (s *TicketAttachmentService) Upload(ctx context.Context, in UploadInput) (*
 	// Wrap the body in a size-limited reader so a lying Content-Length
 	// can't blow past the cap.
 	limited := io.LimitReader(in.Body, s.maxBytes+1)
-	path, sizeBytes, err := s.storage.Save(ctx, in.TicketID, in.Filename, contentType, limited)
+	path, sizeBytes, err := s.storage.Save(ctx, in.TicketID.String(), in.Filename, contentType, limited)
 	if err != nil {
 		return nil, err
 	}

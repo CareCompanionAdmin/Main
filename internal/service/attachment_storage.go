@@ -17,40 +17,49 @@ import (
 	"carecompanion/internal/config"
 )
 
-// AttachmentStorage abstracts where ticket attachment bytes live. Two
-// implementations: local filesystem (dev / single-host) and S3 (prod, where
-// ASG instances get replaced and local disk vanishes).
+// BlobStorage abstracts where binary blobs live. Two implementations: local
+// filesystem (dev / single-host) and S3 (prod, where ASG instances get
+// replaced and local disk vanishes).
 //
-// Save returns a (driver, path) pair that's persisted in
-// ticket_attachments.storage_driver / .storage_path so we always know how
-// to fetch/delete a row even if the active driver changes later.
-type AttachmentStorage interface {
+// Save returns a (driver, path) pair that callers persist alongside their
+// own row (ticket_attachments, reports, etc.) so the right driver can be
+// used to fetch/delete it later, even after the active driver flips.
+type BlobStorage interface {
 	Driver() string
-	Save(ctx context.Context, ticketID uuid.UUID, filename string, contentType string, body io.Reader) (path string, sizeBytes int64, err error)
+	Save(ctx context.Context, namespace string, filename string, contentType string, body io.Reader) (path string, sizeBytes int64, err error)
 	Open(ctx context.Context, path string) (io.ReadCloser, error)
 	Delete(ctx context.Context, path string) error
 }
 
-// NewAttachmentStorage picks the driver based on config. If ATTACHMENT_S3_BUCKET
-// is set we use S3; otherwise we fall back to the local filesystem under
-// {UploadDir}/ticket_attachments. The chosen driver is logged at startup so
-// it's obvious which is in play.
-func NewAttachmentStorage(cfg *config.StorageConfig) AttachmentStorage {
+// AttachmentStorage is kept as an alias so existing imports keep working.
+// New code should use BlobStorage directly.
+type AttachmentStorage = BlobStorage
+
+// NewBlobStorage picks the driver based on config. If cfg.S3Bucket is set
+// we use S3 with the given s3Prefix; otherwise we fall back to localfs at
+// {cfg.UploadDir}/{localSubdir}.
+func NewBlobStorage(cfg *config.StorageConfig, localSubdir string, s3Prefix string) BlobStorage {
 	if cfg.S3Bucket != "" {
-		s3s, err := newS3Storage(cfg)
+		s3s, err := newS3Storage(cfg, s3Prefix)
 		if err != nil {
-			log.Printf("[STORAGE] S3 init failed (%v) — falling back to local filesystem", err)
+			log.Printf("[STORAGE/%s] S3 init failed (%v) — falling back to local filesystem", localSubdir, err)
 		} else {
-			log.Printf("[STORAGE] using S3 driver bucket=%s prefix=%s region=%s", cfg.S3Bucket, cfg.S3Prefix, cfg.S3Region)
+			log.Printf("[STORAGE/%s] using S3 driver bucket=%s prefix=%s region=%s", localSubdir, cfg.S3Bucket, s3Prefix, cfg.S3Region)
 			return s3s
 		}
 	}
-	root := filepath.Join(cfg.UploadDir, "ticket_attachments")
+	root := filepath.Join(cfg.UploadDir, localSubdir)
 	if err := os.MkdirAll(root, 0o750); err != nil {
-		log.Printf("[STORAGE] could not create %s: %v (uploads will fail)", root, err)
+		log.Printf("[STORAGE/%s] could not create %s: %v (uploads will fail)", localSubdir, root, err)
 	}
-	log.Printf("[STORAGE] using local filesystem driver root=%s", root)
+	log.Printf("[STORAGE/%s] using local filesystem driver root=%s", localSubdir, root)
 	return &localFSStorage{root: root}
+}
+
+// NewAttachmentStorage preserves the old constructor for callers that haven't
+// been migrated yet. It builds the ticket-attachments namespace.
+func NewAttachmentStorage(cfg *config.StorageConfig) BlobStorage {
+	return NewBlobStorage(cfg, "ticket_attachments", cfg.S3Prefix)
 }
 
 // ----------------------------------------------------------------------------
@@ -63,12 +72,12 @@ type localFSStorage struct {
 
 func (l *localFSStorage) Driver() string { return "localfs" }
 
-func (l *localFSStorage) Save(ctx context.Context, ticketID uuid.UUID, filename string, contentType string, body io.Reader) (string, int64, error) {
-	dir := filepath.Join(l.root, ticketID.String())
+func (l *localFSStorage) Save(ctx context.Context, namespace string, filename string, contentType string, body io.Reader) (string, int64, error) {
+	dir := filepath.Join(l.root, namespace)
 	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return "", 0, err
 	}
-	rel := filepath.Join(ticketID.String(), uuid.New().String()+extFromName(filename, contentType))
+	rel := filepath.Join(namespace, uuid.New().String()+extFromName(filename, contentType))
 	full := filepath.Join(l.root, rel)
 	f, err := os.Create(full)
 	if err != nil {
@@ -115,12 +124,12 @@ type s3Storage struct {
 	prefix string
 }
 
-func newS3Storage(cfg *config.StorageConfig) (*s3Storage, error) {
+func newS3Storage(cfg *config.StorageConfig, s3Prefix string) (*s3Storage, error) {
 	awscfg, err := awsconfig.LoadDefaultConfig(context.Background(), awsconfig.WithRegion(cfg.S3Region))
 	if err != nil {
 		return nil, err
 	}
-	prefix := cfg.S3Prefix
+	prefix := s3Prefix
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
 		prefix += "/"
 	}
@@ -133,12 +142,12 @@ func newS3Storage(cfg *config.StorageConfig) (*s3Storage, error) {
 
 func (s *s3Storage) Driver() string { return "s3" }
 
-func (s *s3Storage) Save(ctx context.Context, ticketID uuid.UUID, filename string, contentType string, body io.Reader) (string, int64, error) {
-	key := s.prefix + ticketID.String() + "/" + uuid.New().String() + extFromName(filename, contentType)
+func (s *s3Storage) Save(ctx context.Context, namespace string, filename string, contentType string, body io.Reader) (string, int64, error) {
+	key := s.prefix + namespace + "/" + uuid.New().String() + extFromName(filename, contentType)
 
 	// PutObject needs a seeker for retries; buffer through a temp file so we
 	// can both stream to S3 and report the byte count.
-	tmp, err := os.CreateTemp("", "ticket-attach-*")
+	tmp, err := os.CreateTemp("", "blob-upload-*")
 	if err != nil {
 		return "", 0, err
 	}
@@ -162,8 +171,6 @@ func (s *s3Storage) Save(ctx context.Context, ticketID uuid.UUID, filename strin
 	if err != nil {
 		return "", 0, err
 	}
-	// Strip the prefix from the persisted path so changing the prefix later
-	// doesn't break old rows: we always re-prepend at fetch time.
 	rel := strings.TrimPrefix(key, s.prefix)
 	return rel, n, nil
 }
