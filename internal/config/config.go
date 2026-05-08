@@ -60,9 +60,10 @@ type StorageConfig struct {
 	AttachmentMaxBytes   int64
 	AttachmentMaxPerTkt  int
 	// S3 driver. If S3Bucket is empty the localfs driver is used.
-	S3Bucket string
-	S3Region string
-	S3Prefix string
+	S3Bucket       string
+	S3Region       string
+	S3Prefix       string // ticket attachments
+	ReportS3Prefix string // reports
 }
 
 type AppConfig struct {
@@ -187,6 +188,7 @@ func Load() (*Config, error) {
 			S3Bucket:            getEnv("ATTACHMENT_S3_BUCKET", ""),
 			S3Region:            getEnv("ATTACHMENT_S3_REGION", "us-east-1"),
 			S3Prefix:            getEnv("ATTACHMENT_S3_PREFIX", "ticket-attachments/"),
+			ReportS3Prefix:      getEnv("REPORT_S3_PREFIX", "reports/"),
 		},
 		FCM: FCMConfig{
 			ServerKey:             getEnv("FCM_SERVER_KEY", ""),
