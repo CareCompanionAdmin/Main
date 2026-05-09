@@ -30,7 +30,9 @@ func (h *WebHandlers) Landing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderTemplate(w, "landing", nil)
+	renderTemplate(w, "landing", map[string]interface{}{
+		"CurrentYear": time.Now().Year(),
+	})
 }
 
 // Home renders the home page (redirects appropriately)
