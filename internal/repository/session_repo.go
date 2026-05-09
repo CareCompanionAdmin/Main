@@ -36,10 +36,12 @@ func (r *sessionRepo) Create(ctx context.Context, s *models.Session) error {
 	const q = `
 		INSERT INTO sessions
 			(id, user_id, kind, system_role, family_id, ip_at_start, user_agent,
+			 user_email, user_first_name, user_last_name, family_name, env_name,
 			 created_at, last_seen_at, expires_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`
 	_, err := r.db.ExecContext(ctx, q,
 		s.ID, s.UserID, s.Kind, s.SystemRole, s.FamilyID, s.IPAtStart, s.UserAgent,
+		s.UserEmail, s.UserFirstName, s.UserLastName, s.FamilyName, s.EnvName,
 		s.CreatedAt, s.LastSeenAt, s.ExpiresAt)
 	return err
 }
@@ -47,12 +49,14 @@ func (r *sessionRepo) Create(ctx context.Context, s *models.Session) error {
 func (r *sessionRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Session, error) {
 	const q = `
 		SELECT id, user_id, kind, system_role, family_id, ip_at_start::text,
-		       user_agent, created_at, last_seen_at, revoked_at, expires_at
+		       user_agent, created_at, last_seen_at, revoked_at, expires_at,
+		       user_email, user_first_name, user_last_name, family_name, env_name
 		FROM sessions WHERE id = $1`
 	var s models.Session
 	err := r.db.QueryRowContext(ctx, q, id).Scan(
 		&s.ID, &s.UserID, &s.Kind, &s.SystemRole, &s.FamilyID, &s.IPAtStart,
-		&s.UserAgent, &s.CreatedAt, &s.LastSeenAt, &s.RevokedAt, &s.ExpiresAt)
+		&s.UserAgent, &s.CreatedAt, &s.LastSeenAt, &s.RevokedAt, &s.ExpiresAt,
+		&s.UserEmail, &s.UserFirstName, &s.UserLastName, &s.FamilyName, &s.EnvName)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -87,7 +91,8 @@ func (r *sessionRepo) ListActive(ctx context.Context, kind *models.SessionKind, 
 	}
 	q := `
 		SELECT id, user_id, kind, system_role, family_id, ip_at_start::text,
-		       user_agent, created_at, last_seen_at, revoked_at, expires_at
+		       user_agent, created_at, last_seen_at, revoked_at, expires_at,
+		       user_email, user_first_name, user_last_name, family_name, env_name
 		FROM sessions
 		WHERE revoked_at IS NULL AND expires_at > NOW()`
 	args := []any{}
@@ -109,7 +114,8 @@ func (r *sessionRepo) ListActive(ctx context.Context, kind *models.SessionKind, 
 	for rows.Next() {
 		var s models.Session
 		if err := rows.Scan(&s.ID, &s.UserID, &s.Kind, &s.SystemRole, &s.FamilyID,
-			&s.IPAtStart, &s.UserAgent, &s.CreatedAt, &s.LastSeenAt, &s.RevokedAt, &s.ExpiresAt); err != nil {
+			&s.IPAtStart, &s.UserAgent, &s.CreatedAt, &s.LastSeenAt, &s.RevokedAt, &s.ExpiresAt,
+			&s.UserEmail, &s.UserFirstName, &s.UserLastName, &s.FamilyName, &s.EnvName); err != nil {
 			return nil, err
 		}
 		out = append(out, s)
