@@ -196,6 +196,16 @@ func (h *Handler) AdminLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		Expires:  tokens.ExpiresAt, // honors the global 8h expiry, not 15m
 	})
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "admin_refresh_token",
+		Value:    tokens.RefreshToken,
+		Path:     "/api/admin/auth/refresh",
+		HttpOnly: true,
+		Secure:   isSecure,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
+	})
+
 	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
 
