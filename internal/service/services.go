@@ -45,6 +45,7 @@ type Services struct {
 	Subscription      *SubscriptionService
 	Stripe            *StripeService
 	ChatHub           *ChatHub
+	LiveSessions      *LiveSessionsService
 }
 
 // NewServices creates all services with their dependencies
@@ -112,6 +113,10 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Beta:              NewBetaService(repos.BetaInvitation, emailService, ascService, cfg.App.URL, "/static/docs/beta-onboarding.html"),
 		Bounty:            NewBountyService(repos.BountyAward, repos.Admin, emailService, db),
 		ChatHub:           NewChatHub(),
+		// DevModeService is constructed in cmd/server/main.go after NewServices
+		// returns; main.go calls svcs.LiveSessions.SetDevModeService(...) once
+		// it's built. SSH list is gracefully empty until then.
+		LiveSessions: NewLiveSessionsService(repos.Session, repos.SessionProd, nil, cfg.App.Env),
 	}
 	// Subscription service has to come AFTER auth/family/child services exist
 	// because we wire it INTO them below (signup → trial, add-child → bump).
