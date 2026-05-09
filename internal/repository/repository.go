@@ -10,11 +10,22 @@ import (
 	"carecompanion/internal/models"
 )
 
-// UserRepository handles user data operations
+// UserRepository handles user data operations.
+//
+// Post-00032: schema is split into admin_users + app_users. This interface
+// keeps a kind-AGNOSTIC face for backward compatibility (Create writes to
+// app_users; UpdateStatus/UpdateLastLogin/Delete fan out to both tables;
+// GetByID reads from a UNION view; GetByEmail is also via the view but
+// non-deterministic when an email exists in both tables). Two new
+// kind-AWARE methods exist for code paths that must distinguish:
+// GetAdminByEmail and GetAppByEmail. Admin LOGIN must use GetAdminByEmail;
+// parent login + register must use GetAppByEmail.
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	GetAdminByEmail(ctx context.Context, email string) (*models.User, error)
+	GetAppByEmail(ctx context.Context, email string) (*models.User, error)
 	Update(ctx context.Context, user *models.User) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status models.UserStatus) error
 	UpdateLastLogin(ctx context.Context, id uuid.UUID) error

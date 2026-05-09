@@ -130,10 +130,14 @@ func (s *PasswordResetService) ResetPassword(ctx context.Context, token, newPass
 	}
 	defer tx.Rollback()
 
-	// Update password
-	_, err = tx.ExecContext(ctx, `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, string(hashedPassword), userID)
-	if err != nil {
-		return fmt.Errorf("failed to update password: %w", err)
+	// Update password. Post-00032: row may live in either admin_users or
+	// app_users; password reset works for either kind. Update both — only one
+	// will match.
+	if _, err = tx.ExecContext(ctx, `UPDATE app_users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, string(hashedPassword), userID); err != nil {
+		return fmt.Errorf("failed to update password (app_users): %w", err)
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE admin_users SET password_hash = $1, updated_at = NOW() WHERE id = $2`, string(hashedPassword), userID); err != nil {
+		return fmt.Errorf("failed to update password (admin_users): %w", err)
 	}
 
 	// Mark token as used

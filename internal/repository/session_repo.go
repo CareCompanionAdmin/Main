@@ -33,22 +33,34 @@ func (r *sessionRepo) Create(ctx context.Context, s *models.Session) error {
 		s.CreatedAt = now
 	}
 	s.LastSeenAt = s.CreatedAt
+	// Post-00032: sessions has admin_id + app_user_id (NOT user_id). Pick the
+	// right column based on Kind. The Session model still carries a single
+	// UserID field; the repo translates it to the right column.
+	var adminID, appUserID *uuid.UUID
+	if s.Kind == models.SessionKindAdmin {
+		id := s.UserID
+		adminID = &id
+	} else {
+		id := s.UserID
+		appUserID = &id
+	}
 	const q = `
 		INSERT INTO sessions
-			(id, user_id, kind, system_role, family_id, ip_at_start, user_agent,
+			(id, admin_id, app_user_id, kind, system_role, family_id, ip_at_start, user_agent,
 			 user_email, user_first_name, user_last_name, family_name, env_name,
 			 created_at, last_seen_at, expires_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`
 	_, err := r.db.ExecContext(ctx, q,
-		s.ID, s.UserID, s.Kind, s.SystemRole, s.FamilyID, s.IPAtStart, s.UserAgent,
+		s.ID, adminID, appUserID, s.Kind, s.SystemRole, s.FamilyID, s.IPAtStart, s.UserAgent,
 		s.UserEmail, s.UserFirstName, s.UserLastName, s.FamilyName, s.EnvName,
 		s.CreatedAt, s.LastSeenAt, s.ExpiresAt)
 	return err
 }
 
 func (r *sessionRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Session, error) {
+	// Post-00032: COALESCE admin_id + app_user_id back into UserID for the model.
 	const q = `
-		SELECT id, user_id, kind, system_role, family_id, ip_at_start::text,
+		SELECT id, COALESCE(admin_id, app_user_id) AS user_id, kind, system_role, family_id, ip_at_start::text,
 		       user_agent, created_at, last_seen_at, revoked_at, expires_at,
 		       user_email, user_first_name, user_last_name, family_name, env_name
 		FROM sessions WHERE id = $1`
@@ -73,9 +85,15 @@ func (r *sessionRepo) Revoke(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *sessionRepo) RevokeForUserKind(ctx context.Context, userID uuid.UUID, kind models.SessionKind) error {
+	// Post-00032: user_id no longer exists on sessions. Use the right column
+	// for the kind being revoked.
+	col := "app_user_id"
+	if kind == models.SessionKindAdmin {
+		col = "admin_id"
+	}
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE sessions SET revoked_at = NOW()
-		 WHERE user_id = $1 AND kind = $2 AND revoked_at IS NULL`, userID, kind)
+		 WHERE `+col+` = $1 AND kind = $2 AND revoked_at IS NULL`, userID, kind)
 	return err
 }
 
@@ -90,7 +108,7 @@ func (r *sessionRepo) ListActive(ctx context.Context, kind *models.SessionKind, 
 		limit = 200
 	}
 	q := `
-		SELECT id, user_id, kind, system_role, family_id, ip_at_start::text,
+		SELECT id, COALESCE(admin_id, app_user_id) AS user_id, kind, system_role, family_id, ip_at_start::text,
 		       user_agent, created_at, last_seen_at, revoked_at, expires_at,
 		       user_email, user_first_name, user_last_name, family_name, env_name
 		FROM sessions

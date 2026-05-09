@@ -154,8 +154,10 @@ type LoginContext struct {
 }
 
 func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*models.User, *TokenPair, error) {
-	// Check if email exists
-	existing, err := s.userRepo.GetByEmail(ctx, req.Email)
+	// Post-00032: register is parent-side only; check the app_users table for
+	// duplicate email. An admin-side row with the same email is intentionally
+	// allowed (per Bryan's design: same email may exist in BOTH kinds).
+	existing, err := s.userRepo.GetAppByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -270,7 +272,17 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*models.Use
 }
 
 func (s *AuthService) LoginWithContext(ctx context.Context, req *LoginRequest, lc LoginContext) (*models.User, *TokenPair, error) {
-	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	// Post-00032: kind-aware lookup. Admin login (lc.Kind == admin) checks
+	// admin_users; parent / app login checks app_users. Same email may now
+	// exist in BOTH tables — using a kind-agnostic lookup would
+	// non-deterministically pick one.
+	var user *models.User
+	var err error
+	if lc.Kind == models.SessionKindAdmin {
+		user, err = s.userRepo.GetAdminByEmail(ctx, req.Email)
+	} else {
+		user, err = s.userRepo.GetAppByEmail(ctx, req.Email)
+	}
 	if err != nil {
 		return nil, nil, err
 	}

@@ -67,7 +67,9 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID uuid.UUID, req *
 			return ErrEmailInvalid
 		}
 		if newEmail != strings.ToLower(user.Email) {
-			existing, err := s.userRepo.GetByEmail(ctx, newEmail)
+			// Post-00032: only check the app_users side. An admin row with the
+			// same email is allowed by design.
+			existing, err := s.userRepo.GetAppByEmail(ctx, newEmail)
 			if err != nil {
 				return err
 			}

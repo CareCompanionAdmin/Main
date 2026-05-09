@@ -319,14 +319,21 @@ func (r *adminRepo) SearchUsers(ctx context.Context, query string, page, limit i
 }
 
 func (r *adminRepo) UpdateUserStatus(ctx context.Context, id uuid.UUID, status models.UserStatus) error {
-	query := `UPDATE users SET status = $2, updated_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id, status)
+	// Post-00032: row may live in either admin_users or app_users. Update both;
+	// only one will match.
+	if _, err := r.db.ExecContext(ctx, `UPDATE app_users SET status = $2, updated_at = NOW() WHERE id = $1`, id, status); err != nil {
+		return err
+	}
+	_, err := r.db.ExecContext(ctx, `UPDATE admin_users SET status = $2, updated_at = NOW() WHERE id = $1`, id, status)
 	return err
 }
 
 func (r *adminRepo) ResetUserPassword(ctx context.Context, id uuid.UUID, newHash string) error {
-	query := `UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, id, newHash)
+	// Same fan-out pattern as UpdateUserStatus.
+	if _, err := r.db.ExecContext(ctx, `UPDATE app_users SET password_hash = $2, updated_at = NOW() WHERE id = $1`, id, newHash); err != nil {
+		return err
+	}
+	_, err := r.db.ExecContext(ctx, `UPDATE admin_users SET password_hash = $2, updated_at = NOW() WHERE id = $1`, id, newHash)
 	return err
 }
 
@@ -341,12 +348,15 @@ func (r *adminRepo) ResetUserMFA(ctx context.Context, id uuid.UUID) error {
 // ============================================================================
 
 func (r *adminRepo) ListAdminUsers(ctx context.Context) ([]AdminUserView, error) {
+	// Post-00032: admin rows live in admin_users. Phone column doesn't exist
+	// on admin_users (admins don't need it), so project NULL.
+	// family_count is admin's parent-side family memberships — but admin_users
+	// rows have no family memberships by construction, so just project 0.
 	query := `
-		SELECT u.id, u.email, u.first_name, u.last_name, u.phone, u.status, u.system_role,
+		SELECT u.id, u.email, u.first_name, u.last_name, NULL::varchar AS phone, u.status, u.system_role,
 		       u.created_at, u.last_login_at,
-		       (SELECT COUNT(*) FROM family_memberships WHERE user_id = u.id AND is_active = true) as family_count
-		FROM users u
-		WHERE u.system_role IS NOT NULL
+		       0 AS family_count
+		FROM admin_users u
 		ORDER BY u.created_at DESC
 	`
 	rows, err := r.db.QueryContext(ctx, query)
@@ -371,7 +381,7 @@ func (r *adminRepo) CreateAdminUser(ctx context.Context, email, passwordHash, fi
 	id := uuid.New()
 	now := time.Now()
 	query := `
-		INSERT INTO users (id, email, password_hash, first_name, last_name, system_role, status, created_at, updated_at)
+		INSERT INTO admin_users (id, email, password_hash, first_name, last_name, system_role, status, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
 		RETURNING id
 	`
@@ -383,13 +393,18 @@ func (r *adminRepo) CreateAdminUser(ctx context.Context, email, passwordHash, fi
 }
 
 func (r *adminRepo) UpdateAdminRole(ctx context.Context, id uuid.UUID, role models.SystemRole) error {
-	query := `UPDATE users SET system_role = $2, updated_at = NOW() WHERE id = $1`
+	query := `UPDATE admin_users SET system_role = $2, updated_at = NOW() WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id, role)
 	return err
 }
 
+// RemoveAdminRole DELETES the admin row entirely (post-00032 — there is no
+// "set system_role to NULL" path because admin_users.system_role is NOT NULL,
+// and an email that already exists in app_users would otherwise collide if
+// we tried to recreate the user as a parent here. If a person needs both
+// admin and parent identity, they are TWO ROWS sharing an email.)
 func (r *adminRepo) RemoveAdminRole(ctx context.Context, id uuid.UUID) error {
-	query := `UPDATE users SET system_role = NULL, updated_at = NOW() WHERE id = $1`
+	query := `DELETE FROM admin_users WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, id)
 	return err
 }

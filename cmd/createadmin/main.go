@@ -95,8 +95,11 @@ func main() {
 	ctx := context.Background()
 
 	// Check if email already exists
+	// Post-00032: only admin_users matters for the createadmin CLI. We do NOT
+	// promote/demote app_users rows from this CLI; if you want a parent who is
+	// also an admin, create an admin row here AND register a parent at /register.
 	var existingID uuid.UUID
-	err = db.DB.QueryRowContext(ctx, "SELECT id FROM users WHERE LOWER(email) = LOWER($1)", *email).Scan(&existingID)
+	err = db.DB.QueryRowContext(ctx, "SELECT id FROM admin_users WHERE LOWER(email) = LOWER($1)", *email).Scan(&existingID)
 	if err == nil {
 		// User exists, update their system_role
 		fmt.Printf("User with email '%s' already exists.\n", *email)
@@ -109,7 +112,7 @@ func main() {
 		}
 
 		_, err = db.DB.ExecContext(ctx,
-			"UPDATE users SET system_role = $1, updated_at = $2 WHERE id = $3",
+			"UPDATE admin_users SET system_role = $1, updated_at = $2 WHERE id = $3",
 			*role, time.Now(), existingID,
 		)
 		if err != nil {
@@ -130,7 +133,7 @@ func main() {
 	now := time.Now()
 
 	_, err = db.DB.ExecContext(ctx, `
-		INSERT INTO users (id, email, password_hash, first_name, last_name, system_role, status, created_at, updated_at)
+		INSERT INTO admin_users (id, email, password_hash, first_name, last_name, system_role, status, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
 	`, userID, *email, string(hashedPassword), *firstName, *lastName, *role, models.UserStatusActive, now)
 
