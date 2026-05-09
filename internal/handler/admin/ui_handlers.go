@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"carecompanion/internal/auth"
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/models"
 	"carecompanion/internal/repository"
@@ -34,6 +35,16 @@ type AdminUser struct {
 
 // templateFuncs provides custom functions for admin templates
 var templateFuncs = template.FuncMap{
+	// canSee reports whether a role can see a sidebar section. Reads the
+	// permission matrix in internal/auth/perm.go.
+	"canSee": func(role string, section string) bool {
+		return auth.Matrix(models.SystemRole(role), section) != auth.LevelNone
+	},
+	// matrixLevel returns the access level a role has on a section
+	// ("none"/"read"/"write"/"full"). Used to render "(Read Only)" badges.
+	"matrixLevel": func(role string, section string) string {
+		return string(auth.Matrix(models.SystemRole(role), section))
+	},
 	"divf": func(a, b float64) float64 {
 		if b == 0 {
 			return 0

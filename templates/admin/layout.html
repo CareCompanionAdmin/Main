@@ -49,67 +49,104 @@
         <!-- Sidebar -->
         <aside id="admin-sidebar" class="sidebar w-64 bg-white shadow-md hidden md:block transform -translate-x-full md:translate-x-0 transition-transform duration-200 ease-in-out">
             <nav class="p-4 pt-6 md:pt-4">
+                {{$role := .CurrentUser.SystemRole}}
+
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Dashboard</h3>
                     <a href="/admin/dashboard" class="block px-3 py-2 rounded hover:bg-gray-100">Overview</a>
                 </div>
 
-                {{if or (eq .CurrentUser.SystemRole "super_admin") (eq .CurrentUser.SystemRole "support")}}
+                {{if or (canSee $role "tickets") (canSee $role "users") (canSee $role "families")}}
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Support</h3>
+                    {{if canSee $role "tickets"}}
                     <a href="/admin/tickets" class="block px-3 py-2 rounded hover:bg-gray-100 flex items-center justify-between">
-                        <span>Tickets</span>
+                        <span>Tickets {{if eq (matrixLevel $role "tickets") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</span>
                         <span id="ticket-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
                     </a>
-                    <a href="/admin/users" class="block px-3 py-2 rounded hover:bg-gray-100">Users</a>
-                    <a href="/admin/families" class="block px-3 py-2 rounded hover:bg-gray-100">Families</a>
-                </div>
-                {{end}}
-
-                {{if or (eq .CurrentUser.SystemRole "super_admin") (eq .CurrentUser.SystemRole "marketing")}}
-                <div class="mb-6">
-                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Marketing</h3>
-                    <a href="/admin/marketing" class="block px-3 py-2 rounded hover:bg-gray-100">Metrics Dashboard</a>
-                    <a href="/admin/materials" class="block px-3 py-2 rounded hover:bg-gray-100">Copy & Materials</a>
-                    <a href="/admin/marketing/beta" class="block px-3 py-2 rounded hover:bg-gray-100">Beta Program</a>
-                    <a href="/admin/marketing/bounty" class="block px-3 py-2 rounded hover:bg-gray-100">Bounty Program</a>
-                    {{if eq .CurrentUser.SystemRole "super_admin"}}
-                    <a href="/admin/promo-codes" class="block px-3 py-2 rounded hover:bg-gray-100">Promo Codes</a>
-                    {{else}}
-                    <a href="/admin/marketing/tickets" class="block px-3 py-2 rounded hover:bg-gray-100">Tickets <span class="text-xs text-gray-400">(Read Only)</span></a>
-                    <a href="/admin/promo-codes" class="block px-3 py-2 rounded hover:bg-gray-100">Promo Codes <span class="text-xs text-gray-400">(Read Only)</span></a>
+                    {{end}}
+                    {{if canSee $role "users"}}
+                    <a href="/admin/users" class="block px-3 py-2 rounded hover:bg-gray-100">Users {{if eq (matrixLevel $role "users") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "families"}}
+                    <a href="/admin/families" class="block px-3 py-2 rounded hover:bg-gray-100">Families {{if eq (matrixLevel $role "families") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
                     {{end}}
                 </div>
                 {{end}}
 
-                {{if eq .CurrentUser.SystemRole "super_admin"}}
+                {{if or (canSee $role "metrics_dashboard") (or (canSee $role "copy_materials") (or (canSee $role "beta_program") (or (canSee $role "bounty_program") (canSee $role "promo_codes"))))}}
+                <div class="mb-6">
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Marketing</h3>
+                    {{if canSee $role "metrics_dashboard"}}
+                    <a href="/admin/marketing" class="block px-3 py-2 rounded hover:bg-gray-100">Metrics Dashboard {{if eq (matrixLevel $role "metrics_dashboard") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "copy_materials"}}
+                    <a href="/admin/materials" class="block px-3 py-2 rounded hover:bg-gray-100">Copy &amp; Materials {{if eq (matrixLevel $role "copy_materials") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "beta_program"}}
+                    <a href="/admin/marketing/beta" class="block px-3 py-2 rounded hover:bg-gray-100">Beta Program {{if eq (matrixLevel $role "beta_program") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "bounty_program"}}
+                    <a href="/admin/marketing/bounty" class="block px-3 py-2 rounded hover:bg-gray-100">Bounty Program {{if eq (matrixLevel $role "bounty_program") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "promo_codes"}}
+                    <a href="/admin/promo-codes" class="block px-3 py-2 rounded hover:bg-gray-100">Promo Codes {{if eq (matrixLevel $role "promo_codes") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                </div>
+                {{end}}
+
+                {{if or (canSee $role "infrastructure_status") (or (canSee $role "error_logs") (canSee $role "development_mode"))}}
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System</h3>
-                    <a href="/admin/status" class="block px-3 py-2 rounded hover:bg-gray-100">Infrastructure Status</a>
+                    {{if canSee $role "infrastructure_status"}}
+                    <a href="/admin/status" class="block px-3 py-2 rounded hover:bg-gray-100">Infrastructure Status {{if eq (matrixLevel $role "infrastructure_status") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "error_logs"}}
                     <a href="/admin/errors" class="block px-3 py-2 rounded hover:bg-gray-100 flex items-center justify-between">
-                        <span>Error Logs</span>
+                        <span>Error Logs {{if eq (matrixLevel $role "error_logs") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</span>
                         <span id="error-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
                     </a>
+                    {{end}}
+                    {{if canSee $role "development_mode"}}
                     <a href="/admin/development" class="block px-3 py-2 rounded hover:bg-gray-100">Development Mode</a>
+                    {{end}}
                 </div>
+                {{end}}
 
+                {{if canSee $role "product_roadmap"}}
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Roadmap</h3>
-                    <a href="/admin/roadmap" class="block px-3 py-2 rounded hover:bg-gray-100">Product Roadmap</a>
+                    <a href="/admin/roadmap" class="block px-3 py-2 rounded hover:bg-gray-100">Product Roadmap {{if eq (matrixLevel $role "product_roadmap") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
                 </div>
+                {{end}}
 
+                {{if or (canSee $role "financials") (canSee $role "subscriptions")}}
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Finance</h3>
-                    <a href="/admin/financials" class="block px-3 py-2 rounded hover:bg-gray-100">Financials</a>
-                    <a href="/admin/subscriptions" class="block px-3 py-2 rounded hover:bg-gray-100">Subscriptions</a>
+                    {{if canSee $role "financials"}}
+                    <a href="/admin/financials" class="block px-3 py-2 rounded hover:bg-gray-100">Financials {{if eq (matrixLevel $role "financials") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "subscriptions"}}
+                    <a href="/admin/subscriptions" class="block px-3 py-2 rounded hover:bg-gray-100">Subscriptions {{if eq (matrixLevel $role "subscriptions") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
                 </div>
+                {{end}}
 
+                {{if or (canSee $role "admin_users") (or (canSee $role "system_settings") (or (canSee $role "audit_log") (canSee $role "version_log")))}}
                 <div class="mb-6">
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Administration</h3>
-                    <a href="/admin/admins" class="block px-3 py-2 rounded hover:bg-gray-100">Admin Users</a>
+                    {{if canSee $role "admin_users"}}
+                    <a href="/admin/admins" class="block px-3 py-2 rounded hover:bg-gray-100">Admin Users {{if eq (matrixLevel $role "admin_users") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
+                    {{if canSee $role "system_settings"}}
                     <a href="/admin/settings" class="block px-3 py-2 rounded hover:bg-gray-100">System Settings</a>
+                    {{end}}
+                    {{if canSee $role "audit_log"}}
                     <a href="/admin/audit" class="block px-3 py-2 rounded hover:bg-gray-100">Audit Log</a>
-                    <a href="/admin/version-log" class="block px-3 py-2 rounded hover:bg-gray-100">Version Log</a>
+                    {{end}}
+                    {{if canSee $role "version_log"}}
+                    <a href="/admin/version-log" class="block px-3 py-2 rounded hover:bg-gray-100">Version Log {{if eq (matrixLevel $role "version_log") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    {{end}}
                 </div>
                 {{end}}
             </nav>
