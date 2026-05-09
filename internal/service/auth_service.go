@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,6 +18,22 @@ import (
 	"carecompanion/internal/models"
 	"carecompanion/internal/repository"
 )
+
+// stripPort removes the :port suffix from net/http RemoteAddr strings so the
+// host can be stored in a Postgres INET column. Returns "" for empty input.
+// IPv6 addresses arrive bracketed ("[::1]:5432") — net.SplitHostPort handles
+// both forms; on parse failure we return the input unchanged so a caller
+// passing an already-bare IP keeps working.
+func stripPort(addr string) string {
+	if addr == "" {
+		return ""
+	}
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return addr
+	}
+	return host
+}
 
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
@@ -297,8 +314,8 @@ func (s *AuthService) LoginWithContext(ctx context.Context, req *LoginRequest, l
 	if familyID != uuid.Nil {
 		sess.FamilyID = models.NullUUID{UUID: familyID, Valid: true}
 	}
-	if lc.IP != "" {
-		sess.IPAtStart = models.NullString{NullString: sql.NullString{String: lc.IP, Valid: true}}
+	if ip := stripPort(lc.IP); ip != "" {
+		sess.IPAtStart = models.NullString{NullString: sql.NullString{String: ip, Valid: true}}
 	}
 	if lc.UserAgent != "" {
 		sess.UserAgent = models.NullString{NullString: sql.NullString{String: lc.UserAgent, Valid: true}}
