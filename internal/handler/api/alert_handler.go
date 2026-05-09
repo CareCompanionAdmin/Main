@@ -216,7 +216,11 @@ func (h *AlertHandler) DashboardInsights(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Also include recently created info alerts (positive feedback)
-	infoAlerts, _ := h.alertService.GetByChildID(r.Context(), childID, nil)
+	infoAlerts, err := h.alertService.GetByChildID(r.Context(), childID, nil)
+	if err != nil {
+		respondInternalError(w, "Failed to get insights")
+		return
+	}
 
 	// Combine and deduplicate, prioritize by severity then recency
 	seen := make(map[string]bool)
