@@ -25,13 +25,13 @@ func main() {
 	email := flag.String("email", "", "Admin email address (required)")
 	firstName := flag.String("first-name", "", "Admin first name (required)")
 	lastName := flag.String("last-name", "", "Admin last name")
-	role := flag.String("role", "super_admin", "System role (super_admin, support, marketing)")
+	role := flag.String("role", "super_admin", "System role (super_admin, support, marketing, partner)")
 	flag.Parse()
 
 	// Validate required flags
 	if *email == "" {
 		fmt.Println("Usage: createadmin -email <email> -first-name <name> [-last-name <name>] [-role <role>]")
-		fmt.Println("\nRoles: super_admin, support, marketing")
+		fmt.Println("\nRoles: super_admin, support, marketing, partner")
 		fmt.Println("\nExample:")
 		fmt.Println("  go run cmd/createadmin/main.go -email admin@example.com -first-name Admin -role super_admin")
 		os.Exit(1)
@@ -44,7 +44,7 @@ func main() {
 
 	// Validate role
 	if !models.IsValidSystemRole(*role) {
-		fmt.Printf("Error: Invalid role '%s'. Valid roles: super_admin, support, marketing\n", *role)
+		fmt.Printf("Error: Invalid role '%s'. Valid roles: super_admin, support, marketing, partner\n", *role)
 		os.Exit(1)
 	}
 
