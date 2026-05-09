@@ -47,6 +47,7 @@ func RequireAnyAdminRole() func(http.Handler) http.Handler {
 		models.SystemRoleSuperAdmin,
 		models.SystemRoleSupport,
 		models.SystemRoleMarketing,
+		models.SystemRolePartner,
 	)
 }
 
@@ -71,6 +72,7 @@ func RequireSupportOrMarketing() func(http.Handler) http.Handler {
 		models.SystemRoleSuperAdmin,
 		models.SystemRoleSupport,
 		models.SystemRoleMarketing,
+		models.SystemRolePartner,
 	)
 }
 

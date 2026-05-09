@@ -66,7 +66,7 @@ func computeEntitlement(ctx context.Context, db *sql.DB) Entitlement {
 	// anyway (they typically have no family).
 	role := GetSystemRole(ctx)
 	switch models.SystemRole(role) {
-	case models.SystemRoleSuperAdmin, models.SystemRoleSupport, models.SystemRoleMarketing:
+	case models.SystemRoleSuperAdmin, models.SystemRoleSupport, models.SystemRoleMarketing, models.SystemRolePartner:
 		return Entitlement{Mode: EntitlementFull, IsAdminOverride: true, HasSubscription: false}
 	}
 
