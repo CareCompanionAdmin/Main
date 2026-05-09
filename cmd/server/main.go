@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -67,6 +68,26 @@ func main() {
 		log.Println("Connected to separate support PostgreSQL (SUPPORT_DB_DSN set)")
 	}
 
+	// Optional cross-env sessions pool (read-only display) for the Live Sessions
+	// admin page. A misconfigured DSN logs a warning and is skipped — must NOT
+	// prevent the local server from starting.
+	var sessionsProdDB *sql.DB
+	if cfg.Database.SessionsProdDSN != "" {
+		s, err := database.NewWithDSN(
+			cfg.Database.SessionsProdDSN,
+			cfg.Database.MaxOpenConns,
+			cfg.Database.MaxIdleConns,
+			cfg.Database.ConnMaxLifetime,
+		)
+		if err != nil {
+			log.Printf("[SESSIONS] cross-env pool init failed (%v) — continuing without it", err)
+		} else {
+			defer s.Close()
+			sessionsProdDB = s.DB
+			log.Println("Connected to cross-env sessions pool (SESSIONS_PROD_DB_DSN set)")
+		}
+	}
+
 	// Apply any pending DB migrations before anything else touches the schema.
 	// Fatal on failure: better to fail fast than serve traffic against a
 	// half-migrated DB. ASG keeps the previous instance up if the new one
@@ -87,7 +108,7 @@ func main() {
 	log.Println("Connected to Redis")
 
 	// Initialize repositories
-	repos := repository.NewRepositories(db.DB, supportDB)
+	repos := repository.NewRepositories(db.DB, supportDB, sessionsProdDB)
 
 	// Initialize services
 	services := service.NewServices(repos, redis, cfg, db.DB)

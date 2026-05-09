@@ -358,6 +358,7 @@ type Repositories struct {
 	BetaInvitation   BetaInvitationRepository   // Marketing-managed TestFlight beta invites
 	BountyAward      BountyAwardRepository      // Monthly top-5+5 bounty rewards
 	Session          SessionRepository          // Persistent server-side sessions
+	SessionProd      SessionRepository          // Optional cross-env (prod) sessions read pool — nil when SESSIONS_PROD_DB_DSN unset
 }
 
 // NewRepositories creates all repository implementations.
@@ -368,8 +369,8 @@ type Repositories struct {
 // envs; the admin/user-support/ticket-attachment repos route those three
 // tables to supportDB while continuing to use db for everything else
 // (users lookup for denorm, audit log, etc.).
-func NewRepositories(db, supportDB *sql.DB) *Repositories {
-	return &Repositories{
+func NewRepositories(db, supportDB *sql.DB, sessionsProdDB *sql.DB) *Repositories {
+	repos := &Repositories{
 		User:         NewUserRepo(db),
 		Family:       NewFamilyRepo(db),
 		Child:        NewChildRepo(db),
@@ -395,4 +396,8 @@ func NewRepositories(db, supportDB *sql.DB) *Repositories {
 		BountyAward:      NewBountyAwardRepo(db),
 		Session:          NewSessionRepo(db),
 	}
+	if sessionsProdDB != nil {
+		repos.SessionProd = NewSessionRepo(sessionsProdDB)
+	}
+	return repos
 }

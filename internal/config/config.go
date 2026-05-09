@@ -91,6 +91,12 @@ type DatabaseConfig struct {
 	// every other table including users-lookup-for-denorm. When empty, the
 	// main DB is used for support too. Set on dev to share prod's tickets.
 	SupportDSN string
+
+	// SessionsProdDSN, when non-empty, opens a SECOND read-only connection to
+	// the prod sessions table so the dev Live Sessions admin page can show
+	// prod sessions alongside dev. Empty in prod (cross-env display is a
+	// dev-side affordance only).
+	SessionsProdDSN string
 }
 
 type RedisConfig struct {
@@ -159,6 +165,7 @@ func Load() (*Config, error) {
 			MaxIdleConns:    getEnvInt("DB_MAX_IDLE_CONNS", 5),
 			ConnMaxLifetime: getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute),
 			SupportDSN:      getEnv("SUPPORT_DB_DSN", ""),
+			SessionsProdDSN: getEnv("SESSIONS_PROD_DB_DSN", ""),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "172.28.0.30"),
