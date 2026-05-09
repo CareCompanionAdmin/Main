@@ -88,6 +88,13 @@ func (h *Handler) Routes() chi.Router {
 	// allowed roles in a later slice without restructuring the route tree.
 	r.Delete("/sessions/{sessionID}", h.RevokeSession)
 
+	// Live Sessions JSON + bulk + SSH kill — inline role check inside each
+	// handler (super_admin / support / partner) so the routes can sit at the
+	// admin top level alongside the existing single-session DELETE.
+	r.Get("/sessions/live", h.ListLiveSessions)
+	r.Post("/sessions/revoke", h.BulkRevokeSessions)
+	r.Post("/sessions/ssh/kill", h.KillSSHSessionJSON)
+
 	// Super admin routes — gates set per-section below (matrix-driven).
 	r.Route("/super", func(r chi.Router) {
 		// No blanket gate — each sub-section sets its own gate below.
@@ -343,6 +350,12 @@ func (h *Handler) UIRoutes() chi.Router {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RequireSection("admin_users"))
 			r.Get("/admins", h.AdminUsersPage)
+		})
+
+		// Live Sessions (Partner=full, super_admin/support=full)
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RequireSection("live_sessions"))
+			r.Get("/sessions", h.LiveSessionsPage)
 		})
 
 		// System pages (super_admin only — Settings, Audit, Development)
