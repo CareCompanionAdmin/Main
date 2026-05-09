@@ -425,6 +425,15 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*T
 		return nil, ErrUserInactive
 	}
 
+	// Preserve the sid across refresh so AuthMiddleware can keep validating
+	// against the sessions table. Without this, a refreshed access token
+	// carries Sid=uuid.Nil and the middleware accepts on signature alone —
+	// which means a revoked session can be kept alive indefinitely by
+	// refreshing. For legacy pre-sid refresh tokens (Sid=uuid.Nil) we
+	// fall back to generateTokens so the JWT shape stays unchanged.
+	if claims.Sid != uuid.Nil {
+		return s.generateTokensWithSid(user, claims.FamilyID, claims.Role, claims.Sid)
+	}
 	return s.generateTokens(user, claims.FamilyID, claims.Role)
 }
 
