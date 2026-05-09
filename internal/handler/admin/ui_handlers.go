@@ -229,6 +229,13 @@ func (h *Handler) AdminLogout(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "admin_refresh_token",
+		Value:    "",
+		Path:     "/api/admin/auth/refresh",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+	})
 	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 }
 
