@@ -27,6 +27,42 @@ const (
 	AuthClaimsKey  contextKey = "authClaims"
 )
 
+const (
+	cookieUser   = "user_access_token"
+	cookieAdmin  = "admin_access_token"
+	cookieLegacy = "access_token"
+)
+
+// resolveCookieNames returns the cookie names to try in order for a request
+// path. Admin paths prefer admin_access_token; everything else prefers
+// user_access_token. Both fall back to the legacy access_token cookie during
+// the rollover window after this slice ships.
+func resolveCookieNames(path string) []string {
+	if strings.HasPrefix(path, "/admin") || strings.HasPrefix(path, "/api/admin") {
+		return []string{cookieAdmin, cookieLegacy}
+	}
+	return []string{cookieUser, cookieLegacy}
+}
+
+// errSuffix maps a service.ValidateSession error to a short string used in
+// unauthorized reasons (e.g. "session_revoked").
+func errSuffix(err error) string {
+	switch err {
+	case service.ErrSessionRevoked:
+		return "revoked"
+	case service.ErrSessionExpired:
+		return "expired"
+	case service.ErrSessionNotFound:
+		return "missing"
+	default:
+		return "invalid"
+	}
+}
+
+// ResolveCookieNamesForTest is exported only for tests (white-box check on
+// resolveCookieNames). Not for runtime use.
+func ResolveCookieNamesForTest(path string) []string { return resolveCookieNames(path) }
+
 // AuthMiddleware validates JWT tokens and sets user context.
 //
 // Failure UX: API requests (path under /api/) get a JSON body so the client
@@ -51,16 +87,21 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 			// Get token from header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				// Try cookie for web requests
-				cookie, err := r.Cookie("access_token")
-				if err != nil {
+				var found *http.Cookie
+				for _, name := range resolveCookieNames(r.URL.Path) {
+					if c, err := r.Cookie(name); err == nil {
+						found = c
+						break
+					}
+				}
+				if found == nil {
 					if strings.HasPrefix(r.URL.Path, "/api/admin") {
-						log.Printf("Auth debug [%s]: No access_token cookie found, err=%v", r.URL.Path, err)
+						log.Printf("Auth debug [%s]: No auth cookie found (tried %v)", r.URL.Path, resolveCookieNames(r.URL.Path))
 					}
 					unauthorized(w, r, "no_token")
 					return
 				}
-				authHeader = "Bearer " + cookie.Value
+				authHeader = "Bearer " + found.Value
 			}
 
 			// Validate Bearer format
@@ -79,6 +120,16 @@ func AuthMiddleware(authService *service.AuthService) func(http.Handler) http.Ha
 				unauthorized(w, r, "expired_or_invalid")
 				return
 			}
+
+			if claims.Sid != uuid.Nil {
+				if err := authService.ValidateSession(r.Context(), claims.Sid); err != nil {
+					unauthorized(w, r, "session_"+errSuffix(err))
+					return
+				}
+				authService.TouchSession(claims.Sid)
+			}
+			// claims.Sid == uuid.Nil → legacy pre-migration JWT. Accept on signature
+			// alone; this branch goes away once all legacy sessions have expired.
 
 			// Set context values
 			ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
@@ -101,10 +152,11 @@ func OptionalAuthMiddleware(authService *service.AuthService) func(http.Handler)
 			// Get token from header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				// Try cookie for web requests
-				cookie, err := r.Cookie("access_token")
-				if err == nil {
-					authHeader = "Bearer " + cookie.Value
+				for _, name := range resolveCookieNames(r.URL.Path) {
+					if c, err := r.Cookie(name); err == nil {
+						authHeader = "Bearer " + c.Value
+						break
+					}
 				}
 			}
 
@@ -113,6 +165,14 @@ func OptionalAuthMiddleware(authService *service.AuthService) func(http.Handler)
 				if len(parts) == 2 && parts[0] == "Bearer" {
 					claims, err := authService.ValidateToken(parts[1])
 					if err == nil {
+						if claims.Sid != uuid.Nil {
+							if err := authService.ValidateSession(r.Context(), claims.Sid); err != nil {
+								// Don't set auth context; treat as anonymous.
+								next.ServeHTTP(w, r)
+								return
+							}
+							authService.TouchSession(claims.Sid)
+						}
 						ctx := context.WithValue(r.Context(), UserIDKey, claims.UserID)
 						ctx = context.WithValue(ctx, EmailKey, claims.Email)
 						ctx = context.WithValue(ctx, FamilyIDKey, claims.FamilyID)
