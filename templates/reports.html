@@ -491,16 +491,27 @@ function renderCharts(data) {
 }
 
 function downloadReport() {
-    // Open the PDF in a new tab/window so the original results page (and its
-    // Back button) stay reachable. The previous behavior used
-    // `window.location.href = url` which navigated the WebView away to the
-    // raw PDF — on the Capacitor mobile shell that locked the user inside an
-    // inline PDF viewer with no exit, requiring force-quit to escape (ticket
-    // #112376). New tab gives the system browser's native chrome on mobile
-    // (back / share / save), and on desktop also surfaces the browser's own
-    // download UI for users who'd rather save than view.
-    if (currentReportId) {
-        window.open(`/api/children/${childId}/reports/${currentReportId}/download`, '_blank');
+    // Open the PDF outside the main WebView so the user always has a way back.
+    //
+    // Earlier behavior used `window.location.href = url` which navigated the
+    // Capacitor WebView away to the raw PDF, locking the user inside an
+    // inline PDF viewer with no exit (ticket #112376 — required force-quit
+    // to escape).
+    //
+    // Native app path: @capacitor/browser plugin opens in SFSafariViewController
+    // on iOS / Custom Tabs on Android — both have their own chrome with a
+    // Done/Back button that returns to MyCareCompanion. The plugin is already
+    // bundled into the native shell (mobile/package.json); the JS bridge is
+    // injected by Capacitor at runtime and `window.Capacitor.isNativePlatform`
+    // is true only inside the app.
+    //
+    // Web path: open in a new tab so the original results page stays reachable.
+    if (!currentReportId) return;
+    const url = `/api/children/${childId}/reports/${currentReportId}/download`;
+    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+        window.Capacitor.Plugins.Browser.open({ url: window.location.origin + url });
+    } else {
+        window.open(url, '_blank');
     }
 }
 
