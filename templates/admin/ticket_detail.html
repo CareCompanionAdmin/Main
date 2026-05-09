@@ -9,7 +9,7 @@
     <strong>Marked as duplicate</strong> of
     {{if $.Data.dup_canonical_t}}
         ticket
-        <a href="/admin/tickets/{{$.Data.dup_canonical_t.ID}}" class="text-amber-900 underline">#{{slice $.Data.dup_canonical_t.ID.String 0 8}} — {{$.Data.dup_canonical_t.Subject}}</a>
+        <a href="/admin/tickets/{{$.Data.dup_canonical_t.ID}}" class="text-amber-900 underline">#{{$.Data.dup_canonical_t.Number}} — {{$.Data.dup_canonical_t.Subject}}</a>
     {{else if $.Data.dup_canonical_r}}
         roadmap item
         <a href="/admin/roadmap/{{$.Data.dup_canonical_r.ID}}" class="text-amber-900 underline">{{$.Data.dup_canonical_r.Title}}</a>
@@ -31,7 +31,7 @@
     <div class="flex justify-between items-start mb-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">{{.Subject}}</h1>
-            <p class="text-sm text-gray-500">Ticket #{{slice .ID.String 0 8}} | Created {{.CreatedAt.Format "Jan 2, 2006"}} {{formatTimeStr (.CreatedAt.Format "15:04") $.UserTimeFormat}}</p>
+            <p class="text-sm text-gray-500">Ticket #{{.Number}} | Created {{.CreatedAt.Format "Jan 2, 2006"}} {{formatTimeStr (.CreatedAt.Format "15:04") $.UserTimeFormat}}</p>
         </div>
         <div class="flex space-x-2">
             <span class="px-3 py-1 text-sm rounded-full

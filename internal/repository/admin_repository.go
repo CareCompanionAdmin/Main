@@ -56,6 +56,11 @@ type AdminFamilyView struct {
 // SupportTicket represents a support ticket
 type SupportTicket struct {
 	ID                   uuid.UUID         `json:"id"`
+	// Number is the human-shareable display ID — 6+ digits, sequential,
+	// starts at 112358 (Fibonacci). UUID stays the PK; this is a separate
+	// UNIQUE column added in migration 00033 for verbal communication
+	// with users ("your ticket #112358 has been resolved").
+	Number               int64             `json:"ticket_number"`
 	UserID               models.NullUUID   `json:"user_id,omitempty"`
 	Subject              string            `json:"subject"`
 	Description          string            `json:"description"`
@@ -545,7 +550,7 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 	// denorm column carries the correct email regardless of which env the
 	// row originated from.
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+		SELECT t.id, t.ticket_number, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
@@ -565,7 +570,7 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 	var tickets []SupportTicket
 	for rows.Next() {
 		var t SupportTicket
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
+		if err := rows.Scan(&t.ID, &t.Number, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 			&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
 			&t.UserEmail, &t.AssigneeName, &t.DuplicateCount); err != nil {
@@ -578,7 +583,7 @@ func (r *adminRepo) GetTickets(ctx context.Context, status, ticketType string, p
 
 func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTicket, error) {
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+		SELECT t.id, t.ticket_number, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
@@ -591,7 +596,7 @@ func (r *adminRepo) GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTi
 	`
 	t := &SupportTicket{}
 	err := r.supportDB.QueryRowContext(ctx, query, id).Scan(
-		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
+		&t.ID, &t.Number, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 		&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 		&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
 		&t.UserEmail, &t.AssigneeName, &t.DuplicateCount,
@@ -725,7 +730,7 @@ func (r *adminRepo) SearchTicketsByText(ctx context.Context, query string, limit
 	}
 	pattern := "%" + strings.ToLower(query) + "%"
 	rows, err := r.supportDB.QueryContext(ctx, `
-        SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+        SELECT t.id, t.ticket_number, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
                t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
                t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
                COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
@@ -749,7 +754,7 @@ func (r *adminRepo) SearchTicketsByText(ctx context.Context, query string, limit
 // joins for one-arg WHERE-clause lookups.
 func (r *adminRepo) queryTicketsBy(ctx context.Context, whereClause string, arg interface{}) ([]SupportTicket, error) {
 	q := `
-        SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+        SELECT t.id, t.ticket_number, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
                t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
                t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
                COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
@@ -773,7 +778,7 @@ func scanTickets(rows *sql.Rows) ([]SupportTicket, error) {
 	var out []SupportTicket
 	for rows.Next() {
 		var t SupportTicket
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
+		if err := rows.Scan(&t.ID, &t.Number, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 			&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
 			&t.UserEmail, &t.AssigneeName, &t.DuplicateCount); err != nil {

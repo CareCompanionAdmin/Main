@@ -102,7 +102,7 @@ func (r *userSupportRepo) CreateTicket(ctx context.Context, userID uuid.UUID, su
 // GetTickets returns all tickets for a specific user
 func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]SupportTicket, error) {
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+		SELECT t.id, t.ticket_number, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
@@ -122,7 +122,7 @@ func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]S
 	var tickets []SupportTicket
 	for rows.Next() {
 		var t SupportTicket
-		if err := rows.Scan(&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
+		if err := rows.Scan(&t.ID, &t.Number, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 			&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 			&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
 			&t.UserEmail, &t.AssigneeName); err != nil {
@@ -136,7 +136,7 @@ func (r *userSupportRepo) GetTickets(ctx context.Context, userID uuid.UUID) ([]S
 // GetTicketByID returns a specific ticket, validating user ownership
 func (r *userSupportRepo) GetTicketByID(ctx context.Context, ticketID, userID uuid.UUID) (*SupportTicket, error) {
 	query := `
-		SELECT t.id, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
+		SELECT t.id, t.ticket_number, t.user_id, t.subject, t.description, t.status, t.priority, t.type,
 		       t.assigned_to, t.created_at, t.updated_at, t.resolved_at, t.resolved_by,
 		       t.duplicate_of_ticket_id, t.duplicate_of_roadmap_id,
 		       COALESCE(NULLIF(t.user_email, ''), u.email, '') as user_email,
@@ -148,7 +148,7 @@ func (r *userSupportRepo) GetTicketByID(ctx context.Context, ticketID, userID uu
 	`
 	t := &SupportTicket{}
 	err := r.supportDB.QueryRowContext(ctx, query, ticketID, userID).Scan(
-		&t.ID, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
+		&t.ID, &t.Number, &t.UserID, &t.Subject, &t.Description, &t.Status, &t.Priority, &t.Type,
 		&t.AssignedTo, &t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt, &t.ResolvedBy,
 		&t.DuplicateOfTicketID, &t.DuplicateOfRoadmapID,
 		&t.UserEmail, &t.AssigneeName,
