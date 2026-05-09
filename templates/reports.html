@@ -491,8 +491,16 @@ function renderCharts(data) {
 }
 
 function downloadReport() {
+    // Open the PDF in a new tab/window so the original results page (and its
+    // Back button) stay reachable. The previous behavior used
+    // `window.location.href = url` which navigated the WebView away to the
+    // raw PDF — on the Capacitor mobile shell that locked the user inside an
+    // inline PDF viewer with no exit, requiring force-quit to escape (ticket
+    // #112376). New tab gives the system browser's native chrome on mobile
+    // (back / share / save), and on desktop also surfaces the browser's own
+    // download UI for users who'd rather save than view.
     if (currentReportId) {
-        window.location.href = `/api/children/${childId}/reports/${currentReportId}/download`;
+        window.open(`/api/children/${childId}/reports/${currentReportId}/download`, '_blank');
     }
 }
 
