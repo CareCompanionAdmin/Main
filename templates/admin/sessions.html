@@ -1,0 +1,234 @@
+{{define "content"}}
+{{$snap := .Data}}
+<div class="max-w-7xl">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Live Sessions</h1>
+    <div class="flex items-center gap-2">
+      <button onclick="refreshSessions()" class="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">Refresh</button>
+    </div>
+  </div>
+
+  {{if $snap.CrossEnvError}}
+  <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-sm">
+    Production sessions unavailable: {{$snap.CrossEnvError}}
+  </div>
+  {{end}}
+
+  <!-- USER SESSIONS -->
+  <section class="mb-8" id="user-section">
+    <h2 class="text-lg font-semibold mb-2">User Sessions</h2>
+    <div class="bg-white rounded shadow overflow-hidden">
+      <div class="px-4 py-2 border-b flex items-center justify-between bg-gray-50">
+        <label class="text-xs"><input type="checkbox" onclick="toggleAll('users', this.checked)"> Select all</label>
+        <button onclick="killSelected('users')" class="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Kill selected</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+          <tr>
+            <th class="px-3 py-2 text-left w-8"></th>
+            <th class="px-3 py-2 text-left">User</th>
+            <th class="px-3 py-2 text-left">Email</th>
+            <th class="px-3 py-2 text-left">Family</th>
+            <th class="px-3 py-2 text-left">Source IP</th>
+            <th class="px-3 py-2 text-left">Started</th>
+            <th class="px-3 py-2 text-left">Last seen</th>
+            <th class="px-3 py-2 text-left">Env</th>
+            <th class="px-3 py-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="user-rows">
+          {{range $snap.Users}}
+          <tr data-id="{{.ID}}" data-local="{{.IsLocalEnv}}" data-kind="user">
+            <td class="px-3 py-2">{{if .IsLocalEnv}}<input type="checkbox" class="row-check users-check" value="{{.ID}}">{{end}}</td>
+            <td class="px-3 py-2">{{.UserFirstName}} {{.UserLastName}}</td>
+            <td class="px-3 py-2 text-gray-600">{{.UserEmail}}</td>
+            <td class="px-3 py-2">{{.FamilyName}}</td>
+            <td class="px-3 py-2 font-mono text-xs">{{.IPAtStart}}</td>
+            <td class="px-3 py-2 text-xs text-gray-600">{{.CreatedAt.Format "Jan 2 15:04"}}</td>
+            <td class="px-3 py-2 text-xs text-gray-600">{{.LastSeenAt.Format "Jan 2 15:04"}}</td>
+            <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded {{if eq .Env "production"}}bg-red-100 text-red-800{{else}}bg-blue-100 text-blue-800{{end}}">{{.Env}}</span></td>
+            <td class="px-3 py-2 text-right">
+              {{if .IsLocalEnv}}
+              <button onclick="killOne('{{.ID}}')" class="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Kill</button>
+              {{else}}
+              <span class="text-xs text-gray-400" title="Log into {{.Env}} admin to kill this session">cross-env</span>
+              {{end}}
+            </td>
+          </tr>
+          {{else}}
+          <tr><td colspan="9" class="px-3 py-6 text-center text-gray-400 text-sm">No active user sessions.</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ADMIN SESSIONS -->
+  <section class="mb-8" id="admin-section">
+    <h2 class="text-lg font-semibold mb-2">Admin Portal Sessions</h2>
+    <div class="bg-white rounded shadow overflow-hidden">
+      <div class="px-4 py-2 border-b flex items-center justify-between bg-gray-50">
+        <label class="text-xs"><input type="checkbox" onclick="toggleAll('admins', this.checked)"> Select all</label>
+        <button onclick="killSelected('admins')" class="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Kill selected</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+          <tr>
+            <th class="px-3 py-2 text-left w-8"></th>
+            <th class="px-3 py-2 text-left">User</th>
+            <th class="px-3 py-2 text-left">Email</th>
+            <th class="px-3 py-2 text-left">Role</th>
+            <th class="px-3 py-2 text-left">Source IP</th>
+            <th class="px-3 py-2 text-left">Started</th>
+            <th class="px-3 py-2 text-left">Last seen</th>
+            <th class="px-3 py-2 text-left">User agent</th>
+            <th class="px-3 py-2 text-left">Env</th>
+            <th class="px-3 py-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="admin-rows">
+          {{range $snap.Admins}}
+          <tr data-id="{{.ID}}" data-local="{{.IsLocalEnv}}" data-kind="admin">
+            <td class="px-3 py-2">{{if .IsLocalEnv}}<input type="checkbox" class="row-check admins-check" value="{{.ID}}">{{end}}</td>
+            <td class="px-3 py-2">{{.UserFirstName}} {{.UserLastName}}</td>
+            <td class="px-3 py-2 text-gray-600">{{.UserEmail}}</td>
+            <td class="px-3 py-2">{{.SystemRole}}</td>
+            <td class="px-3 py-2 font-mono text-xs">{{.IPAtStart}}</td>
+            <td class="px-3 py-2 text-xs text-gray-600">{{.CreatedAt.Format "Jan 2 15:04"}}</td>
+            <td class="px-3 py-2 text-xs text-gray-600">{{.LastSeenAt.Format "Jan 2 15:04"}}</td>
+            <td class="px-3 py-2 text-xs text-gray-500 truncate max-w-xs" title="{{.UserAgent}}">{{.UserAgent}}</td>
+            <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded {{if eq .Env "production"}}bg-red-100 text-red-800{{else}}bg-blue-100 text-blue-800{{end}}">{{.Env}}</span></td>
+            <td class="px-3 py-2 text-right">
+              {{if .IsLocalEnv}}
+              <button onclick="killOne('{{.ID}}')" class="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Kill</button>
+              {{else}}
+              <span class="text-xs text-gray-400" title="Log into {{.Env}} admin to kill this session">cross-env</span>
+              {{end}}
+            </td>
+          </tr>
+          {{else}}
+          <tr><td colspan="10" class="px-3 py-6 text-center text-gray-400 text-sm">No active admin sessions.</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SSH SESSIONS -->
+  <section class="mb-8" id="ssh-section">
+    <h2 class="text-lg font-semibold mb-2">SSH Sessions <span class="text-sm text-gray-400 font-normal">({{$snap.LocalEnv}} only)</span></h2>
+    <div class="bg-white rounded shadow overflow-hidden">
+      <div class="px-4 py-2 border-b flex items-center justify-between bg-gray-50">
+        <label class="text-xs"><input type="checkbox" onclick="toggleAll('ssh', this.checked)"> Select all</label>
+        <button onclick="killSelectedSSH()" class="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Kill selected</button>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+          <tr>
+            <th class="px-3 py-2 text-left w-8"></th>
+            <th class="px-3 py-2 text-left">User</th>
+            <th class="px-3 py-2 text-left">Source IP</th>
+            <th class="px-3 py-2 text-left">Started</th>
+            <th class="px-3 py-2 text-left">Terminal</th>
+            <th class="px-3 py-2 text-left">Env</th>
+            <th class="px-3 py-2 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="ssh-rows">
+          {{range $snap.SSH}}
+          <tr data-id="{{.ID}}" data-tty="{{.TTY}}" data-kind="ssh">
+            <td class="px-3 py-2"><input type="checkbox" class="row-check ssh-check" value="{{.TTY}}"></td>
+            <td class="px-3 py-2">{{.UserEmail}}</td>
+            <td class="px-3 py-2 font-mono text-xs">{{.IPAtStart}}</td>
+            <td class="px-3 py-2 text-xs text-gray-600">{{.StartedDisplay}}</td>
+            <td class="px-3 py-2 font-mono text-xs">{{.TTY}}</td>
+            <td class="px-3 py-2"><span class="px-2 py-0.5 text-xs rounded bg-blue-100 text-blue-800">{{.Env}}</span></td>
+            <td class="px-3 py-2 text-right">
+              <button onclick="killSSH('{{.TTY}}')" class="text-xs px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">Kill</button>
+            </td>
+          </tr>
+          {{else}}
+          <tr><td colspan="7" class="px-3 py-6 text-center text-gray-400 text-sm">No active SSH sessions.</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+const SECTIONS = { users: 'users-check', admins: 'admins-check', ssh: 'ssh-check' };
+
+function toggleAll(section, checked) {
+  document.querySelectorAll('.' + SECTIONS[section]).forEach(c => c.checked = checked);
+}
+
+function selectedIds(section) {
+  return Array.from(document.querySelectorAll('.' + SECTIONS[section] + ':checked')).map(c => c.value);
+}
+
+async function killOne(id) {
+  if (!confirm('Kill this session?')) return;
+  const resp = await fetch('/api/admin/sessions/' + id, { method: 'DELETE', credentials: 'same-origin' });
+  if (!resp.ok && resp.status !== 204) {
+    alert('Failed to kill session: ' + resp.status);
+    return;
+  }
+  refreshSessions();
+}
+
+async function killSelected(section) {
+  const ids = selectedIds(section);
+  if (ids.length === 0) return;
+  if (!confirm('Kill ' + ids.length + ' session(s)?')) return;
+  const resp = await fetch('/api/admin/sessions/revoke', {
+    method: 'POST', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: ids }),
+  });
+  if (resp.ok) {
+    const j = await resp.json();
+    alert('Revoked ' + j.revoked + ' session(s)');
+    refreshSessions();
+  } else {
+    alert('Bulk revoke failed: ' + resp.status);
+  }
+}
+
+async function killSSH(tty) {
+  if (!confirm('Kill SSH session on ' + tty + '?')) return;
+  const resp = await fetch('/api/admin/sessions/ssh/kill', {
+    method: 'POST', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tty: tty }),
+  });
+  if (resp.ok || resp.status === 204) {
+    refreshSessions();
+  } else {
+    alert('Failed to kill SSH session: ' + resp.status);
+  }
+}
+
+async function killSelectedSSH() {
+  const ttys = selectedIds('ssh');
+  if (ttys.length === 0) return;
+  if (!confirm('Kill ' + ttys.length + ' SSH session(s)?')) return;
+  for (const t of ttys) {
+    await fetch('/api/admin/sessions/ssh/kill', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tty: t }),
+    });
+  }
+  refreshSessions();
+}
+
+function refreshSessions() {
+  // Simple full-page reload — keeps the template logic single-source-of-truth.
+  // 30s auto-refresh; manual button hits the same path.
+  window.location.reload();
+}
+
+setInterval(refreshSessions, 30000);
+</script>
+{{end}}
