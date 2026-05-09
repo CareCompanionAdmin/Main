@@ -20,6 +20,7 @@ type Handler struct {
 	attachService     *service.TicketAttachmentService
 	betaService       *service.BetaService
 	bountyService     *service.BountyService
+	liveSessionsService *service.LiveSessionsService
 }
 
 // SetBetaService wires the beta-invite orchestration service.
@@ -50,6 +51,11 @@ func (h *Handler) SetTicketDuplicateService(s *service.TicketDuplicateService) {
 // SetTicketAttachmentService wires the attachment service.
 func (h *Handler) SetTicketAttachmentService(s *service.TicketAttachmentService) {
 	h.attachService = s
+}
+
+// SetLiveSessionsService wires the live-sessions aggregator.
+func (h *Handler) SetLiveSessionsService(s *service.LiveSessionsService) {
+	h.liveSessionsService = s
 }
 
 // NewHandler creates a new admin handler

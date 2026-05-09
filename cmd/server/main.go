@@ -244,6 +244,11 @@ func main() {
 		internalToken,
 	)
 	adminHandler.SetDevModeService(devModeService)
+	// Wire DevMode into the live-sessions aggregator so SSH rows show up
+	// alongside JWT sessions on the Live Sessions admin page. Without this,
+	// snap.SSH stays empty.
+	services.LiveSessions.SetDevModeService(devModeService)
+	adminHandler.SetLiveSessionsService(services.LiveSessions)
 	log.Println("Development Mode service initialized")
 
 	// Internal endpoints for cross-server dev mode session management
