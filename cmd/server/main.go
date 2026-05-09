@@ -285,6 +285,12 @@ func main() {
 
 	r.Route("/api/admin", func(r chi.Router) {
 		r.Use(middleware.ContentTypeJSON)
+
+		// Public refresh endpoint — registered BEFORE the protected Mount so
+		// chi matches it first. AuthMiddleware does NOT run here; refresh
+		// must work AFTER the access token has lapsed.
+		r.Post("/auth/refresh", adminHandler.AdminRefreshToken)
+
 		r.Mount("/", adminHandler.Routes())
 	})
 	r.Mount("/admin", adminHandler.UIRoutes())
