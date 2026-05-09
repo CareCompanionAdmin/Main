@@ -357,6 +357,7 @@ type Repositories struct {
 	TicketAttachment TicketAttachmentRepository // Per-ticket file attachments
 	BetaInvitation   BetaInvitationRepository   // Marketing-managed TestFlight beta invites
 	BountyAward      BountyAwardRepository      // Monthly top-5+5 bounty rewards
+	Session          SessionRepository          // Persistent server-side sessions
 }
 
 // NewRepositories creates all repository implementations.
@@ -392,5 +393,6 @@ func NewRepositories(db, supportDB *sql.DB) *Repositories {
 		TicketAttachment: NewTicketAttachmentRepo(db, supportDB),
 		BetaInvitation:   NewBetaInvitationRepo(db),
 		BountyAward:      NewBountyAwardRepo(db),
+		Session:          NewSessionRepo(db),
 	}
 }
