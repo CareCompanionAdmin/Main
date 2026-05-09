@@ -83,6 +83,10 @@ func (h *Handler) Routes() chi.Router {
 	// All admin routes require authentication
 	r.Use(middleware.AuthMiddleware(h.authService))
 
+	// Lightweight liveness probe used by admin_session_guard.js. AuthMiddleware
+	// returns 401 on missing/expired/revoked session — handler just confirms 200.
+	r.Get("/auth/check", h.AdminAuthCheck)
+
 	// Sessions: super_admin + support can revoke individual sessions.
 	// Role check is in the handler (not via middleware) so we can extend the
 	// allowed roles in a later slice without restructuring the route tree.
