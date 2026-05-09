@@ -3,6 +3,7 @@ package admin
 import (
 	"encoding/json"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -360,7 +361,16 @@ func (h *Handler) TicketsPage(w http.ResponseWriter, r *http.Request) {
 
 	status := r.URL.Query().Get("status")
 	ticketType := r.URL.Query().Get("type")
-	tickets, total, _ := h.adminRepo.GetTickets(r.Context(), status, ticketType, 1, 50)
+	tickets, total, err := h.adminRepo.GetTickets(r.Context(), status, ticketType, 1, 50)
+	if err != nil {
+		// Don't render an empty list silently — that masked a permission-grant
+		// gap on the cross-env support DB role for ~30 minutes after the
+		// 00032 users-split ship. Log loudly and surface a 500 so future
+		// regressions show up immediately.
+		log.Printf("[admin/tickets] GetTickets failed: %v", err)
+		http.Error(w, "Failed to load tickets", http.StatusInternalServerError)
+		return
+	}
 
 	tmpl, err := parseTemplates("layout.html", "tickets.html")
 	if err != nil {
@@ -389,8 +399,22 @@ func (h *Handler) TicketDetailPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, _ := uuid.Parse(chi.URLParam(r, "id"))
-	ticket, _ := h.adminRepo.GetTicketByID(r.Context(), id)
-	messages, _ := h.adminRepo.GetTicketMessages(r.Context(), id)
+	ticket, err := h.adminRepo.GetTicketByID(r.Context(), id)
+	if err != nil {
+		log.Printf("[admin/tickets/%s] GetTicketByID failed: %v", id, err)
+		http.Error(w, "Failed to load ticket", http.StatusInternalServerError)
+		return
+	}
+	if ticket == nil {
+		http.NotFound(w, r)
+		return
+	}
+	messages, err := h.adminRepo.GetTicketMessages(r.Context(), id)
+	if err != nil {
+		log.Printf("[admin/tickets/%s] GetTicketMessages failed: %v", id, err)
+		http.Error(w, "Failed to load ticket messages", http.StatusInternalServerError)
+		return
+	}
 
 	// If the roadmap service is wired and this ticket is a feature_request,
 	// look up whether it's already been promoted so the UI can show
@@ -445,7 +469,12 @@ func (h *Handler) UsersPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query().Get("q")
-	users, total, _ := h.adminRepo.SearchUsers(r.Context(), query, 1, 50)
+	users, total, err := h.adminRepo.SearchUsers(r.Context(), query, 1, 50)
+	if err != nil {
+		log.Printf("[admin/users] SearchUsers failed: %v", err)
+		http.Error(w, "Failed to load users", http.StatusInternalServerError)
+		return
+	}
 
 	tmpl, err := parseTemplates("layout.html", "users.html")
 	if err != nil {

@@ -34,8 +34,12 @@ func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, 
 	return s.userRepo.GetByID(ctx, id)
 }
 
+// GetByEmail is the parent-side email lookup (family member add/lookup).
+// Post-00032 this MUST resolve in app_users only — using the kind-agnostic
+// GetByEmail (legacy `users` view) would non-deterministically pick admin
+// or parent when the same email exists in both tables.
 func (s *UserService) GetByEmail(ctx context.Context, email string) (*models.User, error) {
-	return s.userRepo.GetByEmail(ctx, email)
+	return s.userRepo.GetAppByEmail(ctx, email)
 }
 
 func (s *UserService) Update(ctx context.Context, user *models.User) error {

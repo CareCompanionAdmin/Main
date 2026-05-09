@@ -39,9 +39,15 @@ func NewPasswordResetService(db *sql.DB, userRepo repository.UserRepository, ema
 	}
 }
 
-// RequestReset generates a reset token and sends the reset email
+// RequestReset generates a reset token and sends the reset email.
+// Post-00032: this flow is parent-only (POST /api/auth/request-reset on the
+// public site). Admins reset other admins' passwords via the admin portal,
+// not by self-service. So we deliberately look up the parent table only —
+// using GetByEmail (the legacy kind-agnostic helper that hits the `users`
+// view) would non-deterministically pick admin or parent when the same
+// email exists in both tables.
 func (s *PasswordResetService) RequestReset(ctx context.Context, email string) error {
-	user, err := s.userRepo.GetByEmail(ctx, email)
+	user, err := s.userRepo.GetAppByEmail(ctx, email)
 	if err != nil {
 		return err
 	}
