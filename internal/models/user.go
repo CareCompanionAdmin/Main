@@ -51,6 +51,11 @@ func (u *User) IsMarketing() bool {
 	return u.SystemRole.Valid && SystemRole(u.SystemRole.String) == SystemRoleMarketing
 }
 
+// IsPartner returns true when the user has the partner system role.
+func (u *User) IsPartner() bool {
+	return u.SystemRole.Valid && SystemRole(u.SystemRole.String) == SystemRolePartner
+}
+
 func (u *User) IsEmailVerified() bool {
 	return u.EmailVerifiedAt.Valid
 }

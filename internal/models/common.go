@@ -325,12 +325,13 @@ const (
 	SystemRoleSuperAdmin SystemRole = "super_admin"
 	SystemRoleSupport    SystemRole = "support"
 	SystemRoleMarketing  SystemRole = "marketing"
+	SystemRolePartner    SystemRole = "partner"
 )
 
 // IsValidSystemRole checks if a string is a valid system role
 func IsValidSystemRole(role string) bool {
 	switch SystemRole(role) {
-	case SystemRoleSuperAdmin, SystemRoleSupport, SystemRoleMarketing:
+	case SystemRoleSuperAdmin, SystemRoleSupport, SystemRoleMarketing, SystemRolePartner:
 		return true
 	}
 	return false
