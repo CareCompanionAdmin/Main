@@ -328,18 +328,26 @@ func (r *childRepo) GetDashboard(ctx context.Context, childID uuid.UUID, date ti
 		}
 	}
 
-	// Get week summary
+	// Get week summary — including negative-incident totals so the bright-spot
+	// tile gating in the template can require a genuinely calm week, not just
+	// today being incident-free.
 	weekStart := date.AddDate(0, 0, -7)
 	weekQuery := `
 		SELECT
 			COUNT(DISTINCT log_date) as days_logged,
-			COALESCE(AVG(mood_level), 0) as avg_mood
+			COALESCE(AVG(mood_level), 0) as avg_mood,
+			COALESCE(SUM(meltdowns), 0) as total_meltdowns,
+			COALESCE(SUM(aggression_incidents), 0) as total_aggression,
+			COALESCE(SUM(self_injury_incidents), 0) as total_self_injury
 		FROM behavior_logs
 		WHERE child_id = $1 AND log_date BETWEEN $2 AND $3
 	`
 	r.db.QueryRowContext(ctx, weekQuery, childID, weekStart, date).Scan(
 		&dashboard.WeekSummary.DaysLogged,
 		&dashboard.WeekSummary.AverageMood,
+		&dashboard.WeekSummary.TotalMeltdowns,
+		&dashboard.WeekSummary.TotalAggression,
+		&dashboard.WeekSummary.TotalSelfInjury,
 	)
 
 	// Medication adherence for week

@@ -99,4 +99,12 @@ type WeekSummary struct {
 	AverageMood         float64 `json:"average_mood"`
 	MedicationAdherence float64 `json:"medication_adherence"`
 	AlertCount          int     `json:"alert_count"`
+	// Negative-incident totals across the week. Used to gate the "bright
+	// spot" tile so it only celebrates a calm stretch when one actually
+	// occurred — earlier the tile fired on `today.Meltdowns == 0` alone,
+	// which read "6 steady days" even when the week contained 6 aggression
+	// incidents and 3 self-injury incidents (ticket #112377).
+	TotalMeltdowns      int     `json:"total_meltdowns"`
+	TotalAggression     int     `json:"total_aggression"`
+	TotalSelfInjury     int     `json:"total_self_injury"`
 }
