@@ -283,14 +283,17 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// Public admin refresh endpoint. Registered at the TOP LEVEL (not inside
+	// the /api/admin Route block) because chi's Mount("/", adminHandler.Routes())
+	// inside that block uses its own AuthMiddleware and will intercept any
+	// path that lands on the mounted subrouter — even routes registered as
+	// siblings before the Mount. Keeping refresh at the top level guarantees
+	// it bypasses AuthMiddleware, which is required because refresh must work
+	// AFTER the access token has lapsed.
+	r.With(middleware.ContentTypeJSON).Post("/api/admin/auth/refresh", adminHandler.AdminRefreshToken)
+
 	r.Route("/api/admin", func(r chi.Router) {
 		r.Use(middleware.ContentTypeJSON)
-
-		// Public refresh endpoint — registered BEFORE the protected Mount so
-		// chi matches it first. AuthMiddleware does NOT run here; refresh
-		// must work AFTER the access token has lapsed.
-		r.Post("/auth/refresh", adminHandler.AdminRefreshToken)
-
 		r.Mount("/", adminHandler.Routes())
 	})
 	r.Mount("/admin", adminHandler.UIRoutes())
