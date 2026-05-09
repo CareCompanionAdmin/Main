@@ -78,8 +78,10 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	// Wire push notifications into alert service (avoids circular constructor deps)
 	alertService.SetPushService(pushService, repos.Family)
 
+	sessionCache := NewSessionCache(redis)
+
 	svcs := &Services{
-		Auth:              NewAuthService(repos.User, repos.Family, redis, &cfg.JWT, emailService, cfg.App.URL),
+		Auth:              NewAuthService(repos.User, repos.Family, repos.Session, sessionCache, redis, &cfg.JWT, emailService, cfg.App.URL),
 		User:              NewUserService(repos.User, repos.Family),
 		Family:            NewFamilyService(repos.Family, repos.Child),
 		Child:             NewChildService(repos.Child, repos.Family),

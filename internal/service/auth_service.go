@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -27,6 +29,8 @@ var (
 type AuthService struct {
 	userRepo     repository.UserRepository
 	familyRepo   repository.FamilyRepository
+	sessionRepo  repository.SessionRepository
+	sessionCache *SessionCache
 	redis        *database.Redis
 	jwtConfig    *config.JWTConfig
 	emailService *EmailService
@@ -43,6 +47,8 @@ func (s *AuthService) SetSubscriptionService(sub *SubscriptionService) {
 func NewAuthService(
 	userRepo repository.UserRepository,
 	familyRepo repository.FamilyRepository,
+	sessionRepo repository.SessionRepository,
+	sessionCache *SessionCache,
 	redis *database.Redis,
 	jwtConfig *config.JWTConfig,
 	emailService *EmailService,
@@ -51,6 +57,8 @@ func NewAuthService(
 	return &AuthService{
 		userRepo:     userRepo,
 		familyRepo:   familyRepo,
+		sessionRepo:  sessionRepo,
+		sessionCache: sessionCache,
 		redis:        redis,
 		jwtConfig:    jwtConfig,
 		emailService: emailService,
@@ -60,6 +68,7 @@ func NewAuthService(
 
 type AuthClaims struct {
 	jwt.RegisteredClaims
+	Sid        uuid.UUID          `json:"sid,omitempty"`
 	UserID     uuid.UUID          `json:"user_id"`
 	Email      string             `json:"email"`
 	FamilyID   uuid.UUID          `json:"family_id,omitempty"`
@@ -116,6 +125,12 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type LoginContext struct {
+	Kind      models.SessionKind
+	IP        string
+	UserAgent string
 }
 
 func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*models.User, *TokenPair, error) {
@@ -231,6 +246,10 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*mode
 }
 
 func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*models.User, *TokenPair, error) {
+	return s.LoginWithContext(ctx, req, LoginContext{Kind: models.SessionKindUser})
+}
+
+func (s *AuthService) LoginWithContext(ctx context.Context, req *LoginRequest, lc LoginContext) (*models.User, *TokenPair, error) {
 	user, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, nil, err
@@ -238,43 +257,126 @@ func (s *AuthService) Login(ctx context.Context, req *LoginRequest) (*models.Use
 	if user == nil {
 		return nil, nil, ErrInvalidCredentials
 	}
-
 	if user.Status != models.UserStatusActive {
 		return nil, nil, ErrUserInactive
 	}
-
-	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, nil, ErrInvalidCredentials
 	}
 
-	// Update last login
 	s.userRepo.UpdateLastLogin(ctx, user.ID)
 
-	// Get user's families
 	memberships, err := s.familyRepo.GetUserFamilies(ctx, user.ID)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	var familyID uuid.UUID
 	var role models.FamilyRole
 	if len(memberships) > 0 {
-		// Use first active family
 		familyID = memberships[0].FamilyID
 		role = memberships[0].Role
 	}
 
-	tokens, err := s.generateTokens(user, familyID, role)
+	// Default the kind so direct callers of Login (no LoginContext) still work.
+	if lc.Kind == "" {
+		lc.Kind = models.SessionKindUser
+	}
+
+	// At most one active session per (user_id, kind). Revoke any existing one.
+	_ = s.sessionRepo.RevokeForUserKind(ctx, user.ID, lc.Kind)
+
+	expires := time.Now().Add(s.jwtConfig.AccessExpiry)
+	sess := &models.Session{
+		UserID:    user.ID,
+		Kind:      lc.Kind,
+		ExpiresAt: expires,
+	}
+	if user.HasSystemRole() {
+		sess.SystemRole = models.NullString{NullString: sql.NullString{String: string(user.GetSystemRole()), Valid: true}}
+	}
+	if familyID != uuid.Nil {
+		sess.FamilyID = models.NullUUID{UUID: familyID, Valid: true}
+	}
+	if lc.IP != "" {
+		sess.IPAtStart = models.NullString{NullString: sql.NullString{String: lc.IP, Valid: true}}
+	}
+	if lc.UserAgent != "" {
+		sess.UserAgent = models.NullString{NullString: sql.NullString{String: lc.UserAgent, Valid: true}}
+	}
+	if err := s.sessionRepo.Create(ctx, sess); err != nil {
+		return nil, nil, fmt.Errorf("create session: %w", err)
+	}
+
+	tokens, err := s.generateTokensWithSid(user, familyID, role, sess.ID)
 	if err != nil {
 		return nil, nil, err
 	}
-
+	s.sessionCache.MarkValid(ctx, sess.ID)
 	return user, tokens, nil
 }
 
 func (s *AuthService) Logout(ctx context.Context, userID uuid.UUID) error {
-	return s.redis.DeleteSession(ctx, userID.String())
+	return s.sessionRepo.RevokeForUserKind(ctx, userID, models.SessionKindUser)
+}
+
+func (s *AuthService) LogoutAdmin(ctx context.Context, userID uuid.UUID) error {
+	return s.sessionRepo.RevokeForUserKind(ctx, userID, models.SessionKindAdmin)
+}
+
+func (s *AuthService) LogoutAll(ctx context.Context, userID uuid.UUID) error {
+	if err := s.sessionRepo.RevokeForUserKind(ctx, userID, models.SessionKindUser); err != nil {
+		return err
+	}
+	return s.sessionRepo.RevokeForUserKind(ctx, userID, models.SessionKindAdmin)
+}
+
+var (
+	ErrSessionRevoked  = errors.New("session revoked")
+	ErrSessionExpired  = errors.New("session expired")
+	ErrSessionNotFound = errors.New("session not found")
+)
+
+func (s *AuthService) RevokeSession(ctx context.Context, sid uuid.UUID) error {
+	if err := s.sessionRepo.Revoke(ctx, sid); err != nil {
+		return err
+	}
+	s.sessionCache.MarkRevoked(ctx, sid)
+	return nil
+}
+
+func (s *AuthService) ValidateSession(ctx context.Context, sid uuid.UUID) error {
+	switch s.sessionCache.Lookup(ctx, sid) {
+	case "valid":
+		return nil
+	case "revoked":
+		return ErrSessionRevoked
+	}
+	row, err := s.sessionRepo.GetByID(ctx, sid)
+	if err != nil {
+		return err
+	}
+	if row == nil {
+		return ErrSessionNotFound
+	}
+	if row.RevokedAt != nil {
+		s.sessionCache.MarkRevoked(ctx, sid)
+		return ErrSessionRevoked
+	}
+	if time.Now().After(row.ExpiresAt) {
+		return ErrSessionExpired
+	}
+	s.sessionCache.MarkValid(ctx, sid)
+	return nil
+}
+
+// TouchSession updates last_seen_at off the request hot path. Best-effort —
+// errors are swallowed.
+func (s *AuthService) TouchSession(sid uuid.UUID) {
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = s.sessionRepo.TouchLastSeen(ctx, sid)
+	}()
 }
 
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*TokenPair, error) {
@@ -388,6 +490,59 @@ func (s *AuthService) generateTokens(user *models.User, familyID uuid.UUID, role
 		RefreshToken: refreshTokenString,
 		ExpiresAt:    accessExpiry,
 	}, nil
+}
+
+func (s *AuthService) generateTokensWithSid(user *models.User, familyID uuid.UUID, role models.FamilyRole, sid uuid.UUID) (*TokenPair, error) {
+	now := time.Now()
+	accessExpiry := now.Add(s.jwtConfig.AccessExpiry)
+	refreshExpiry := now.Add(s.jwtConfig.RefreshExpiry)
+
+	var systemRole models.SystemRole
+	if user.HasSystemRole() {
+		systemRole = user.GetSystemRole()
+	}
+
+	accessClaims := &AuthClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "carecompanion",
+			Subject:   user.ID.String(),
+			ExpiresAt: jwt.NewNumericDate(accessExpiry),
+			IssuedAt:  jwt.NewNumericDate(now),
+		},
+		Sid:        sid,
+		UserID:     user.ID,
+		Email:      user.Email,
+		FamilyID:   familyID,
+		Role:       role,
+		SystemRole: systemRole,
+		FirstName:  user.FirstName,
+	}
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
+	accessStr, err := accessToken.SignedString([]byte(s.jwtConfig.Secret))
+	if err != nil {
+		return nil, err
+	}
+
+	refreshClaims := &AuthClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "carecompanion",
+			Subject:   user.ID.String(),
+			ExpiresAt: jwt.NewNumericDate(refreshExpiry),
+			IssuedAt:  jwt.NewNumericDate(now),
+		},
+		Sid:        sid,
+		UserID:     user.ID,
+		FamilyID:   familyID,
+		Role:       role,
+		SystemRole: systemRole,
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+	refreshStr, err := refreshToken.SignedString([]byte(s.jwtConfig.Secret))
+	if err != nil {
+		return nil, err
+	}
+
+	return &TokenPair{AccessToken: accessStr, RefreshToken: refreshStr, ExpiresAt: accessExpiry}, nil
 }
 
 func (s *AuthService) HashPassword(password string) (string, error) {
