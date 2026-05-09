@@ -81,7 +81,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 	sessionCache := NewSessionCache(redis)
 
 	svcs := &Services{
-		Auth:              NewAuthService(repos.User, repos.Family, repos.Session, sessionCache, redis, &cfg.JWT, emailService, cfg.App.URL),
+		Auth:              NewAuthService(repos.User, repos.Family, repos.Session, sessionCache, redis, &cfg.JWT, emailService, cfg.App.URL, cfg.App.Env),
 		User:              NewUserService(repos.User, repos.Family),
 		Family:            NewFamilyService(repos.Family, repos.Child),
 		Child:             NewChildService(repos.Child, repos.Family),

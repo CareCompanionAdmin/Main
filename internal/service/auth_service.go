@@ -52,6 +52,7 @@ type AuthService struct {
 	jwtConfig    *config.JWTConfig
 	emailService *EmailService
 	appURL       string
+	appEnv       string
 	subSvc       *SubscriptionService // wired post-construction; nil-safe
 }
 
@@ -70,6 +71,7 @@ func NewAuthService(
 	jwtConfig *config.JWTConfig,
 	emailService *EmailService,
 	appURL string,
+	appEnv string,
 ) *AuthService {
 	return &AuthService{
 		userRepo:     userRepo,
@@ -80,6 +82,7 @@ func NewAuthService(
 		jwtConfig:    jwtConfig,
 		emailService: emailService,
 		appURL:       appURL,
+		appEnv:       appEnv,
 	}
 }
 
@@ -319,6 +322,17 @@ func (s *AuthService) LoginWithContext(ctx context.Context, req *LoginRequest, l
 	}
 	if lc.UserAgent != "" {
 		sess.UserAgent = models.NullString{NullString: sql.NullString{String: lc.UserAgent, Valid: true}}
+	}
+	sess.UserEmail = models.NullString{NullString: sql.NullString{String: user.Email, Valid: user.Email != ""}}
+	sess.UserFirstName = models.NullString{NullString: sql.NullString{String: user.FirstName, Valid: user.FirstName != ""}}
+	sess.UserLastName = models.NullString{NullString: sql.NullString{String: user.LastName, Valid: user.LastName != ""}}
+	if s.appEnv != "" {
+		sess.EnvName = models.NullString{NullString: sql.NullString{String: s.appEnv, Valid: true}}
+	}
+	if familyID != uuid.Nil {
+		if family, ferr := s.familyRepo.GetByID(ctx, familyID); ferr == nil && family != nil && family.Name != "" {
+			sess.FamilyName = models.NullString{NullString: sql.NullString{String: family.Name, Valid: true}}
+		}
 	}
 	if err := s.sessionRepo.Create(ctx, sess); err != nil {
 		return nil, nil, fmt.Errorf("create session: %w", err)
