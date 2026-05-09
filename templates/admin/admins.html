@@ -28,6 +28,7 @@
                     <span class="px-2 py-1 text-xs rounded-full
                         {{if eq .SystemRole.String "super_admin"}}bg-purple-100 text-purple-800
                         {{else if eq .SystemRole.String "support"}}bg-blue-100 text-blue-800
+                        {{else if eq .SystemRole.String "partner"}}bg-amber-100 text-amber-800
                         {{else}}bg-green-100 text-green-800{{end}}">
                         {{.SystemRole.String}}
                     </span>
@@ -79,6 +80,7 @@
                     <option value="super_admin">Super Admin</option>
                     <option value="support">Support</option>
                     <option value="marketing">Marketing</option>
+                    <option value="partner">Partner</option>
                 </select>
             </div>
             <div class="flex justify-end space-x-3">
@@ -112,8 +114,8 @@ document.getElementById('addForm').onsubmit = async (e) => {
     location.reload();
 };
 async function editAdmin(id, currentRole) {
-    const newRole = prompt('Enter new role (super_admin, support, marketing):', currentRole);
-    if (newRole && ['super_admin', 'support', 'marketing'].includes(newRole)) {
+    const newRole = prompt('Enter new role (super_admin, support, marketing, partner):', currentRole);
+    if (newRole && ['super_admin', 'support', 'marketing', 'partner'].includes(newRole)) {
         await apiCall('PUT', '/api/admin/super/admins/' + id, { role: newRole });
         location.reload();
     }
