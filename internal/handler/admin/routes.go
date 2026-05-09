@@ -77,6 +77,11 @@ func (h *Handler) Routes() chi.Router {
 	// All admin routes require authentication
 	r.Use(middleware.AuthMiddleware(h.authService))
 
+	// Sessions: super_admin + support can revoke individual sessions.
+	// Role check is in the handler (not via middleware) so we can extend the
+	// allowed roles in a later slice without restructuring the route tree.
+	r.Delete("/sessions/{sessionID}", h.RevokeSession)
+
 	// Super admin routes
 	r.Route("/super", func(r chi.Router) {
 		r.Use(middleware.RequireSuperAdmin())

@@ -822,3 +822,24 @@ func getIntParam(r *http.Request, name string, defaultVal int) int {
 	}
 	return i
 }
+
+// RevokeSession kills a single session by id. Permitted to super_admin and
+// support roles. Bulk variant ships with the Live Sessions admin UI in a
+// later slice; the Partner role gets the same access then.
+func (h *Handler) RevokeSession(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetAuthClaims(r.Context())
+	if claims == nil || !claims.HasAnySystemRole(models.SystemRoleSuperAdmin, models.SystemRoleSupport) {
+		middleware.JSONError(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	id, err := uuid.Parse(chi.URLParam(r, "sessionID"))
+	if err != nil {
+		middleware.JSONError(w, "Invalid session ID", http.StatusBadRequest)
+		return
+	}
+	if err := h.authService.RevokeSession(r.Context(), id); err != nil {
+		middleware.JSONError(w, "Revoke failed", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
