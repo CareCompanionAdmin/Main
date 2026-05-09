@@ -823,12 +823,12 @@ func getIntParam(r *http.Request, name string, defaultVal int) int {
 	return i
 }
 
-// RevokeSession kills a single session by id. Permitted to super_admin and
-// support roles. Bulk variant ships with the Live Sessions admin UI in a
-// later slice; the Partner role gets the same access then.
+// RevokeSession kills a single session by id. Permitted to super_admin,
+// support, and partner roles. Bulk variant ships with the Live Sessions
+// admin UI in a later slice.
 func (h *Handler) RevokeSession(w http.ResponseWriter, r *http.Request) {
 	claims := middleware.GetAuthClaims(r.Context())
-	if claims == nil || !claims.HasAnySystemRole(models.SystemRoleSuperAdmin, models.SystemRoleSupport) {
+	if claims == nil || !claims.HasAnySystemRole(models.SystemRoleSuperAdmin, models.SystemRoleSupport, models.SystemRolePartner) {
 		middleware.JSONError(w, "Forbidden", http.StatusForbidden)
 		return
 	}
