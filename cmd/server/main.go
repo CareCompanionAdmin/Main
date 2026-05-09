@@ -88,6 +88,28 @@ func main() {
 		}
 	}
 
+	// Optional admin-mirror pool for bidirectional admin_users replication.
+	// When set, every admin user CRUD dual-writes to both the local DB and
+	// this mirror. Same fail-soft behavior as SESSIONS_PROD_DB_DSN — if the
+	// mirror DSN is misconfigured we log and continue local-only; admin CRUD
+	// then warns the operator that replication is offline. Boot does NOT fail.
+	var adminMirrorDB *sql.DB
+	if cfg.Database.AdminMirrorDSN != "" {
+		s, err := database.NewWithDSN(
+			cfg.Database.AdminMirrorDSN,
+			cfg.Database.MaxOpenConns,
+			cfg.Database.MaxIdleConns,
+			cfg.Database.ConnMaxLifetime,
+		)
+		if err != nil {
+			log.Printf("[ADMIN-MIRROR] pool init failed (%v) — continuing without replication", err)
+		} else {
+			defer s.Close()
+			adminMirrorDB = s.DB
+			log.Println("Connected to admin-mirror pool (ADMIN_MIRROR_DB_DSN set) — bidirectional admin replication ON")
+		}
+	}
+
 	// Apply any pending DB migrations before anything else touches the schema.
 	// Fatal on failure: better to fail fast than serve traffic against a
 	// half-migrated DB. ASG keeps the previous instance up if the new one
@@ -108,7 +130,23 @@ func main() {
 	log.Println("Connected to Redis")
 
 	// Initialize repositories
-	repos := repository.NewRepositories(db.DB, supportDB, sessionsProdDB)
+	repos := repository.NewRepositories(db.DB, supportDB, sessionsProdDB, adminMirrorDB)
+
+	// One-shot bidirectional reconciliation of admin_users between local and
+	// mirror — runs once per boot when ADMIN_MIRROR_DB_DSN is set. Catches any
+	// drift accumulated while the mirror was offline (or pre-existing rows on
+	// either side that never went through the dual-write path). Conflicts on
+	// same-email/different-id rows resolve last-writer-wins by updated_at;
+	// the wrapper logs each conflict for an operator to review.
+	if syncer, ok := repos.Admin.(*repository.ReplicatingAdminRepo); ok {
+		syncCtx, syncCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		if pushed, pulled, conflicts, err := syncer.SyncAdminUsers(syncCtx); err != nil {
+			log.Printf("[ADMIN-MIRROR] initial sync failed (continuing without reconciliation): %v", err)
+		} else {
+			log.Printf("[ADMIN-MIRROR] initial sync OK: pushed=%d pulled=%d conflicts=%d", pushed, pulled, conflicts)
+		}
+		syncCancel()
+	}
 
 	// Initialize services
 	services := service.NewServices(repos, redis, cfg, db.DB)

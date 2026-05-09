@@ -97,6 +97,15 @@ type DatabaseConfig struct {
 	// prod sessions alongside dev. Empty in prod (cross-env display is a
 	// dev-side affordance only).
 	SessionsProdDSN string
+
+	// AdminMirrorDSN, when non-empty, opens a connection to the OTHER env's
+	// database for bidirectional admin_users replication. Every admin CRUD
+	// operation dual-writes to both the local DB and this mirror; failure to
+	// commit on either side rolls back the local write. Set on BOTH envs:
+	// dev points at prod RDS, prod points at the dev docker-postgres on the
+	// admin EC2 (via private-IP SG ingress). When unset, replication is
+	// disabled and admin CRUD is local-only.
+	AdminMirrorDSN string
 }
 
 type RedisConfig struct {
@@ -166,6 +175,7 @@ func Load() (*Config, error) {
 			ConnMaxLifetime: getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute),
 			SupportDSN:      getEnv("SUPPORT_DB_DSN", ""),
 			SessionsProdDSN: getEnv("SESSIONS_PROD_DB_DSN", ""),
+			AdminMirrorDSN:  getEnv("ADMIN_MIRROR_DB_DSN", ""),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "172.28.0.30"),

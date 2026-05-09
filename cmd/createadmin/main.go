@@ -18,6 +18,7 @@ import (
 	"carecompanion/internal/config"
 	"carecompanion/internal/database"
 	"carecompanion/internal/models"
+	"carecompanion/internal/repository"
 )
 
 func main() {
@@ -85,23 +86,49 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Connect to database
+	// Connect to local database
 	db, err := database.New(&cfg.Database)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
+	// If ADMIN_MIRROR_DB_DSN is set, route writes through the dual-write
+	// wrapper so the new admin row replicates to the other env immediately.
+	// Without this, a CLI-created admin would drift until the next boot-sync.
+	var mirrorDB *database.DB
+	if cfg.Database.AdminMirrorDSN != "" {
+		mirrorDB, err = database.NewWithDSN(
+			cfg.Database.AdminMirrorDSN,
+			cfg.Database.MaxOpenConns,
+			cfg.Database.MaxIdleConns,
+			cfg.Database.ConnMaxLifetime,
+		)
+		if err != nil {
+			log.Fatalf("Failed to connect to admin-mirror DB: %v", err)
+		}
+		defer mirrorDB.Close()
+	}
+
+	baseAdmin := repository.NewAdminRepo(db.DB, db.DB)
+	var adminRepo repository.AdminRepository = baseAdmin
+	if mirrorDB != nil {
+		adminRepo = repository.NewReplicatingAdminRepo(baseAdmin, db.DB, mirrorDB.DB)
+		fmt.Println("Replication ON: writes will dual-target local + mirror.")
+	}
+	userRepo := repository.NewUserRepo(db.DB)
+
 	ctx := context.Background()
 
-	// Check if email already exists
+	// Check if email already exists in admin_users.
 	// Post-00032: only admin_users matters for the createadmin CLI. We do NOT
 	// promote/demote app_users rows from this CLI; if you want a parent who is
 	// also an admin, create an admin row here AND register a parent at /register.
-	var existingID uuid.UUID
-	err = db.DB.QueryRowContext(ctx, "SELECT id FROM admin_users WHERE LOWER(email) = LOWER($1)", *email).Scan(&existingID)
-	if err == nil {
-		// User exists, update their system_role
+	existing, err := userRepo.GetAdminByEmail(ctx, *email)
+	if err != nil {
+		log.Fatalf("Failed to check existing admin: %v", err)
+	}
+	if existing != nil {
 		fmt.Printf("User with email '%s' already exists.\n", *email)
 		fmt.Print("Update their system role to ", *role, "? (y/n): ")
 		reader := bufio.NewReader(os.Stdin)
@@ -110,12 +137,7 @@ func main() {
 			fmt.Println("Aborted.")
 			os.Exit(0)
 		}
-
-		_, err = db.DB.ExecContext(ctx,
-			"UPDATE admin_users SET system_role = $1, updated_at = $2 WHERE id = $3",
-			*role, time.Now(), existingID,
-		)
-		if err != nil {
+		if err := adminRepo.UpdateAdminRole(ctx, existing.ID, models.SystemRole(*role)); err != nil {
 			log.Fatalf("Failed to update user: %v", err)
 		}
 		fmt.Printf("Successfully updated user to %s role.\n", *role)
@@ -128,15 +150,7 @@ func main() {
 		log.Fatalf("Failed to hash password: %v", err)
 	}
 
-	// Create new admin user
-	userID := uuid.New()
-	now := time.Now()
-
-	_, err = db.DB.ExecContext(ctx, `
-		INSERT INTO admin_users (id, email, password_hash, first_name, last_name, system_role, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
-	`, userID, *email, string(hashedPassword), *firstName, *lastName, *role, models.UserStatusActive, now)
-
+	view, err := adminRepo.CreateAdminUser(ctx, *email, string(hashedPassword), *firstName, *lastName, models.SystemRole(*role))
 	if err != nil {
 		log.Fatalf("Failed to create admin user: %v", err)
 	}
@@ -144,9 +158,11 @@ func main() {
 	fmt.Println("\n====================================")
 	fmt.Println("Admin user created successfully!")
 	fmt.Println("====================================")
-	fmt.Printf("ID:         %s\n", userID)
-	fmt.Printf("Email:      %s\n", *email)
-	fmt.Printf("Name:       %s %s\n", *firstName, *lastName)
-	fmt.Printf("Role:       %s\n", *role)
+	fmt.Printf("ID:         %s\n", view.ID)
+	fmt.Printf("Email:      %s\n", view.Email)
+	fmt.Printf("Name:       %s %s\n", view.FirstName, view.LastName)
+	fmt.Printf("Role:       %s\n", view.SystemRole)
 	fmt.Println("\nYou can now log in at /admin/login")
+	_ = uuid.Nil // keep uuid import used for any future need
+	_ = time.Now()
 }

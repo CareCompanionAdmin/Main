@@ -380,7 +380,16 @@ type Repositories struct {
 // envs; the admin/user-support/ticket-attachment repos route those three
 // tables to supportDB while continuing to use db for everything else
 // (users lookup for denorm, audit log, etc.).
-func NewRepositories(db, supportDB *sql.DB, sessionsProdDB *sql.DB) *Repositories {
+//
+// adminMirrorDB, when non-nil, enables bidirectional admin_users replication.
+// The Admin repo is wrapped in a dual-writer that mirrors every admin user
+// CRUD to both pools. See replicating_admin_repo.go.
+func NewRepositories(db, supportDB *sql.DB, sessionsProdDB *sql.DB, adminMirrorDB *sql.DB) *Repositories {
+	baseAdmin := NewAdminRepo(db, supportDB)
+	var adminRepo AdminRepository = baseAdmin
+	if adminMirrorDB != nil {
+		adminRepo = NewReplicatingAdminRepo(baseAdmin, db, adminMirrorDB)
+	}
 	repos := &Repositories{
 		User:         NewUserRepo(db),
 		Family:       NewFamilyRepo(db),
@@ -393,7 +402,7 @@ func NewRepositories(db, supportDB *sql.DB, sessionsProdDB *sql.DB) *Repositorie
 		Cohort:       NewCohortRepo(db),
 		Chat:         NewChatRepo(db),
 		Transparency: NewTransparencyRepository(db),
-		Admin:        NewAdminRepo(db, supportDB),
+		Admin:        adminRepo,
 		UserSupport:  NewUserSupportRepo(db, supportDB),
 		Marketing:    NewMarketingRepo(db),
 		DevMode:      NewDevModeRepo(db),
