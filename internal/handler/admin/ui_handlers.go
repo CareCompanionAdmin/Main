@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"carecompanion/internal/middleware"
+	"carecompanion/internal/models"
 	"carecompanion/internal/repository"
 	"carecompanion/internal/service"
 )
@@ -151,46 +152,63 @@ func (h *Handler) AdminLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	// Use auth service to login
-	loginReq := &service.LoginRequest{
-		Email:    email,
-		Password: password,
-	}
-
-	user, tokens, err := h.authService.Login(r.Context(), loginReq)
+	loginReq := &service.LoginRequest{Email: email, Password: password}
+	user, tokens, err := h.authService.LoginWithContext(r.Context(), loginReq, service.LoginContext{
+		Kind:      models.SessionKindAdmin,
+		IP:        r.RemoteAddr,
+		UserAgent: r.UserAgent(),
+	})
 	if err != nil {
 		tmpl, _ := parseTemplates("login.html")
-		tmpl.Execute(w, AdminPageData{
-			Title: "Admin Login",
-			Flash: "Invalid credentials",
-		})
+		tmpl.Execute(w, AdminPageData{Title: "Admin Login", Flash: "Invalid credentials"})
 		return
 	}
 
-	// Check if user has admin role
 	if !user.HasSystemRole() {
+		// Roll back the admin session row that LoginWithContext just created;
+		// otherwise a non-admin user would have a dangling kind='admin' row.
+		_ = h.authService.LogoutAdmin(r.Context(), user.ID)
 		tmpl, _ := parseTemplates("login.html")
-		tmpl.Execute(w, AdminPageData{
-			Title: "Admin Login",
-			Flash: "Access denied - admin role required",
-		})
+		tmpl.Execute(w, AdminPageData{Title: "Admin Login", Flash: "Access denied - admin role required"})
 		return
 	}
 
-	// Set cookie - use "/" path to cover both /admin UI and /api/admin API routes
-	// Check if request is over HTTPS (direct TLS or via proxy like CloudFront/ALB)
+	// "/" path so the cookie covers both /admin UI and /api/admin API routes.
 	isSecure := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
+		Name:     "admin_access_token",
 		Value:    tokens.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   isSecure,
 		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(15 * time.Minute),
+		Expires:  tokens.ExpiresAt, // honors the global 8h expiry, not 15m
 	})
 
 	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+}
+
+// AdminLogout revokes the admin session row and clears the admin cookie.
+// POSTed from the layout's logout button. Redirects to /admin/login.
+func (h *Handler) AdminLogout(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	_ = h.authService.LogoutAdmin(r.Context(), userID)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "admin_access_token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+	})
+	// Belt-and-suspenders: clear the legacy cookie if a stale browser still has it.
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+	})
+	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 }
 
 // AdminDashboard renders the main admin dashboard based on role

@@ -34,8 +34,9 @@
                 <div class="flex items-center space-x-4">
                     <span class="hidden sm:inline">{{.CurrentUser.FirstName}} ({{.CurrentUser.Email}})</span>
                     <span class="sm:hidden">{{.CurrentUser.FirstName}}</span>
-                    <a href="/admin/login" onclick="document.cookie='access_token=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT';"
-                       class="px-3 py-1 bg-indigo-800 rounded hover:bg-indigo-900 text-sm">Logout</a>
+                    <form method="POST" action="/admin/logout" class="inline">
+                        <button type="submit" class="px-3 py-1 bg-indigo-800 rounded hover:bg-indigo-900 text-sm text-white cursor-pointer border-0">Logout</button>
+                    </form>
                 </div>
             </div>
         </div>

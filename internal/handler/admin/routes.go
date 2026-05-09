@@ -249,6 +249,7 @@ func (h *Handler) UIRoutes() chi.Router {
 
 		r.Get("/", h.AdminDashboard)
 		r.Get("/dashboard", h.AdminDashboard)
+		r.Post("/logout", h.AdminLogout)
 
 		// Super admin pages
 		r.Group(func(r chi.Router) {
