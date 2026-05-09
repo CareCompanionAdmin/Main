@@ -40,4 +40,6 @@ func (c *SessionCache) MarkRevoked(ctx context.Context, sid uuid.UUID) {
 	_ = c.r.Set(ctx, sessionKey(sid), "revoked", 5*time.Minute).Err()
 }
 
-func sessionKey(sid uuid.UUID) string { return "session:" + sid.String() }
+// Namespaced under session:sid: to avoid collision with the older
+// SetSession/GetSession/DeleteSession helpers that key on session:<userID>.
+func sessionKey(sid uuid.UUID) string { return "session:sid:" + sid.String() }
