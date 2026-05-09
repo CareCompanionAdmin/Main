@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"carecompanion/internal/middleware"
+	"carecompanion/internal/models"
 	"carecompanion/internal/service"
 )
 
@@ -46,7 +47,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set cookies for web clients
-	h.setAuthCookies(w, tokens)
+	h.setUserAuthCookies(w, r, tokens)
 
 	// Return response
 	response := map[string]interface{}{
@@ -74,7 +75,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, tokens, err := h.authService.Login(r.Context(), &req)
+	user, tokens, err := h.authService.LoginWithContext(r.Context(), &req, service.LoginContext{
+		Kind:      models.SessionKindUser,
+		IP:        r.RemoteAddr,
+		UserAgent: r.UserAgent(),
+	})
 	if err != nil {
 		switch err {
 		case service.ErrInvalidCredentials:
@@ -88,7 +93,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set cookies for web clients
-	h.setAuthCookies(w, tokens)
+	h.setUserAuthCookies(w, r, tokens)
 
 	response := map[string]interface{}{
 		"user":          user,
@@ -111,10 +116,24 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Clear cookies
-	h.clearAuthCookies(w)
+	h.clearUserAuthCookies(w)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
+
+// LogoutAll revokes both the user-kind and admin-kind sessions for the
+// current user and clears every auth cookie. Useful for "log out of all my
+// devices" UX.
+func (h *AuthHandler) LogoutAll(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	if err := h.authService.LogoutAll(r.Context(), userID); err != nil {
+		middleware.JSONError(w, "Logout failed", http.StatusInternalServerError)
+		return
+	}
+	h.clearAllAuthCookies(w)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out from all sessions"})
 }
 
 // RefreshToken handles token refresh
@@ -139,7 +158,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.setAuthCookies(w, tokens)
+	h.setUserAuthCookies(w, r, tokens)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tokens)
@@ -169,7 +188,7 @@ func (h *AuthHandler) SwitchFamily(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.setAuthCookies(w, tokens)
+	h.setUserAuthCookies(w, r, tokens)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tokens)
@@ -215,44 +234,35 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func (h *AuthHandler) setAuthCookies(w http.ResponseWriter, tokens *service.TokenPair) {
-	// Access token cookie
+func (h *AuthHandler) setUserAuthCookies(w http.ResponseWriter, r *http.Request, tokens *service.TokenPair) {
+	isSecure := r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
+		Name:     "user_access_token",
 		Value:    tokens.AccessToken,
 		Path:     "/",
 		Expires:  tokens.ExpiresAt,
 		HttpOnly: true,
-		Secure:   false, // Set to true in production with HTTPS
+		Secure:   isSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
-
-	// Refresh token cookie (longer expiry)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    tokens.RefreshToken,
 		Path:     "/api/auth/refresh",
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   isSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
 
-func (h *AuthHandler) clearAuthCookies(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    "",
-		Path:     "/",
-		Expires:  time.Unix(0, 0),
-		HttpOnly: true,
-	})
+func (h *AuthHandler) clearUserAuthCookies(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{Name: "user_access_token", Value: "", Path: "/", Expires: time.Unix(0, 0), HttpOnly: true})
+	http.SetCookie(w, &http.Cookie{Name: "access_token", Value: "", Path: "/", Expires: time.Unix(0, 0), HttpOnly: true})
+	http.SetCookie(w, &http.Cookie{Name: "refresh_token", Value: "", Path: "/api/auth/refresh", Expires: time.Unix(0, 0), HttpOnly: true})
+}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    "",
-		Path:     "/api/auth/refresh",
-		Expires:  time.Unix(0, 0),
-		HttpOnly: true,
-	})
+func (h *AuthHandler) clearAllAuthCookies(w http.ResponseWriter) {
+	h.clearUserAuthCookies(w)
+	http.SetCookie(w, &http.Cookie{Name: "admin_access_token", Value: "", Path: "/", Expires: time.Unix(0, 0), HttpOnly: true})
 }

@@ -84,6 +84,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 
 		// Auth routes
 		r.Post("/auth/logout", handlers.Auth.Logout)
+		r.Post("/auth/logout-all", handlers.Auth.LogoutAll)
 		r.Get("/auth/me", handlers.Auth.Me)
 		r.Post("/auth/switch-family", handlers.Auth.SwitchFamily)
 
