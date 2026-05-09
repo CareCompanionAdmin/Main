@@ -300,6 +300,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 					r.Get("/", handlers.Report.GetReport)
 					r.Get("/download", handlers.Report.DownloadReport)
 					r.Get("/view", handlers.Report.ViewReportData)
+					r.Get("/sign-url", handlers.Report.GetSignedURL)
 					r.Post("/share", handlers.Report.ShareReport)
 					r.Delete("/", handlers.Report.DeleteReport)
 				})

@@ -103,7 +103,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Email:             emailService,
 		PasswordReset:     NewPasswordResetService(db, repos.User, emailService, cfg.App.URL),
 		Push:              pushService,
-		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, reportStorage),
+		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, reportStorage, cfg.JWT.Secret),
 		Search:            NewSearchService(repos.Search),
 		Roadmap:           NewRoadmapService(repos.Roadmap, repos.Admin, emailService, db),
 		TicketDuplicate:   NewTicketDuplicateService(repos.Admin, repos.Roadmap, emailService),

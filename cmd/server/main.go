@@ -216,6 +216,11 @@ func main() {
 		api.SetupRoutes(r, apiHandlers, services.Auth, db.DB)
 	})
 
+	// Public report PDF — signed URL, no auth. SFSafariViewController and
+	// Chrome Custom Tabs don't carry the WKWebView's JWT; the URL itself
+	// embeds a short-lived HMAC signature instead.
+	r.Get("/r/signed/{reportID}", apiHandlers.Report.ServeSignedPDF)
+
 	// Web routes
 	web.SetupRoutes(r, webHandlers, services.Auth, db.DB)
 

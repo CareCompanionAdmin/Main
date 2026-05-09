@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 {{template "head" "Reports"}}
+<style>
+/* Chart.js canvases capture pointer events for tooltips, which on iOS WKWebView
+   blocks vertical pan. pan-y lets the page scroll while preserving x-axis tap
+   for the tooltip — matches what users expect on mobile. */
+#charts-container canvas { touch-action: pan-y; }
+
+/* The inline report viewer needs to scroll inside the Capacitor WebView with
+   no momentum stalls. Defensive against any global background-attachment
+   that traps overscroll on iOS. */
+#report-results { -webkit-overflow-scrolling: touch; }
+
+/* Print only the report paper. The page chrome (nav, action bar, modals,
+   "Past Reports" list) is hidden so the printed page is just the report. */
+@media print {
+    body.calm-bg { background: #ffffff !important; }
+    .no-print, nav, header.mb-8, .mb-4 a { display: none !important; }
+    #report-results { position: static !important; }
+    #report-paper { box-shadow: none !important; max-width: 100% !important; }
+    #report-paper * { color-adjust: exact; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
 <body class="calm-bg min-h-screen">
 {{template "nav" .}}
 <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -189,18 +210,84 @@
 </main>
 
 <!-- Share Modal -->
-<div id="share-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">Share Report</h3>
-        <label class="block text-sm font-medium text-stone-700 mb-2">Send to family member:</label>
-        <select id="share-recipient" class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition mb-4">
-            {{range .Members}}
-            <option value="{{.UserID}}">{{if .User}}{{.User.FirstName}} {{.User.LastName}}{{else}}{{.UserID}}{{end}}</option>
-            {{end}}
-        </select>
+<div id="share-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 no-print">
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full">
+        <h3 class="text-lg font-bold mb-1 text-stone-900">Share Report</h3>
+        <p class="text-sm text-stone-500 mb-4">Choose how you'd like to share this report.</p>
+
+        <!-- In-app: send to a family member via chat -->
+        <div class="border border-stone-200 rounded-2xl p-4 mb-3">
+            <div class="flex items-start gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-stone-900 text-sm">Send to a family member</p>
+                    <p class="text-xs text-stone-500">Stays inside MyCareCompanion. Recipient gets it in their chat thread.</p>
+                </div>
+            </div>
+            <select id="share-recipient" class="w-full px-3 py-2 border border-stone-200 bg-white rounded-xl text-sm mb-2">
+                {{range .Members}}
+                <option value="{{.UserID}}">{{if .User}}{{.User.FirstName}} {{.User.LastName}}{{else}}{{.UserID}}{{end}}</option>
+                {{end}}
+            </select>
+            <button onclick="shareViaChat()" class="w-full py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 text-sm font-medium">Send via Chat</button>
+        </div>
+
+        <!-- External: native share sheet with HIPAA disclaimer -->
+        <button onclick="beginExternalShare()" class="w-full text-left border border-stone-200 rounded-2xl p-4 mb-3 hover:bg-stone-50 transition-colors">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-stone-900 text-sm">Share externally <span class="text-xs text-amber-700 font-normal">(text, email, etc.)</span></p>
+                    <p class="text-xs text-stone-500">You'll see a privacy reminder before continuing — this report contains health information.</p>
+                </div>
+            </div>
+        </button>
+
+        <!-- Copy signed link -->
+        <button onclick="copySignedLink()" class="w-full text-left border border-stone-200 rounded-2xl p-4 mb-4 hover:bg-stone-50 transition-colors">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-full bg-stone-100 text-stone-600 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-stone-900 text-sm">Copy link to clipboard</p>
+                    <p class="text-xs text-stone-500">A short-lived link (10 minutes) that opens the PDF directly. Anyone with the link can view it.</p>
+                </div>
+            </div>
+        </button>
+
+        <button onclick="closeShareModal()" class="w-full py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 text-sm font-medium">Cancel</button>
+    </div>
+</div>
+
+<!-- HIPAA / PHI disclaimer modal — shown before any external share. -->
+<div id="hipaa-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 no-print">
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full">
+        <div class="flex items-start gap-3 mb-3">
+            <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-stone-900 leading-tight">Privacy reminder</h3>
+                <p class="text-xs text-stone-500">Before you share outside MyCareCompanion</p>
+            </div>
+        </div>
+        <p class="text-sm text-stone-700 mb-3">
+            This report contains protected health information about your child — behavior, medications, sleep, and other care details.
+        </p>
+        <ul class="text-sm text-stone-600 space-y-1 mb-4 list-disc pl-5">
+            <li>Only share with people you trust to handle this information.</li>
+            <li>Email and text messages are <strong>not</strong> HIPAA-secured by default.</li>
+            <li>For a doctor or therapist, prefer their patient portal or a secure-messaging system when available.</li>
+            <li>Once you share the file, MyCareCompanion can no longer protect it.</li>
+        </ul>
         <div class="flex gap-2">
-            <button onclick="shareReport()" class="flex-1 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700">Send via Chat</button>
-            <button onclick="closeShareModal()" class="px-4 py-2 bg-stone-200 rounded-full hover:bg-stone-300">Cancel</button>
+            <button onclick="closeHipaaModal()" class="flex-1 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 text-sm font-medium">Cancel</button>
+            <button onclick="confirmExternalShare()" class="flex-1 py-2 bg-amber-600 text-white rounded-full hover:bg-amber-700 text-sm font-medium">I understand — continue</button>
         </div>
     </div>
 </div>
@@ -490,32 +577,50 @@ function renderCharts(data) {
     }
 }
 
-function downloadReport() {
-    // Open the PDF outside the main WebView so the user always has a way back.
-    //
-    // Earlier behavior used `window.location.href = url` which navigated the
-    // Capacitor WebView away to the raw PDF, locking the user inside an
-    // inline PDF viewer with no exit (ticket #112376 — required force-quit
-    // to escape).
-    //
-    // Native app path: @capacitor/browser plugin opens in SFSafariViewController
-    // on iOS / Custom Tabs on Android — both have their own chrome with a
-    // Done/Back button that returns to MyCareCompanion. The plugin is already
-    // bundled into the native shell (mobile/package.json); the JS bridge is
-    // injected by Capacitor at runtime and `window.Capacitor.isNativePlatform`
-    // is true only inside the app.
-    //
-    // Web path: open in a new tab so the original results page stays reachable.
-    if (!currentReportId) return;
-    const url = `/api/children/${childId}/reports/${currentReportId}/download`;
-    if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-        window.Capacitor.Plugins.Browser.open({ url: window.location.origin + url });
+function isNative() {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+}
+
+// Mints a short-lived signed URL the system browser can fetch without a JWT.
+// SFSafariViewController and Chrome Custom Tabs run outside the WKWebView's
+// auth context — cookies and localStorage don't cross the boundary — so the
+// JWT-protected /download endpoint returns the login page there. The signed
+// URL is unauthenticated but tied to a single report ID + 10-min expiry.
+async function fetchSignedURL() {
+    if (!currentReportId) return null;
+    const response = await fetch(`/api/children/${childId}/reports/${currentReportId}/sign-url`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!response.ok) {
+        alert('Could not prepare the report link. Try again in a moment.');
+        return null;
+    }
+    const data = await response.json();
+    return window.location.origin + data.path;
+}
+
+async function downloadReport() {
+    const signed = await fetchSignedURL();
+    if (!signed) return;
+    if (isNative() && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+        // SFSafariViewController / Custom Tabs render the PDF and offer their
+        // own Done button + share sheet (Save to Files, AirPrint, Mail, etc.).
+        await window.Capacitor.Plugins.Browser.open({ url: signed });
     } else {
-        window.open(url, '_blank');
+        window.open(signed, '_blank');
     }
 }
 
-function printReport() {
+async function printReport() {
+    if (isNative() && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+        // window.print() does nothing in WKWebView — there's no system print
+        // dialog plumbed through. Open the signed PDF in Safari, where iOS
+        // exposes AirPrint via the built-in share sheet.
+        const signed = await fetchSignedURL();
+        if (!signed) return;
+        await window.Capacitor.Plugins.Browser.open({ url: signed });
+        return;
+    }
     window.print();
 }
 
@@ -527,8 +632,9 @@ function closeReport() {
 
 function openShareModal() { document.getElementById('share-modal').classList.remove('hidden'); }
 function closeShareModal() { document.getElementById('share-modal').classList.add('hidden'); }
+function closeHipaaModal() { document.getElementById('hipaa-modal').classList.add('hidden'); }
 
-async function shareReport() {
+async function shareViaChat() {
     const recipientId = document.getElementById('share-recipient').value;
     if (!recipientId || !currentReportId) return;
 
@@ -539,14 +645,94 @@ async function shareReport() {
             body: JSON.stringify({ recipient_id: recipientId })
         });
         if (response.ok) {
-            alert('Report shared via chat!');
+            alert('Report sent to family member.');
             closeShareModal();
         } else {
-            alert('Failed to share report');
+            alert('Failed to share report.');
         }
     } catch (err) {
-        alert('Error sharing report');
+        alert('Error sharing report.');
     }
+}
+
+// External share opens the OS share sheet. We gate it behind the HIPAA
+// disclaimer because once the report leaves the app, we can't protect it.
+function beginExternalShare() {
+    document.getElementById('hipaa-modal').classList.remove('hidden');
+}
+
+async function confirmExternalShare() {
+    closeHipaaModal();
+    closeShareModal();
+    const signed = await fetchSignedURL();
+    if (!signed) return;
+
+    // Native: Capacitor Share plugin → iOS/Android share sheet (Messages,
+    // Mail, AirDrop, Save to Files, etc.). Plugin is bundled in the native
+    // shell; isNativePlatform() is true only inside the app.
+    if (isNative() && window.Capacitor.Plugins && window.Capacitor.Plugins.Share) {
+        try {
+            await window.Capacitor.Plugins.Share.share({
+                title: document.getElementById('report-title').textContent || 'Care Report',
+                text: 'Care report from MyCareCompanion',
+                url: signed,
+                dialogTitle: 'Share report'
+            });
+            return;
+        } catch (e) {
+            // User cancelled the share sheet — silently return, no error.
+            return;
+        }
+    }
+
+    // Web: navigator.share if available (mobile browsers + some desktop),
+    // otherwise fall back to copying the link.
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: document.getElementById('report-title').textContent || 'Care Report',
+                text: 'Care report from MyCareCompanion',
+                url: signed
+            });
+            return;
+        } catch (e) { return; }
+    }
+    await copyToClipboard(signed);
+    alert('Link copied. Paste it into your email or message app.');
+}
+
+async function copySignedLink() {
+    const signed = await fetchSignedURL();
+    if (!signed) return;
+    const ok = await copyToClipboard(signed);
+    if (ok) {
+        alert('Link copied to clipboard. It expires in 10 minutes.');
+        closeShareModal();
+    } else {
+        alert('Could not copy to clipboard. Long-press to copy: ' + signed);
+    }
+}
+
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (e) {}
+    // Fallback for older WebViews
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+    } catch (e) { return false; }
 }
 
 function openScheduleModal() { document.getElementById('schedule-modal').classList.remove('hidden'); }
@@ -595,18 +781,51 @@ async function loadPastReports() {
             const statusBadge = r.status === 'completed'
                 ? '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">Completed</span>'
                 : '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">' + r.status + '</span>';
+            const actions = r.status === 'completed'
+                ? `<button onclick="viewPastReport('${r.id}', ${JSON.stringify(r.title)})" class="px-3 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200">View</button>`
+                : '';
             return `<div class="flex items-center justify-between py-3 border-b last:border-0">
                 <div>
                     <p class="font-medium text-sm text-stone-900">${escapeHtml(r.title)}</p>
                     <p class="text-xs text-stone-500">${date} ${statusBadge}</p>
                 </div>
                 <div class="flex gap-2">
-                    ${r.status === 'completed' ? `<a href="/api/children/${childId}/reports/${r.id}/download" class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded text-xs hover:bg-emerald-200">Download</a>` : ''}
+                    ${actions}
                     <button onclick="deleteReport('${r.id}')" class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">Delete</button>
                 </div>
             </div>`;
         }).join('');
     } catch (err) {}
+}
+
+// Re-open an already-generated report in the inline charts viewer. Same UI
+// as a fresh Generate, just hydrated from /view instead of /generate. Lets
+// users skip the download/print roundtrip when they only need to look.
+async function viewPastReport(reportId, title) {
+    currentReportId = reportId;
+    document.getElementById('report-title').textContent = title || 'Report';
+    document.getElementById('config-panel').classList.add('hidden');
+    document.getElementById('report-results').classList.remove('hidden');
+
+    try {
+        const response = await fetch(`/api/children/${childId}/reports/${reportId}/view`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!response.ok) {
+            alert('Could not load that report.');
+            return;
+        }
+        const data = await response.json();
+        document.getElementById('report-child-name').textContent = data.child_name || '';
+        document.getElementById('report-date-range').textContent = data.start_date && data.end_date
+            ? data.start_date + ' to ' + data.end_date
+            : '';
+        document.getElementById('report-generated-at').textContent = 'Viewing report ' + (title || '');
+        renderCharts(data);
+        document.getElementById('report-results').scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+        alert('Error loading report.');
+    }
 }
 
 async function deleteReport(reportId) {

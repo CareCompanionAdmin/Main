@@ -3,6 +3,8 @@ package api
 import (
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -10,6 +12,11 @@ import (
 	"carecompanion/internal/models"
 	"carecompanion/internal/service"
 )
+
+// signedURLTTL is how long a freshly-issued PDF URL stays valid. Short by
+// design — the URL is minted right before opening in SFSafariViewController
+// or Chrome Custom Tabs, where the user immediately sees the PDF.
+const signedURLTTL = 10 * time.Minute
 
 // ReportHandler handles report API endpoints
 type ReportHandler struct {
@@ -349,6 +356,90 @@ func (h *ReportHandler) DeleteSchedule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondNoContent(w)
+}
+
+// GetSignedURL returns a short-lived HMAC-signed URL for the report PDF.
+// SFSafariViewController and Chrome Custom Tabs don't share the WKWebView's
+// localStorage or auth cookies, so they can't hit the JWT-protected endpoints
+// directly. The signed URL is unauthenticated but tied to a specific report
+// ID + expiry so it can't be reused or pivoted.
+func (h *ReportHandler) GetSignedURL(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
+	reportID, err := parseUUID(chi.URLParam(r, "reportID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid report ID")
+		return
+	}
+
+	report, err := h.reportService.GetByID(r.Context(), reportID)
+	if err != nil || report == nil {
+		respondNotFound(w, "Report not found")
+		return
+	}
+
+	path, exp := h.reportService.SignedPDFURL(report.ID, signedURLTTL)
+	respondOK(w, map[string]interface{}{
+		"path":       path,
+		"expires_at": exp.Format(time.RFC3339),
+	})
+}
+
+// ServeSignedPDF streams a report PDF when the request carries a valid HMAC
+// signature. No JWT required — the URL itself is the bearer credential, and
+// it expires in minutes. Used by Capacitor Browser, AirPrint, and external
+// share targets that can't carry our auth headers.
+func (h *ReportHandler) ServeSignedPDF(w http.ResponseWriter, r *http.Request) {
+	reportID, err := parseUUID(chi.URLParam(r, "reportID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid report ID")
+		return
+	}
+
+	expRaw := r.URL.Query().Get("exp")
+	sig := r.URL.Query().Get("sig")
+	if expRaw == "" || sig == "" {
+		respondBadRequest(w, "Missing signature")
+		return
+	}
+
+	expUnix, err := strconv.ParseInt(expRaw, 10, 64)
+	if err != nil {
+		respondBadRequest(w, "Bad expiry")
+		return
+	}
+
+	if err := h.reportService.VerifySignedPDF(reportID, expUnix, sig); err != nil {
+		respondError(w, "Link expired or invalid", http.StatusForbidden)
+		return
+	}
+
+	report, err := h.reportService.GetByID(r.Context(), reportID)
+	if err != nil || report == nil {
+		respondNotFound(w, "Report not found")
+		return
+	}
+
+	rc, err := h.reportService.OpenPDF(r.Context(), report)
+	if err != nil {
+		respondNotFound(w, "Report file not available")
+		return
+	}
+	defer rc.Close()
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+report.Title+".pdf\"")
+	io.Copy(w, rc)
 }
 
 // ServeReportPDF streams a report PDF from blob storage. Routed by reportID

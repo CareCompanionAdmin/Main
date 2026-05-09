@@ -3,7 +3,10 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"image/color"
 	"image/png"
@@ -12,6 +15,7 @@ import (
 	"math"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,22 +29,60 @@ import (
 
 // ReportService handles report generation, chart rendering, and PDF creation
 type ReportService struct {
-	reportRepo repository.ReportRepository
-	logRepo    repository.LogRepository
-	childRepo  repository.ChildRepository
-	chatRepo   repository.ChatRepository
-	storage    BlobStorage
+	reportRepo    repository.ReportRepository
+	logRepo       repository.LogRepository
+	childRepo     repository.ChildRepository
+	chatRepo      repository.ChatRepository
+	storage       BlobStorage
+	signingSecret []byte
 }
 
-// NewReportService creates a new report service
-func NewReportService(reportRepo repository.ReportRepository, logRepo repository.LogRepository, childRepo repository.ChildRepository, chatRepo repository.ChatRepository, storage BlobStorage) *ReportService {
+// NewReportService creates a new report service. signingSecret is used to
+// HMAC-sign short-lived PDF URLs so SFSafariViewController / Custom Tabs
+// can fetch the file without inheriting the WKWebView's JWT (cookies and
+// localStorage don't cross that boundary on iOS or Android).
+func NewReportService(reportRepo repository.ReportRepository, logRepo repository.LogRepository, childRepo repository.ChildRepository, chatRepo repository.ChatRepository, storage BlobStorage, signingSecret string) *ReportService {
 	return &ReportService{
-		reportRepo: reportRepo,
-		logRepo:    logRepo,
-		childRepo:  childRepo,
-		chatRepo:   chatRepo,
-		storage:    storage,
+		reportRepo:    reportRepo,
+		logRepo:       logRepo,
+		childRepo:     childRepo,
+		chatRepo:      chatRepo,
+		storage:       storage,
+		signingSecret: []byte(signingSecret),
 	}
+}
+
+// SignedPDFURL returns a path with HMAC signature + expiry that ServeSignedPDF
+// will accept without auth. TTL is short by design — the URL is meant to be
+// minted just before opening in a system browser.
+func (s *ReportService) SignedPDFURL(reportID uuid.UUID, ttl time.Duration) (path string, exp time.Time) {
+	exp = time.Now().Add(ttl)
+	expUnix := exp.Unix()
+	mac := hmac.New(sha256.New, s.signingSecret)
+	mac.Write([]byte(reportID.String() + "|" + strconv.FormatInt(expUnix, 10)))
+	sig := hex.EncodeToString(mac.Sum(nil))
+	path = fmt.Sprintf("/r/signed/%s?exp=%d&sig=%s", reportID.String(), expUnix, sig)
+	return path, exp
+}
+
+// VerifySignedPDF confirms exp is in the future and sig matches reportID|exp
+// signed with our secret. Returns nil on success.
+func (s *ReportService) VerifySignedPDF(reportID uuid.UUID, expUnix int64, sig string) error {
+	if time.Now().Unix() > expUnix {
+		return fmt.Errorf("signed url expired")
+	}
+	mac := hmac.New(sha256.New, s.signingSecret)
+	mac.Write([]byte(reportID.String() + "|" + strconv.FormatInt(expUnix, 10)))
+	want := hex.EncodeToString(mac.Sum(nil))
+	got, err := hex.DecodeString(sig)
+	if err != nil {
+		return fmt.Errorf("bad signature encoding")
+	}
+	wantBytes, _ := hex.DecodeString(want)
+	if !hmac.Equal(got, wantBytes) {
+		return fmt.Errorf("signature mismatch")
+	}
+	return nil
 }
 
 // GenerateReport creates a report with PDF
