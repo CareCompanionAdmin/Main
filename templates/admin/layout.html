@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - MyCareCompanion Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/js/admin_session_guard.js"></script>
     <style>
         .sidebar { min-height: calc(100vh - 64px); }
         @media (max-width: 767px) {
@@ -167,7 +168,6 @@
         </main>
     </div>
 
-    <script src="/static/js/admin_session_guard.js"></script>
     <script>
         // Admin sidebar toggle for mobile
         function toggleAdminSidebar() {
