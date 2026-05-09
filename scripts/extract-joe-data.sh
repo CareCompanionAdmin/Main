@@ -109,8 +109,20 @@ extract chat_participants     "SELECT * FROM chat_participants WHERE user_id IN 
 extract chat_messages         "SELECT cm.* FROM chat_messages cm WHERE cm.sender_id IN ($USER_IN) OR cm.thread_id IN (SELECT id FROM chat_threads WHERE created_by IN ($USER_IN) OR family_id IN ($FAMILY_IN) OR child_id IN ($CHILD_IN)) ORDER BY cm.id;"
 extract family_subscriptions  "SELECT * FROM family_subscriptions WHERE family_id IN ($FAMILY_IN) OR comped_by IN ($USER_IN) ORDER BY id;"
 extract password_reset_tokens "SELECT * FROM password_reset_tokens WHERE user_id IN ($USER_IN) ORDER BY id;"
-extract audit_log             "SELECT * FROM audit_log WHERE user_id IN ($USER_IN) OR family_id IN ($FAMILY_IN) ORDER BY id;"
-extract sessions              "SELECT * FROM sessions WHERE user_id IN ($USER_IN) OR family_id IN ($FAMILY_IN) ORDER BY id;"
+# audit_log + sessions: post-00032 these tables use admin_id + app_user_id
+# (split from the old user_id). We adapt at runtime — try the new shape first,
+# fall back to the legacy single-column shape so this script works against
+# both pre-migration and post-migration databases.
+if $PSQL -c "SELECT 1 FROM information_schema.columns WHERE table_name='audit_log' AND column_name='admin_id';" | grep -q 1; then
+    extract audit_log "SELECT * FROM audit_log WHERE admin_id IN ($USER_IN) OR app_user_id IN ($USER_IN) OR family_id IN ($FAMILY_IN) ORDER BY id;"
+else
+    extract audit_log "SELECT * FROM audit_log WHERE user_id IN ($USER_IN) OR family_id IN ($FAMILY_IN) ORDER BY id;"
+fi
+if $PSQL -c "SELECT 1 FROM information_schema.columns WHERE table_name='sessions' AND column_name='admin_id';" | grep -q 1; then
+    extract sessions "SELECT * FROM sessions WHERE admin_id IN ($USER_IN) OR app_user_id IN ($USER_IN) OR family_id IN ($FAMILY_IN) ORDER BY id;"
+else
+    extract sessions "SELECT * FROM sessions WHERE user_id IN ($USER_IN) OR family_id IN ($FAMILY_IN) ORDER BY id;"
+fi
 extract payments              "SELECT * FROM payments WHERE user_id IN ($USER_IN) ORDER BY id;"
 
 echo
