@@ -153,7 +153,7 @@ func main() {
 
 	// Initialize handlers
 	apiHandlers := api.NewHandlers(services, cfg)
-	webHandlers := web.NewWebHandlers(services)
+	webHandlers := web.NewWebHandlers(services, cfg.App.Env)
 
 	// Initialize templates (optional, will use fallback if not available)
 	if err := web.InitTemplates("templates"); err != nil {
@@ -178,6 +178,16 @@ func main() {
 	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.CORSMiddleware(nil))
 	r.Use(chimiddleware.Compress(5))
+
+	// Dev-gate: in non-prod environments, fronts the app with a one-time
+	// passphrase so casual visitors who find the dev URL can't reach the
+	// app. Native Capacitor shell bypasses via its User-Agent marker; users
+	// who entered the code keep a 30-day cookie. No-op in production.
+	r.Use(middleware.DevGateMiddleware(
+		cfg.App.Env,
+		os.Getenv("DEV_GATE_CODE"),
+		os.Getenv("DEV_GATE_APP_UA_MARKER"),
+	))
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {

@@ -96,7 +96,9 @@ export GOPATH=$HOME/go
 ```bash
 ./scripts/dev.sh    # Starts Postgres, Redis, and app with hot-reload
 ```
-Access at: http://98.88.131.147:8090
+Access at: https://dev.mycarecompanion.net (TLS via Caddy → localhost:8090).
+First browser visit prompts for the DEV_GATE_CODE; cookie lasts 30 days.
+Native Capacitor app bypasses the gate via User-Agent marker.
 
 ### Stopping dev
 ```bash
@@ -149,7 +151,7 @@ Admin templates are in `templates/admin/`. The layout is `layout.html` and conte
 
 ## URLs
 - **Production:** https://www.mycarecompanion.net
-- **Dev:** http://98.88.131.147:8090
+- **Dev:** https://dev.mycarecompanion.net (TLS via Caddy → port 8090; gated by DEV_GATE_CODE for browser users)
 - **Admin Portal:** https://www.mycarecompanion.net/admin
 - **Health Check:** https://www.mycarecompanion.net/health
 

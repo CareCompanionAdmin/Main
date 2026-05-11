@@ -35,7 +35,7 @@ type Handlers struct {
 // NewHandlers creates all API handlers
 func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 	return &Handlers{
-		Auth:         NewAuthHandler(services.Auth),
+		Auth:         NewAuthHandler(services.Auth, services.AdminRepo, cfg.App.Env),
 		Child:        NewChildHandler(services.Child),
 		Family:       NewFamilyHandler(services.Family, services.User, services.Email, services.Push, cfg.App.URL),
 		Medication:   NewMedicationHandler(services.Medication, services.Child, services.User, services.DrugDatabase, services.Insight, services.RealtimeDetection),

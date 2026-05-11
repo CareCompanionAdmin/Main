@@ -51,18 +51,14 @@
 	     that otherwise blocks Codemagic's auto-submit to TestFlight. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>98.88.131.147</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-				<key>NSIncludesSubdomains</key>
-				<false/>
-			</dict>
-		</dict>
-	</dict>
+	<!--
+	  No NSAppTransportSecurity exception needed: both production
+	  (www.mycarecompanion.net) and dev (dev.mycarecompanion.net) serve over
+	  TLS. The prior NSExceptionAllowsInsecureHTTPLoads exception for the
+	  dev IP was removed as part of the dev.mycarecompanion.net migration —
+	  Apple App Review auto-flags ATS exceptions and a clean Info.plist is
+	  required for approval. Do NOT reintroduce ATS exceptions without a
+	  written reviewer justification.
+	-->
 </dict>
 </plist>

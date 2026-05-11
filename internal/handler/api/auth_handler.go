@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -8,19 +9,68 @@ import (
 
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/models"
+	"carecompanion/internal/repository"
 	"carecompanion/internal/service"
 )
 
 type AuthHandler struct {
 	authService *service.AuthService
+	adminRepo   repository.AdminRepository
+	appEnv      string
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService *service.AuthService, adminRepo repository.AdminRepository, appEnv string) *AuthHandler {
+	return &AuthHandler{
+		authService: authService,
+		adminRepo:   adminRepo,
+		appEnv:      appEnv,
+	}
+}
+
+// registrationOpen reports whether new signups are accepted right now.
+//
+// Reads the existing `registration_enabled` system_setting (also surfaced
+// by the super-admin Settings → Registration toggle), which the admin UI
+// stores as {"enabled": bool}. Env-specific default when unset:
+//   - production → open (live app must accept new users)
+//   - dev/staging → closed (avoid stray test signups during daily work;
+//     admin flips on briefly when testing the registration flow)
+//
+// Failure modes (transient DB error) preserve the env-specific default so
+// a flaky read can't simultaneously lock prod users out and let dev users in.
+func (h *AuthHandler) registrationOpen(ctx context.Context) bool {
+	defaultOpen := h.appEnv == "production"
+	val, err := h.adminRepo.GetSetting(ctx, "registration_enabled")
+	if err != nil {
+		log.Printf("registrationOpen: GetSetting error: %v — using env default", err)
+		return defaultOpen
+	}
+	if val == nil {
+		return defaultOpen
+	}
+	// Admin UI writes {"enabled": bool}; older writes may be raw bool.
+	if m, ok := val.(map[string]interface{}); ok {
+		if e, ok := m["enabled"].(bool); ok {
+			return e
+		}
+	}
+	if b, ok := val.(bool); ok {
+		return b
+	}
+	return defaultOpen
 }
 
 // Register handles user registration
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	// Gate: in non-prod, refuse signups unless an admin has flipped the
+	// dev_registration_open setting on. Prevents stray accounts during
+	// daily dev work; admin toggles it on briefly when actively testing
+	// the registration flow.
+	if !h.registrationOpen(r.Context()) {
+		middleware.JSONError(w, "Registration is currently closed on this environment.", http.StatusForbidden)
+		return
+	}
+
 	var req service.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("JSON decode error: %v", err)

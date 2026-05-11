@@ -2,12 +2,13 @@
   "appId": "net.mycarecompanion.app",
   "appName": "MyCareCompanion",
   "webDir": "www",
+  "appendUserAgent": "MyCareCompanionApp",
   "server": {
     "url": "https://www.mycarecompanion.net/dashboard",
     "allowNavigation": [
       "www.mycarecompanion.net",
       "mycarecompanion.net",
-      "98.88.131.147"
+      "dev.mycarecompanion.net"
     ]
   },
   "plugins": {

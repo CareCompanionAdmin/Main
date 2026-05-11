@@ -119,11 +119,13 @@
             var href = link.getAttribute('href');
             if (!href) return;
 
-            // Open external links in system browser
+            // Open external links in system browser. mycarecompanion.net
+            // covers both prod (www) and dev (dev) subdomains — anything
+            // else with an absolute URL is third-party and gets the system
+            // Safari/Chrome handoff via Capacitor Browser.
             var isExternal = link.target === '_blank' ||
                 (href.startsWith('http') &&
-                 !href.includes('mycarecompanion.net') &&
-                 !href.includes('98.88.131.147'));
+                 !href.includes('mycarecompanion.net'));
 
             if (isExternal) {
                 e.preventDefault();
@@ -145,9 +147,9 @@
     var envTapTimer = null;
     var ENVIRONMENTS = {
         production: 'https://www.mycarecompanion.net',
-        development: 'http://98.88.131.147:8090'
+        development: 'https://dev.mycarecompanion.net'
     };
-    var DEV_HOST_MARKER = '98.88.131.147';
+    var DEV_HOST_MARKER = 'dev.mycarecompanion.net';
 
     function getCurrentEnvironment() {
         return window.location.host.indexOf(DEV_HOST_MARKER) !== -1 ? 'development' : 'production';
@@ -178,15 +180,15 @@
         var beforeHost = window.location.host;
         window.location.href = targetUrl;
 
-        // Verify the navigation actually happened. iOS ATS or Android cleartext
-        // policy can silently block HTTP loads — if we don't catch that here,
-        // the banner could end up advertising one env while fetches go to the
-        // other. Loud failure is the only acceptable outcome.
+        // Both prod and dev are HTTPS as of the dev.mycarecompanion.net
+        // migration, so the historical ATS/cleartext-block failure mode is
+        // gone. Keep the navigation-verification check anyway in case a
+        // future infra change reintroduces a silent block — loud failure
+        // beats a banner that doesn't match the data destination.
         setTimeout(function() {
             if (window.location.host === beforeHost) {
                 alert('Switch FAILED — you are still on ' + currentEnv.toUpperCase() + '.\n\n' +
-                      'Do NOT enter test data. The mobile app likely needs a rebuild ' +
-                      'with the dev host whitelisted in iOS ATS / Android network security config.');
+                      'Do NOT enter test data. Verify dev.mycarecompanion.net is reachable and the host is in capacitor.config.json allowNavigation.');
             }
         }, 2000);
     }

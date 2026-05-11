@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -14,11 +15,12 @@ import (
 // WebHandlers handles web page rendering
 type WebHandlers struct {
 	services *service.Services
+	appEnv   string
 }
 
 // NewWebHandlers creates web handlers
-func NewWebHandlers(services *service.Services) *WebHandlers {
-	return &WebHandlers{services: services}
+func NewWebHandlers(services *service.Services, appEnv string) *WebHandlers {
+	return &WebHandlers{services: services, appEnv: appEnv}
 }
 
 // Landing renders the marketing landing page for non-authenticated users
@@ -52,9 +54,39 @@ func (h *WebHandlers) Login(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login", nil)
 }
 
-// Register renders the register page
+// Register renders the register page, or a "closed" page when the
+// dev_registration_open setting is off (non-prod only). Avoids letting
+// the user fill out a form that the API would reject.
 func (h *WebHandlers) Register(w http.ResponseWriter, r *http.Request) {
+	if !h.registrationOpen(r.Context()) {
+		renderTemplate(w, "register_closed", map[string]interface{}{
+			"CurrentYear": time.Now().Year(),
+		})
+		return
+	}
 	renderTemplate(w, "register", nil)
+}
+
+// registrationOpen mirrors the API handler's check — same setting key
+// (registration_enabled, stored as {"enabled": bool} by the super-admin
+// Settings toggle), same env-specific default, same tolerance for raw-bool
+// values. Keeps the GET /register and POST /api/auth/register decisions
+// in sync so a user can't ever see the form just to be 403'd on submit.
+func (h *WebHandlers) registrationOpen(ctx context.Context) bool {
+	defaultOpen := h.appEnv == "production"
+	val, err := h.services.AdminRepo.GetSetting(ctx, "registration_enabled")
+	if err != nil || val == nil {
+		return defaultOpen
+	}
+	if m, ok := val.(map[string]interface{}); ok {
+		if e, ok := m["enabled"].(bool); ok {
+			return e
+		}
+	}
+	if b, ok := val.(bool); ok {
+		return b
+	}
+	return defaultOpen
 }
 
 // Privacy renders the privacy policy page

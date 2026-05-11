@@ -46,6 +46,12 @@ type Services struct {
 	Stripe            *StripeService
 	ChatHub           *ChatHub
 	LiveSessions      *LiveSessionsService
+
+	// AdminRepo is exposed (vs the usual pattern of wrapping each repo in its
+	// own service) for handlers that need to read/write generic
+	// system_settings — e.g. the registration toggle on dev. Avoids minting
+	// a one-method service for each setting.
+	AdminRepo repository.AdminRepository
 }
 
 // NewServices creates all services with their dependencies
@@ -104,6 +110,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		PasswordReset:     NewPasswordResetService(db, repos.User, emailService, cfg.App.URL),
 		Push:              pushService,
 		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, reportStorage, cfg.JWT.Secret),
+		AdminRepo:         repos.Admin,
 		Search:            NewSearchService(repos.Search),
 		Roadmap:           NewRoadmapService(repos.Roadmap, repos.Admin, emailService, db),
 		TicketDuplicate:   NewTicketDuplicateService(repos.Admin, repos.Roadmap, emailService),
