@@ -150,6 +150,14 @@ type ClaudeConfig struct {
 	MaxInsights    int
 	LookbackDays   int
 	Enabled        bool
+
+	// NarrativeOptInAvailable gates whether the AI Narrative Analysis
+	// opt-in toggle is shown in the user-facing Settings page and
+	// whether the consent service will honor a "true" consent value.
+	// Stays false through Phases 3-4 even as the consent code ships;
+	// flipped to true in Phase 5 once AWS Bedrock + BAA are in place.
+	// See docs/superpowers/specs/2026-05-11-ai-phi-stripping-and-internal-expansion.md
+	NarrativeOptInAvailable bool
 }
 
 func Load() (*Config, error) {
@@ -227,13 +235,14 @@ func Load() (*Config, error) {
 			BetaGroupName: getEnv("ASC_BETA_GROUP_NAME", "External Beta Testers"),
 		},
 		Claude: ClaudeConfig{
-			APIKey:       getEnv("CLAUDE_API_KEY", ""),
-			Model:        getEnv("CLAUDE_MODEL", "claude-sonnet-4-5-20241022"),
-			MaxTokens:    getEnvInt("CLAUDE_MAX_TOKENS", 4096),
-			DailyRunHour: getEnvInt("CLAUDE_DAILY_RUN_HOUR", 6),
-			MaxInsights:  getEnvInt("CLAUDE_MAX_INSIGHTS", 5),
-			LookbackDays: getEnvInt("CLAUDE_LOOKBACK_DAYS", 7),
-			Enabled:      getEnvBool("CLAUDE_ENABLED", false),
+			APIKey:                  getEnv("CLAUDE_API_KEY", ""),
+			Model:                   getEnv("CLAUDE_MODEL", "claude-sonnet-4-5-20241022"),
+			MaxTokens:               getEnvInt("CLAUDE_MAX_TOKENS", 4096),
+			DailyRunHour:            getEnvInt("CLAUDE_DAILY_RUN_HOUR", 6),
+			MaxInsights:             getEnvInt("CLAUDE_MAX_INSIGHTS", 5),
+			LookbackDays:            getEnvInt("CLAUDE_LOOKBACK_DAYS", 7),
+			Enabled:                 getEnvBool("CLAUDE_ENABLED", false),
+			NarrativeOptInAvailable: getEnvBool("AI_NARRATIVE_OPT_IN_AVAILABLE", false),
 		},
 		Stripe: StripeConfig{
 			SecretKey:      getEnv("STRIPE_SECRET_KEY", ""),

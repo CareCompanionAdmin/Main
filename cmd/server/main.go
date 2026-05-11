@@ -403,6 +403,10 @@ func main() {
 		aiInsightService = service.NewAIInsightService(
 			&cfg.Claude, repos.Log, repos.Child, repos.Medication, repos.Insight, services.Alert,
 		)
+		// Phase 3 narrative consent gate. The service may be nil-tolerant
+		// (always strips free-text by default), and the gate itself short-
+		// circuits to false when AI_NARRATIVE_OPT_IN_AVAILABLE is unset.
+		aiInsightService.SetNarrativeConsent(services.AINarrativeConsent)
 		log.Println("Claude AI insights enabled")
 	} else {
 		log.Println("Claude AI insights disabled (set CLAUDE_ENABLED=true and CLAUDE_API_KEY to enable)")

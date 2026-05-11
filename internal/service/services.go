@@ -47,6 +47,7 @@ type Services struct {
 	ChatHub           *ChatHub
 	LiveSessions      *LiveSessionsService
 	AccountDeletion   *AccountDeletionService
+	AINarrativeConsent *AINarrativeConsentService
 
 	// AdminRepo is exposed (vs the usual pattern of wrapping each repo in its
 	// own service) for handlers that need to read/write generic
@@ -131,6 +132,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		// returns; main.go calls svcs.LiveSessions.SetDevModeService(...) once
 		// it's built. SSH list is gracefully empty until then.
 		LiveSessions: NewLiveSessionsService(repos.Session, repos.SessionProd, nil, cfg.App.Env),
+		AINarrativeConsent: NewAINarrativeConsentService(db, cfg.Claude.NarrativeOptInAvailable),
 	}
 	// AccountDeletionService needs AuthService (above) so it can revoke
 	// sessions on confirm. Constructed after the struct so Auth is set.

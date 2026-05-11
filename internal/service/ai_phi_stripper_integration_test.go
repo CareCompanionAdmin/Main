@@ -155,7 +155,8 @@ func TestBuildLogContext_NoPHILeaks_NoFreeText(t *testing.T) {
 	}
 
 	svc := &AIInsightService{config: &config.ClaudeConfig{LookbackDays: 7}}
-	out := svc.buildLogContext(child, logs)
+	// includeNarrative=false matches the Phase 1 default — free-text stripped.
+	out := svc.buildLogContext(child, logs, false)
 	t.Logf("De-identified log context:\n%s", out)
 
 	forbidden := []string{
@@ -190,6 +191,67 @@ func TestBuildLogContext_NoPHILeaks_NoFreeText(t *testing.T) {
 	// Behavior log "notes" field must NOT be present at all.
 	if strings.Contains(out, "notes=") {
 		t.Errorf("free-text notes leaked into output — should be dropped: %q", out)
+	}
+}
+
+// TestBuildLogContext_NarrativeOptIn_IncludesFreeText asserts that when
+// Phase 3 narrative consent is in effect (includeNarrative=true), the
+// previously-stripped free-text fields ARE included in the prompt.
+// This is the partner of TestBuildLogContext_NoPHILeaks_NoFreeText —
+// together they prove both code paths work correctly.
+//
+// IMPORTANT: this test asserts that free-text leaks WHEN explicitly
+// opted in. It does NOT assert PHI-stripping; that's the other test's
+// job. Identifying content like "Sarah" still shouldn't appear because
+// the narrative fields don't contain it (only the parent's own
+// descriptive prose).
+func TestBuildLogContext_NarrativeOptIn_IncludesFreeText(t *testing.T) {
+	child := models.Child{
+		ID:        uuid.MustParse("11111111-1111-1111-1111-111111111111"),
+		FirstName: "Sarah",
+	}
+
+	now := time.Now()
+	mood := 7
+	narrativeBehavior := "Had a really tough morning after the schedule change"
+	narrativeTherapy := "Made eye contact during OT for the first time this week"
+	narrativeHealth := "Pediatrician adjusted dosing — follow up in 2 weeks"
+
+	logs := &models.DailyLogPage{
+		BehaviorLogs: []models.BehaviorLog{
+			{
+				LogDate:   now.AddDate(0, 0, -1),
+				MoodLevel: &mood,
+				Notes:     models.NullString{NullString: sql.NullString{String: narrativeBehavior, Valid: true}},
+			},
+		},
+		TherapyLogs: []models.TherapyLog{
+			{
+				LogDate:         now.AddDate(0, 0, -2),
+				TherapyType:     models.NullString{NullString: sql.NullString{String: "OT", Valid: true}},
+				DurationMinutes: intPtr(30),
+				ProgressNotes:   models.NullString{NullString: sql.NullString{String: narrativeTherapy, Valid: true}},
+			},
+		},
+		HealthEventLogs: []models.HealthEventLog{
+			{
+				LogDate:     now.AddDate(0, 0, -1),
+				EventType:   models.NullString{NullString: sql.NullString{String: "doctor_visit", Valid: true}},
+				Description: models.NullString{NullString: sql.NullString{String: narrativeHealth, Valid: true}},
+			},
+		},
+	}
+
+	svc := &AIInsightService{config: &config.ClaudeConfig{LookbackDays: 7}}
+	out := svc.buildLogContext(child, logs, true) // includeNarrative = true
+
+	required := []string{
+		narrativeBehavior, narrativeTherapy, narrativeHealth,
+	}
+	for _, r := range required {
+		if !strings.Contains(out, r) {
+			t.Errorf("with narrative opt-in, expected free-text %q in output:\n%s", r, out)
+		}
 	}
 }
 

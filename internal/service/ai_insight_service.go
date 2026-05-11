@@ -31,6 +31,11 @@ type AIInsightService struct {
 	insightRepo repository.InsightRepository
 	alertService *AlertService
 	limiter     *rateLimiter
+
+	// narrativeConsent gates whether free-text fields are included in
+	// outbound prompts. Optional (nil-safe — nil means "always strip").
+	// Phase 3 of the internal-AI initiative; defaults to dormant.
+	narrativeConsent *AINarrativeConsentService
 }
 
 type rateLimiter struct {
@@ -74,6 +79,14 @@ func NewAIInsightService(
 		alertService: alertService,
 		limiter:      &rateLimiter{maxCalls: 10, resetTime: time.Now().Add(time.Minute)},
 	}
+}
+
+// SetNarrativeConsent wires the Phase 3 consent gate. Call this once
+// after services are constructed. If never called (or passed nil), the
+// AI service treats all callers as not-consented and continues stripping
+// free-text — the safe Phase 1 default.
+func (s *AIInsightService) SetNarrativeConsent(svc *AINarrativeConsentService) {
+	s.narrativeConsent = svc
 }
 
 // aiInsightResult is the expected JSON structure from Claude's response
@@ -146,9 +159,14 @@ func (s *AIInsightService) AnalyzeChild(ctx context.Context, child models.Child)
 		}
 	}
 
-	// Call 2: Tier 3 (family-specific patterns) — profile + log data
+	// Call 2: Tier 3 (family-specific patterns) — profile + log data.
+	// Narrative free-text is included only when the family's primary
+	// parent has explicitly opted in (Phase 3 consent gate) AND the
+	// server-side feature flag is on. The default — and the only state
+	// in prod through Phases 3-4 — is "always strip."
+	includeNarrative := s.narrativeConsent != nil && s.narrativeConsent.AllowsNarrativeForFamily(ctx, child.FamilyID)
 	if s.limiter.allow() && logs != nil {
-		logCtx := s.buildLogContext(child, logs)
+		logCtx := s.buildLogContext(child, logs, includeNarrative)
 		results, err := s.callClaudeForTier3(ctx, profileCtx, logCtx, child.FirstName)
 		if err != nil {
 			log.Printf("AI Insights: Tier 3 API error for %s: %v", child.FirstName, err)
@@ -248,11 +266,11 @@ func (s *AIInsightService) buildProfileContext(child models.Child, conditions []
 
 // buildLogContext creates a de-identified summary of recent log data for
 // outbound LLM calls. Free-text fields (behavior notes, therapy progress
-// notes, health-event descriptions) are dropped — the LLM never sees parent
-// narrative content via this path. Calendar dates become relative day
-// labels ("Day-3"), and missed medications are aggregated by drug class
-// rather than by name. See ai_phi_stripper.go.
-func (s *AIInsightService) buildLogContext(_ models.Child, logs *models.DailyLogPage) string {
+// notes, health-event descriptions) are dropped UNLESS includeNarrative
+// is true — Phase 3 narrative opt-in gates that. Calendar dates become
+// relative day labels ("Day-3"), and missed medications are aggregated
+// by drug class rather than by name. See ai_phi_stripper.go.
+func (s *AIInsightService) buildLogContext(_ models.Child, logs *models.DailyLogPage, includeNarrative bool) string {
 	var b strings.Builder
 	now := time.Now()
 	b.WriteString(fmt.Sprintf("\n=== Recent log data for %s (last %d days) ===\n", NamePlaceholder, s.config.LookbackDays))
@@ -280,7 +298,10 @@ func (s *AIInsightService) buildLogContext(_ models.Child, logs *models.DailyLog
 			if l.AggressionIncidents > 0 {
 				line += fmt.Sprintf(" aggression=%d", l.AggressionIncidents)
 			}
-			// l.Notes (free-text) intentionally NOT included — Phase 3 opt-in only
+			// Free-text notes: Phase 1 default strips; Phase 3 opt-in includes.
+			if includeNarrative && l.Notes.Valid && l.Notes.String != "" {
+				line += fmt.Sprintf(" notes=%q", aiTruncate(l.Notes.String, 100))
+			}
 			b.WriteString(line + "\n")
 		}
 	}
@@ -455,7 +476,10 @@ func (s *AIInsightService) buildLogContext(_ models.Child, logs *models.DailyLog
 			if l.DurationMinutes != nil {
 				line += fmt.Sprintf(" %dmin", *l.DurationMinutes)
 			}
-			// l.ProgressNotes (free-text) intentionally NOT included — Phase 3 opt-in only
+			// Free-text progress notes: Phase 1 default strips; Phase 3 opt-in includes.
+			if includeNarrative && l.ProgressNotes.Valid && l.ProgressNotes.String != "" {
+				line += fmt.Sprintf(" notes=%q", aiTruncate(l.ProgressNotes.String, 80))
+			}
 			b.WriteString(line + "\n")
 		}
 	}
@@ -488,7 +512,10 @@ func (s *AIInsightService) buildLogContext(_ models.Child, logs *models.DailyLog
 				eventType = l.EventType.String
 			}
 			line := fmt.Sprintf("  %s: %s", RelativeDayLabel(l.LogDate, now), eventType)
-			// l.Description (free-text) intentionally NOT included — Phase 3 opt-in only
+			// Free-text description: Phase 1 default strips; Phase 3 opt-in includes.
+			if includeNarrative && l.Description.Valid && l.Description.String != "" {
+				line += fmt.Sprintf(" — %s", aiTruncate(l.Description.String, 100))
+			}
 			b.WriteString(line + "\n")
 		}
 	}
