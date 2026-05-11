@@ -429,15 +429,24 @@ The `.claude/settings.json` has been updated to reduce permission-prompt frictio
 - [ ] Verify dev still produces useful Claude insights
 
 ### Phase 2 — Internal AI expansion
-- [ ] Create `internal/service/insight_statistics.go` with helpers
-- [ ] Create `internal/service/insight_cross_stream.go`
-- [ ] Create `internal/service/insight_clinical_rules.go`
-- [ ] Create `internal/service/insight_cohort_aggregator.go`
-- [ ] Migration `00035_insight_cohort_aggregates.sql`
-- [ ] Wire new analyzers into `insight_generator.go`
-- [ ] Tests for each module
-- [ ] Deploy to dev; observe insight count before/after
-- [ ] Commit
+**Scope expanded 2026-05-11** after Bryan's "shouldn't internal be able to do open-ended analysis?" question. Original "predefined factor pairs" was too narrow — replaced with exhaustive discovery + anomaly/trend/change-point + clinical rules. Bryan-approved expanded scope; see decisions log entries 2026-05-11.
+
+**Scope reduced** after audit found existing `correlation_service.go` (411 lines, has Pearson w/ lag), `cohort_service.go` (290 lines, has cohort matching + anonymous hashing), and `realtime_detection.go` (446 lines, on-event detection). Built new files for the actual gaps; did NOT duplicate.
+
+- [x] Create `internal/service/insight_statistics.go` — Mean, StdDev, ZScore, RollingMean, LinearRegression w/ p-value, PearsonPValue, BenjaminiHochberg FDR, DetectChangePoint
+- [x] Create `internal/service/insight_autoscan.go` — exhaustive correlation scanner across all factor pairs × 4 lags with FDR correction
+- [x] Create `internal/service/insight_per_metric.go` — anomaly + trend + change-point detection per metric
+- [x] Create `internal/service/insight_clinical_rules.go` — FDA-auto layer + change-point/medication-start coincidence layer; Source 2 (admin-editable rules) deferred to follow-up commit per design (~1 day of admin handler work)
+- [x] Skip cohort aggregator rebuild — existing `cohort_service.go` already covers it
+- [x] Wire all three scanners into `insight_generator.go` runInternalScans method
+- [x] Tests: insight_statistics_test.go (Mean, StdDev, ZScore, RollingMean, LinearRegression, PearsonPValue, BenjaminiHochberg, DetectChangePoint) + ai_insight_json_extractor_test.go
+- [x] Fix Claude prose-with-[CHILD] JSON parsing edge case (extractor walks strings properly)
+- [x] Build + service tests green
+- [x] Deploy to dev
+- [ ] Commit (in flight)
+- [ ] Observe insight count after dev run
+
+**Phase 2 follow-up (own commit, ~1 day)**: Source 2 admin-curated rules — migration `00035_clinical_rules.sql`, repo + admin handlers, simple DSL evaluator. TODO marker left in `insight_clinical_rules.go`.
 
 ### Phase 3 — Opt-in narrative consent flow
 - [ ] Migration `00036_ai_narrative_consent.sql`

@@ -21,6 +21,14 @@ type InsightGenerator struct {
 	aiService    *AIInsightService
 	lastAIRun    time.Time
 	aiRunHour    int
+
+	// Phase 2 internal-AI scanners — see
+	// docs/superpowers/specs/2026-05-11-ai-phi-stripping-and-internal-expansion.md
+	// for the rationale. All three run once daily next to the AI run.
+	autoCorrScanner  *AutoCorrelationScanner
+	perMetricScanner *PerMetricScanner
+	clinicalScanner  *ClinicalRuleScanner
+	lastInternalRun  time.Time
 }
 
 // NewInsightGenerator creates a new insight generator
@@ -32,15 +40,21 @@ func NewInsightGenerator(
 	db *sql.DB,
 	aiService *AIInsightService,
 	aiRunHour int,
+	autoCorrScanner *AutoCorrelationScanner,
+	perMetricScanner *PerMetricScanner,
+	clinicalScanner *ClinicalRuleScanner,
 ) *InsightGenerator {
 	return &InsightGenerator{
-		alertService: alertService,
-		logRepo:      logRepo,
-		medRepo:      medRepo,
-		alertRepo:    alertRepo,
-		db:           db,
-		aiService:    aiService,
-		aiRunHour:    aiRunHour,
+		alertService:     alertService,
+		logRepo:          logRepo,
+		medRepo:          medRepo,
+		alertRepo:        alertRepo,
+		db:               db,
+		aiService:        aiService,
+		aiRunHour:        aiRunHour,
+		autoCorrScanner:  autoCorrScanner,
+		perMetricScanner: perMetricScanner,
+		clinicalScanner:  clinicalScanner,
 	}
 }
 
@@ -56,6 +70,10 @@ func (g *InsightGenerator) Start(ctx context.Context) {
 		g.runAIAnalysis(ctx)
 	}
 
+	// Internal-AI scanners (auto-correlation, per-metric, clinical rules)
+	// also run once at startup so dev gets immediate feedback.
+	g.runInternalScans(ctx)
+
 	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
 
@@ -67,12 +85,69 @@ func (g *InsightGenerator) Start(ctx context.Context) {
 		case <-ticker.C:
 			g.generateAllInsights(ctx)
 
-			// Run AI analysis daily at configured hour
+			// Run AI analysis + internal-AI scanners daily at configured hour
 			if g.shouldRunAI() {
 				g.runAIAnalysis(ctx)
+				g.runInternalScans(ctx)
 			}
 		}
 	}
+}
+
+// runInternalScans runs the three Phase 2 internal-AI scanners
+// (auto-correlation, per-metric, clinical rules) for every active child.
+// All three run on the same daily cadence and are individually optional —
+// if a scanner is nil (e.g., not yet wired in a partial deploy) it is
+// skipped silently.
+func (g *InsightGenerator) runInternalScans(ctx context.Context) {
+	if g.autoCorrScanner == nil && g.perMetricScanner == nil && g.clinicalScanner == nil {
+		return
+	}
+	children, err := g.getAllActiveChildren(ctx)
+	if err != nil {
+		log.Printf("Internal scans: failed to get children: %v", err)
+		return
+	}
+	g.lastInternalRun = time.Now()
+	log.Printf("Internal scans: starting for %d children", len(children))
+
+	totals := struct {
+		corrPatterns, corrAlerts int
+		metricPatterns, metricAlerts int
+		clinicalInsights, clinicalAlerts int
+	}{}
+
+	for _, child := range children {
+		if g.autoCorrScanner != nil {
+			p, a, err := g.autoCorrScanner.ScanChild(ctx, child.ID)
+			if err != nil {
+				log.Printf("Internal scans: auto-correlation error for %s: %v", child.FirstName, err)
+			}
+			totals.corrPatterns += p
+			totals.corrAlerts += a
+		}
+		if g.perMetricScanner != nil {
+			p, a, err := g.perMetricScanner.ScanChild(ctx, child.ID)
+			if err != nil {
+				log.Printf("Internal scans: per-metric error for %s: %v", child.FirstName, err)
+			}
+			totals.metricPatterns += p
+			totals.metricAlerts += a
+		}
+		if g.clinicalScanner != nil {
+			i, a, err := g.clinicalScanner.ScanChild(ctx, child.ID)
+			if err != nil {
+				log.Printf("Internal scans: clinical-rules error for %s: %v", child.FirstName, err)
+			}
+			totals.clinicalInsights += i
+			totals.clinicalAlerts += a
+		}
+	}
+
+	log.Printf("Internal scans complete — auto-corr: %d patterns/%d alerts, per-metric: %d/%d, clinical: %d insights/%d alerts",
+		totals.corrPatterns, totals.corrAlerts,
+		totals.metricPatterns, totals.metricAlerts,
+		totals.clinicalInsights, totals.clinicalAlerts)
 }
 
 // shouldRunAI checks if it's time for the daily AI analysis

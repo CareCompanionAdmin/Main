@@ -651,21 +651,26 @@ func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPro
 	log.Printf("AI Insights: API usage — %d input tokens, %d output tokens",
 		claudeResp.Usage.InputTokens, claudeResp.Usage.OutputTokens)
 
-	// Parse the JSON array from the response text. Claude occasionally
-	// wraps the array in markdown code fences ("```json...```") or adds
-	// a trailing fence even without an opening one, so we extract the
-	// bounds of the JSON array explicitly rather than trying to peel
-	// fences off the ends.
-	text := claudeResp.Content[0].Text
-	if first := strings.IndexByte(text, '['); first >= 0 {
-		if last := strings.LastIndexByte(text, ']'); last > first {
-			text = text[first : last+1]
-		}
+	// Parse the JSON array from the response text. Claude occasionally:
+	//   (a) wraps the array in markdown code fences ("```json...```")
+	//   (b) returns prose starting with "[CHILD]'s ..." — the literal
+	//       placeholder we use causes naive byte-search to mistake it
+	//       for the array opener.
+	//   (c) emits the array followed by trailing prose or backticks.
+	//
+	// To handle all three, we find the first "[" that's followed (after
+	// whitespace) by "{" — the only valid opener for our array-of-objects
+	// schema — then walk forward tracking JSON string state so the matching
+	// "]" we return is the actual array close and not a "]" inside a string.
+	text := extractJSONArray(claudeResp.Content[0].Text)
+	if text == "" {
+		log.Printf("AI Insights: no JSON array found in response. Raw: %s", truncateLog(claudeResp.Content[0].Text, 500))
+		return nil, fmt.Errorf("no JSON array in response")
 	}
 
 	var results []aiInsightResult
 	if err := json.Unmarshal([]byte(text), &results); err != nil {
-		log.Printf("AI Insights: failed to parse response JSON: %v\nRaw: %s", err, text[:min(len(text), 500)])
+		log.Printf("AI Insights: failed to parse response JSON: %v\nRaw: %s", err, truncateLog(text, 500))
 		return nil, fmt.Errorf("parse response JSON: %w", err)
 	}
 
@@ -783,6 +788,90 @@ func (s *AIInsightService) storeInsights(ctx context.Context, childID, familyID 
 	}
 
 	return insightsCreated, alertsCreated
+}
+
+// extractJSONArray scans `text` for the first JSON array of objects and
+// returns its substring bounds. Returns "" if no well-formed array can
+// be located. Handles three problem cases observed in Claude output:
+//
+//   - Markdown fences wrapping the array (```json ... ```)
+//   - Trailing prose or fence after the array
+//   - Prose containing the literal "[CHILD]" placeholder that would
+//     otherwise confuse a naive first-`[` / last-`]` extractor
+//
+// The walker tracks JSON string state so brackets inside strings (like
+// "[CHILD]" inside a description value) don't affect depth counting.
+func extractJSONArray(text string) string {
+	// 1. Find the first '[' followed (after whitespace) by '{' — that's
+	//    the start of an array of objects.
+	parseStart := -1
+	for i := 0; i < len(text); i++ {
+		if text[i] != '[' {
+			continue
+		}
+		j := i + 1
+		for j < len(text) {
+			c := text[j]
+			if c == ' ' || c == '\n' || c == '\t' || c == '\r' {
+				j++
+				continue
+			}
+			break
+		}
+		if j < len(text) && text[j] == '{' {
+			parseStart = i
+			break
+		}
+	}
+	if parseStart < 0 {
+		return ""
+	}
+
+	// 2. Walk forward from parseStart tracking JSON string state to
+	//    find the matching closing ']'.
+	depth := 0
+	inString := false
+	escape := false
+	for i := parseStart; i < len(text); i++ {
+		c := text[i]
+		if escape {
+			escape = false
+			continue
+		}
+		if inString {
+			if c == '\\' {
+				escape = true
+				continue
+			}
+			if c == '"' {
+				inString = false
+			}
+			continue
+		}
+		switch c {
+		case '"':
+			inString = true
+		case '[':
+			depth++
+		case ']':
+			depth--
+			if depth == 0 {
+				return text[parseStart : i+1]
+			}
+		}
+	}
+	// Unbalanced — likely a truncated response. Return "" to signal
+	// failure rather than feeding the parser obviously-broken input.
+	return ""
+}
+
+// truncateLog returns at most maxLen runes of s, with "..." appended
+// when truncation occurs. Safe on s == "".
+func truncateLog(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }
 
 // isDuplicate checks if a similar title exists in recent insights

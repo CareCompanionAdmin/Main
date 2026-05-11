@@ -408,7 +408,13 @@ func main() {
 		log.Println("Claude AI insights disabled (set CLAUDE_ENABLED=true and CLAUDE_API_KEY to enable)")
 	}
 
-	insightGen := service.NewInsightGenerator(services.Alert, repos.Log, repos.Medication, repos.Alert, db.DB, aiInsightService, cfg.Claude.DailyRunHour)
+	// Phase 2 internal-AI scanners — all reuse existing repos. Each is
+	// independent and skips gracefully if its inputs aren't available.
+	autoCorrScanner := service.NewAutoCorrelationScanner(repos.Correlation, repos.Child, services.Alert)
+	perMetricScanner := service.NewPerMetricScanner(repos.Correlation, repos.Child, services.Alert)
+	clinicalRuleScanner := service.NewClinicalRuleScanner(repos.Medication, repos.Correlation, repos.Child, repos.Insight, services.Alert, services.DrugDatabase)
+
+	insightGen := service.NewInsightGenerator(services.Alert, repos.Log, repos.Medication, repos.Alert, db.DB, aiInsightService, cfg.Claude.DailyRunHour, autoCorrScanner, perMetricScanner, clinicalRuleScanner)
 	go insightGen.Start(schedulerCtx)
 
 	// Subscription expiry sweeper — transitions trialing→past_due and
