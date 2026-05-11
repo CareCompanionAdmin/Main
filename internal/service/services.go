@@ -46,12 +46,18 @@ type Services struct {
 	Stripe            *StripeService
 	ChatHub           *ChatHub
 	LiveSessions      *LiveSessionsService
+	AccountDeletion   *AccountDeletionService
 
 	// AdminRepo is exposed (vs the usual pattern of wrapping each repo in its
 	// own service) for handlers that need to read/write generic
 	// system_settings — e.g. the registration toggle on dev. Avoids minting
 	// a one-method service for each setting.
 	AdminRepo repository.AdminRepository
+
+	// AccountDeletionRepo exposed for the same reason: the API handler reads
+	// the user's family-role breakdown to drive disclaimer copy, and the
+	// status endpoint needs direct read access.
+	AccountDeletionRepo repository.AccountDeletionRepository
 }
 
 // NewServices creates all services with their dependencies
@@ -111,6 +117,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		Push:              pushService,
 		Report:            NewReportService(repos.Report, repos.Log, repos.Child, repos.Chat, reportStorage, cfg.JWT.Secret),
 		AdminRepo:         repos.Admin,
+		AccountDeletionRepo: repos.AccountDeletion,
 		Search:            NewSearchService(repos.Search),
 		Roadmap:           NewRoadmapService(repos.Roadmap, repos.Admin, emailService, db),
 		TicketDuplicate:   NewTicketDuplicateService(repos.Admin, repos.Roadmap, emailService),
@@ -125,6 +132,16 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		// it's built. SSH list is gracefully empty until then.
 		LiveSessions: NewLiveSessionsService(repos.Session, repos.SessionProd, nil, cfg.App.Env),
 	}
+	// AccountDeletionService needs AuthService (above) so it can revoke
+	// sessions on confirm. Constructed after the struct so Auth is set.
+	svcs.AccountDeletion = NewAccountDeletionService(
+		repos.AccountDeletion,
+		repos.User,
+		svcs.Auth,
+		emailService,
+		repos.Billing,
+		cfg,
+	)
 	// Subscription service has to come AFTER auth/family/child services exist
 	// because we wire it INTO them below (signup → trial, add-child → bump).
 	subSvc, subErr := NewSubscriptionService(db)

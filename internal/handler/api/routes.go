@@ -13,23 +13,24 @@ import (
 
 // Handlers aggregates all API handlers
 type Handlers struct {
-	Auth          *AuthHandler
-	Child         *ChildHandler
-	Family        *FamilyHandler
-	Medication    *MedicationHandler
-	Log           *LogHandler
-	Alert         *AlertHandler
-	Correlation   *CorrelationHandler
-	Insight       *InsightHandler
-	Chat          *ChatHandler
-	Transparency  *TransparencyHandler
-	Support       *SupportHandler
-	Billing       *BillingHandler
-	PasswordReset *PasswordResetHandler
-	Device        *DeviceHandler
-	User          *UserHandler
-	Report        *ReportHandler
-	Search        *SearchHandler
+	Auth            *AuthHandler
+	Child           *ChildHandler
+	Family          *FamilyHandler
+	Medication      *MedicationHandler
+	Log             *LogHandler
+	Alert           *AlertHandler
+	Correlation     *CorrelationHandler
+	Insight         *InsightHandler
+	Chat            *ChatHandler
+	Transparency    *TransparencyHandler
+	Support         *SupportHandler
+	Billing         *BillingHandler
+	PasswordReset   *PasswordResetHandler
+	Device          *DeviceHandler
+	User            *UserHandler
+	Report          *ReportHandler
+	Search          *SearchHandler
+	AccountDeletion *AccountDeletionHandler
 }
 
 // NewHandlers creates all API handlers
@@ -52,6 +53,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		User:          NewUserHandler(services.User),
 		Report:        NewReportHandler(services.Report, services.Child),
 		Search:        NewSearchHandler(services.Search),
+		AccountDeletion: NewAccountDeletionHandler(services.AccountDeletion, services.AccountDeletionRepo),
 	}
 }
 
@@ -75,6 +77,15 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Get("/auth/validate-reset-token", handlers.PasswordReset.ValidateToken)
 			r.Post("/auth/reset-password", handlers.PasswordReset.ResetPassword)
 		})
+
+		// Account restore via email-link token. Public — the user is signed
+		// out (we revoked their sessions when the deletion was confirmed) and
+		// the token IS the credential. Rate-limited the same way as password
+		// reset for token-guessing defense.
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RateLimit(10, 1*time.Minute))
+			r.Get("/account/deletion/restore", handlers.AccountDeletion.RestoreByToken)
+		})
 	})
 
 	// Protected routes
@@ -91,6 +102,14 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		// User profile and password
 		r.Patch("/users/profile", handlers.User.UpdateProfile)
 		r.Post("/users/password", handlers.User.ChangePassword)
+
+		// Account deletion — user-initiated flow per App Store 5.1.1(v).
+		// Status read + request-OTP + confirm-with-OTP, all behind auth.
+		r.Route("/account", func(r chi.Router) {
+			r.Get("/deletion/status", handlers.AccountDeletion.GetStatus)
+			r.Post("/deletion/request", handlers.AccountDeletion.RequestDeletion)
+			r.Post("/deletion/confirm", handlers.AccountDeletion.ConfirmDeletion)
+		})
 
 		// Device registration (push notifications)
 		r.Post("/devices/register", handlers.Device.RegisterDevice)

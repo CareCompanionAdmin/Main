@@ -54,6 +54,40 @@ func (h *WebHandlers) Login(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login", nil)
 }
 
+// AccountDeletionPending is the goodbye page the Settings flow redirects
+// to right after a successful soft-delete confirm. Public — the user is
+// already signed out by this point.
+func (h *WebHandlers) AccountDeletionPending(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "account_deletion_pending", map[string]interface{}{})
+}
+
+// AccountRestore is the public landing for the one-click "Undo deletion"
+// email link. Reads ?token=... from the query string, calls into the
+// account-deletion service to validate + reverse the soft-delete, then
+// renders a success/failure page. No auth required — the token IS the
+// credential (one-shot, expires in 14 days).
+func (h *WebHandlers) AccountRestore(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		renderTemplate(w, "account_restore", map[string]interface{}{
+			"Success":      false,
+			"ErrorMessage": "Missing token in the URL. The link should look like /account/restore?token=...",
+		})
+		return
+	}
+	_, err := h.services.AccountDeletion.RestoreByToken(r.Context(), token)
+	if err != nil {
+		renderTemplate(w, "account_restore", map[string]interface{}{
+			"Success":      false,
+			"ErrorMessage": "This restore link is invalid or expired. The 14-day self-restore window may have closed.",
+		})
+		return
+	}
+	renderTemplate(w, "account_restore", map[string]interface{}{
+		"Success": true,
+	})
+}
+
 // Register renders the register page, or a "closed" page when the
 // dev_registration_open setting is off (non-prod only). Avoids letting
 // the user fill out a form that the API would reject.

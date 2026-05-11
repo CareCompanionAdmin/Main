@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/smtp"
 	"strings"
+	"time"
 
 	"carecompanion/internal/config"
 )
@@ -186,6 +187,68 @@ func (s *EmailService) SendPasswordResetEmail(to, firstName, resetURL string) er
 	return s.SendEmail(to, subject, body)
 }
 
+// SendAccountDeletionCodeEmail sends the 6-digit OTP that begins the
+// in-app account-deletion flow. ttlMinutes is the validity window we
+// want to communicate to the user (15 by default).
+func (s *EmailService) SendAccountDeletionCodeEmail(to, firstName, code string, ttlMinutes int) error {
+	subject := "MyCareCompanion — Confirm your account deletion"
+	body, err := renderTemplate(accountDeletionCodeTemplate, map[string]string{
+		"FirstName":  firstName,
+		"Code":       code,
+		"TTLMinutes": fmt.Sprintf("%d", ttlMinutes),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render deletion-code email: %w", err)
+	}
+	return s.SendEmail(to, subject, body)
+}
+
+// SendAccountDeletionStartedEmail confirms that the deletion is now in
+// progress and gives the user two next-step links: the one-click undo and
+// the data-export consent page.
+func (s *EmailService) SendAccountDeletionStartedEmail(to, firstName, restoreURL, exportURL string, scheduledHardDelete time.Time, selfRestoreDays, totalGraceDays int) error {
+	subject := "MyCareCompanion — Your account deletion has started"
+	body, err := renderTemplate(accountDeletionStartedTemplate, map[string]string{
+		"FirstName":              firstName,
+		"RestoreURL":             restoreURL,
+		"ExportURL":              exportURL,
+		"ScheduledHardDeleteAt":  scheduledHardDelete.Format("January 2, 2006"),
+		"SelfRestoreWindowDays":  fmt.Sprintf("%d", selfRestoreDays),
+		"TotalGraceWindowDays":   fmt.Sprintf("%d", totalGraceDays),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render deletion-started email: %w", err)
+	}
+	return s.SendEmail(to, subject, body)
+}
+
+// SendAccountRestoredEmail confirms that the soft-delete was reversed
+// (either by the user via the email link or by support).
+func (s *EmailService) SendAccountRestoredEmail(to, firstName, appURL string) error {
+	subject := "MyCareCompanion — Welcome back, your account is restored"
+	body, err := renderTemplate(accountRestoredTemplate, map[string]string{
+		"FirstName": firstName,
+		"AppURL":    appURL,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render restored email: %w", err)
+	}
+	return s.SendEmail(to, subject, body)
+}
+
+// SendAccountHardDeletedEmail is the final notice — after the 30-day grace,
+// the data has been permanently removed from production.
+func (s *EmailService) SendAccountHardDeletedEmail(to, firstName string) error {
+	subject := "MyCareCompanion — Your account has been permanently deleted"
+	body, err := renderTemplate(accountHardDeletedTemplate, map[string]string{
+		"FirstName": firstName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render hard-deleted email: %w", err)
+	}
+	return s.SendEmail(to, subject, body)
+}
+
 // SendFamilyMemberAddedEmail notifies a user they've been added to a family
 func (s *EmailService) SendFamilyMemberAddedEmail(to, firstName, familyName, role, appURL string) error {
 	subject := fmt.Sprintf("You've been added to %s on MyCareCompanion", familyName)
@@ -305,4 +368,48 @@ var memberAddedTemplate = fmt.Sprintf(emailWrapper, `
     <p>You've been added to the <strong>{{.FamilyName}}</strong> family on MyCareCompanion as a <strong>{{.Role}}</strong>.</p>
     <p>You can now access this family's data, including children's profiles, logs, medications, and more.</p>
     <p><a href="{{.AppURL}}" class="btn" style="color: #ffffff;">Open MyCareCompanion</a></p>
+`)
+
+// --- Account deletion templates ---
+
+var accountDeletionCodeTemplate = fmt.Sprintf(emailWrapper, `
+    <h2>Confirm Your Account Deletion</h2>
+    <p>Hi {{.FirstName}},</p>
+    <p>You started the process of deleting your MyCareCompanion account. To confirm, enter this code in the app:</p>
+    <p style="text-align:center; font-size:2rem; letter-spacing:0.4em; font-family:monospace; padding:1rem; background:#fbf6ee; border-radius:12px;"><strong>{{.Code}}</strong></p>
+    <p>This code expires in {{.TTLMinutes}} minutes.</p>
+    <p>If you didn't start an account deletion, you can ignore this email — nothing has happened to your account yet. If you keep seeing these messages, please email support@mycarecompanion.net so we can investigate.</p>
+`)
+
+var accountDeletionStartedTemplate = fmt.Sprintf(emailWrapper, `
+    <h2>Your Account Deletion Has Started</h2>
+    <p>Hi {{.FirstName}},</p>
+    <p>We've received your confirmation and started the process of deleting your MyCareCompanion account. Your data will be permanently removed on <strong>{{.ScheduledHardDeleteAt}}</strong>.</p>
+
+    <h3>Changed your mind?</h3>
+    <p>You have <strong>{{.SelfRestoreWindowDays}} days</strong> to undo this deletion yourself. Click the button below at any time before then:</p>
+    <p><a href="{{.RestoreURL}}" class="btn" style="color: #ffffff;">Undo Deletion</a></p>
+    <p>After that, you have up to <strong>{{.TotalGraceWindowDays}} days</strong> total to email <a href="mailto:support@mycarecompanion.net">support@mycarecompanion.net</a> and ask us to restore your account.</p>
+
+    <h3>Want a copy of your data?</h3>
+    <p>You can request a downloadable copy of your family's care history in CSV, Excel, or SQLite formats. Once you submit your format choices, we'll email you the download link within 24 hours.</p>
+    <p><a href="{{.ExportURL}}" class="btn" style="color: #ffffff;">Download My Data</a></p>
+    <p style="font-size:0.85rem; color:#78716c;">Once your data leaves our system, you're responsible for storing it securely. Don't share it casually — it contains protected health information about your child.</p>
+
+    <p style="margin-top:2rem; font-size:0.85rem; color:#78716c;">If you didn't initiate this deletion, please reply to this email immediately so we can secure your account.</p>
+`)
+
+var accountRestoredTemplate = fmt.Sprintf(emailWrapper, `
+    <h2>Welcome back, {{.FirstName}}</h2>
+    <p>Your MyCareCompanion account has been restored. Your data is back exactly as it was, and you can sign in normally:</p>
+    <p><a href="{{.AppURL}}/login" class="btn" style="color: #ffffff;">Sign In</a></p>
+    <p>If you didn't ask to restore your account, please reply to this email — someone else may have your account credentials.</p>
+`)
+
+var accountHardDeletedTemplate = fmt.Sprintf(emailWrapper, `
+    <h2>Your Account Has Been Permanently Deleted</h2>
+    <p>Hi {{.FirstName}},</p>
+    <p>The 30-day grace period for your MyCareCompanion account has ended. Your account and all family data have been removed from our active systems.</p>
+    <p>If you ever want to use MyCareCompanion again, you're welcome to create a new account at <a href="https://www.mycarecompanion.net">mycarecompanion.net</a>.</p>
+    <p>Thanks for being with us.</p>
 `)

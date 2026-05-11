@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" "Restore your account"}}
+<body class="calm-bg min-h-screen">
+<div class="min-h-screen flex items-center justify-center py-12 px-4">
+    <div class="max-w-md w-full">
+        {{if .Success}}
+        <div class="text-center mb-8">
+            <p class="handwritten text-3xl text-orange-800">Welcome back.</p>
+            <h1 class="display text-4xl font-medium text-stone-800 mt-1">Your account is restored</h1>
+        </div>
+        <div class="glass ring-soft rounded-3xl p-8 text-center">
+            <p class="text-stone-700">All of your family's data is back exactly as it was. You can sign in normally.</p>
+            <a href="/login" class="inline-block mt-4 px-6 py-3 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium">Sign in</a>
+        </div>
+        {{else}}
+        <div class="text-center mb-8">
+            <p class="handwritten text-3xl text-rose-800">We couldn't restore your account.</p>
+        </div>
+        <div class="glass ring-soft rounded-3xl p-8">
+            <p class="text-stone-700">{{.ErrorMessage}}</p>
+            <p class="text-stone-700 mt-3">If your account is still within the 30-day grace period, email <a href="mailto:support@mycarecompanion.net" class="text-orange-700 underline">support@mycarecompanion.net</a> and we'll restore it manually.</p>
+        </div>
+        {{end}}
+    </div>
+</div>
+</body>
+</html>

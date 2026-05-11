@@ -370,6 +370,7 @@ type Repositories struct {
 	BountyAward      BountyAwardRepository      // Monthly top-5+5 bounty rewards
 	Session          SessionRepository          // Persistent server-side sessions
 	SessionProd      SessionRepository          // Optional cross-env (prod) sessions read pool — nil when SESSIONS_PROD_DB_DSN unset
+	AccountDeletion  AccountDeletionRepository  // User-initiated account deletion (App Store Blocker 2)
 }
 
 // NewRepositories creates all repository implementations.
@@ -415,6 +416,7 @@ func NewRepositories(db, supportDB *sql.DB, sessionsProdDB *sql.DB, adminMirrorD
 		BetaInvitation:   NewBetaInvitationRepo(db),
 		BountyAward:      NewBountyAwardRepo(db),
 		Session:          NewSessionRepo(db),
+		AccountDeletion:  NewAccountDeletionRepository(db),
 	}
 	if sessionsProdDB != nil {
 		repos.SessionProd = NewSessionRepo(sessionsProdDB)

@@ -358,10 +358,46 @@
         <!-- Danger Zone -->
         <div id="section-danger" class="glass ring-soft rounded-3xl border-red-200 p-6 transition-colors scroll-mt-6">
             <h2 class="text-lg font-semibold text-red-700 mb-4">Danger Zone</h2>
-            <p class="text-stone-600 mb-4">Once you delete your account, there is no going back. Please be certain.</p>
-            <button onclick="confirmDelete()" class="px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700">
-                Delete Account
+            <p class="text-stone-600 mb-2">Deleting your account is permanent. You have a 30-day grace period to change your mind — the first 14 days are self-serve via an emailed link, and our support team can restore your account for up to 30 days after that.</p>
+            <p id="deletion-pending-banner" class="hidden mt-3 p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm"></p>
+            <button onclick="openDeleteAccountModal()" class="mt-2 px-6 py-2 bg-red-600 text-white rounded-full hover:bg-red-700">
+                Delete My Account
             </button>
+        </div>
+
+        <!-- ===== Delete Account modal: role-aware disclaimer + OTP request ===== -->
+        <div id="delete-account-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-lg w-full p-6" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-semibold text-stone-900 mb-2">Before you go</h3>
+                <p id="del-acc-summary" class="text-sm text-stone-600 mb-3">Loading your account details…</p>
+
+                <div id="del-acc-disclaimer" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 text-sm text-amber-900">
+                    <!-- Populated by JS based on role (primary vs non-primary). -->
+                </div>
+
+                <p class="text-sm text-stone-600 mb-4">When you click below, we'll email a 6-digit confirmation code to your address on file. Enter that code on the next screen to start the 30-day deletion window. You can self-restore at any time during the first 14 days via the email we send.</p>
+
+                <div class="flex gap-2 justify-end">
+                    <button onclick="closeDeleteAccountModal()" class="px-4 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 text-sm font-medium">Cancel</button>
+                    <button onclick="requestDeletionCode()" id="del-acc-send-btn" class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium">Email me the code</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Enter Code modal: OTP entry, soft-delete on submit ===== -->
+        <div id="del-acc-code-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-md w-full p-6" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-semibold text-stone-900 mb-1">Enter your code</h3>
+                <p class="text-sm text-stone-600 mb-4">We sent a 6-digit code to your email. It expires in 15 minutes.</p>
+                <input type="text" id="del-acc-code-input" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                       placeholder="000000" autocomplete="one-time-code"
+                       class="w-full text-center tracking-[0.5em] font-mono text-2xl px-4 py-3 border border-stone-200 bg-white/80 rounded-2xl mb-3 focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400">
+                <p id="del-acc-code-error" class="hidden text-sm text-red-600 mb-3"></p>
+                <div class="flex gap-2 justify-end">
+                    <button onclick="closeCodeModal()" class="px-4 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 text-sm font-medium">Cancel</button>
+                    <button onclick="confirmDeletion()" id="del-acc-confirm-btn" class="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 text-sm font-medium">Confirm deletion</button>
+                </div>
+            </div>
         </div>
 
         <!-- Build / version label. Tap 7 times in the iOS app to switch dev/prod.
@@ -812,11 +848,205 @@ async function switchFamily(familyId) {
     }
 }
 
-function confirmDelete() {
-    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-        showMessage('error', 'Account deletion not implemented yet');
+// ===== Account deletion flow =====
+//
+// Two-modal sequence:
+//   1. Disclaimer modal — fetches status from the server (which families
+//      the user is in, whether a deletion is already pending). Role-aware
+//      copy: primary parents see "your family will be deleted"; non-primary
+//      members see "data belongs to the family creator."
+//   2. Code-entry modal — enters the 6-digit code we emailed; on success
+//      the user is soft-deleted server-side and signed out everywhere.
+//
+// Backed by /api/account/deletion/{status,request,confirm}.
+
+let _delAccStatus = null;
+
+async function loadDeletionStatus() {
+    const tok = localStorage.getItem('access_token');
+    try {
+        const r = await fetch('/api/account/deletion/status', {
+            headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
+            credentials: 'include',
+        });
+        if (!r.ok) return null;
+        _delAccStatus = await r.json();
+        return _delAccStatus;
+    } catch (e) { return null; }
+}
+
+function openDeleteAccountModal() {
+    const modal = document.getElementById('delete-account-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.getElementById('del-acc-summary').textContent = 'Loading your account details…';
+    document.getElementById('del-acc-disclaimer').classList.add('hidden');
+
+    loadDeletionStatus().then(status => {
+        if (!status) {
+            document.getElementById('del-acc-summary').textContent = 'Could not load account details. Please try again.';
+            return;
+        }
+
+        // If a pending or confirmed request already exists, surface that
+        // instead of starting a new one.
+        if (status.active_request) {
+            const req = status.active_request;
+            if (req.status === 'pending_code') {
+                document.getElementById('del-acc-summary').textContent =
+                    "You've already requested a deletion code — check your email. If you didn't receive it, we can resend.";
+                document.getElementById('del-acc-send-btn').textContent = 'Resend code';
+            } else if (req.status === 'confirmed') {
+                document.getElementById('del-acc-summary').innerHTML =
+                    "Your account deletion is already in progress and will complete on <strong>" +
+                    new Date(req.scheduled_hard_delete_at).toLocaleDateString() +
+                    "</strong>. Check your email for the recovery link.";
+                document.getElementById('del-acc-send-btn').classList.add('hidden');
+                return;
+            }
+        }
+
+        // Build the role-aware disclaimer + summary.
+        const roles = status.family_roles || [];
+        const primaryFamilies = roles.filter(r => r.is_primary);
+        const memberFamilies  = roles.filter(r => !r.is_primary);
+
+        let summary = 'Here\'s what will happen when you confirm:';
+        const lines = [];
+        const discl = document.getElementById('del-acc-disclaimer');
+        const disclLines = [];
+
+        if (primaryFamilies.length > 0) {
+            // The user is primary parent of at least one family — cascade-delete applies.
+            const names = primaryFamilies.map(f => f.family_name).join(', ');
+            disclLines.push(
+                '<p class="font-semibold mb-1">You are the primary parent of: ' + escapeHtml(names) + '</p>' +
+                '<p>Because the data for this family is tied to your account, deleting your account will <strong>permanently delete the family</strong> after the 30-day grace period. Any caregivers, providers, or co-parents you\'ve invited will lose access immediately and lose their copy of the data on day 30.</p>' +
+                '<p class="mt-2"><em>If you\'d prefer to transfer ownership to a different parent on your account instead, please email <a class="underline" href="mailto:support@mycarecompanion.net">support@mycarecompanion.net</a>. We do our best to accommodate transfer requests; we\'ll work with you to verify identity and update ownership without losing data.</em></p>'
+            );
+        }
+        if (memberFamilies.length > 0) {
+            const names = memberFamilies.map(f => f.family_name).join(', ');
+            disclLines.push(
+                '<p class="font-semibold mt-3 mb-1">You are a non-primary member of: ' + escapeHtml(names) + '</p>' +
+                '<p>The data for these families belongs to the primary parent who created the family. When you delete your account, your access to these families is removed, but their data and your contributions stay with the family.</p>'
+            );
+        }
+        if (primaryFamilies.length === 0 && memberFamilies.length === 0) {
+            disclLines.push('<p>You aren\'t currently associated with any families.</p>');
+        }
+        discl.innerHTML = disclLines.join('');
+        discl.classList.remove('hidden');
+
+        document.getElementById('del-acc-summary').textContent = summary;
+    });
+}
+
+function closeDeleteAccountModal() {
+    const m = document.getElementById('delete-account-modal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+}
+function closeCodeModal() {
+    const m = document.getElementById('del-acc-code-modal');
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+    document.getElementById('del-acc-code-input').value = '';
+    document.getElementById('del-acc-code-error').classList.add('hidden');
+}
+
+async function requestDeletionCode() {
+    const btn = document.getElementById('del-acc-send-btn');
+    btn.disabled = true;
+    const tok = localStorage.getItem('access_token');
+    try {
+        const r = await fetch('/api/account/deletion/request', {
+            method: 'POST',
+            headers: tok ? { 'Authorization': 'Bearer ' + tok } : {},
+            credentials: 'include',
+        });
+        if (!r.ok) throw new Error(await r.text());
+        closeDeleteAccountModal();
+        const m = document.getElementById('del-acc-code-modal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+        document.getElementById('del-acc-code-input').focus();
+    } catch (e) {
+        alert('Could not send the code. Please try again.');
+    } finally {
+        btn.disabled = false;
     }
 }
+
+async function confirmDeletion() {
+    const code = document.getElementById('del-acc-code-input').value.trim();
+    if (!/^\d{6}$/.test(code)) {
+        showCodeError('Enter the 6-digit code from your email.');
+        return;
+    }
+    const btn = document.getElementById('del-acc-confirm-btn');
+    btn.disabled = true;
+    const tok = localStorage.getItem('access_token');
+    try {
+        const r = await fetch('/api/account/deletion/confirm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(tok ? { 'Authorization': 'Bearer ' + tok } : {}),
+            },
+            credentials: 'include',
+            body: JSON.stringify({ code }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+            showCodeError(data.message || 'That code didn\'t work. Try again or request a new one.');
+            return;
+        }
+        // Soft-delete is now applied server-side; the session is revoked.
+        // Wipe the local token + redirect to the goodbye page.
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/account/deletion-pending';
+    } catch (e) {
+        showCodeError('Network error. Try again.');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function showCodeError(msg) {
+    const el = document.getElementById('del-acc-code-error');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+}
+
+function escapeHtml(s) {
+    if (!s) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+}
+
+// On Settings page load, check whether the user already has a pending
+// deletion + surface a banner so they don't forget. (The same modal would
+// also show this if they re-opened it, but the banner makes it visible
+// without clicking.)
+document.addEventListener('DOMContentLoaded', function() {
+    loadDeletionStatus().then(status => {
+        if (!status || !status.active_request) return;
+        const req = status.active_request;
+        const banner = document.getElementById('deletion-pending-banner');
+        if (!banner) return;
+        if (req.status === 'pending_code') {
+            banner.textContent = "You have a deletion request awaiting confirmation. Check your email for the code, or click below to start over.";
+            banner.classList.remove('hidden');
+        } else if (req.status === 'confirmed') {
+            const hardDelete = new Date(req.scheduled_hard_delete_at).toLocaleDateString();
+            banner.innerHTML = "Your account is scheduled for permanent deletion on <strong>" + hardDelete + "</strong>. Check the email we sent for the one-click recovery link.";
+            banner.classList.remove('hidden');
+        }
+    });
+});
 
 async function logout() {
     try {
