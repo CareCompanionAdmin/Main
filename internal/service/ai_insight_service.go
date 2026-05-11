@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -139,7 +140,7 @@ func (s *AIInsightService) AnalyzeChild(ctx context.Context, child models.Child)
 		if err != nil {
 			log.Printf("AI Insights: Tier 1+2 API error for %s: %v", child.FirstName, err)
 		} else {
-			n, a := s.storeInsights(ctx, child.ID, child.FamilyID, results, recentInsights)
+			n, a := s.storeInsights(ctx, child.ID, child.FamilyID, child.FirstName, results, recentInsights)
 			totalInsights += n
 			totalAlerts += a
 		}
@@ -152,7 +153,7 @@ func (s *AIInsightService) AnalyzeChild(ctx context.Context, child models.Child)
 		if err != nil {
 			log.Printf("AI Insights: Tier 3 API error for %s: %v", child.FirstName, err)
 		} else {
-			n, a := s.storeInsights(ctx, child.ID, child.FamilyID, results, recentInsights)
+			n, a := s.storeInsights(ctx, child.ID, child.FamilyID, child.FirstName, results, recentInsights)
 			totalInsights += n
 			totalAlerts += a
 		}
@@ -165,61 +166,102 @@ func (s *AIInsightService) AnalyzeChild(ctx context.Context, child models.Child)
 	return nil
 }
 
-// buildProfileContext creates a compact text summary of the child's profile
+// buildProfileContext creates a de-identified text summary of the child's
+// profile for outbound LLM calls. All HIPAA Safe Harbor identifiers are
+// stripped here — first name becomes "[CHILD]" placeholder, DOB becomes a
+// 2-year age band, ICD codes become coarse disease categories, and
+// medication names become drug classes. See ai_phi_stripper.go.
 func (s *AIInsightService) buildProfileContext(child models.Child, conditions []models.ChildCondition, medications []models.Medication) string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("Child: %s\n", child.FirstName))
-	if !child.DateOfBirth.IsZero() {
-		age := time.Since(child.DateOfBirth)
-		years := int(age.Hours() / 8760)
-		months := int(age.Hours()/730) % 12
-		b.WriteString(fmt.Sprintf("Age: %d years %d months\n", years, months))
+	b.WriteString(fmt.Sprintf("Subject: %s\n", NamePlaceholder))
+	if band := AgeBand(child.DateOfBirth); band != "" {
+		b.WriteString(fmt.Sprintf("Age band: %s\n", band))
 	}
 	if child.Gender.Valid && child.Gender.String != "" {
 		b.WriteString(fmt.Sprintf("Gender: %s\n", child.Gender.String))
 	}
 
 	if len(conditions) > 0 {
-		b.WriteString("\nDiagnosed Conditions:\n")
+		b.WriteString("\nDiagnosed Conditions (category-level):\n")
+		seen := make(map[string]string) // category -> severity
 		for _, c := range conditions {
 			if !c.IsActive {
 				continue
 			}
-			line := fmt.Sprintf("- %s", c.ConditionName)
+			cat := ""
 			if c.ICDCode.Valid {
-				line += fmt.Sprintf(" (ICD: %s)", c.ICDCode.String)
+				cat = GeneralizeICD(c.ICDCode.String)
 			}
+			if cat == "" {
+				cat = "unspecified"
+			}
+			sev := ""
 			if c.Severity.Valid {
-				line += fmt.Sprintf(", severity: %s", c.Severity.String)
+				sev = c.Severity.String
+			}
+			// Keep the most-severe value if a category appears multiple times.
+			if existing, ok := seen[cat]; !ok || sev > existing {
+				seen[cat] = sev
+			}
+		}
+		// Deterministic ordering for repeatable output.
+		cats := make([]string, 0, len(seen))
+		for cat := range seen {
+			cats = append(cats, cat)
+		}
+		sort.Strings(cats)
+		for _, cat := range cats {
+			line := "- " + cat
+			if seen[cat] != "" {
+				line += ", severity: " + seen[cat]
 			}
 			b.WriteString(line + "\n")
 		}
 	}
 
 	if len(medications) > 0 {
-		b.WriteString("\nActive Medications:\n")
+		b.WriteString("\nActive Medications (drug class only):\n")
+		classCounts := make(map[string]int)
 		for _, m := range medications {
 			if !m.IsActive {
 				continue
 			}
-			b.WriteString(fmt.Sprintf("- %s %s %s, %s\n", m.Name, m.Dosage, m.DosageUnit, m.Frequency))
+			classCounts[DrugClass(m.Name)]++
+		}
+		classes := make([]string, 0, len(classCounts))
+		for c := range classCounts {
+			classes = append(classes, c)
+		}
+		sort.Strings(classes)
+		for _, c := range classes {
+			if classCounts[c] > 1 {
+				b.WriteString(fmt.Sprintf("- %s × %d\n", c, classCounts[c]))
+			} else {
+				b.WriteString(fmt.Sprintf("- %s\n", c))
+			}
 		}
 	}
 
 	return b.String()
 }
 
-// buildLogContext creates a compact text summary of recent log data
-func (s *AIInsightService) buildLogContext(child models.Child, logs *models.DailyLogPage) string {
+// buildLogContext creates a de-identified summary of recent log data for
+// outbound LLM calls. Free-text fields (behavior notes, therapy progress
+// notes, health-event descriptions) are dropped — the LLM never sees parent
+// narrative content via this path. Calendar dates become relative day
+// labels ("Day-3"), and missed medications are aggregated by drug class
+// rather than by name. See ai_phi_stripper.go.
+func (s *AIInsightService) buildLogContext(_ models.Child, logs *models.DailyLogPage) string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("\n=== Recent Log Data for %s (last %d days) ===\n", child.FirstName, s.config.LookbackDays))
+	now := time.Now()
+	b.WriteString(fmt.Sprintf("\n=== Recent log data for %s (last %d days) ===\n", NamePlaceholder, s.config.LookbackDays))
 
-	// Behavior logs
+	// Behavior logs — numerical only; free-text notes intentionally dropped
 	if len(logs.BehaviorLogs) > 0 {
 		b.WriteString("\nBehavior Logs:\n")
 		for _, l := range logs.BehaviorLogs {
-			line := fmt.Sprintf("  %s:", l.LogDate.Format("01/02"))
+			line := fmt.Sprintf("  %s:", RelativeDayLabel(l.LogDate, now))
 			if l.MoodLevel != nil {
 				line += fmt.Sprintf(" mood=%d/10", *l.MoodLevel)
 			}
@@ -238,18 +280,16 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 			if l.AggressionIncidents > 0 {
 				line += fmt.Sprintf(" aggression=%d", l.AggressionIncidents)
 			}
-			if l.Notes.Valid && l.Notes.String != "" {
-				line += fmt.Sprintf(" notes=%q", aiTruncate(l.Notes.String, 100))
-			}
+			// l.Notes (free-text) intentionally NOT included — Phase 3 opt-in only
 			b.WriteString(line + "\n")
 		}
 	}
 
-	// Sleep logs
+	// Sleep logs — purely numerical/categorical, no PHI
 	if len(logs.SleepLogs) > 0 {
 		b.WriteString("\nSleep Logs:\n")
 		for _, l := range logs.SleepLogs {
-			line := fmt.Sprintf("  %s:", l.LogDate.Format("01/02"))
+			line := fmt.Sprintf("  %s:", RelativeDayLabel(l.LogDate, now))
 			if l.TotalSleepMinutes != nil {
 				hours := float64(*l.TotalSleepMinutes) / 60.0
 				line += fmt.Sprintf(" %.1f hours", hours)
@@ -270,31 +310,37 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 		}
 	}
 
-	// Medication logs
+	// Medication adherence — aggregate adherence rate + missed-doses by drug class
 	if len(logs.MedicationLogs) > 0 {
 		b.WriteString("\nMedication Adherence:\n")
 		taken := 0
 		missed := 0
+		missedByClass := make(map[string]int)
 		for _, l := range logs.MedicationLogs {
-			if string(l.Status) == "taken" {
+			switch string(l.Status) {
+			case "taken":
 				taken++
-			} else if string(l.Status) == "missed" || string(l.Status) == "skipped" {
+			case "missed", "skipped":
 				missed++
+				missedByClass[DrugClass(l.MedicationName)]++
 			}
 		}
 		total := taken + missed
 		if total > 0 {
 			b.WriteString(fmt.Sprintf("  %d/%d doses taken (%.0f%% adherence)\n", taken, total, float64(taken)/float64(total)*100))
 		}
-		// List missed medications
-		for _, l := range logs.MedicationLogs {
-			if string(l.Status) == "missed" || string(l.Status) == "skipped" {
-				b.WriteString(fmt.Sprintf("  MISSED: %s on %s\n", l.MedicationName, l.LogDate.Format("01/02")))
-			}
+		// Deterministic ordering: sort classes alphabetically
+		classes := make([]string, 0, len(missedByClass))
+		for c := range missedByClass {
+			classes = append(classes, c)
+		}
+		sort.Strings(classes)
+		for _, c := range classes {
+			b.WriteString(fmt.Sprintf("  MISSED: %d dose(s) of class=%s\n", missedByClass[c], c))
 		}
 	}
 
-	// Diet logs
+	// Diet logs — foods are categorical (no PHI)
 	if len(logs.DietLogs) > 0 {
 		b.WriteString("\nDiet Logs:\n")
 		for _, l := range logs.DietLogs {
@@ -302,7 +348,7 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 			if l.MealType.Valid {
 				mealType = l.MealType.String
 			}
-			line := fmt.Sprintf("  %s %s:", l.LogDate.Format("01/02"), mealType)
+			line := fmt.Sprintf("  %s %s:", RelativeDayLabel(l.LogDate, now), mealType)
 			if len(l.FoodsEaten) > 0 {
 				line += fmt.Sprintf(" ate=%s", strings.Join(stringSlice(l.FoodsEaten), ","))
 			}
@@ -319,11 +365,11 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 		}
 	}
 
-	// Sensory logs
+	// Sensory logs — counts and triggers, no free-text
 	if len(logs.SensoryLogs) > 0 {
 		b.WriteString("\nSensory Logs:\n")
 		for _, l := range logs.SensoryLogs {
-			line := fmt.Sprintf("  %s:", l.LogDate.Format("01/02"))
+			line := fmt.Sprintf("  %s:", RelativeDayLabel(l.LogDate, now))
 			if l.OverloadEpisodes > 0 {
 				line += fmt.Sprintf(" overloads=%d", l.OverloadEpisodes)
 			}
@@ -337,11 +383,11 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 		}
 	}
 
-	// Social logs
+	// Social logs — purely numerical
 	if len(logs.SocialLogs) > 0 {
 		b.WriteString("\nSocial Logs:\n")
 		for _, l := range logs.SocialLogs {
-			line := fmt.Sprintf("  %s:", l.LogDate.Format("01/02"))
+			line := fmt.Sprintf("  %s:", RelativeDayLabel(l.LogDate, now))
 			if l.EyeContactLevel != nil {
 				line += fmt.Sprintf(" eye_contact=%d/5", *l.EyeContactLevel)
 			}
@@ -358,11 +404,11 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 		}
 	}
 
-	// Speech logs
+	// Speech logs — verbal output + word lists (categorical)
 	if len(logs.SpeechLogs) > 0 {
 		b.WriteString("\nSpeech Logs:\n")
 		for _, l := range logs.SpeechLogs {
-			line := fmt.Sprintf("  %s:", l.LogDate.Format("01/02"))
+			line := fmt.Sprintf("  %s:", RelativeDayLabel(l.LogDate, now))
 			if l.VerbalOutputLevel != nil {
 				line += fmt.Sprintf(" verbal=%d/5", *l.VerbalOutputLevel)
 			}
@@ -379,11 +425,11 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 		}
 	}
 
-	// Bowel logs
+	// Bowel logs — Bristol scale + boolean flags, no PHI
 	if len(logs.BowelLogs) > 0 {
 		b.WriteString("\nBowel Logs:\n")
 		for _, l := range logs.BowelLogs {
-			line := fmt.Sprintf("  %s:", l.LogDate.Format("01/02"))
+			line := fmt.Sprintf("  %s:", RelativeDayLabel(l.LogDate, now))
 			if l.BristolScale != nil {
 				line += fmt.Sprintf(" bristol=%d", *l.BristolScale)
 			}
@@ -397,7 +443,7 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 		}
 	}
 
-	// Therapy logs
+	// Therapy logs — type + duration; progress_notes (free-text) intentionally dropped
 	if len(logs.TherapyLogs) > 0 {
 		b.WriteString("\nTherapy Logs:\n")
 		for _, l := range logs.TherapyLogs {
@@ -405,18 +451,16 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 			if l.TherapyType.Valid {
 				therapyType = l.TherapyType.String
 			}
-			line := fmt.Sprintf("  %s: %s", l.LogDate.Format("01/02"), therapyType)
+			line := fmt.Sprintf("  %s: %s", RelativeDayLabel(l.LogDate, now), therapyType)
 			if l.DurationMinutes != nil {
 				line += fmt.Sprintf(" %dmin", *l.DurationMinutes)
 			}
-			if l.ProgressNotes.Valid && l.ProgressNotes.String != "" {
-				line += fmt.Sprintf(" notes=%q", aiTruncate(l.ProgressNotes.String, 80))
-			}
+			// l.ProgressNotes (free-text) intentionally NOT included — Phase 3 opt-in only
 			b.WriteString(line + "\n")
 		}
 	}
 
-	// Seizure logs
+	// Seizure logs — type + duration, no free-text
 	if len(logs.SeizureLogs) > 0 {
 		b.WriteString("\nSeizure Logs:\n")
 		for _, l := range logs.SeizureLogs {
@@ -424,7 +468,7 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 			if l.SeizureType.Valid {
 				seizureType = l.SeizureType.String
 			}
-			line := fmt.Sprintf("  %s: type=%s", l.LogDate.Format("01/02"), seizureType)
+			line := fmt.Sprintf("  %s: type=%s", RelativeDayLabel(l.LogDate, now), seizureType)
 			if l.DurationSeconds != nil {
 				line += fmt.Sprintf(" duration=%ds", *l.DurationSeconds)
 			}
@@ -435,7 +479,7 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 		}
 	}
 
-	// Health events
+	// Health events — type only; description (free-text) intentionally dropped
 	if len(logs.HealthEventLogs) > 0 {
 		b.WriteString("\nHealth Events:\n")
 		for _, l := range logs.HealthEventLogs {
@@ -443,10 +487,8 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 			if l.EventType.Valid {
 				eventType = l.EventType.String
 			}
-			line := fmt.Sprintf("  %s: %s", l.LogDate.Format("01/02"), eventType)
-			if l.Description.Valid && l.Description.String != "" {
-				line += fmt.Sprintf(" — %s", aiTruncate(l.Description.String, 100))
-			}
+			line := fmt.Sprintf("  %s: %s", RelativeDayLabel(l.LogDate, now), eventType)
+			// l.Description (free-text) intentionally NOT included — Phase 3 opt-in only
 			b.WriteString(line + "\n")
 		}
 	}
@@ -454,26 +496,28 @@ func (s *AIInsightService) buildLogContext(child models.Child, logs *models.Dail
 	return b.String()
 }
 
-const tier12SystemPrompt = `You are a medical knowledge assistant for MyCareCompanion, a family care tracking app for children with autism spectrum disorder and related conditions. Given a child's profile (age, diagnoses, medications), provide relevant insights.
+const tier12SystemPrompt = `You are a medical knowledge assistant for MyCareCompanion, a family care tracking app for children with autism spectrum disorder and related conditions. Given a child's de-identified profile (age band, diagnosis categories, medication classes — NO real names), provide relevant insights.
+
+PRIVACY NOTE: the subject child is referred to as "[CHILD]" — this is a placeholder. The real first name will be substituted into your output client-side. ALWAYS use the literal string "[CHILD]" in your title and descriptions where you would normally refer to the child by name. Do not invent a name. Do not write "the child" — write "[CHILD]". Possessive form: "[CHILD]'s".
 
 Generate TWO types of insights:
 
-TIER 1 (Medical Knowledge): Known medication side effects relevant to current dosages, drug interactions if multiple medications, age-appropriate developmental expectations, condition-specific medical knowledge.
+TIER 1 (Medical Knowledge): Known medication-class side effects, interactions between medication classes, age-appropriate developmental expectations, condition-category medical knowledge.
 - Do NOT diagnose or recommend medication changes
 - Always note families should consult their healthcare provider
 - Set "tier": 1
 
 TIER 2 (Research-Based Patterns): What published research and clinical practice suggest for children with similar profiles. Frame as "Research suggests..." or "Children with similar profiles often..."
 - Draw on published autism/ADHD research and clinical practice patterns
-- Be specific to the child's actual profile (age, conditions, medications)
+- Be specific to the child's actual profile (age band, condition categories, medication classes)
 - Set "tier": 2
 
 Return a JSON array (no markdown, no code fences, just the array):
 [{
   "tier": 1 or 2,
   "category": "medication|condition|development|safety|behavior|sleep|diet|sensory|social|therapy",
-  "title": "Short descriptive title mentioning the child's name (under 80 chars)",
-  "simple_description": "Parent-friendly explanation (2-3 sentences). Use the child's name.",
+  "title": "Short descriptive title using [CHILD] placeholder (under 80 chars)",
+  "simple_description": "Parent-friendly explanation (2-3 sentences). Use [CHILD] where you would name the child.",
   "detailed_description": "Clinical detail for advanced view",
   "confidence": 0.7 to 1.0,
   "alert_worthy": false,
@@ -482,7 +526,9 @@ Return a JSON array (no markdown, no code fences, just the array):
 
 Return 2-3 insights total (1-2 Tier 1, 1 Tier 2). Only include genuinely relevant information, not generic advice.`
 
-const tier3SystemPrompt = `You are a data analyst for MyCareCompanion, a care tracking app for children with autism. You are given a child's recent log data across multiple dimensions (behavior, sleep, diet, medication, sensory, social, therapy, bowel, seizure, health events, speech).
+const tier3SystemPrompt = `You are a data analyst for MyCareCompanion, a care tracking app for children with autism. You are given a child's de-identified recent log data across multiple dimensions (behavior, sleep, diet, medication, sensory, social, therapy, bowel, seizure, health events, speech). Dates are relative ("Day-3" = three days ago). Medications appear by drug class only. The subject child is referred to as "[CHILD]".
+
+PRIVACY NOTE: ALWAYS use the literal string "[CHILD]" where you would refer to the child by name. The real first name will be substituted client-side. Do not invent a name.
 
 Analyze the data for:
 1. Correlations between different log types (e.g., sleep quality vs next-day mood)
@@ -491,8 +537,8 @@ Analyze the data for:
 4. Positive developments worth celebrating
 5. Concerning patterns that warrant attention
 
-Be SPECIFIC. Reference actual data values and dates. Use the child's name.
-Example good insight: "Emma's mood averaged 7/10 on days following 9+ hours of sleep, vs 4/10 after less than 7 hours (observed 5 of 7 days)"
+Be SPECIFIC. Reference actual data values and relative day labels.
+Example good insight: "[CHILD]'s mood averaged 7/10 on days following 9+ hours of sleep, vs 4/10 after less than 7 hours (observed 5 of 7 days)"
 Example bad insight: "Sleep affects mood" (too generic)
 
 Return a JSON array (no markdown, no code fences, just the raw JSON array):
@@ -605,19 +651,16 @@ func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPro
 	log.Printf("AI Insights: API usage — %d input tokens, %d output tokens",
 		claudeResp.Usage.InputTokens, claudeResp.Usage.OutputTokens)
 
-	// Parse the JSON array from the response text
+	// Parse the JSON array from the response text. Claude occasionally
+	// wraps the array in markdown code fences ("```json...```") or adds
+	// a trailing fence even without an opening one, so we extract the
+	// bounds of the JSON array explicitly rather than trying to peel
+	// fences off the ends.
 	text := claudeResp.Content[0].Text
-
-	// Strip markdown code fences if present
-	text = strings.TrimSpace(text)
-	if strings.HasPrefix(text, "```json") {
-		text = strings.TrimPrefix(text, "```json")
-		text = strings.TrimSuffix(text, "```")
-		text = strings.TrimSpace(text)
-	} else if strings.HasPrefix(text, "```") {
-		text = strings.TrimPrefix(text, "```")
-		text = strings.TrimSuffix(text, "```")
-		text = strings.TrimSpace(text)
+	if first := strings.IndexByte(text, '['); first >= 0 {
+		if last := strings.LastIndexByte(text, ']'); last > first {
+			text = text[first : last+1]
+		}
 	}
 
 	var results []aiInsightResult
@@ -651,12 +694,21 @@ func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPro
 }
 
 // storeInsights saves parsed insights to the database, deduplicating against recent insights.
-// Returns (insights_created, alerts_created)
-func (s *AIInsightService) storeInsights(ctx context.Context, childID, familyID uuid.UUID, results []aiInsightResult, recentInsights []models.Insight) (int, int) {
+// Returns (insights_created, alerts_created).
+//
+// firstName is used to substitute the "[CHILD]" placeholder Claude was instructed to use
+// back to the real child name client-side, so the LLM never sees the actual name but
+// the parent sees personable, named output.
+func (s *AIInsightService) storeInsights(ctx context.Context, childID, familyID uuid.UUID, firstName string, results []aiInsightResult, recentInsights []models.Insight) (int, int) {
 	insightsCreated := 0
 	alertsCreated := 0
 
 	for _, r := range results {
+		// Substitute the name placeholder back to the real first name.
+		r.Title = ApplyNamePlaceholder(r.Title, firstName)
+		r.SimpleDescription = ApplyNamePlaceholder(r.SimpleDescription, firstName)
+		r.DetailedDescription = ApplyNamePlaceholder(r.DetailedDescription, firstName)
+
 		// Dedup: check if a similar title exists in recent insights
 		if isDuplicate(r.Title, recentInsights) {
 			log.Printf("AI Insights: skipping duplicate — %s", r.Title)

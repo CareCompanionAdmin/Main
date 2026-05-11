@@ -488,6 +488,51 @@ func getDrugClass(drugName string) string {
 		// PPIs
 		"omeprazole": "ppi", "prilosec": "ppi", "nexium": "ppi", "prevacid": "ppi",
 		"pantoprazole": "ppi", "esomeprazole": "ppi", "lansoprazole": "ppi",
+		// Antipsychotics — atypicals are extremely common in autism care
+		"risperidone": "antipsychotic", "risperdal": "antipsychotic",
+		"aripiprazole": "antipsychotic", "abilify": "antipsychotic",
+		"olanzapine": "antipsychotic", "zyprexa": "antipsychotic",
+		"quetiapine": "antipsychotic", "seroquel": "antipsychotic",
+		"ziprasidone": "antipsychotic", "geodon": "antipsychotic",
+		"haloperidol": "antipsychotic", "haldol": "antipsychotic",
+		"clozapine": "antipsychotic", "clozaril": "antipsychotic",
+		"lurasidone": "antipsychotic", "latuda": "antipsychotic",
+		"paliperidone": "antipsychotic", "invega": "antipsychotic",
+		// Anticonvulsants / mood stabilizers — also common in this population
+		"valproic acid": "anticonvulsant", "valproate": "anticonvulsant",
+		"depakote": "anticonvulsant", "depakene": "anticonvulsant",
+		"carbamazepine": "anticonvulsant", "tegretol": "anticonvulsant",
+		"oxcarbazepine": "anticonvulsant", "trileptal": "anticonvulsant",
+		"phenytoin": "anticonvulsant", "dilantin": "anticonvulsant",
+		"lamotrigine": "anticonvulsant", "lamictal": "anticonvulsant",
+		"topiramate": "anticonvulsant", "topamax": "anticonvulsant",
+		"levetiracetam": "anticonvulsant", "keppra": "anticonvulsant",
+		"gabapentin": "anticonvulsant", "neurontin": "anticonvulsant",
+		"pregabalin": "anticonvulsant", "lyrica": "anticonvulsant",
+		"ethosuximide": "anticonvulsant", "zarontin": "anticonvulsant",
+		"phenobarbital": "anticonvulsant",
+		"lithium":       "mood-stabilizer",
+		// Alpha agonists (commonly used for ADHD impulse control / sleep in autism)
+		"guanfacine": "alpha-agonist", "intuniv": "alpha-agonist", "tenex": "alpha-agonist",
+		"clonidine": "alpha-agonist", "kapvay": "alpha-agonist", "catapres": "alpha-agonist",
+		// Non-stimulant ADHD meds
+		"atomoxetine": "non-stimulant-adhd", "strattera": "non-stimulant-adhd",
+		"viloxazine": "non-stimulant-adhd", "qelbree": "non-stimulant-adhd",
+		// Atypical antidepressants
+		"bupropion": "atypical-antidepressant", "wellbutrin": "atypical-antidepressant",
+		"trazodone": "atypical-antidepressant",
+		"mirtazapine": "atypical-antidepressant", "remeron": "atypical-antidepressant",
+		// Tricyclic antidepressants
+		"amitriptyline": "tricyclic", "elavil": "tricyclic",
+		"nortriptyline": "tricyclic", "pamelor": "tricyclic",
+		"imipramine": "tricyclic", "tofranil": "tricyclic",
+		"clomipramine": "tricyclic", "anafranil": "tricyclic",
+		// Antihistamines (commonly used for sleep / allergy in this population)
+		"diphenhydramine": "antihistamine", "benadryl": "antihistamine",
+		"hydroxyzine": "antihistamine", "vistaril": "antihistamine", "atarax": "antihistamine",
+		"cetirizine": "antihistamine", "zyrtec": "antihistamine",
+		"loratadine": "antihistamine", "claritin": "antihistamine",
+		"fexofenadine": "antihistamine", "allegra": "antihistamine",
 	}
 
 	lower := strings.ToLower(drugName)
