@@ -2644,9 +2644,9 @@ function showDetails(type, element) {
             content = `
                 <div class="space-y-3">
                     <div class="flex justify-between"><span class="text-stone-500">Time:</span><span class="font-medium">${time}</span></div>
-                    <div class="flex justify-between"><span class="text-stone-500">Verbal Output Level:</span><span class="font-medium">${verbalLevel > 0 ? verbalLevel + '/10' : 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-stone-500">Clarity Level:</span><span class="font-medium">${clarityLevel > 0 ? clarityLevel + '/10' : 'Not recorded'}</span></div>
-                    <div class="flex justify-between"><span class="text-stone-500">Echolalia Level:</span><span class="font-medium">${echolaliaLevel > 0 ? echolaliaLevel + '/10' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-stone-500">Verbal Output Level:</span><span class="font-medium">${verbalLevel > 0 ? verbalLevel + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-stone-500">Clarity Level:</span><span class="font-medium">${clarityLevel > 0 ? clarityLevel + '/5' : 'Not recorded'}</span></div>
+                    <div class="flex justify-between"><span class="text-stone-500">Echolalia Level:</span><span class="font-medium">${echolaliaLevel > 0 ? echolaliaLevel + '/5' : 'Not recorded'}</span></div>
                     <div class="flex justify-between"><span class="text-stone-500">Communication Attempts:</span><span class="font-medium">${commAttempts > 0 ? commAttempts : 'Not recorded'}</span></div>
                     <div class="flex justify-between"><span class="text-stone-500">Successful Communications:</span><span class="font-medium">${successfulComms > 0 ? successfulComms : 'Not recorded'}</span></div>
                     <div><span class="text-stone-500 block mb-1">New Words:</span><p class="text-stone-900 ${newWords ? 'text-green-600' : ''}">${newWords || 'None'}</p></div>

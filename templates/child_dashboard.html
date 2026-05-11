@@ -152,9 +152,9 @@
         {{if .Dashboard.TodayLogs.MoodLevel}}
         <p class="display text-stone-500 text-2xl sm:text-3xl mb-3">Today, {{.Child.FirstName}} is</p>
         <div class="flex items-end gap-4 sm:gap-6">
-            <div class="display text-[8rem] sm:text-[12rem] leading-[0.85] font-medium text-stone-800 tracking-tight">{{$mood}}<span class="text-stone-300 text-5xl sm:text-7xl">/5</span></div>
+            <div class="display text-[8rem] sm:text-[12rem] leading-[0.85] font-medium text-stone-800 tracking-tight">{{$mood}}<span class="text-stone-300 text-5xl sm:text-7xl">/10</span></div>
             <div class="pb-4">
-                {{if ge $mood 4}}
+                {{if ge $mood 7}}
                 <svg width="84" height="84" viewBox="0 0 96 96" fill="none">
                     <circle cx="34" cy="34" r="18" fill="#fbbf24" />
                     <circle cx="32" cy="34" r="18" fill="#fde68a" opacity="0.6"/>
@@ -162,7 +162,7 @@
                     <ellipse cx="42" cy="56" rx="14" ry="10" fill="#ffffff" />
                     <ellipse cx="70" cy="54" rx="14" ry="10" fill="#ffffff" />
                 </svg>
-                {{else if eq $mood 3}}
+                {{else if ge $mood 4}}
                 <svg width="84" height="84" viewBox="0 0 96 96" fill="none">
                     <ellipse cx="48" cy="48" rx="38" ry="22" fill="#e7e5e4" />
                     <ellipse cx="32" cy="46" rx="20" ry="14" fill="#f5f5f4" />
@@ -179,9 +179,9 @@
             </div>
         </div>
         <p class="display italic text-stone-600 text-lg sm:text-xl mt-3">
-            {{- /* Qualitative one-liner — pick adjectives from the data */ -}}
+            {{- /* Qualitative one-liner — pick adjectives from the data. Mood is on a 1-10 scale (#112382). */ -}}
             {{- $parts := list -}}
-            {{- if ge $mood 4}}{{$parts = append $parts "Calm"}}{{else if eq $mood 3}}{{$parts = append $parts "Steady"}}{{else}}{{$parts = append $parts "A hard day"}}{{end -}}
+            {{- if ge $mood 7}}{{$parts = append $parts "Calm"}}{{else if ge $mood 4}}{{$parts = append $parts "Steady"}}{{else}}{{$parts = append $parts "A hard day"}}{{end -}}
             {{- if gt .Dashboard.TodayLogs.Meltdowns 0}}{{$parts = append $parts (printf "%d hard moment%s" .Dashboard.TodayLogs.Meltdowns (pluralize .Dashboard.TodayLogs.Meltdowns))}}{{end -}}
             {{- if and .Dashboard.TodayLogs.MedicationsTotal (eq .Dashboard.TodayLogs.MedicationsTaken .Dashboard.TodayLogs.MedicationsTotal)}}{{$parts = append $parts "meds all in"}}{{else if and .Dashboard.TodayLogs.MedicationsTotal (gt .Dashboard.TodayLogs.MedicationsTaken 0)}}{{$parts = append $parts (printf "%d of %d meds in" .Dashboard.TodayLogs.MedicationsTaken .Dashboard.TodayLogs.MedicationsTotal)}}{{end -}}
             {{- if and .Dashboard.TodayLogs.SleepMinutes (ge $sleep 480)}}{{$parts = append $parts "slept well"}}{{else if and .Dashboard.TodayLogs.SleepMinutes (lt $sleep 360)}}{{$parts = append $parts "short night"}}{{else if .Dashboard.TodayLogs.SleepMinutes}}{{$parts = append $parts (printf "%dh of sleep" (div $sleep 60))}}{{end -}}
@@ -200,10 +200,14 @@
     <section class="mb-10 space-y-3">
         <p class="text-xs uppercase tracking-widest text-stone-500 font-semibold mb-3">Three things to know</p>
 
-        <!-- Next medication -->
+        <!-- Next medication. Entire card is tappable on mobile — earlier the
+             title used `truncate` and the only action ("Mark") was hidden on
+             small screens (#112381), so the card looked clickable but did
+             nothing. Title now wraps to 2 lines, and the whole card opens
+             the medications panel. -->
         {{if .Dashboard.MedicationsDue}}
         {{with index .Dashboard.MedicationsDue 0}}
-        <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
+        <a href="#medications-due-section" onclick="document.getElementById('fullDayPanel').classList.remove('hidden');" class="glass ring-soft rounded-3xl p-5 flex items-center gap-4 hover:bg-white/70 transition-colors block">
             <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
@@ -211,13 +215,13 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-xs uppercase tracking-wider text-stone-500">{{if .IsLogged}}Last medication{{else}}Next medication{{end}}</p>
-                <p class="display text-lg sm:text-xl text-stone-800 truncate">{{.Medication.Name}} — {{.Medication.Dosage}} {{.Medication.DosageUnit}}</p>
+                <p class="display text-lg sm:text-xl text-stone-800 leading-tight line-clamp-2">{{.Medication.Name}} — {{.Medication.Dosage}} {{.Medication.DosageUnit}}</p>
                 <p class="text-sm text-stone-500">{{capitalizeTimeOfDay .Schedule.TimeOfDay}}{{if .Schedule.ScheduledTime.Valid}} · {{formatTimeStr .Schedule.ScheduledTime.String $.UserTimeFormat}}{{end}}</p>
             </div>
             {{if not .IsLogged}}
-            <a href="#medications-due-section" onclick="document.getElementById('fullDayPanel').classList.remove('hidden');" class="text-sm font-medium text-blue-700 hover:text-blue-900 px-3 py-1.5 rounded-full bg-white/70 hidden sm:inline-flex">Mark</a>
+            <span class="text-sm font-medium text-blue-700 px-3 py-1.5 rounded-full bg-white/70 hidden sm:inline-flex flex-shrink-0">Mark</span>
             {{end}}
-        </div>
+        </a>
         {{end}}
         {{else}}
         <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
@@ -234,10 +238,11 @@
         </div>
         {{end}}
 
-        <!-- Pattern this week -->
+        <!-- Pattern this week. Whole-card tap target so mobile users can open
+             the full pattern detail (#112381). -->
         {{if .Dashboard.RecentPatterns}}
         {{with index .Dashboard.RecentPatterns 0}}
-        <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
+        <a href="/child/{{$.Child.ID}}/insights" class="glass ring-soft rounded-3xl p-5 flex items-center gap-4 hover:bg-white/70 transition-colors block">
             <div class="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-6 h-6 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17l6-6 4 4 8-8M21 7v4h-4"></path>
@@ -245,11 +250,11 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-xs uppercase tracking-wider text-stone-500">Pattern this week</p>
-                <p class="display text-lg sm:text-xl text-stone-800 truncate">{{if .Description.Valid}}{{.Description.String}}{{else}}{{.InputFactor}} → {{.OutputFactor}}{{end}}</p>
+                <p class="display text-lg sm:text-xl text-stone-800 leading-tight line-clamp-2">{{if .Description.Valid}}{{.Description.String}}{{else}}{{.InputFactor}} → {{.OutputFactor}}{{end}}</p>
                 <p class="text-sm text-stone-500">{{printf "%.0f" (mul .ConfidenceScore 100.0)}}% confidence · {{.SampleSize}} sample{{if ne .SampleSize 1}}s{{end}}</p>
             </div>
-            <a href="/child/{{$.Child.ID}}/insights" class="text-sm font-medium text-emerald-700 hover:text-emerald-900 hidden sm:inline">View →</a>
-        </div>
+            <span class="text-sm font-medium text-emerald-700 hidden sm:inline flex-shrink-0">View →</span>
+        </a>
         {{end}}
         {{else}}
         <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
@@ -266,10 +271,13 @@
         </div>
         {{end}}
 
-        <!-- Active alert / worth noticing -->
+        <!-- Active alert / worth noticing. Whole-card tap target — earlier the
+             title used `truncate` (1 line) and description used `line-clamp-1`
+             (1 line); the "View →" link was hidden on mobile, leaving no way
+             to expand. (#112381) -->
         {{if .Dashboard.ActiveAlerts}}
         {{with index .Dashboard.ActiveAlerts 0}}
-        <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
+        <a href="/child/{{$.Child.ID}}/alerts" class="glass ring-soft rounded-3xl p-5 flex items-center gap-4 hover:bg-white/70 transition-colors block">
             <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-6 h-6 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"></path>
@@ -277,11 +285,11 @@
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-xs uppercase tracking-wider text-stone-500">Worth noticing</p>
-                <p class="display text-lg sm:text-xl text-stone-800 truncate">{{.Title}}</p>
-                <p class="text-sm text-stone-500 line-clamp-1">{{.Description}}</p>
+                <p class="display text-lg sm:text-xl text-stone-800 leading-tight line-clamp-2">{{.Title}}</p>
+                <p class="text-sm text-stone-500 line-clamp-2">{{.Description}}</p>
             </div>
-            <a href="/child/{{$.Child.ID}}/alerts" class="text-sm font-medium text-amber-800 hover:text-amber-900 hidden sm:inline">View →</a>
-        </div>
+            <span class="text-sm font-medium text-amber-800 hidden sm:inline flex-shrink-0">View →</span>
+        </a>
         {{end}}
         {{else}}
         <div class="glass ring-soft rounded-3xl p-5 flex items-center gap-4">
@@ -347,27 +355,32 @@
                 <button onclick="openModal('sleep')" class="mt-4 w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-800 text-sm font-semibold py-2 rounded-full transition">Add a sleep note</button>
             </div>
 
-            <!-- Mood tile -->
+            <!-- Mood tile. Five emoji buttons map to the 1-10 mood scale used
+                 everywhere else in the system. Earlier 4 buttons sent 2..5
+                 directly: tapping the "happiest" emoji wrote 5/10 to the
+                 behavior log, which the at-a-glance rendered as a neutral
+                 face — exactly the inconsistency Joe reported in #112382. -->
             <div class="glass ring-soft rounded-3xl p-5">
                 <div class="flex items-center justify-between gap-3">
                     <div class="min-w-0">
                         <div class="w-10 h-10 rounded-2xl bg-amber-100 grid place-items-center text-xl mb-2">💛</div>
                         <p class="text-xs uppercase tracking-widest text-stone-500 font-bold">How {{.Child.FirstName}} feels</p>
                         {{if .Dashboard.TodayLogs.MoodLevel}}
-                        <p class="display text-lg text-stone-800 leading-tight">{{$mood}}/5 today</p>
+                        <p class="display text-lg text-stone-800 leading-tight">{{$mood}}/10 today</p>
                         {{else}}
                         <p class="display text-lg text-stone-500 leading-tight italic">Not logged</p>
                         {{end}}
                     </div>
-                    <div class="grow-ring grow-ring-sm flex-shrink-0" style="--c:#f59e0b; --p:{{if .Dashboard.TodayLogs.MoodLevel}}{{printf "%.2f" (div_f $mood 5)}}{{else}}0{{end}};">
-                        <span class="text-xl">{{if ge $mood 4}}😊{{else if eq $mood 3}}😐{{else if ge $mood 1}}😞{{else}}–{{end}}</span>
+                    <div class="grow-ring grow-ring-sm flex-shrink-0" style="--c:#f59e0b; --p:{{if .Dashboard.TodayLogs.MoodLevel}}{{printf "%.2f" (div_f $mood 10)}}{{else}}0{{end}};">
+                        <span class="text-xl">{{if ge $mood 8}}😊{{else if ge $mood 5}}😐{{else if ge $mood 1}}😞{{else}}–{{end}}</span>
                     </div>
                 </div>
-                <div class="mt-4 grid grid-cols-4 gap-1">
-                    <button onclick="quickMood(2)" class="seed-btn py-1.5 text-xs">😞</button>
-                    <button onclick="quickMood(3)" class="seed-btn py-1.5 text-xs">😐</button>
-                    <button onclick="quickMood(4)" class="seed-btn py-1.5 text-xs">🙂</button>
-                    <button onclick="quickMood(5)" class="seed-btn py-1.5 text-xs">😊</button>
+                <div class="mt-4 grid grid-cols-5 gap-1">
+                    <button onclick="quickMood(2)" class="seed-btn py-1.5 text-xs" title="Rough day">😢</button>
+                    <button onclick="quickMood(4)" class="seed-btn py-1.5 text-xs" title="Tough">😞</button>
+                    <button onclick="quickMood(6)" class="seed-btn py-1.5 text-xs" title="Okay">😐</button>
+                    <button onclick="quickMood(8)" class="seed-btn py-1.5 text-xs" title="Good">🙂</button>
+                    <button onclick="quickMood(10)" class="seed-btn py-1.5 text-xs" title="Great">😊</button>
                 </div>
             </div>
 
@@ -875,7 +888,7 @@ async function quickMood(level) {
             })
         });
         if (!resp.ok) throw new Error(resp.status);
-        showQuickToast('Mood ' + level + '/5 logged.');
+        showQuickToast('Mood ' + level + '/10 logged.');
         setTimeout(() => window.location.reload(), 700);
     } catch (e) {
         showQuickToast('Couldn\'t log mood.');
@@ -1592,12 +1605,12 @@ const formTemplates = {
         <form id="entry-form" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-stone-700 mb-1">Verbal Output (1-10)</label>
-                    <input type="number" name="verbal_output_level" min="1" max="10" class="w-full px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl">
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Verbal Output (1-5)</label>
+                    <input type="number" name="verbal_output_level" min="1" max="5" class="w-full px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-stone-700 mb-1">Clarity (1-10)</label>
-                    <input type="number" name="clarity_level" min="1" max="10" class="w-full px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl">
+                    <label class="block text-sm font-medium text-stone-700 mb-1">Clarity (1-5)</label>
+                    <input type="number" name="clarity_level" min="1" max="5" class="w-full px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
@@ -1611,8 +1624,8 @@ const formTemplates = {
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-stone-700 mb-1">Echolalia Level (1-10)</label>
-                <input type="number" name="echolalia_level" min="1" max="10" class="w-full px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl" placeholder="0 = none, 10 = constant">
+                <label class="block text-sm font-medium text-stone-700 mb-1">Echolalia Level (0-5)</label>
+                <input type="number" name="echolalia_level" min="0" max="5" class="w-full px-3 py-2 border border-stone-300 bg-white/80 rounded-2xl" placeholder="0 = none, 5 = constant">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
