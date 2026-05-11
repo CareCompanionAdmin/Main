@@ -172,7 +172,7 @@ func (s *PerMetricScanner) checkAnomaly(
 		PatternType:         "anomaly",
 		InputFactor:         metric,
 		OutputFactor:        metric,
-		CorrelationStrength: z, // store z-score in correlation_strength field
+		CorrelationStrength: clampForDB(z), // DB column is numeric(4,3); clamp to ±9.999
 		ConfidenceScore:     math.Min(math.Abs(z)/4.0, 1.0),
 		SampleSize:          len(prior),
 		LagHours:            0,
@@ -241,7 +241,7 @@ func (s *PerMetricScanner) checkTrend(
 		PatternType:         "trend",
 		InputFactor:         metric,
 		OutputFactor:        metric,
-		CorrelationStrength: slope, // slope per day in original units
+		CorrelationStrength: clampForDB(slope), // DB column is numeric(4,3); clamp to ±9.999
 		ConfidenceScore:     1.0 - pValue,
 		SampleSize:          window,
 		LagHours:            0,
@@ -294,7 +294,7 @@ func (s *PerMetricScanner) checkChangePoint(
 		PatternType:         "change_point",
 		InputFactor:         metric,
 		OutputFactor:        metric,
-		CorrelationStrength: score, // z-score-like magnitude of the shift
+		CorrelationStrength: clampForDB(score), // DB column is numeric(4,3); clamp to ±9.999
 		ConfidenceScore:     math.Min(score/6.0, 1.0),
 		SampleSize:          len(values),
 		LagHours:            daysAgo, // store the "days ago" of the change in LagHours
@@ -362,4 +362,19 @@ func sliceMin(xs []float64) float64 {
 		}
 	}
 	return m
+}
+
+// clampForDB constrains a value to fit family_patterns.correlation_strength,
+// which is numeric(4,3) — meaning ±9.999. Z-scores and trend slopes can
+// exceed that range in extreme cases. Anything above 9.999 means "very
+// anomalous" without quantitative resolution loss for our purposes.
+func clampForDB(v float64) float64 {
+	const cap = 9.999
+	if v > cap {
+		return cap
+	}
+	if v < -cap {
+		return -cap
+	}
+	return v
 }
