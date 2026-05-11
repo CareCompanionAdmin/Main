@@ -190,6 +190,47 @@ Bryan's direction (2026-05-11):
 
 Implementation: Phase 4 adds capacity-monitoring widgets to the admin dashboard (EC2/RDS/Bedrock-spend/insights-per-day/active-users + headroom indicators) so we know when to upgrade. Code changes are designed to scale with infra; no premature optimization.
 
+### Decision 9: Expand Phase 2 to include open-ended internal pattern discovery
+
+Bryan's question, mid-session (2026-05-11):
+> "Intelligent analysis of this sort of data without a static list was the kind of thing I would assume was being handled by the AI calls, but shouldn't it also be able to be handled by our internal AI engine since one of the primary changes being accomplished here is a drastic increase in on-box or in-app AI reasoning capability?"
+
+The original Phase 2 plan was scoped to "predefined factor pairs" (e.g., sleep_quality → next-day mood) — a manageable starter but not what Bryan was imagining when he agreed to "internal AI expansion." Bryan correctly intuited that **statistics CAN do open-ended pattern discovery without predefined hypotheses** — that's what exhaustive correlation, anomaly detection, trend detection, and change-point detection are.
+
+Approved expanded scope (2026-05-11):
+1. **Exhaustive auto-correlation** across all factor pairs × 4 lag windows, with Benjamini-Hochberg FDR correction across all ~hundreds of hypotheses tested. Surviving pairs become FamilyPattern records. No "what should we look for?" needed — the data tells us.
+2. **Per-metric scanners**: z-score anomaly (vs rolling baseline), linear-regression trend slope (with p-value + effect size gate), change-point detection (pooled-stderr split-mean scan).
+3. **Clinical-rule layer with 3 sources**: (a) FDA-auto pulled live from openFDA via existing `drug_database.go`, (b) admin-curated rules (DEFERRED to follow-up), (c) medication-start ↔ recent change-point co-occurrence flagging.
+
+Scope cost: extended from ~1.5 days to ~3.5 days of new code. Bryan: "go with the expanded scope for sure."
+
+### Decision 10: JB2S Enterprises, LLC named ONLY in legal-disclaimer surfaces
+
+Bryan's preference (2026-05-11):
+> "I don't really want the JB2S mentioned on the contact us page or anywhere else in the app or on the webpage other than legal disclaimers etc. The reason why is that as soon as we get most of the way through our beta program and this whole thing passes the 'is this a real business or not' sniff test, we're going to re-incorporate it into its own entity so it's not under the JB2S umbrella any more."
+
+Implementation: `templates/terms.html` preamble and `templates/privacy.html` preamble name JB2S Enterprises, LLC d/b/a MyCareCompanion (commit `9b1e277`). Contact Us section was reverted to plain "MyCareCompanion" the same session. No JB2S references in marketing copy, footers, app metadata, or anywhere else. When the post-beta spinout happens, only those two preambles need to change.
+
+### Decision 11: Don't separate to a new dev server for Bedrock — only for actual isolation reasons later
+
+Bryan's question (2026-05-11):
+> "I use the server that we are having this session on as a central dev server for several other projects that are not related to MyCareCompanion. Am I correct to assume that once we move to Bedrock this server will not have access to those non-Bedrock resources and that I should probably spin up a new central dev server for everything not related to MyCareCompanion?"
+
+Conclusion: The Bedrock migration does NOT restrict this server. Bedrock is just another AWS API; the AWS BAA is a contractual document at the account level, not a firewall. Non-CareCompanion projects can keep running on this box.
+
+However, separate isolation IS recommended over time, for non-Bedrock reasons:
+- **Blast radius** — PHI of children with autism + side projects on the same box is a risk multiplier
+- **AWS BAA best practice** — designate a dedicated HIPAA account under Organizations
+- **Compliance audit ease** — clean story for future enterprise customers
+- **Cost allocation** — track CareCompanion's true unit economics
+
+Three-stage plan:
+1. **Now**: Sign BAA, switch endpoint, keep operating. No infra changes.
+2. **3-6 months**: Spin up a separate small EC2/Lightsail for non-CareCompanion projects. This box becomes CareCompanion-only.
+3. **At ~1,000 users or first enterprise pilot**: Move CareCompanion to its own AWS account under Organizations. Other projects in sibling accounts with no BAA exposure.
+
+Note for Phase 5: the IAM policy granting `bedrock-runtime:InvokeModel` will be scoped to the CareCompanion EC2 instance role (the auto-scaling group's role), not to the dev server's user role. So Bedrock permission is properly fenced at the IAM level regardless of host-level isolation.
+
 ---
 
 ## The Five-Phase Plan
@@ -488,6 +529,105 @@ The `.claude/settings.json` has been updated to reduce permission-prompt frictio
 
 All commits in this initiative will reference back to this design doc in the commit message footer:
 > See `docs/superpowers/specs/2026-05-11-ai-phi-stripping-and-internal-expansion.md` for full design.
+
+Shipped commits (in chronological order):
+1. **`9b1e277`** — `docs(legal): name JB2S Enterprises, LLC d/b/a MyCareCompanion in Terms + Privacy preambles (App Store Blocker 3)`. Blocker 3 sign-off material; sets up the legal entity placement decision.
+2. **`0b1bb86`** — `feat(ai-insights): Phase 1 — strip all PHI before outbound Anthropic calls`. The de-identification boundary work, drug-class extensions, copy fixes, JSON parser robustness pass 1.
+3. **`9e9347e`** — `feat(insights): Phase 2 — internal-AI scanners (correlation/anomaly/trend/change-point/clinical)`. ~2000 LOC across 6 new files. JSON parser robustness pass 2 (`[CHILD]`-in-prose handling).
+4. **`11d8c01`** — `fix(insights): clamp per-metric pattern values to fit numeric(4,3) DB column`. Z-scores were overflowing the existing schema.
+5. **`d406b0c`** — `feat(ai-insights): Phase 3 backend — opt-in narrative consent gate`. Consent service + migration 00035 + AI service gate, all dormant by default.
+
+All five shipped to prod via instance refresh `1ae14d81-047a-4f60-83c5-cbd35ce2e29d` on 2026-05-11 22:59 UTC under ECR digest `cbe35ae3206e808a...`. Verified live.
+
+---
+
+## Technical Findings During the Session
+
+Things discovered during the work that are not strictly architectural decisions but matter for understanding the system state.
+
+### Finding 1: Prod has `CLAUDE_ENABLED` unset — Anthropic was never being called in prod
+
+Discovered during the post-Phase 3 smoke test (2026-05-11). The CareCompanion prod EC2 environment does not have `CLAUDE_ENABLED=true` set, so the AI Insights pipeline has never called `api.anthropic.com` in production. Steinmetz family (and all other prod families) have only been getting the simple 5-rule `insight_generator.go` output until today.
+
+This reshapes the impact narrative substantially:
+- **Phase 1 (PHI stripping)** is forward-protection — it'll matter when Bedrock comes online in Phase 5. There is no urgent PHI-leak to remediate in prod because no PHI was being sent.
+- **Phase 2 (internal scanners) is the immediate user-facing win** — 79 correlation patterns + 41 clinical insights generated for 13 prod children on the very first scan, with zero LLM cost.
+
+Practical implication: when we eventually enable Claude (via Bedrock) in prod, all the de-identification machinery from Phase 1 is sitting there waiting to be tested under real load. Until then, prod is running internal-only intelligence — which is genuinely valuable on its own.
+
+### Finding 2: `drug_database.go`'s `getDrugClass()` had no antipsychotics/anticonvulsants — critical gap for autism population
+
+The original `getDrugClass()` map covered stimulants, SSRIs, SNRIs, opioids, benzodiazepines, anticoagulants, NSAIDs, and PPIs. The autism population disproportionately uses antipsychotics (Risperdal, Abilify) and anticonvulsants (Depakote, Tegretol) — none of which were mapped. Fix in commit `0b1bb86`: added 40+ medications across antipsychotic, anticonvulsant, alpha-agonist, non-stimulant-adhd, atypical-antidepressant, tricyclic, antihistamine, and mood-stabilizer classes.
+
+This was a pre-existing gap that affected the drug-drug interaction detection in `CheckInteractions()` too — not just our new PHI stripping path. The extension benefits both code paths.
+
+### Finding 3: Claude responses contain literal `[CHILD]` after Phase 1, breaking byte-naive JSON parsing
+
+After we instructed Claude to use the `[CHILD]` placeholder, Claude sometimes returns prose containing the placeholder (e.g., "I'm ready to analyze [CHILD]'s profile but don't see the data..."). The naive byte-level `strings.IndexByte('[')` JSON extractor in `ai_insight_service.go` would find the `[` of `[CHILD]` and try to parse the description as a JSON array, failing.
+
+Final fix in commit `9e9347e`: new `extractJSONArray()` function that finds the first `[` followed (after whitespace) by `{` and walks the string with proper JSON string-state tracking. Handles markdown fences, prose-with-placeholder, nested brackets in strings, and escaped quotes. 10 dedicated unit tests in `ai_insight_json_extractor_test.go`.
+
+Side benefit: Emma's prod insight count went from 3 (pre-Phase 1) → 6 (post-fix) on the very next analysis run.
+
+### Finding 4: `family_patterns.correlation_strength` is `numeric(4,3)` — z-scores overflow
+
+Per-metric anomaly and change-point detection store z-score-style magnitudes. The existing schema's `correlation_strength` column is `numeric(4,3)` (max ±9.999) because it was originally designed for Pearson r in [-1, 1]. Z-scores can exceed 10 in extreme cases.
+
+Initial Phase 2 first prod run showed 0 per-metric patterns even though clear anomalies existed — silent DB INSERT failures with `ERROR: numeric field overflow (SQLSTATE 22003)`. Fix in commit `11d8c01`: `clampForDB()` helper clamps values to ±9.999 before insert. Anything above means "extremely anomalous" without quantitative resolution loss for our use.
+
+Confirmed working on second prod run — 3 per-metric patterns surfaced where 0 had before.
+
+### Finding 5: Clinical-rule scanner dedupe is too loose — surfacing duplicates per scan
+
+Open follow-up. The clinical-rule scanner's `alreadySurfaced()` predicate matches by title substring containing the medication name + kind tag. If titles don't exactly match the previous insight's title, duplicates leak through. Result: 14 clinical insights per scan even when previous scans had already covered the same meds.
+
+Not fixed in this session (low priority — duplicates are a small annoyance, not a correctness issue). Tighten the dedupe predicate so the same (medication, kind) tuple doesn't re-emit within the dedupe window, regardless of title text variations.
+
+### Finding 6: AWS BAA is contractual, not technical — doesn't restrict shared servers
+
+Discussed at length during the Bedrock multi-project conversation. The AWS BAA is signed at the AWS account level via AWS Artifact and is a passive contractual safety net. It does NOT prohibit non-PHI workloads in the same account or on the same EC2 host. The actual technical restriction is "use HIPAA-eligible services when handling PHI" — and almost everything you'd want is eligible (EC2, RDS, S3, Bedrock, Lambda, etc.).
+
+Practical implication: this dev server can keep serving multiple projects post-Bedrock. Separation is recommended over time for blast-radius/audit reasons (see Decision 11), not because Bedrock forces it.
+
+---
+
+## Open Items / Phase 3+ Backlog
+
+Tracked here so future sessions can find them without re-reading the whole doc.
+
+**Phase 3 follow-up (still in own commit):**
+- Settings page UI: toggle + disclosure modal (only visible when `AI_NARRATIVE_OPT_IN_AVAILABLE=true`)
+- API handler to POST consent changes (`/api/account/ai-narrative-consent`)
+- Estimated: ~0.5 day
+- Currently consent can only change via direct SQL (acceptable for dev; not user-facing)
+
+**Phase 4 — Admin capacity monitoring:**
+- New file `internal/handler/admin/capacity_handler.go`
+- New template `templates/admin/capacity.html` with EC2 CPU/memory, RDS connections, ElastiCache memory, insights generated /24h, active users /24h, LLM API spend rolling 7-day, color-coded headroom indicators
+- Existing `cloudwatch_service.go` is the integration point
+- Estimated: ~0.5 day
+
+**Phase 5 — Bedrock migration + ship:**
+- (Bryan) Sign AWS BAA in AWS Artifact — ~5 min
+- (Bryan) Enable Claude model access in Bedrock console (us-east-1) — ~5 min
+- Add `aws-sdk-go-v2/service/bedrockruntime` to go.mod
+- Replace `callClaude()` HTTP code with Bedrock InvokeModel
+- (Bryan approves) Apply IAM policy granting `bedrock-runtime:InvokeModel` to EC2 instance role — cat #1
+- Update `ClaudeConfig` → `BedrockConfig`
+- Smoke test on dev: full AI analysis flow via Bedrock
+- Update `templates/privacy.html` with Bedrock + BAA disclosure
+- Update `infrastructure/app-store-metadata.md` privacy nutrition label answers
+- Flip `AI_NARRATIVE_OPT_IN_AVAILABLE=true` in prod env
+- Commit
+- (Bryan says "ship"/"deploy"/"prod") Deploy to prod
+- New `mobile-v*` git tag → Codemagic build
+- Internal QA pass on TestFlight
+- App Store Connect submission
+
+**Cleanup items:**
+- Finding 5 — clinical-rule scanner dedupe tightening
+- Source 2 of clinical rules — admin-curated rules table + admin UI + DSL evaluator (~1 day)
+- Consider whether to set `CLAUDE_ENABLED=true` in prod env post-Bedrock so the Steinmetz family also gets the narrative-polish layer (currently they only get internal scans, no LLM output, even though Phase 1 makes it safe)
 
 ---
 
