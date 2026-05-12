@@ -135,28 +135,66 @@ func (s *DrugDatabaseService) LookupDrugWithDosage(ctx context.Context, drugName
 
 	return info, nil
 }
-// fetchFromOpenFDA queries the FDA drug database
+// fetchFromOpenFDA queries the FDA drug database.
+//
+// Multi-word drug names ("Fluoxetine Hcl", "Clonidine Hydrochloride")
+// have to be searched as a quoted phrase, not as bare tokens. OpenFDA's
+// lucene parser treats `openfda.generic_name:Fluoxetine+Hcl` as a search
+// for either word — which returns 35k+ matches across the whole label
+// corpus and `limit=1` picks an unrelated label (typically a decongestant
+// whose name contains "Hcl"). Quoted phrase keeps the words together.
+//
+// If the quoted-phrase search returns zero hits (the medication was
+// entered as a rarely-labeled form, e.g. "Fluoxetine Hcl 20mg Cap"),
+// we retry with just the first whitespace-delimited token — usually
+// the active-ingredient root — so the user still gets useful info
+// instead of nothing.
 func (s *DrugDatabaseService) fetchFromOpenFDA(ctx context.Context, drugName string, info *DrugInfo) error {
-	// Search drug labels
+	candidates := []string{`"` + drugName + `"`}
+	if fields := strings.Fields(drugName); len(fields) > 1 {
+		candidates = append(candidates, fields[0])
+	}
+	for _, searchTerm := range candidates {
+		found, err := s.queryFDALabel(ctx, searchTerm, info)
+		if err != nil {
+			return err
+		}
+		if found {
+			return nil
+		}
+	}
+	return nil
+}
+
+// queryFDALabel runs a single label-search query with the given search
+// term and populates info from the first result. Returns whether a
+// result was found and any transport-level error.
+func (s *DrugDatabaseService) queryFDALabel(ctx context.Context, searchTerm string, info *DrugInfo) (bool, error) {
 	labelURL := fmt.Sprintf("%s/label.json?search=openfda.brand_name:%s+OR+openfda.generic_name:%s&limit=1",
 		s.openFDAURL,
-		url.QueryEscape(drugName),
-		url.QueryEscape(drugName),
+		url.QueryEscape(searchTerm),
+		url.QueryEscape(searchTerm),
 	)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", labelURL, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer resp.Body.Close()
 
+	// OpenFDA returns 404 when the search produces zero results. Treat
+	// that as "not found" rather than a hard error so the caller can
+	// try a fallback search term.
+	if resp.StatusCode == http.StatusNotFound {
+		return false, nil
+	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("FDA API returned status %d", resp.StatusCode)
+		return false, fmt.Errorf("FDA API returned status %d", resp.StatusCode)
 	}
 
 	var result struct {
@@ -182,7 +220,7 @@ func (s *DrugDatabaseService) fetchFromOpenFDA(ctx context.Context, drugName str
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return err
+		return false, err
 	}
 
 	if len(result.Results) > 0 {
@@ -261,7 +299,7 @@ func (s *DrugDatabaseService) fetchFromOpenFDA(ctx context.Context, drugName str
 		s.fetchNDCDetails(ctx, info.NDCCodes[0], info)
 	}
 
-	return nil
+	return len(result.Results) > 0, nil
 }
 
 // fetchNDCDetails fetches detailed product info including physical characteristics
