@@ -101,6 +101,7 @@
                     <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">System</h3>
                     {{if canSee $role "infrastructure_status"}}
                     <a href="/admin/status" class="block px-3 py-2 rounded hover:bg-gray-100">Infrastructure Status {{if eq (matrixLevel $role "infrastructure_status") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
+                    <a href="/admin/capacity" class="block px-3 py-2 rounded hover:bg-gray-100">Capacity {{if eq (matrixLevel $role "infrastructure_status") "read"}}<span class="text-xs text-gray-400">(Read Only)</span>{{end}}</a>
                     {{end}}
                     {{if canSee $role "error_logs"}}
                     <a href="/admin/errors" class="block px-3 py-2 rounded hover:bg-gray-100 flex items-center justify-between">

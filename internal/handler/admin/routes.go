@@ -142,6 +142,7 @@ func (h *Handler) Routes() chi.Router {
 			r.Get("/infra-files", h.ListInfraFiles)
 			r.Get("/infra-files/download", h.DownloadInfraFile)
 			r.Post("/infra-files/upload", h.UploadInfraFile)
+			r.Get("/capacity", h.GetCapacity)
 		})
 
 		// Error Logs
@@ -374,6 +375,7 @@ func (h *Handler) UIRoutes() chi.Router {
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RequireSection("infrastructure_status"))
 			r.Get("/status", h.StatusPage)
+			r.Get("/capacity", h.CapacityPage)
 		})
 
 		// Errors page (Partner=read)

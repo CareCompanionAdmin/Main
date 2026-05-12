@@ -128,6 +128,23 @@ type SystemMetrics struct {
 	ErrorCount24h        int     `json:"error_count_24h"`
 }
 
+// CapacityCounts is the DB-side snapshot for the /admin/capacity page —
+// activity-driven indicators that tell us when to upgrade infra. Pairs
+// with CloudWatch (CPU/memory/RDS connection) data on the same page.
+type CapacityCounts struct {
+	SampledAt              time.Time `json:"sampled_at"`
+	ActiveSessionsNow      int       `json:"active_sessions_now"`       // last_seen_at within 15 min
+	ActiveUsers24h         int       `json:"active_users_24h"`          // distinct user_email in last 24h
+	NewFamilies24h         int       `json:"new_families_24h"`
+	TotalFamilies          int       `json:"total_families"`
+	TotalChildren          int       `json:"total_children"`
+	LogEntries24h          int       `json:"log_entries_24h"`           // sum of behavior/sleep/medication/diet/bowel/seizure
+	InsightsGenerated24h   int       `json:"insights_generated_24h"`
+	AlertsGenerated24h     int       `json:"alerts_generated_24h"`
+	DBConnections          int       `json:"db_connections"`            // pg_stat_activity count
+	DBConnectionsMax       int       `json:"db_connections_max"`        // max_connections setting
+}
+
 // AdminRepository defines the interface for admin data operations
 // CRITICAL: No methods in this interface should access PHI tables
 type AdminRepository interface {
@@ -170,6 +187,10 @@ type AdminRepository interface {
 	GetCachedMetrics(ctx context.Context) (*SystemMetrics, error)
 	RefreshMetrics(ctx context.Context) error
 	UpdateSystemHealthMetrics(ctx context.Context, cpuUtil, dbStorageUtil float64) error
+
+	// Capacity (Phase 4 admin monitoring) — DB-side activity counts that
+	// pair with CloudWatch metrics on the /admin/capacity page.
+	GetCapacityCounts(ctx context.Context) (*CapacityCounts, error)
 
 	// System settings
 	GetSetting(ctx context.Context, key string) (interface{}, error)
@@ -886,6 +907,68 @@ func (r *adminRepo) GetCachedMetrics(ctx context.Context) (*SystemMetrics, error
 	).Scan(&metrics.ErrorCount24h)
 
 	return metrics, nil
+}
+
+// GetCapacityCounts returns the DB-side snapshot for the /admin/capacity
+// page. Designed as a single best-effort call — individual scan errors are
+// swallowed so a partial snapshot still renders. Each query is independent
+// and shallow; no joins to PHI tables.
+func (r *adminRepo) GetCapacityCounts(ctx context.Context) (*CapacityCounts, error) {
+	c := &CapacityCounts{SampledAt: time.Now()}
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM sessions WHERE revoked_at IS NULL AND last_seen_at > NOW() - INTERVAL '15 minutes'",
+	).Scan(&c.ActiveSessionsNow)
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(DISTINCT user_email) FROM sessions WHERE last_seen_at > NOW() - INTERVAL '24 hours' AND user_email IS NOT NULL",
+	).Scan(&c.ActiveUsers24h)
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM families WHERE created_at > NOW() - INTERVAL '24 hours' AND deleted_at IS NULL",
+	).Scan(&c.NewFamilies24h)
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM families WHERE deleted_at IS NULL",
+	).Scan(&c.TotalFamilies)
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM children WHERE is_active = TRUE",
+	).Scan(&c.TotalChildren)
+
+	// Sum log entries across all parent-facing log tables in last 24h.
+	// Each table is queried independently; missing tables (older deploys)
+	// just contribute zero.
+	logTables := []string{
+		"behavior_logs", "sleep_logs", "medication_logs", "diet_logs",
+		"bowel_logs", "seizure_logs", "speech_logs", "weight_logs",
+		"sensory_logs", "social_logs", "therapy_logs", "health_event_logs",
+	}
+	for _, t := range logTables {
+		var n int
+		_ = r.db.QueryRowContext(ctx,
+			"SELECT COUNT(*) FROM "+t+" WHERE created_at > NOW() - INTERVAL '24 hours'",
+		).Scan(&n)
+		c.LogEntries24h += n
+	}
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM insights WHERE created_at > NOW() - INTERVAL '24 hours'",
+	).Scan(&c.InsightsGenerated24h)
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM alerts WHERE created_at > NOW() - INTERVAL '24 hours'",
+	).Scan(&c.AlertsGenerated24h)
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT COUNT(*) FROM pg_stat_activity WHERE datname = current_database()",
+	).Scan(&c.DBConnections)
+
+	_ = r.db.QueryRowContext(ctx,
+		"SELECT setting::int FROM pg_settings WHERE name = 'max_connections'",
+	).Scan(&c.DBConnectionsMax)
+
+	return c, nil
 }
 
 func (r *adminRepo) RefreshMetrics(ctx context.Context) error {

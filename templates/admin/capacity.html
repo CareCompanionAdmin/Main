@@ -1,0 +1,140 @@
+{{define "content"}}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">Capacity</h1>
+        <div class="flex items-center space-x-4">
+            <span id="last-updated" class="text-sm text-gray-500">Last updated: --</span>
+            <label class="text-sm text-gray-600">
+                <input type="checkbox" id="auto-refresh" checked class="mr-1">
+                Auto-refresh (60s)
+            </label>
+            <button onclick="loadCapacity()" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <p class="text-sm text-gray-600">
+        Headroom indicators across infrastructure and application activity.
+        Green is room to grow (≤70%), amber is watch (≤85%), red means plan an
+        upgrade. DB counts are real-time; CloudWatch metrics are a rolling 5-min
+        average.
+    </p>
+
+    <!-- Infrastructure headroom row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div id="widget-ec2"   class="capacity-widget bg-white rounded-lg shadow p-5"></div>
+        <div id="widget-rds"   class="capacity-widget bg-white rounded-lg shadow p-5"></div>
+        <div id="widget-cache" class="capacity-widget bg-white rounded-lg shadow p-5"></div>
+        <div id="widget-asg"   class="capacity-widget bg-white rounded-lg shadow p-5"></div>
+        <div id="widget-llm"   class="capacity-widget bg-white rounded-lg shadow p-5"></div>
+    </div>
+
+    <!-- DB activity counts -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">Activity (last 24 hours)</h2>
+        <div id="db-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"></div>
+    </div>
+
+    <!-- Footer note -->
+    <p class="text-xs text-gray-500">
+        This page is read-only. Thresholds are static (70/85). Tune them in
+        <code>capacity_handler.go &middot; statusFromPercent</code> if a
+        different alert profile is needed.
+    </p>
+</div>
+
+<script>
+let autoRefreshTimer = null;
+
+function statusColor(s) {
+    switch (s) {
+        case 'ok':   return { bar: 'bg-green-500',  pill: 'bg-green-100 text-green-800',  text: 'OK' };
+        case 'warn': return { bar: 'bg-yellow-500', pill: 'bg-yellow-100 text-yellow-800', text: 'WATCH' };
+        case 'crit': return { bar: 'bg-red-500',    pill: 'bg-red-100 text-red-800',      text: 'UPGRADE' };
+        default:     return { bar: 'bg-gray-300',   pill: 'bg-gray-100 text-gray-700',    text: 'N/A' };
+    }
+}
+
+function renderWidget(el, w) {
+    if (!el) return;
+    if (!w) {
+        el.innerHTML = '<div class="text-sm text-gray-400">Unavailable</div>';
+        return;
+    }
+    const c = statusColor(w.status);
+    const pct = Math.max(0, Math.min(100, w.percent || 0));
+    el.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+            <h3 class="text-sm font-medium text-gray-700">${w.label}</h3>
+            <span class="px-2 py-0.5 text-xs rounded-full ${c.pill}">${c.text}</span>
+        </div>
+        <div class="text-2xl font-bold text-gray-900 mb-2">${w.value}</div>
+        <div class="h-2 bg-gray-100 rounded overflow-hidden">
+            <div class="h-2 ${c.bar}" style="width: ${pct}%"></div>
+        </div>
+        ${w.note ? `<div class="text-xs text-gray-500 mt-2">${w.note}</div>` : ''}
+    `;
+}
+
+function renderDBGrid(db) {
+    const grid = document.getElementById('db-grid');
+    if (!db) {
+        grid.innerHTML = '<div class="col-span-full text-sm text-gray-400">DB metrics unavailable</div>';
+        return;
+    }
+    const items = [
+        { label: 'Active sessions now', value: db.active_sessions_now },
+        { label: 'Active users (24h)', value: db.active_users_24h },
+        { label: 'New families (24h)', value: db.new_families_24h },
+        { label: 'Total families', value: db.total_families },
+        { label: 'Total children', value: db.total_children },
+        { label: 'Log entries (24h)', value: db.log_entries_24h },
+        { label: 'Insights generated (24h)', value: db.insights_generated_24h },
+        { label: 'Alerts (24h)', value: db.alerts_generated_24h },
+        { label: 'DB connections', value: `${db.db_connections} / ${db.db_connections_max}` }
+    ];
+    grid.innerHTML = items.map(it => `
+        <div class="p-3 bg-gray-50 rounded">
+            <div class="text-xs text-gray-500">${it.label}</div>
+            <div class="text-xl font-semibold text-gray-900">${it.value}</div>
+        </div>
+    `).join('');
+}
+
+async function loadCapacity() {
+    try {
+        const resp = await fetch('/api/admin/super/capacity', { credentials: 'same-origin' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        renderWidget(document.getElementById('widget-ec2'),   data.ec2);
+        renderWidget(document.getElementById('widget-rds'),   data.rds);
+        renderWidget(document.getElementById('widget-cache'), data.cache);
+        renderWidget(document.getElementById('widget-asg'),   data.asg);
+        renderWidget(document.getElementById('widget-llm'),   data.llm);
+        renderDBGrid(data.db);
+        document.getElementById('last-updated').textContent = 'Last updated: ' + new Date(data.generated_at).toLocaleTimeString();
+    } catch (err) {
+        console.error('Capacity load failed', err);
+        document.getElementById('last-updated').textContent = 'Last updated: failed (' + err.message + ')';
+    }
+}
+
+function setupAutoRefresh() {
+    const checkbox = document.getElementById('auto-refresh');
+    function tick() {
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+        if (checkbox.checked) {
+            autoRefreshTimer = setInterval(loadCapacity, 60000);
+        }
+    }
+    checkbox.addEventListener('change', tick);
+    tick();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCapacity();
+    setupAutoRefresh();
+});
+</script>
+{{end}}
