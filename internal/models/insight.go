@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -93,6 +94,13 @@ type Insight struct {
 	ClinicallyValidated bool     `json:"clinically_validated"`
 	ValidationCount     int      `json:"validation_count"`
 	LastValidatedAt     NullTime `json:"last_validated_at,omitempty"`
+
+	// DedupeKey lets a scanner suppress re-emission of the same finding
+	// within a rolling window without relying on title-substring matching.
+	// Format: "<scanner>:<rule>:<target>[:<extra>]" e.g.
+	// "clinical:fda-blackbox:methylphenidate". Nullable — pre-migration
+	// insights have NULL.
+	DedupeKey sql.NullString `json:"dedupe_key,omitempty"`
 
 	// Display
 	IsActive  bool      `json:"is_active"`

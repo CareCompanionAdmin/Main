@@ -97,13 +97,6 @@ func (s *ClinicalRuleScanner) ScanChild(ctx context.Context, childID uuid.UUID) 
 		return 0, 0, nil
 	}
 
-	// Recent insights for de-duplication.
-	recentInsights, err := s.insightRepo.GetByChildIDSince(ctx, childID, time.Now().AddDate(0, 0, -s.dedupeWindowDays))
-	if err != nil {
-		log.Printf("clinical-rules: fetch recent insights failed: %v", err)
-		recentInsights = nil
-	}
-
 	// Change-point patterns within the anchor window — used by source 3.
 	recentPatterns, err := s.correlationRepo.GetPatterns(ctx, childID, true)
 	if err != nil {
@@ -120,13 +113,13 @@ func (s *ClinicalRuleScanner) ScanChild(ctx context.Context, childID uuid.UUID) 
 		}
 
 		// Source 1: FDA-auto pull of side effects and pediatric warnings.
-		nIns, nAlt := s.surfaceFDAFindings(ctx, child, &med, recentInsights)
+		nIns, nAlt := s.surfaceFDAFindings(ctx, child, &med)
 		insightsCreated += nIns
 		alertsCreated += nAlt
 
 		// Source 3: medication start ↔ recent change-point co-occurrence.
 		if med.StartDate.Valid {
-			nIns, nAlt = s.surfaceMedStartCoincidence(ctx, child, &med, recentPatterns, recentInsights)
+			nIns, nAlt = s.surfaceMedStartCoincidence(ctx, child, &med, recentPatterns)
 			insightsCreated += nIns
 			alertsCreated += nAlt
 		}
@@ -140,7 +133,6 @@ func (s *ClinicalRuleScanner) ScanChild(ctx context.Context, childID uuid.UUID) 
 // (so we don't spam parents about long-stable medications every day).
 func (s *ClinicalRuleScanner) surfaceFDAFindings(
 	ctx context.Context, child *models.Child, med *models.Medication,
-	recentInsights []models.Insight,
 ) (int, int) {
 	// Only emit FDA insights for recently started medications. For meds
 	// the child has been on for months, the parent has seen the warnings.
@@ -160,35 +152,40 @@ func (s *ClinicalRuleScanner) surfaceFDAFindings(
 	alertsCreated := 0
 
 	// (a) Black-box warning — always surfaced if present, alertable.
-	if info.BlackBoxWarning != nil && !s.alreadySurfaced(recentInsights, med.Name, "fda-blackbox") {
-		conf := 1.0
-		ins := &models.Insight{
-			ChildID:           &child.ID,
-			FamilyID:          &child.FamilyID,
-			Tier:              models.TierGlobalMedical,
-			Category:          "medication",
-			Title:             fmt.Sprintf("%s: FDA Black Box Warning", med.Name),
-			SimpleDescription: fmt.Sprintf("%s has an FDA black box warning — the most serious warning the FDA issues. Make sure your prescriber has discussed this with you.", med.Name),
-			ConfidenceScore:   &conf,
-			IsActive:          true,
-		}
-		ins.DetailedDescription.String = *info.BlackBoxWarning
-		ins.DetailedDescription.Valid = true
-		if err := s.insightRepo.Create(ctx, ins); err == nil {
-			insightsCreated++
-			alert := &models.Alert{
-				ChildID:         child.ID,
-				FamilyID:        child.FamilyID,
-				AlertType:       "medication",
-				Severity:        models.AlertSeverityWarning,
-				Status:          models.AlertStatusActive,
-				Title:           ins.Title,
-				Description:     ins.SimpleDescription,
-				ConfidenceScore: &conf,
-				SourceType:      models.CorrelationTypeFamilySpecific,
+	if info.BlackBoxWarning != nil {
+		key := s.clinicalDedupeKey("fda-blackbox", med.Name, "")
+		if s.shouldEmit(ctx, child.ID, key) {
+			conf := 1.0
+			ins := &models.Insight{
+				ChildID:           &child.ID,
+				FamilyID:          &child.FamilyID,
+				Tier:              models.TierGlobalMedical,
+				Category:          "medication",
+				Title:             fmt.Sprintf("%s: FDA Black Box Warning", med.Name),
+				SimpleDescription: fmt.Sprintf("%s has an FDA black box warning — the most serious warning the FDA issues. Make sure your prescriber has discussed this with you.", med.Name),
+				ConfidenceScore:   &conf,
+				IsActive:          true,
 			}
-			if err := s.alertService.Create(ctx, alert); err == nil {
-				alertsCreated++
+			ins.DetailedDescription.String = *info.BlackBoxWarning
+			ins.DetailedDescription.Valid = true
+			ins.DedupeKey.String = key
+			ins.DedupeKey.Valid = true
+			if err := s.insightRepo.Create(ctx, ins); err == nil {
+				insightsCreated++
+				alert := &models.Alert{
+					ChildID:         child.ID,
+					FamilyID:        child.FamilyID,
+					AlertType:       "medication",
+					Severity:        models.AlertSeverityWarning,
+					Status:          models.AlertStatusActive,
+					Title:           ins.Title,
+					Description:     ins.SimpleDescription,
+					ConfidenceScore: &conf,
+					SourceType:      models.CorrelationTypeFamilySpecific,
+				}
+				if err := s.alertService.Create(ctx, alert); err == nil {
+					alertsCreated++
+				}
 			}
 		}
 	}
@@ -202,8 +199,8 @@ func (s *ClinicalRuleScanner) surfaceFDAFindings(
 		if se.Frequency != "common" {
 			continue
 		}
-		dedupeKey := "fda-side-effect-" + se.Effect
-		if s.alreadySurfaced(recentInsights, med.Name, dedupeKey) {
+		key := s.clinicalDedupeKey("fda-side-effect", med.Name, se.Effect)
+		if !s.shouldEmit(ctx, child.ID, key) {
 			continue
 		}
 		conf := 0.85
@@ -219,6 +216,8 @@ func (s *ClinicalRuleScanner) surfaceFDAFindings(
 		}
 		ins.DetailedDescription.String = fmt.Sprintf("Severity: %s. From FDA labeling for %s.", se.Severity, med.Name)
 		ins.DetailedDescription.Valid = true
+		ins.DedupeKey.String = key
+		ins.DedupeKey.Valid = true
 		if err := s.insightRepo.Create(ctx, ins); err == nil {
 			insightsCreated++
 			emitted++
@@ -227,7 +226,8 @@ func (s *ClinicalRuleScanner) surfaceFDAFindings(
 
 	// (c) Pediatric warnings — surface the first one (if any), capped.
 	for _, pw := range info.PediatricWarnings {
-		if s.alreadySurfaced(recentInsights, med.Name, "fda-pediatric") {
+		key := s.clinicalDedupeKey("fda-pediatric", med.Name, "")
+		if !s.shouldEmit(ctx, child.ID, key) {
 			break
 		}
 		conf := 0.9
@@ -243,6 +243,8 @@ func (s *ClinicalRuleScanner) surfaceFDAFindings(
 		}
 		ins.DetailedDescription.String = pw
 		ins.DetailedDescription.Valid = true
+		ins.DedupeKey.String = key
+		ins.DedupeKey.Valid = true
 		if err := s.insightRepo.Create(ctx, ins); err == nil {
 			insightsCreated++
 		}
@@ -257,7 +259,7 @@ func (s *ClinicalRuleScanner) surfaceFDAFindings(
 // date. If so, surface a "possible side effect to discuss" insight.
 func (s *ClinicalRuleScanner) surfaceMedStartCoincidence(
 	ctx context.Context, child *models.Child, med *models.Medication,
-	recentPatterns []models.FamilyPattern, recentInsights []models.Insight,
+	recentPatterns []models.FamilyPattern,
 ) (int, int) {
 	if !med.StartDate.Valid {
 		return 0, 0
@@ -286,8 +288,8 @@ func (s *ClinicalRuleScanner) surfaceMedStartCoincidence(
 		if gap > float64(s.changePointAnchorDays) {
 			continue
 		}
-		dedupeKey := "med-start-changepoint-" + p.InputFactor
-		if s.alreadySurfaced(recentInsights, med.Name, dedupeKey) {
+		key := s.clinicalDedupeKey("med-start-changepoint", med.Name, p.InputFactor)
+		if !s.shouldEmit(ctx, child.ID, key) {
 			continue
 		}
 
@@ -304,6 +306,8 @@ func (s *ClinicalRuleScanner) surfaceMedStartCoincidence(
 		}
 		ins.DetailedDescription.String = fmt.Sprintf("Change-point detected with z-score=%.1f at approximately Day-%d. Medication start: %s.", p.CorrelationStrength, p.LagHours, startDate.Format("2006-01-02"))
 		ins.DetailedDescription.Valid = true
+		ins.DedupeKey.String = key
+		ins.DedupeKey.Valid = true
 
 		if err := s.insightRepo.Create(ctx, ins); err == nil {
 			alert := &models.Alert{
@@ -327,34 +331,39 @@ func (s *ClinicalRuleScanner) surfaceMedStartCoincidence(
 	return 0, 0
 }
 
-// alreadySurfaced returns true if a similar insight (same med name +
-// kind tag) has been created recently.
-func (s *ClinicalRuleScanner) alreadySurfaced(recent []models.Insight, medName, kind string) bool {
-	medNameLower := strings.ToLower(medName)
-	for _, ins := range recent {
-		titleLower := strings.ToLower(ins.Title)
-		if !strings.Contains(titleLower, medNameLower) {
-			continue
-		}
-		// Tags are encoded loosely in titles — be tolerant.
-		switch {
-		case kind == "fda-blackbox" && strings.Contains(titleLower, "black box"):
-			return true
-		case strings.HasPrefix(kind, "fda-side-effect-"):
-			effect := strings.TrimPrefix(kind, "fda-side-effect-")
-			if strings.Contains(titleLower, strings.ToLower(effect)) {
-				return true
-			}
-		case kind == "fda-pediatric" && strings.Contains(titleLower, "pediatric"):
-			return true
-		case strings.HasPrefix(kind, "med-start-changepoint-"):
-			factor := strings.TrimPrefix(kind, "med-start-changepoint-")
-			if strings.Contains(titleLower, strings.ToLower(friendlyMetricName(factor))) {
-				return true
+// clinicalDedupeKey builds the structured dedupe key for one clinical
+// finding. Format: "clinical:<rule>:<med-normalized>[:<extra-normalized>]".
+// Normalization lower-cases and strips non-alphanumeric so spacing /
+// punctuation variants don't slip past dedupe.
+func (s *ClinicalRuleScanner) clinicalDedupeKey(rule, medName, extra string) string {
+	norm := func(x string) string {
+		var b strings.Builder
+		for _, r := range strings.ToLower(x) {
+			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+				b.WriteRune(r)
 			}
 		}
+		return b.String()
 	}
-	return false
+	key := "clinical:" + rule + ":" + norm(medName)
+	if extra != "" {
+		key += ":" + norm(extra)
+	}
+	return key
+}
+
+// shouldEmit returns true when no insight with this dedupe_key has been
+// created for this child inside the rolling dedupe window. A DB lookup
+// error fails-open (returns true) so a transient error doesn't suppress
+// alerts the parent would want to see.
+func (s *ClinicalRuleScanner) shouldEmit(ctx context.Context, childID uuid.UUID, key string) bool {
+	window := time.Duration(s.dedupeWindowDays) * 24 * time.Hour
+	exists, err := s.insightRepo.ExistsRecentByDedupeKey(ctx, childID, key, window)
+	if err != nil {
+		log.Printf("clinical-rules: dedupe lookup failed for key=%q: %v", key, err)
+		return true
+	}
+	return !exists
 }
 
 func truncateAt(s string, max int) string {

@@ -29,7 +29,8 @@ func (r *insightRepo) Create(ctx context.Context, insight *models.Insight) error
 			date_range_start, date_range_end,
 			source_ids, pattern_id,
 			clinically_validated, validation_count, last_validated_at,
-			is_active, created_at, updated_at
+			is_active, created_at, updated_at,
+			dedupe_key
 		) VALUES (
 			$1, $2, $3, $4, $5,
 			$6, $7, $8,
@@ -39,7 +40,8 @@ func (r *insightRepo) Create(ctx context.Context, insight *models.Insight) error
 			$20, $21,
 			$22, $23,
 			$24, $25, $26,
-			$27, $28, $29
+			$27, $28, $29,
+			$30
 		)
 	`
 	insight.ID = uuid.New()
@@ -57,8 +59,30 @@ func (r *insightRepo) Create(ctx context.Context, insight *models.Insight) error
 		insight.SourceIDs, insight.PatternID,
 		insight.ClinicallyValidated, insight.ValidationCount, insight.LastValidatedAt,
 		insight.IsActive, insight.CreatedAt, insight.UpdatedAt,
+		insight.DedupeKey,
 	)
 	return err
+}
+
+// ExistsRecentByDedupeKey reports whether an insight with the given
+// dedupe_key has already been emitted for this child inside the rolling
+// time window. Returns false (and no error) for empty keys — callers
+// without a key opt out of structured dedupe.
+func (r *insightRepo) ExistsRecentByDedupeKey(ctx context.Context, childID uuid.UUID, key string, window time.Duration) (bool, error) {
+	if key == "" {
+		return false, nil
+	}
+	since := time.Now().Add(-window)
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM insights
+			WHERE child_id = $1
+			  AND dedupe_key = $2
+			  AND created_at > $3
+			LIMIT 1
+		)`, childID, key, since).Scan(&exists)
+	return exists, err
 }
 
 func (r *insightRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Insight, error) {
