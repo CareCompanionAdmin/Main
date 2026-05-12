@@ -85,6 +85,26 @@ func (r *insightRepo) ExistsRecentByDedupeKey(ctx context.Context, childID uuid.
 	return exists, err
 }
 
+// CountRecentByDedupeKeyPrefix counts insights for a child whose
+// dedupe_key starts with the given prefix and were created inside the
+// rolling time window. Used by scanners to enforce per-window emission
+// caps (e.g. "no more than 2 FDA side-effect insights per medication
+// per 14 days"). Empty prefix returns 0.
+func (r *insightRepo) CountRecentByDedupeKeyPrefix(ctx context.Context, childID uuid.UUID, prefix string, window time.Duration) (int, error) {
+	if prefix == "" {
+		return 0, nil
+	}
+	since := time.Now().Add(-window)
+	var n int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM insights
+		WHERE child_id = $1
+		  AND dedupe_key LIKE $2
+		  AND created_at > $3`,
+		childID, prefix+"%", since).Scan(&n)
+	return n, err
+}
+
 func (r *insightRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.Insight, error) {
 	query := `
 		SELECT id, child_id, family_id, tier, category,

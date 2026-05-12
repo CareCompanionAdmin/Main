@@ -98,6 +98,25 @@ Data sharing: None — no data shared with third parties
 Data encryption: Yes, in transit and at rest
 Data deletion: Users can request account and data deletion
 
+## Apple App Privacy ("Nutrition Label") Answers
+Verified 2026-05-12 by auditing `mobile/package.json`, `mobile/ios/App/Podfile`, `mobile/android/app/build.gradle`, and `static/js/**`.
+
+**No analytics or crash-reporting SDKs are bundled.** No Sentry, Crashlytics, Firebase Analytics, Datadog, Amplitude, Mixpanel, Posthog, or Segment. The only Firebase touch point is `@capacitor/push-notifications` which uses FCM exclusively for push delivery (no analytics emission).
+
+Data type declarations (Linked to User, App Functionality only, NOT used for tracking or advertising):
+- **Health & Fitness** — medication records, behaviors, mood, sleep, seizure logs, therapy notes
+- **Contact Info** — email, name (account creation + family chat display)
+- **User Content** — family chat messages, free-text notes on logs, PDF report content
+- **Identifiers** — internal user ID (server-issued UUID, not shared with third parties)
+
+Not declared:
+- Diagnostics — none collected (no analytics/crash SDK)
+- Tracking — none (no third-party tracking)
+- Advertising — none (no ad SDKs)
+
+## App Icon Status (2026-05-12 audit)
+`mobile/icons/` contains seven PNG-encoded files (icon-48 through icon-512). All under 512×512. **Apple requires 1024×1024 PNG (no transparency, no rounded corners, no Apple imagery) for the App Store listing.** A 1024×1024 master source is needed before submission — either upscale-and-resharpen the existing 512px PNG or regenerate from the source design file. Bryan TODO.
+
 ## Target Audience
 Adults (18+) — the app is for adult caregivers, not children
 

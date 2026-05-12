@@ -243,6 +243,7 @@ type InsightRepository interface {
 	GetGlobalInsights(ctx context.Context, category string) ([]models.Insight, error)
 	GetByPatternID(ctx context.Context, patternID uuid.UUID) (*models.Insight, error)
 	ExistsRecentByDedupeKey(ctx context.Context, childID uuid.UUID, key string, window time.Duration) (bool, error)
+	CountRecentByDedupeKeyPrefix(ctx context.Context, childID uuid.UUID, prefix string, window time.Duration) (int, error)
 
 	// Validation
 	IncrementValidation(ctx context.Context, id uuid.UUID) error

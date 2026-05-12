@@ -190,10 +190,17 @@ func (s *ClinicalRuleScanner) surfaceFDAFindings(
 		}
 	}
 
-	// (b) Common side effects — surface up to maxFDAInsightsPerMed.
+	// (b) Common side effects — surface up to maxFDAInsightsPerMed CUMULATIVE
+	// within the dedupe window. Without this, the cap would be per-run and a
+	// medication with many common side effects would gradually leak many
+	// insights over consecutive scans.
+	window := time.Duration(s.dedupeWindowDays) * 24 * time.Hour
+	prefix := s.clinicalDedupeKeyPrefix("fda-side-effect", med.Name)
+	existingSideEffects, _ := s.insightRepo.CountRecentByDedupeKeyPrefix(ctx, child.ID, prefix, window)
+	remaining := s.maxFDAInsightsPerMed - existingSideEffects
 	emitted := 0
 	for _, se := range info.SideEffects {
-		if emitted >= s.maxFDAInsightsPerMed {
+		if emitted >= remaining {
 			break
 		}
 		if se.Frequency != "common" {
@@ -331,25 +338,32 @@ func (s *ClinicalRuleScanner) surfaceMedStartCoincidence(
 	return 0, 0
 }
 
+// normForKey lowercases + strips non-alphanumeric so spacing and
+// punctuation variants of the same name collapse to one canonical token.
+func normForKey(x string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(x) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
 // clinicalDedupeKey builds the structured dedupe key for one clinical
 // finding. Format: "clinical:<rule>:<med-normalized>[:<extra-normalized>]".
-// Normalization lower-cases and strips non-alphanumeric so spacing /
-// punctuation variants don't slip past dedupe.
 func (s *ClinicalRuleScanner) clinicalDedupeKey(rule, medName, extra string) string {
-	norm := func(x string) string {
-		var b strings.Builder
-		for _, r := range strings.ToLower(x) {
-			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-				b.WriteRune(r)
-			}
-		}
-		return b.String()
-	}
-	key := "clinical:" + rule + ":" + norm(medName)
+	key := "clinical:" + rule + ":" + normForKey(medName)
 	if extra != "" {
-		key += ":" + norm(extra)
+		key += ":" + normForKey(extra)
 	}
 	return key
+}
+
+// clinicalDedupeKeyPrefix returns the prefix that all keys for a given
+// (rule, medication) share — used for cumulative cap counts.
+func (s *ClinicalRuleScanner) clinicalDedupeKeyPrefix(rule, medName string) string {
+	return "clinical:" + rule + ":" + normForKey(medName) + ":"
 }
 
 // shouldEmit returns true when no insight with this dedupe_key has been
