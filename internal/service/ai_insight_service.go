@@ -757,6 +757,7 @@ func (s *AIInsightService) storeInsights(ctx context.Context, childID, familyID 
 			DetailedDescription: models.NullString{NullString: sql.NullString{String: r.DetailedDescription, Valid: r.DetailedDescription != ""}},
 			ConfidenceScore:     &r.Confidence,
 			IsActive:            true,
+			DedupeKey:           sql.NullString{String: aiInsightDedupeKey(r.Tier, r.Category, r.Title), Valid: true},
 		}
 
 		// Tier-specific fields
@@ -902,6 +903,48 @@ func truncateLog(s string, maxLen int) string {
 }
 
 // isDuplicate checks if a similar title exists in recent insights
+// aiInsightDedupeKey builds a structured key for an AI-generated insight.
+// Format: ai:<tier>:<category>:<3-significant-tokens-of-title>. Stop-words
+// and non-alphanumerics are stripped so phrasing variants ("Emma's sleep
+// timing" vs "sleep timing for Emma") collapse onto roughly the same key.
+//
+// Not used for hard dedupe today — the in-memory isDuplicate is still the
+// primary dedupe — but persisting the key gives the /admin/capacity page
+// and any future analysis a stable identity per (child, tier, category,
+// concept). Set alongside DedupeKey on every emitted insight.
+func aiInsightDedupeKey(tier int, category, title string) string {
+	stopWords := map[string]bool{
+		"a": true, "an": true, "and": true, "or": true, "the": true,
+		"of": true, "in": true, "on": true, "for": true, "to": true,
+		"with": true, "at": true, "by": true, "is": true, "are": true,
+		"this": true, "that": true, "as": true, "from": true, "your": true,
+		"my": true, "our": true, "their": true, "his": true, "her": true,
+		"its": true, "child": true, "childs": true, "kid": true, "kids": true,
+	}
+	var sig []string
+	for _, w := range strings.Fields(strings.ToLower(title)) {
+		var norm strings.Builder
+		for _, r := range w {
+			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+				norm.WriteRune(r)
+			}
+		}
+		token := norm.String()
+		if token == "" || stopWords[token] {
+			continue
+		}
+		sig = append(sig, token)
+		if len(sig) == 3 {
+			break
+		}
+	}
+	categoryNorm := strings.ToLower(strings.TrimSpace(category))
+	if categoryNorm == "" {
+		categoryNorm = "general"
+	}
+	return fmt.Sprintf("ai:%d:%s:%s", tier, categoryNorm, strings.Join(sig, "-"))
+}
+
 func isDuplicate(title string, recent []models.Insight) bool {
 	titleLower := strings.ToLower(title)
 	for _, ins := range recent {
