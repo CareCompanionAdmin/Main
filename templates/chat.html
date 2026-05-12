@@ -492,6 +492,19 @@ function renderMessage(msg) {
         }).join('');
     }
 
+    // Report affordance: only for messages from other users. Tap opens the
+    // user's mail app with a pre-addressed report to support — Apple wants
+    // a clear path to report objectionable content (App Store 1.2 / UGC).
+    const reportButton = isOwn ? '' : `
+        <button type="button" onclick="reportMessage('${msg.id}', ${JSON.stringify(name)}, ${JSON.stringify(msgDate.toISOString())})"
+                class="ml-2 align-top text-stone-400 hover:text-stone-700"
+                title="Report this message">
+            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 2H21l-3 6 3 6h-8.5l-1-2H5a2 2 0 00-2 2zm9-13.5V9"/>
+            </svg>
+        </button>`;
+
     return `
         <div class="mb-4 ${isOwn ? 'text-right' : ''}">
             <div class="inline-block max-w-[70%] ${isOwn ? 'bg-orange-600 text-white' : 'bg-stone-100 text-stone-900'} rounded-2xl px-4 py-2">
@@ -500,8 +513,28 @@ function renderMessage(msg) {
                 ${attachmentsHtml}
                 <p class="text-xs ${isOwn ? 'text-orange-200' : 'text-stone-400'} mt-1">${time}</p>
             </div>
+            ${reportButton}
         </div>
     `;
+}
+
+// Open a pre-filled email to support so the user can report an objectionable
+// message. We deliberately don't send a server request — mailto: keeps the
+// user in control of what they send, and the system Mail app is the iOS
+// happy path the App Store reviewer expects to see.
+function reportMessage(messageID, senderName, sentAtISO) {
+    if (!confirm("Send a report about this message to our support team?")) return;
+    const subject = "Report a message in MyCareCompanion";
+    const body =
+        "I'd like to report a message in my family chat.\n\n" +
+        "From: " + senderName + "\n" +
+        "Sent: " + sentAtISO + "\n" +
+        "Message ID: " + messageID + "\n\n" +
+        "Reason for reporting:\n";
+    const mailto = "mailto:support@mycarecompanion.net" +
+        "?subject=" + encodeURIComponent(subject) +
+        "&body=" + encodeURIComponent(body);
+    window.location.href = mailto;
 }
 
 // File attachment handling

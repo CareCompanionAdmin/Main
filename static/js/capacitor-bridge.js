@@ -119,6 +119,17 @@
             var href = link.getAttribute('href');
             if (!href) return;
 
+            // Skip non-navigable schemes and bare anchors — let the WebView
+            // hand mailto:/tel: to the system app and '#' / javascript: to
+            // the page's own handlers. Routing these through Browser.open
+            // either fails or opens an empty page.
+            if (href === '#' ||
+                href.startsWith('javascript:') ||
+                href.startsWith('mailto:') ||
+                href.startsWith('tel:')) {
+                return;
+            }
+
             // Open external links in system browser. mycarecompanion.net
             // covers both prod (www) and dev (dev) subdomains — anything
             // else with an absolute URL is third-party and gets the system
@@ -131,6 +142,54 @@
                 e.preventDefault();
                 Browser.open({ url: href });
             }
+        }, true);
+    }
+
+    // =========================================================================
+    // Stripe Checkout (App Store guideline 3.1.1)
+    //
+    // Web flow: form posts /billing/checkout → server returns 303 → browser
+    // follows the redirect to checkout.stripe.com.
+    //
+    // Capacitor flow: that 303 would load Stripe inside the WebView, which
+    // Apple treats as in-app purchase circumvention. Instead, intercept any
+    // submit to /billing/checkout, show a neutral pre-redirect notice, POST
+    // via fetch (the server detects the MyCareCompanionApp UA and returns
+    // JSON), then hand the URL to Browser.open which uses SFSafariViewController
+    // on iOS. The user enters payment in Safari, Stripe completes, and the
+    // success_url brings them back to the app via Universal Link / return-to-app.
+    // =========================================================================
+    if (Browser) {
+        document.addEventListener('submit', function(e) {
+            var form = e.target;
+            if (!form || form.tagName !== 'FORM') return;
+            var action = form.getAttribute('action') || '';
+            if (action !== '/billing/checkout') return;
+
+            e.preventDefault();
+
+            var proceed = confirm(
+                "You'll continue on carecompanion.net to subscribe. " +
+                "We'll bring you back to the app when you're done."
+            );
+            if (!proceed) return;
+
+            var formData = new FormData(form);
+            fetch(action, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            }).then(function(resp) {
+                if (!resp.ok) throw new Error('checkout HTTP ' + resp.status);
+                return resp.json();
+            }).then(function(data) {
+                if (!data || !data.checkout_url) throw new Error('no checkout_url in response');
+                Browser.open({ url: data.checkout_url });
+            }).catch(function(err) {
+                console.error('[Capacitor] Subscribe failed:', err);
+                alert('Subscription unavailable right now. Please try again in a moment.');
+            });
         }, true);
     }
 

@@ -2,10 +2,12 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,6 +15,19 @@ import (
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/service"
 )
+
+// capacitorUserAgentMarker is appended to the User-Agent by the Capacitor
+// shell (see mobile/capacitor.config.json appendUserAgent). When this marker
+// is present, the request is from the iOS/Android app, not a web browser —
+// flows that involve external redirects (like Stripe Checkout) must return
+// JSON so the native shell can open the URL in SFSafariViewController
+// instead of letting the WebView load Stripe inline (App Store guideline
+// 3.1.1 rejection trigger).
+const capacitorUserAgentMarker = "MyCareCompanionApp"
+
+func isCapacitorClient(r *http.Request) bool {
+	return strings.Contains(r.Header.Get("User-Agent"), capacitorUserAgentMarker)
+}
 
 // CheckoutPost handles POST /billing/checkout. The form posts a plan_id
 // from the upgrade button on the settings page. We resolve the plan to
@@ -86,6 +101,14 @@ func (h *WebHandlers) CheckoutPost(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[STRIPE] CreateCheckoutSession failed user=%s family=%s plan=%s: %v",
 			userID, familyID, planID, err)
 		renderError(w, "Failed to start checkout. Please try again.", http.StatusBadGateway)
+		return
+	}
+	// Capacitor client: return the checkout URL as JSON so the native
+	// bridge can open it in SFSafariViewController (Apple 3.1.1 — Stripe
+	// must not load inside the WebView).
+	if isCapacitorClient(r) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"checkout_url": sess.URL})
 		return
 	}
 	if HTMXRequest(r) {

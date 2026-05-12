@@ -62,13 +62,23 @@ Health & Fitness
 - Google: Everyone
 
 ## App Review Notes (Apple)
-This app is a care coordination and health logging tool for families with children who have autism spectrum disorder. It does not diagnose, treat, or claim to prevent any medical condition. It is not a regulated medical device.
+MyCareCompanion is a tracking and journaling tool for parents of children with autism. It is NOT a diagnostic, treatment, or medical device — all in-app "patterns" are statistical correlations across user-logged data with prominent disclaimers to consult a physician.
+
+Subscription is $15/month handled on the web at carecompanion.net per Apple's US-storefront external-link allowance (April 2025 guideline update, 3.1.1(a)). Tap Subscribe in the app to see the neutral redirect notice and external Safari handoff.
+
+Family chat is private to invited family members only. Each message has a Report icon (next to non-own messages) that opens a pre-addressed email to support. Family owners may also remove members directly from Settings → Members.
 
 Demo account for review:
-Email: demo@mycarecompanion.net
-Password: [TO BE CREATED]
+Email: appreview@mycarecompanion.net
+Password: MyCareReview2026!
 
-The app loads a web URL (https://www.mycarecompanion.net) inside a native WebView shell. This is intentional — it allows instant updates without app store resubmission. The native shell provides push notifications, safe-area handling, and app lifecycle management via Capacitor.
+This account has a complimentary subscription, a sample child profile with seeded behavior + sleep logs over the past 7 days, an active medication schedule, and a family-chat thread with sample messages. The account is fully functional — including the in-app Account Deletion flow at Settings → Danger Zone.
+
+Privacy policy: https://www.mycarecompanion.net/privacy
+Medical disclaimer: visible at Settings → About and at the bottom of every Insights / Alert Analysis page; PDF reports include the disclaimer in the footer of every page.
+Support: support@mycarecompanion.net
+
+The app loads a web URL (https://www.mycarecompanion.net) inside a native WebView shell. This is intentional — it allows instant updates without app store resubmission. The native shell provides push notifications, safe-area handling, app lifecycle management via Capacitor, and routes external links (FDA drug info, Stripe checkout, support email) to the system Safari / Mail apps rather than loading them inline.
 
 ## Google Play Health Apps Declaration
 - App category: Care coordination / health tracking

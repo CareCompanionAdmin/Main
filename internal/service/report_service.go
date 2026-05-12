@@ -550,6 +550,18 @@ func (s *ReportService) generatePDF(ctx context.Context, reportID uuid.UUID, chi
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetAutoPageBreak(true, 20)
 
+	// Medical disclaimer footer on every page (App Store guideline 1.4.1).
+	pdf.SetFooterFunc(func() {
+		pdf.SetY(-15)
+		pdf.SetFont("Helvetica", "I", 7)
+		pdf.SetTextColor(120, 113, 108)
+		pdf.MultiCell(0, 3.2,
+			"MyCareCompanion is a tracking and journaling tool, not a medical device. "+
+				"The data and patterns in this report are observations of your logged entries, not medical advice. "+
+				"Consult your child's healthcare provider for clinical decisions. In an emergency, call 911.",
+			"", "C", false)
+	})
+
 	// Cover page
 	pdf.AddPage()
 	pdf.SetFont("Helvetica", "B", 24)
