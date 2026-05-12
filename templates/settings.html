@@ -20,6 +20,7 @@
             <a href="#section-prefs"    class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Preferences</a>
             <a href="#section-password" class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Password</a>
             <a href="#section-notify"   class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">Notifications</a>
+            <a href="#section-ai"       id="nav-section-ai" class="hidden px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">AI</a>
             <a href="#section-about"    class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-white transition-colors">About</a>
             <a href="#section-danger"   class="px-3 py-1.5 rounded-full bg-white/70 border border-stone-200 text-stone-700 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 transition-colors">Danger zone</a>
         </nav>
@@ -354,6 +355,47 @@
                     Save Preferences
                 </button>
             </form>
+        </div>
+
+        <!-- AI Narrative Analysis (Phase 3) — section hidden unless the
+             server feature flag AI_NARRATIVE_OPT_IN_AVAILABLE is on. -->
+        <div id="section-ai" class="hidden glass ring-soft rounded-3xl p-6 transition-colors scroll-mt-6">
+            <h2 class="display text-xl font-medium text-stone-800 mb-2">AI Narrative Analysis</h2>
+            <p class="text-stone-600 text-sm mb-4">
+                By default, our AI insight pipeline only sees de-identified, numerical and categorical data from your logs — no first names, no exact birthdates, no free-text. If you'd like the AI to also read your free-text notes (behavior, therapy, health events) so it can pick up context that numbers miss, you can opt in here. You can turn it off at any time.
+            </p>
+
+            <div id="ai-consent-status" class="hidden mb-4 p-3 rounded-2xl text-sm"></div>
+
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="font-medium text-stone-900" id="ai-consent-state-label">Loading…</p>
+                    <p id="ai-consent-detail" class="text-xs text-stone-500"></p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="ai-consent-learn" onclick="openNarrativeDisclosureModal()" class="px-4 py-2 text-sm bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">Learn more</button>
+                    <button type="button" id="ai-consent-toggle" onclick="toggleNarrativeConsent()" class="px-4 py-2 text-sm bg-orange-600 text-white rounded-full hover:bg-orange-700">Enable</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Narrative-consent disclosure modal -->
+        <div id="narrative-disclosure-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl ring-soft shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+                <h3 class="text-xl font-semibold text-stone-900 mb-3">Enable AI Narrative Analysis</h3>
+                <pre id="narrative-disclosure-text" class="whitespace-pre-wrap text-sm text-stone-700 bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 font-sans">Loading…</pre>
+                <p class="text-xs text-stone-500 mb-4">Disclosure version: <span id="narrative-disclosure-version">—</span></p>
+
+                <label class="flex items-start gap-2 mb-4 text-sm text-stone-700">
+                    <input type="checkbox" id="narrative-disclosure-ack" class="mt-1">
+                    <span>I have read the above and consent to including my free-text log notes in outbound AI analysis calls.</span>
+                </label>
+
+                <div class="flex gap-2 justify-end">
+                    <button type="button" onclick="closeNarrativeDisclosureModal()" class="px-4 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200 text-sm">Cancel</button>
+                    <button type="button" id="narrative-disclosure-confirm" onclick="confirmEnableNarrative()" disabled class="px-4 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed">Confirm &amp; enable</button>
+                </div>
+            </div>
         </div>
 
         <!-- About / Legal -->
@@ -1093,7 +1135,126 @@ document.addEventListener('DOMContentLoaded', function() {
     loadChildren();
     loadFamilyMembers();
     loadBillingInfo();
+    loadNarrativeConsent();
 });
+
+// ==========================================================================
+// AI Narrative Analysis consent (Phase 3) — opt-in to having free-text fields
+// included in outbound LLM calls. Section is hidden entirely when the server
+// feature flag AI_NARRATIVE_OPT_IN_AVAILABLE is off (production until Bedrock
+// + BAA finalize in Phase 5).
+// ==========================================================================
+let narrativeConsentState = null;
+
+async function loadNarrativeConsent() {
+    try {
+        const resp = await fetch('/api/users/me/narrative-consent', { credentials: 'same-origin' });
+        if (!resp.ok) {
+            console.warn('narrative consent fetch failed', resp.status);
+            return;
+        }
+        const data = await resp.json();
+        narrativeConsentState = data;
+        renderNarrativeConsent();
+    } catch (err) {
+        console.error('narrative consent error', err);
+    }
+}
+
+function renderNarrativeConsent() {
+    const section = document.getElementById('section-ai');
+    const navChip = document.getElementById('nav-section-ai');
+    if (!narrativeConsentState || !narrativeConsentState.feature_available) {
+        section.classList.add('hidden');
+        navChip.classList.add('hidden');
+        return;
+    }
+    section.classList.remove('hidden');
+    navChip.classList.remove('hidden');
+
+    const label = document.getElementById('ai-consent-state-label');
+    const detail = document.getElementById('ai-consent-detail');
+    const btn = document.getElementById('ai-consent-toggle');
+
+    if (narrativeConsentState.needs_re_consent) {
+        label.textContent = 'Re-consent required';
+        detail.textContent = "We updated the disclosure since you last opted in. Please review and re-consent.";
+        btn.textContent = 'Review and re-enable';
+        btn.classList.remove('bg-stone-200', 'text-stone-700');
+        btn.classList.add('bg-orange-600', 'text-white', 'hover:bg-orange-700');
+    } else if (narrativeConsentState.enabled) {
+        label.textContent = 'On — free-text included in AI analysis';
+        const dt = narrativeConsentState.consented_at;
+        detail.textContent = dt ? ('Last enabled ' + new Date(dt).toLocaleString()) : '';
+        btn.textContent = 'Turn off';
+        btn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+        btn.classList.add('bg-stone-200', 'text-stone-700', 'hover:bg-stone-300');
+    } else {
+        label.textContent = 'Off — only de-identified data sent';
+        detail.textContent = 'Tap "Enable" to include free-text notes.';
+        btn.textContent = 'Enable';
+        btn.classList.remove('bg-stone-200', 'text-stone-700', 'hover:bg-stone-300');
+        btn.classList.add('bg-orange-600', 'text-white', 'hover:bg-orange-700');
+    }
+}
+
+function toggleNarrativeConsent() {
+    if (!narrativeConsentState) return;
+    if (narrativeConsentState.enabled) {
+        // Disabling — confirm dialog only, no disclosure modal.
+        if (!confirm("Turn off AI Narrative Analysis? Your free-text notes will no longer be included in outbound AI analysis calls. Previously generated insights stay.")) return;
+        putNarrativeConsent(false, '');
+    } else {
+        openNarrativeDisclosureModal();
+    }
+}
+
+function openNarrativeDisclosureModal() {
+    if (!narrativeConsentState) return;
+    document.getElementById('narrative-disclosure-text').textContent = narrativeConsentState.disclosure_text || '';
+    document.getElementById('narrative-disclosure-version').textContent = narrativeConsentState.current_version;
+    const ack = document.getElementById('narrative-disclosure-ack');
+    const confirmBtn = document.getElementById('narrative-disclosure-confirm');
+    ack.checked = false;
+    confirmBtn.disabled = true;
+    ack.onchange = function() { confirmBtn.disabled = !ack.checked; };
+    const modal = document.getElementById('narrative-disclosure-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeNarrativeDisclosureModal() {
+    const modal = document.getElementById('narrative-disclosure-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function confirmEnableNarrative() {
+    if (!narrativeConsentState) return;
+    putNarrativeConsent(true, narrativeConsentState.disclosure_sha);
+    closeNarrativeDisclosureModal();
+}
+
+async function putNarrativeConsent(enabled, acknowledgedSHA) {
+    try {
+        const resp = await fetch('/api/users/me/narrative-consent', {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled, acknowledged_sha: acknowledgedSHA })
+        });
+        if (!resp.ok) {
+            const errText = await resp.text();
+            alert('Could not update consent: ' + errText);
+            return;
+        }
+        narrativeConsentState = await resp.json();
+        renderNarrativeConsent();
+    } catch (err) {
+        console.error('narrative consent put error', err);
+        alert('Could not update consent. Please try again.');
+    }
+}
 
 // Billing Management
 async function loadBillingInfo() {

@@ -31,6 +31,7 @@ type Handlers struct {
 	Report          *ReportHandler
 	Search          *SearchHandler
 	AccountDeletion *AccountDeletionHandler
+	NarrativeConsent *NarrativeConsentHandler
 }
 
 // NewHandlers creates all API handlers
@@ -54,6 +55,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Report:        NewReportHandler(services.Report, services.Child),
 		Search:        NewSearchHandler(services.Search),
 		AccountDeletion: NewAccountDeletionHandler(services.AccountDeletion, services.AccountDeletionRepo),
+		NarrativeConsent: NewNarrativeConsentHandler(services.AINarrativeConsent),
 	}
 }
 
@@ -396,6 +398,12 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		// User display preferences (timezone, theme)
 		r.Get("/users/me/preferences", handlers.Family.GetUserPreferences)
 		r.Put("/users/me/preferences", handlers.Family.UpdateUserPreferences)
+
+		// AI narrative consent — Phase 3 opt-in for free-text fields in
+		// outbound LLM calls. Returns disclosure text + version alongside
+		// state so the Settings UI can render the agreement inline.
+		r.Get("/users/me/narrative-consent", handlers.NarrativeConsent.Get)
+		r.Put("/users/me/narrative-consent", handlers.NarrativeConsent.Put)
 
 		// Support ticket routes (user-facing)
 		r.Route("/support", func(r chi.Router) {
