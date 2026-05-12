@@ -333,3 +333,31 @@ func (h *SupportHandler) GetUnread(w http.ResponseWriter, r *http.Request) {
 		"unread_count": count,
 	})
 }
+
+// Reopen flips a resolved or closed ticket back to open and stamps
+// reopened_at. Validates ownership server-side. Returns 404 when the
+// ticket doesn't belong to the caller, 409 when it exists but is
+// already in an open state.
+func (h *SupportHandler) Reopen(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+
+	ticketID, err := parseUUID(chi.URLParam(r, "ticketID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid ticket ID")
+		return
+	}
+
+	err = h.supportService.ReopenTicket(r.Context(), ticketID, userID)
+	if err == nil {
+		respondOK(w, map[string]interface{}{"status": "open"})
+		return
+	}
+	switch {
+	case errors.Is(err, service.ErrTicketNotFound):
+		respondNotFound(w, "Ticket not found")
+	case errors.Is(err, service.ErrTicketNotReopenable):
+		respondError(w, "Ticket is already open or in progress", http.StatusConflict)
+	default:
+		respondInternalError(w, "Failed to reopen ticket")
+	}
+}

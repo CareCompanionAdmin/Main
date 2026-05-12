@@ -87,6 +87,9 @@
                             <span id="ticket-created" class="text-sm text-stone-500"></span>
                         </div>
                     </div>
+                    <button type="button" id="ticket-reopen-btn" onclick="reopenCurrentTicket()" class="hidden ml-3 px-3 py-1.5 text-xs bg-orange-600 text-white rounded-full hover:bg-orange-700">
+                        Reopen ticket
+                    </button>
                 </div>
             </div>
             <div id="message-area" class="flex-1 overflow-y-auto p-4">
@@ -265,6 +268,14 @@ async function selectTicket(ticketID) {
             statusEl.className += 'bg-stone-100 text-stone-800';
         }
 
+        // Reopen button is only meaningful for resolved/closed tickets.
+        const reopenBtn = document.getElementById('ticket-reopen-btn');
+        if (ticket.status === 'resolved' || ticket.status === 'closed') {
+            reopenBtn.classList.remove('hidden');
+        } else {
+            reopenBtn.classList.add('hidden');
+        }
+
         const typeEl = document.getElementById('ticket-type');
         const typeMap = {
             'bug_report':      ['Bug',     'bg-red-100 text-red-800'],
@@ -355,6 +366,41 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Reopen a resolved/closed ticket from the detail header. Confirms with
+// the user, posts the reopen, then refreshes the detail view so status
+// + Reopen button update.
+async function reopenCurrentTicket() {
+    if (!currentTicketID) return;
+    if (!confirm("Reopen this ticket? Our support team will see it back at the top of their queue.")) return;
+
+    const btn = document.getElementById('ticket-reopen-btn');
+    btn.disabled = true;
+    btn.textContent = 'Reopening…';
+
+    try {
+        const resp = await fetch(`/api/support/tickets/${currentTicketID}/reopen`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        if (resp.ok) {
+            selectTicket(currentTicketID); // Refresh detail
+            loadTickets();                  // Refresh sidebar list
+        } else if (resp.status === 409) {
+            alert("This ticket is already open.");
+            selectTicket(currentTicketID);
+        } else {
+            const err = await resp.json().catch(() => ({}));
+            alert(err.error || "Couldn't reopen the ticket. Please try again.");
+        }
+    } catch (err) {
+        console.error('reopen failed', err);
+        alert("Couldn't reopen the ticket. Please try again.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Reopen ticket';
+    }
 }
 
 document.getElementById('reply-form').addEventListener('submit', async function(e) {

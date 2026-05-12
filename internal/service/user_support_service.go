@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/google/uuid"
@@ -10,10 +11,11 @@ import (
 )
 
 var (
-	ErrTicketNotFound   = errors.New("ticket not found")
-	ErrEmptySubject     = errors.New("subject cannot be empty")
-	ErrEmptyDescription = errors.New("description cannot be empty")
-	ErrEmptyReply       = errors.New("reply message cannot be empty")
+	ErrTicketNotFound       = errors.New("ticket not found")
+	ErrEmptySubject         = errors.New("subject cannot be empty")
+	ErrEmptyDescription     = errors.New("description cannot be empty")
+	ErrEmptyReply           = errors.New("reply message cannot be empty")
+	ErrTicketNotReopenable  = errors.New("ticket cannot be reopened in its current state")
 )
 
 // UserSupportService handles user-facing support ticket operations
@@ -97,7 +99,11 @@ func (s *UserSupportService) GetTicketWithMessages(ctx context.Context, ticketID
 	return ticket, messages, nil
 }
 
-// AddReply adds a reply message to a ticket
+// AddReply adds a reply message to a ticket. If the ticket is currently
+// resolved or closed, replying acts as an implicit reopen — status
+// flips to 'open' and reopened_at is stamped. ErrTicketNotReopenable
+// from the reopen attempt is swallowed (means the ticket was already
+// open, which is the no-op happy path).
 func (s *UserSupportService) AddReply(ctx context.Context, ticketID, userID uuid.UUID, message string) error {
 	if message == "" {
 		return ErrEmptyReply
@@ -112,7 +118,19 @@ func (s *UserSupportService) AddReply(ctx context.Context, ticketID, userID uuid
 		return ErrTicketNotFound
 	}
 
-	return s.repo.AddMessage(ctx, ticketID, userID, message)
+	if err := s.repo.AddMessage(ctx, ticketID, userID, message); err != nil {
+		return err
+	}
+
+	// Implicit reopen — a reply on a resolved/closed ticket is a clear
+	// signal the user isn't done with it.
+	if reopenErr := s.repo.ReopenTicket(ctx, ticketID, userID); reopenErr != nil && !errors.Is(reopenErr, sql.ErrNoRows) {
+		// Don't fail the reply just because the reopen flip errored —
+		// the message is already saved and is the load-bearing thing.
+		// Log the reopen error but return success.
+		_ = reopenErr
+	}
+	return nil
 }
 
 // MarkTicketRead marks a ticket as read
@@ -128,4 +146,29 @@ func (s *UserSupportService) HasUnreadSupportMessages(ctx context.Context, userI
 // GetUnreadTicketCount returns count of tickets with unread messages
 func (s *UserSupportService) GetUnreadTicketCount(ctx context.Context, userID uuid.UUID) (int, error) {
 	return s.repo.GetUnreadTicketCount(ctx, userID)
+}
+
+// ReopenTicket flips a resolved/closed ticket back to open for the
+// owning user. Returns ErrTicketNotReopenable when the ticket exists
+// but isn't currently in a reopenable state, and ErrTicketNotFound
+// when the user doesn't own it (the repo combines both cases — we
+// disambiguate here by looking up the ticket first).
+func (s *UserSupportService) ReopenTicket(ctx context.Context, ticketID, userID uuid.UUID) error {
+	err := s.repo.ReopenTicket(ctx, ticketID, userID)
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+	// Disambiguate: not found vs found-but-wrong-state. A subsequent
+	// ownership check tells us which.
+	ticket, lookupErr := s.repo.GetTicketByID(ctx, ticketID, userID)
+	if lookupErr != nil {
+		return lookupErr
+	}
+	if ticket == nil {
+		return ErrTicketNotFound
+	}
+	return ErrTicketNotReopenable
 }

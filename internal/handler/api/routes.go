@@ -416,6 +416,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 				r.Get("/", handlers.Support.GetTicket)
 				r.Post("/messages", handlers.Support.AddMessage)
 				r.Post("/read", handlers.Support.MarkRead)
+				r.Post("/reopen", handlers.Support.Reopen)
 
 				// Attachments — owner only.
 				r.Get("/attachments", handlers.Support.ListAttachments)

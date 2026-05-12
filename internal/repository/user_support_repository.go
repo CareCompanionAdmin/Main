@@ -35,6 +35,12 @@ type UserSupportRepository interface {
 
 	// GetUnreadTicketCount returns count of tickets with unread messages
 	GetUnreadTicketCount(ctx context.Context, userID uuid.UUID) (int, error)
+
+	// ReopenTicket flips a resolved/closed ticket back to 'open', clears
+	// resolved_at, and stamps reopened_at. Validates user ownership.
+	// Returns ErrTicketNotFound if the ticket doesn't exist, is not owned
+	// by the user, or is already in an open/in_progress/waiting state.
+	ReopenTicket(ctx context.Context, ticketID, userID uuid.UUID) error
 }
 
 // userSupportRepo implements UserSupportRepository.
@@ -274,4 +280,32 @@ func (r *userSupportRepo) GetUnreadTicketCount(ctx context.Context, userID uuid.
 	var count int
 	err := r.supportDB.QueryRowContext(ctx, query, userID).Scan(&count)
 	return count, err
+}
+
+// ReopenTicket flips a resolved/closed ticket back to open for the
+// owning user. The single UPDATE narrows on (id, user_id, status IN
+// ('resolved','closed')) so an unauthorized or wrong-state attempt
+// affects zero rows and returns ErrTicketNotFound to the caller.
+func (r *userSupportRepo) ReopenTicket(ctx context.Context, ticketID, userID uuid.UUID) error {
+	res, err := r.supportDB.ExecContext(ctx, `
+		UPDATE support_tickets
+		   SET status      = 'open',
+		       resolved_at = NULL,
+		       reopened_at = NOW(),
+		       updated_at  = NOW()
+		 WHERE id = $1
+		   AND user_id = $2
+		   AND status IN ('resolved', 'closed')
+	`, ticketID, userID)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
