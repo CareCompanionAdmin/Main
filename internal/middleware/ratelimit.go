@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,7 +30,14 @@ func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 		window:  window,
 	}
 	// Periodically clean up expired entries to prevent memory growth
-	go rl.cleanup()
+	go func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf("[ratelimit] cleanup goroutine panic: %v", rec)
+			}
+		}()
+		rl.cleanup()
+	}()
 	return rl
 }
 
@@ -76,10 +85,12 @@ func RateLimit(limit int, window time.Duration) func(http.Handler) http.Handler 
 
 			// Also check X-Forwarded-For for clients behind ALB
 			if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-				// Use the first IP (original client)
-				if idx := len(forwarded); idx > 0 {
-					parts := splitFirst(forwarded, ",")
-					ip = parts
+				// Use the first IP (original client). If no comma, take the
+				// whole header value.
+				if idx := strings.Index(forwarded, ","); idx > 0 {
+					ip = strings.TrimSpace(forwarded[:idx])
+				} else {
+					ip = strings.TrimSpace(forwarded)
 				}
 			}
 
@@ -96,11 +107,3 @@ func RateLimit(limit int, window time.Duration) func(http.Handler) http.Handler 
 	}
 }
 
-func splitFirst(s, sep string) string {
-	for i := 0; i < len(s); i++ {
-		if string(s[i]) == sep {
-			return s[:i]
-		}
-	}
-	return s
-}

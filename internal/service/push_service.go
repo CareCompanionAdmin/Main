@@ -104,7 +104,13 @@ func (s *PushService) Send(ctx context.Context, userID uuid.UUID, msg PushMessag
 		return nil
 	}
 
-	var lastErr error
+	// Track per-device outcomes so the caller can distinguish "all sends
+	// failed" from "one device failed but the user got the message on
+	// another." Previously the function returned lastErr — which depended
+	// on iteration order and could mask a per-device failure if a later
+	// device happened to succeed (or vice-versa).
+	var sendErrs []string
+	succeeded := 0
 	for _, dt := range tokens {
 		if err := s.sendToDevice(ctx, dt.Token, msg); err != nil {
 			if isTokenInvalid(err) {
@@ -112,14 +118,31 @@ func (s *PushService) Send(ctx context.Context, userID uuid.UUID, msg PushMessag
 				if deactErr := s.deviceTokenRepo.DeactivateByToken(ctx, dt.Token); deactErr != nil {
 					log.Printf("Failed to deactivate token: %v", deactErr)
 				}
-			} else {
-				log.Printf("Failed to send push to device %s: %v", dt.ID, err)
-				lastErr = err
+				// Don't count invalid-token errors as send failures — the
+				// token is dead and we've cleaned it up; nothing the caller
+				// can do about it.
+				continue
 			}
+			log.Printf("Failed to send push to device %s: %v", dt.ID, err)
+			sendErrs = append(sendErrs, fmt.Sprintf("device %s: %v", dt.ID, err))
+			continue
 		}
+		succeeded++
 	}
 
-	return lastErr
+	// If at least one device got the message, treat the send as successful
+	// from the caller's perspective — the user was notified.
+	if succeeded > 0 {
+		if len(sendErrs) > 0 {
+			log.Printf("Push partially delivered to user %s: %d succeeded, %d failed", userID, succeeded, len(sendErrs))
+		}
+		return nil
+	}
+	// All eligible devices failed — surface a single aggregate error.
+	if len(sendErrs) > 0 {
+		return fmt.Errorf("all push sends failed for user %s: %s", userID, strings.Join(sendErrs, "; "))
+	}
+	return nil
 }
 
 // SendToUsers sends a push notification to multiple users

@@ -20,6 +20,13 @@ type AccountDeletionRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*models.AccountDeletionRequest, error)
 	GetActiveByUser(ctx context.Context, userID uuid.UUID) (*models.AccountDeletionRequest, error)
 	IncrementAttempts(ctx context.Context, id uuid.UUID) error
+	// IncrementAttemptsAndCheck atomically increments confirmation_attempts
+	// and returns the post-increment value. Use this in preference to
+	// IncrementAttempts when the caller needs to detect that the max has
+	// been crossed by THIS call — it eliminates the read-check-increment
+	// TOCTOU race where two concurrent wrong-OTP submissions could each
+	// observe (count < max) and both proceed.
+	IncrementAttemptsAndCheck(ctx context.Context, id uuid.UUID) (newCount int, err error)
 	MarkCodeUsed(ctx context.Context, id uuid.UUID) error
 
 	// Confirm transitions a pending_code request to 'confirmed' and applies
@@ -128,9 +135,52 @@ func (r *accountDeletionRepo) GetActiveByUser(ctx context.Context, userID uuid.U
 }
 
 func (r *accountDeletionRepo) IncrementAttempts(ctx context.Context, id uuid.UUID) error {
+	// The single-statement increment is atomic at the SQL level — Postgres
+	// holds a row-level write lock for the duration of the UPDATE, so
+	// concurrent callers serialize and the final value reflects every
+	// increment. The race that motivated F7 lives in the SERVICE-LAYER
+	// read-check-increment sequence (load row → compare attempts → call
+	// this method). Callers that need to atomically detect "this call
+	// crossed the max" should use IncrementAttemptsAndCheck instead.
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE account_deletion_requests SET confirmation_attempts = confirmation_attempts + 1 WHERE id = $1`, id)
 	return err
+}
+
+// IncrementAttemptsAndCheck atomically increments confirmation_attempts and
+// returns the new count, using UPDATE ... RETURNING in a single statement
+// so no second round-trip / TOCTOU window exists between increment and
+// observation. Wrapped in a transaction with SELECT ... FOR UPDATE for
+// belt-and-suspenders serialization in case future migrations add
+// dependent reads to this code path.
+func (r *accountDeletionRepo) IncrementAttemptsAndCheck(ctx context.Context, id uuid.UUID) (int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	// Lock the row so any concurrent increment-and-check serializes.
+	var current int
+	if err := tx.QueryRowContext(ctx,
+		`SELECT confirmation_attempts FROM account_deletion_requests WHERE id = $1 FOR UPDATE`,
+		id).Scan(&current); err != nil {
+		return 0, fmt.Errorf("lock deletion request row: %w", err)
+	}
+
+	var newCount int
+	if err := tx.QueryRowContext(ctx,
+		`UPDATE account_deletion_requests
+		    SET confirmation_attempts = confirmation_attempts + 1
+		  WHERE id = $1
+		  RETURNING confirmation_attempts`, id).Scan(&newCount); err != nil {
+		return 0, fmt.Errorf("increment attempts: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return newCount, nil
 }
 
 func (r *accountDeletionRepo) MarkCodeUsed(ctx context.Context, id uuid.UUID) error {

@@ -77,10 +77,18 @@
     // sync for the JS-side decoding above.
     function storeTokens(data) {
         if (data && data.access_token) {
-            try { localStorage.setItem('access_token', data.access_token); } catch (_) {}
+            try {
+                localStorage.setItem('access_token', data.access_token);
+            } catch (err) {
+                console.warn('[session_guard] failed to persist access_token (quota or disabled storage):', err);
+            }
         }
         if (data && data.refresh_token) {
-            try { localStorage.setItem('refresh_token', data.refresh_token); } catch (_) {}
+            try {
+                localStorage.setItem('refresh_token', data.refresh_token);
+            } catch (err) {
+                console.warn('[session_guard] failed to persist refresh_token (quota or disabled storage):', err);
+            }
         }
     }
 
@@ -93,7 +101,11 @@
         if (REFRESH_PROMISE) return REFRESH_PROMISE;
 
         var refreshTok = '';
-        try { refreshTok = localStorage.getItem('refresh_token') || ''; } catch (_) {}
+        try {
+            refreshTok = localStorage.getItem('refresh_token') || '';
+        } catch (err) {
+            console.warn('[session_guard] failed to read refresh_token from localStorage:', err);
+        }
 
         var init = {
             method: 'POST',
@@ -174,7 +186,9 @@
         try {
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
-        } catch (_) {}
+        } catch (err) {
+            console.warn('[session_guard] failed to clear tokens from localStorage:', err);
+        }
         // Note: HttpOnly cookies can't be cleared from JS. The server-side
         // redirect handles those — the user landing on /login via the CTA
         // will overwrite the stale cookie on next login.

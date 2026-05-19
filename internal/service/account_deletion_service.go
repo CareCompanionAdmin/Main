@@ -11,6 +11,8 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -47,6 +49,17 @@ type AccountDeletionService struct {
 	selfRestoreWindow      time.Duration // 14 days — link in email valid this long
 	coldBackupRetention    time.Duration // 90 days — config: COLD_BACKUP_RETENTION_DAYS
 	repeatCancelWindow     time.Duration // 365 days — refund forfeit if cancel within
+
+	// confirmMu serializes ConfirmDeletion attempts per user inside this
+	// process so the check-then-increment on confirmation_attempts can't
+	// be raced by concurrent requests for the same user. This is a single-
+	// process guard — running multiple app instances against the same DB
+	// would still allow cross-process races, but the repo's UPDATE on
+	// confirmation_attempts is atomic at the row level and the
+	// AccountDeletionRequest itself is single-user-keyed, so the practical
+	// blast radius is bounded.
+	confirmMu  sync.Mutex
+	confirmLocks map[uuid.UUID]*sync.Mutex
 }
 
 // NewAccountDeletionService wires the dependencies.
@@ -71,7 +84,22 @@ func NewAccountDeletionService(
 		selfRestoreWindow:   14 * 24 * time.Hour,
 		coldBackupRetention: durationFromEnvDays("COLD_BACKUP_RETENTION_DAYS", 90),
 		repeatCancelWindow:  365 * 24 * time.Hour,
+		confirmLocks:        make(map[uuid.UUID]*sync.Mutex),
 	}
+}
+
+// lockForUser returns (and lazily allocates) a per-user mutex used by
+// ConfirmDeletion to serialize the check-then-increment on
+// confirmation_attempts. The lock map itself is guarded by confirmMu.
+func (s *AccountDeletionService) lockForUser(userID uuid.UUID) *sync.Mutex {
+	s.confirmMu.Lock()
+	defer s.confirmMu.Unlock()
+	if mu, ok := s.confirmLocks[userID]; ok {
+		return mu
+	}
+	mu := &sync.Mutex{}
+	s.confirmLocks[userID] = mu
+	return mu
 }
 
 func durationFromEnvDays(key string, defaultDays int) time.Duration {
@@ -165,6 +193,11 @@ func (s *AccountDeletionService) RequestDeletion(ctx context.Context, userID uui
 	// Fire the email asynchronously so the API responds fast. Logged-only
 	// on failure — the user can request a new code if they don't receive it.
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[ADS] panic in deletion-code email goroutine: %v\n%s", r, debug.Stack())
+			}
+		}()
 		if err := s.emailService.SendAccountDeletionCodeEmail(user.Email, user.FirstName, code, int(s.otpTTL.Minutes())); err != nil {
 			log.Printf("[ADS] Failed to send deletion-code email to %s: %v", user.Email, err)
 		}
@@ -181,6 +214,15 @@ func (s *AccountDeletionService) RequestDeletion(ctx context.Context, userID uui
 //
 // Returns the updated request row.
 func (s *AccountDeletionService) ConfirmDeletion(ctx context.Context, userID uuid.UUID, code string) (*models.AccountDeletionRequest, error) {
+	// Serialize confirmation attempts for the same user so the
+	// check-attempts → increment race can't slip extra attempts through.
+	// The repository-level IncrementAttempts is itself a single UPDATE so
+	// it's atomic; the window we're closing here is between reading
+	// req.ConfirmationAttempts and calling IncrementAttempts.
+	mu := s.lockForUser(userID)
+	mu.Lock()
+	defer mu.Unlock()
+
 	req, err := s.repo.GetActiveByUser(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -223,6 +265,11 @@ func (s *AccountDeletionService) ConfirmDeletion(ctx context.Context, userID uui
 	// Side effects — async, log-only on failure. They're recoverable:
 	// the deletion is real either way; emails can be re-sent.
 	go func(req *models.AccountDeletionRequest, restoreToken string) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[ADS] panic in post-confirm goroutine for request %s: %v\n%s", req.ID, r, debug.Stack())
+			}
+		}()
 		// Stripe cancel + refund handled by SubscriptionCancelOnDeletion
 		// (separate method so it can be tested + retried). Best-effort.
 		if err := s.handlePostConfirm(context.Background(), req, restoreToken); err != nil {
@@ -318,6 +365,11 @@ func (s *AccountDeletionService) RestoreByToken(ctx context.Context, token strin
 		return nil, fmt.Errorf("restore: %w", err)
 	}
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[ADS] panic in restored-email goroutine: %v\n%s", r, debug.Stack())
+			}
+		}()
 		firstName := ""
 		if req.UserFirstNameAtRequest.Valid {
 			firstName = req.UserFirstNameAtRequest.String

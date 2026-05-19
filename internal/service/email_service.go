@@ -91,11 +91,18 @@ func (s *EmailService) SendEmail(to, subject, htmlBody string) error {
 
 	addr := fmt.Sprintf("%s:%s", s.cfg.Host, s.cfg.Port)
 
-	// Connect to the SMTP server
-	conn, err := net.Dial("tcp", addr)
+	// Connect to the SMTP server with an explicit dial timeout so an
+	// unreachable / black-holed SMTP host doesn't block the caller
+	// indefinitely. Also apply per-operation deadlines once the
+	// connection is established (covers a server that accepts the TCP
+	// connection but never responds to commands).
+	const smtpDialTimeout = 10 * time.Second
+	const smtpOpTimeout = 20 * time.Second
+	conn, err := net.DialTimeout("tcp", addr, smtpDialTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMTP server: %w", err)
 	}
+	_ = conn.SetDeadline(time.Now().Add(smtpOpTimeout))
 
 	client, err := smtp.NewClient(conn, s.cfg.Host)
 	if err != nil {

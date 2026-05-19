@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"runtime/debug"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -246,6 +247,11 @@ func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*mode
 
 	// Send welcome email (async, don't block registration)
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[AUTH] panic in welcome-email goroutine: %v\n%s", r, debug.Stack())
+			}
+		}()
 		if err := s.emailService.SendWelcomeEmail(user.Email, user.FirstName, s.appURL); err != nil {
 			log.Printf("[EMAIL] Failed to send welcome email to %s: %v", user.Email, err)
 		}
@@ -416,6 +422,11 @@ func (s *AuthService) ValidateSession(ctx context.Context, sid uuid.UUID) error 
 // errors are swallowed.
 func (s *AuthService) TouchSession(sid uuid.UUID) {
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[AUTH] panic in TouchSession goroutine: %v\n%s", r, debug.Stack())
+			}
+		}()
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		_ = s.sessionRepo.TouchLastSeen(ctx, sid)
@@ -426,6 +437,17 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*T
 	claims, err := s.ValidateToken(refreshToken)
 	if err != nil {
 		return nil, ErrInvalidToken
+	}
+
+	// If the refresh token carries a sid, the underlying session must still
+	// be valid (not revoked, not expired). Without this re-check, a revoked
+	// session could be kept alive indefinitely by repeatedly refreshing —
+	// the refresh token's signature is valid until its own expiry, but a
+	// revoked sid should immediately invalidate any token tied to it.
+	if claims.Sid != uuid.Nil {
+		if err := s.ValidateSession(ctx, claims.Sid); err != nil {
+			return nil, ErrInvalidToken
+		}
 	}
 
 	// Get user

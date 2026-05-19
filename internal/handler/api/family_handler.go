@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"net/mail"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -114,6 +116,10 @@ func (h *FamilyHandler) AddMember(w http.ResponseWriter, r *http.Request) {
 
 	if req.Email == "" {
 		respondBadRequest(w, "Email is required")
+		return
+	}
+	if _, err := mail.ParseAddress(req.Email); err != nil {
+		respondBadRequest(w, "Invalid email address")
 		return
 	}
 
@@ -252,6 +258,10 @@ func (h *FamilyHandler) LookupUser(w http.ResponseWriter, r *http.Request) {
 
 	if req.Email == "" {
 		respondBadRequest(w, "Email is required")
+		return
+	}
+	if _, err := mail.ParseAddress(req.Email); err != nil {
+		respondBadRequest(w, "Invalid email address")
 		return
 	}
 
@@ -447,6 +457,16 @@ func (h *FamilyHandler) UpdateUserPreferences(w http.ResponseWriter, r *http.Req
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
 		return
+	}
+
+	// Validate the supplied IANA timezone (e.g. "America/New_York") before
+	// persisting — an arbitrary string would break downstream code that calls
+	// time.LoadLocation on this value.
+	if req.Timezone != nil && *req.Timezone != "" {
+		if _, err := time.LoadLocation(*req.Timezone); err != nil {
+			respondBadRequest(w, "Invalid timezone")
+			return
+		}
 	}
 
 	err := h.userService.UpdatePreferences(r.Context(), userID, &req)

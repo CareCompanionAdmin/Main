@@ -92,6 +92,22 @@ func (h *AlertHandler) Acknowledge(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserID(r.Context())
 
+	alert, err := h.alertService.GetByID(r.Context(), alertID)
+	if err != nil {
+		switch err {
+		case service.ErrAlertNotFound:
+			respondNotFound(w, "Alert not found")
+		default:
+			respondInternalError(w, "Failed to get alert")
+		}
+		return
+	}
+
+	if _, err := h.childService.VerifyChildAccess(r.Context(), alert.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
 	if err := h.alertService.Acknowledge(r.Context(), alertID, userID); err != nil {
 		respondInternalError(w, "Failed to acknowledge alert")
 		return
@@ -111,6 +127,22 @@ func (h *AlertHandler) Resolve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := middleware.GetUserID(r.Context())
+
+	alert, err := h.alertService.GetByID(r.Context(), alertID)
+	if err != nil {
+		switch err {
+		case service.ErrAlertNotFound:
+			respondNotFound(w, "Alert not found")
+		default:
+			respondInternalError(w, "Failed to get alert")
+		}
+		return
+	}
+
+	if _, err := h.childService.VerifyChildAccess(r.Context(), alert.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
 
 	var body struct {
 		Notes string `json:"notes"`
@@ -137,6 +169,22 @@ func (h *AlertHandler) CreateFeedback(w http.ResponseWriter, r *http.Request) {
 
 	userID := middleware.GetUserID(r.Context())
 
+	alert, err := h.alertService.GetByID(r.Context(), alertID)
+	if err != nil {
+		switch err {
+		case service.ErrAlertNotFound:
+			respondNotFound(w, "Alert not found")
+		default:
+			respondInternalError(w, "Failed to get alert")
+		}
+		return
+	}
+
+	if _, err := h.childService.VerifyChildAccess(r.Context(), alert.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
+		return
+	}
+
 	var req models.AlertFeedbackRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
@@ -157,6 +205,24 @@ func (h *AlertHandler) GetFeedback(w http.ResponseWriter, r *http.Request) {
 	alertID, err := parseUUID(chi.URLParam(r, "alertID"))
 	if err != nil {
 		respondBadRequest(w, "Invalid alert ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+
+	alert, err := h.alertService.GetByID(r.Context(), alertID)
+	if err != nil {
+		switch err {
+		case service.ErrAlertNotFound:
+			respondNotFound(w, "Alert not found")
+		default:
+			respondInternalError(w, "Failed to get alert")
+		}
+		return
+	}
+
+	if _, err := h.childService.VerifyChildAccess(r.Context(), alert.ChildID, userID); err != nil {
+		respondForbidden(w, "Access denied")
 		return
 	}
 

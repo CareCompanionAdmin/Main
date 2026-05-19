@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -115,7 +116,7 @@ func (h *MedicationHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name == "" || req.Dosage == "" || req.DosageUnit == "" || req.Frequency == "" {
+	if strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Dosage) == "" || strings.TrimSpace(req.DosageUnit) == "" || strings.TrimSpace(string(req.Frequency)) == "" {
 		respondBadRequest(w, "Name, dosage, dosage unit, and frequency are required")
 		return
 	}
@@ -643,7 +644,11 @@ func (h *MedicationHandler) ProxyDrugImage(w http.ResponseWriter, r *http.Reques
 	// Copy content type and image data
 	w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 	w.Header().Set("Cache-Control", "public, max-age=86400") // Cache for 24 hours
-	io.Copy(w, resp.Body)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		// Headers already written, so we can't change the response. Just log
+		// so the failure isn't silent — typically a client disconnect.
+		log.Printf("ProxyDrugImage: io.Copy failed (url=%s): %v", imageURL, err)
+	}
 }
 
 // CheckInteractions checks for drug interactions among a child's medications

@@ -248,6 +248,15 @@
 
 <script src="/static/js/global-search.js" defer></script>
 <script>
+// Minimal HTML escaper for interpolating untrusted strings into template
+// literals that are then assigned to .innerHTML / insertAdjacentHTML.
+// Mirrors the helper in static/js/global-search.js — kept local so this
+// page works even if that script hasn't loaded yet.
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 const userID = '{{.UserID}}';
 const userTimeFormat = '{{.UserTimeFormat}}';
 let currentThreadID = null;
@@ -473,20 +482,25 @@ function renderMessage(msg) {
         time = msgDate.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit', hour12: true});
     }
 
-    // Render attachments
+    // Render attachments. Both `att.url` and `att.filename` originate
+    // from the upload endpoint and ultimately from user-controlled
+    // multipart fields, so they MUST be escaped before being dropped
+    // into a template literal that becomes innerHTML.
     let attachmentsHtml = '';
     if (msg.attachments && msg.attachments.length > 0) {
         attachmentsHtml = msg.attachments.map(att => {
+            const safeUrl = escapeHtml(att.url);
+            const safeName = escapeHtml(att.filename);
             if (att.content_type && att.content_type.startsWith('image/')) {
-                return `<a href="${att.url}" target="_blank" class="block mt-2">
-                    <img src="${att.url}" alt="${att.filename}" class="max-w-[200px] rounded">
+                return `<a href="${safeUrl}" target="_blank" class="block mt-2">
+                    <img src="${safeUrl}" alt="${safeName}" class="max-w-[200px] rounded">
                 </a>`;
             } else {
-                return `<a href="${att.url}" target="_blank" class="flex items-center gap-2 mt-2 p-2 bg-white/20 rounded hover:bg-white/30">
+                return `<a href="${safeUrl}" target="_blank" class="flex items-center gap-2 mt-2 p-2 bg-white/20 rounded hover:bg-white/30">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span class="text-sm">${att.filename}</span>
+                    <span class="text-sm">${safeName}</span>
                 </a>`;
             }
         }).join('');
@@ -505,11 +519,16 @@ function renderMessage(msg) {
             </svg>
         </button>`;
 
+    // The sender's name and the message body both come from other users
+    // and end up inside an innerHTML assignment downstream — escape them
+    // before interpolation to neutralize any embedded HTML/JS.
+    const safeName = escapeHtml(name);
+    const safeMessageText = msg.message_text ? escapeHtml(msg.message_text) : '';
     return `
         <div class="mb-4 ${isOwn ? 'text-right' : ''}">
             <div class="inline-block max-w-[70%] ${isOwn ? 'bg-orange-600 text-white' : 'bg-stone-100 text-stone-900'} rounded-2xl px-4 py-2">
-                ${!isOwn ? `<p class="text-xs font-medium ${isOwn ? 'text-orange-200' : 'text-stone-500'} mb-1">${name}</p>` : ''}
-                ${msg.message_text ? `<p>${msg.message_text}</p>` : ''}
+                ${!isOwn ? `<p class="text-xs font-medium ${isOwn ? 'text-orange-200' : 'text-stone-500'} mb-1">${safeName}</p>` : ''}
+                ${safeMessageText ? `<p>${safeMessageText}</p>` : ''}
                 ${attachmentsHtml}
                 <p class="text-xs ${isOwn ? 'text-orange-200' : 'text-stone-400'} mt-1">${time}</p>
             </div>

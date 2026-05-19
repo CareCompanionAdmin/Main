@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -825,86 +826,111 @@ func (r *adminRepo) GetCachedMetrics(ctx context.Context) (*SystemMetrics, error
 	}
 	if userCountsJSON != nil {
 		var uc map[string]interface{}
-		json.Unmarshal(userCountsJSON, &uc)
-		if v, ok := uc["total"].(float64); ok {
-			metrics.TotalUsers = int(v)
-		}
-		if v, ok := uc["active_24h"].(float64); ok {
-			metrics.ActiveUsers24h = int(v)
-		}
-		if v, ok := uc["active_7d"].(float64); ok {
-			metrics.ActiveUsers7d = int(v)
-		}
-		if v, ok := uc["new_this_week"].(float64); ok {
-			metrics.NewUsersThisWeek = int(v)
+		if err := json.Unmarshal(userCountsJSON, &uc); err != nil {
+			log.Printf("[admin-metrics] unmarshal user_counts (treating as cache miss): %v", err)
+		} else {
+			if v, ok := uc["total"].(float64); ok {
+				metrics.TotalUsers = int(v)
+			}
+			if v, ok := uc["active_24h"].(float64); ok {
+				metrics.ActiveUsers24h = int(v)
+			}
+			if v, ok := uc["active_7d"].(float64); ok {
+				metrics.ActiveUsers7d = int(v)
+			}
+			if v, ok := uc["new_this_week"].(float64); ok {
+				metrics.NewUsersThisWeek = int(v)
+			}
 		}
 	}
 
 	// Get family counts
 	var familyCountsJSON []byte
-	r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'family_counts'").Scan(&familyCountsJSON)
+	if err := r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'family_counts'").Scan(&familyCountsJSON); err != nil && err != sql.ErrNoRows {
+		log.Printf("[admin-metrics] query family_counts cache: %v", err)
+	}
 	if familyCountsJSON != nil {
 		var fc map[string]interface{}
-		json.Unmarshal(familyCountsJSON, &fc)
-		if v, ok := fc["total"].(float64); ok {
+		if err := json.Unmarshal(familyCountsJSON, &fc); err != nil {
+			log.Printf("[admin-metrics] unmarshal family_counts (treating as cache miss): %v", err)
+		} else if v, ok := fc["total"].(float64); ok {
 			metrics.TotalFamilies = int(v)
 		}
 	}
 
 	// Get entry counts
 	var entryCountsJSON []byte
-	r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'entry_counts'").Scan(&entryCountsJSON)
+	if err := r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'entry_counts'").Scan(&entryCountsJSON); err != nil && err != sql.ErrNoRows {
+		log.Printf("[admin-metrics] query entry_counts cache: %v", err)
+	}
 	if entryCountsJSON != nil {
 		var ec map[string]interface{}
-		json.Unmarshal(entryCountsJSON, &ec)
-		if v, ok := ec["total"].(float64); ok {
-			metrics.TotalEntries = int(v)
-		}
-		if v, ok := ec["this_week"].(float64); ok {
-			metrics.EntriesThisWeek = int(v)
-		}
-		if v, ok := ec["avg_per_day"].(float64); ok {
-			metrics.AvgEntriesPerDay = v
+		if err := json.Unmarshal(entryCountsJSON, &ec); err != nil {
+			log.Printf("[admin-metrics] unmarshal entry_counts (treating as cache miss): %v", err)
+		} else {
+			if v, ok := ec["total"].(float64); ok {
+				metrics.TotalEntries = int(v)
+			}
+			if v, ok := ec["this_week"].(float64); ok {
+				metrics.EntriesThisWeek = int(v)
+			}
+			if v, ok := ec["avg_per_day"].(float64); ok {
+				metrics.AvgEntriesPerDay = v
+			}
 		}
 	}
 
 	// Get growth metrics
 	var growthJSON []byte
-	r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'growth_metrics'").Scan(&growthJSON)
+	if err := r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'growth_metrics'").Scan(&growthJSON); err != nil && err != sql.ErrNoRows {
+		log.Printf("[admin-metrics] query growth_metrics cache: %v", err)
+	}
 	if growthJSON != nil {
 		var gm map[string]interface{}
-		json.Unmarshal(growthJSON, &gm)
-		if v, ok := gm["user_growth_percent"].(float64); ok {
-			metrics.UserGrowthPct = v
-		}
-		if v, ok := gm["new_users_last_week"].(float64); ok {
-			metrics.NewUsersLastWeek = int(v)
+		if err := json.Unmarshal(growthJSON, &gm); err != nil {
+			log.Printf("[admin-metrics] unmarshal growth_metrics (treating as cache miss): %v", err)
+		} else {
+			if v, ok := gm["user_growth_percent"].(float64); ok {
+				metrics.UserGrowthPct = v
+			}
+			if v, ok := gm["new_users_last_week"].(float64); ok {
+				metrics.NewUsersLastWeek = int(v)
+			}
 		}
 	}
 
 	// Get system health metrics from system_health cache
 	var healthJSON []byte
-	r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'system_health'").Scan(&healthJSON)
+	if err := r.db.QueryRowContext(ctx, "SELECT metric_value FROM system_metrics_cache WHERE metric_name = 'system_health'").Scan(&healthJSON); err != nil && err != sql.ErrNoRows {
+		log.Printf("[admin-metrics] query system_health cache: %v", err)
+	}
 	if healthJSON != nil {
 		var sh map[string]interface{}
-		json.Unmarshal(healthJSON, &sh)
-		if v, ok := sh["cpu_utilization"].(float64); ok {
-			metrics.CPUUtilization = v
-		}
-		if v, ok := sh["db_storage_utilization"].(float64); ok {
-			metrics.DBStorageUtilization = v
+		if err := json.Unmarshal(healthJSON, &sh); err != nil {
+			log.Printf("[admin-metrics] unmarshal system_health (treating as cache miss): %v", err)
+		} else {
+			if v, ok := sh["cpu_utilization"].(float64); ok {
+				metrics.CPUUtilization = v
+			}
+			if v, ok := sh["db_storage_utilization"].(float64); ok {
+				metrics.DBStorageUtilization = v
+			}
 		}
 	}
 
 	// Get avg response time from response_time_logs (last 24 hours)
-	r.db.QueryRowContext(ctx,
+	if err := r.db.QueryRowContext(ctx,
 		"SELECT COALESCE(AVG(response_time_ms), 0) FROM response_time_logs WHERE created_at > NOW() - INTERVAL '24 hours'",
-	).Scan(&metrics.AvgResponseTimeMs)
+	).Scan(&metrics.AvgResponseTimeMs); err != nil && err != sql.ErrNoRows {
+		log.Printf("[admin-metrics] query avg response time: %v", err)
+	}
 
 	// Get error count from error_logs (last 24 hours)
-	r.db.QueryRowContext(ctx,
+	if err := r.db.QueryRowContext(ctx,
 		"SELECT COUNT(*) FROM error_logs WHERE created_at > NOW() - INTERVAL '24 hours'",
-	).Scan(&metrics.ErrorCount24h)
+	).Scan(&metrics.ErrorCount24h); err != nil && err != sql.ErrNoRows {
+		log.Printf("[admin-metrics] query 24h error count: %v", err)
+	}
 
 	return metrics, nil
 }
@@ -976,21 +1002,35 @@ func (r *adminRepo) RefreshMetrics(ctx context.Context) error {
 
 	// Refresh user counts
 	var totalUsers, active24h, active7d, newThisWeek int
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&totalUsers)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE last_login_at > NOW() - INTERVAL '24 hours'").Scan(&active24h)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE last_login_at > NOW() - INTERVAL '7 days'").Scan(&active7d)
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days'").Scan(&newThisWeek)
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users").Scan(&totalUsers); err != nil {
+		log.Printf("[admin-metrics] refresh: query total users: %v", err)
+	}
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE last_login_at > NOW() - INTERVAL '24 hours'").Scan(&active24h); err != nil {
+		log.Printf("[admin-metrics] refresh: query active_24h: %v", err)
+	}
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE last_login_at > NOW() - INTERVAL '7 days'").Scan(&active7d); err != nil {
+		log.Printf("[admin-metrics] refresh: query active_7d: %v", err)
+	}
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days'").Scan(&newThisWeek); err != nil {
+		log.Printf("[admin-metrics] refresh: query new_this_week: %v", err)
+	}
 
 	userCounts, _ := json.Marshal(map[string]int{
 		"total": totalUsers, "active_24h": active24h, "active_7d": active7d, "new_this_week": newThisWeek,
 	})
-	r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'user_counts'", userCounts, now)
+	if _, err := r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'user_counts'", userCounts, now); err != nil {
+		log.Printf("[admin-metrics] refresh: update user_counts cache: %v", err)
+	}
 
 	// Refresh family counts
 	var totalFamilies int
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM families").Scan(&totalFamilies)
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM families").Scan(&totalFamilies); err != nil {
+		log.Printf("[admin-metrics] refresh: query total families: %v", err)
+	}
 	familyCounts, _ := json.Marshal(map[string]int{"total": totalFamilies})
-	r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'family_counts'", familyCounts, now)
+	if _, err := r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'family_counts'", familyCounts, now); err != nil {
+		log.Printf("[admin-metrics] refresh: update family_counts cache: %v", err)
+	}
 
 	// Refresh entry counts (aggregate across all log tables - NO individual data)
 	var totalEntries, entriesThisWeek int
@@ -999,20 +1039,28 @@ func (r *adminRepo) RefreshMetrics(ctx context.Context) error {
 	}
 	for _, table := range entryTables {
 		var count int
-		r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+table).Scan(&count)
+		if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+table).Scan(&count); err != nil {
+			log.Printf("[admin-metrics] refresh: query total %s: %v", table, err)
+		}
 		totalEntries += count
-		r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+table+" WHERE created_at > NOW() - INTERVAL '7 days'").Scan(&count)
+		if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+table+" WHERE created_at > NOW() - INTERVAL '7 days'").Scan(&count); err != nil {
+			log.Printf("[admin-metrics] refresh: query weekly %s: %v", table, err)
+		}
 		entriesThisWeek += count
 	}
 	avgPerDay := float64(entriesThisWeek) / 7.0
 	entryCounts, _ := json.Marshal(map[string]interface{}{
 		"total": totalEntries, "this_week": entriesThisWeek, "avg_per_day": avgPerDay,
 	})
-	r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'entry_counts'", entryCounts, now)
+	if _, err := r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'entry_counts'", entryCounts, now); err != nil {
+		log.Printf("[admin-metrics] refresh: update entry_counts cache: %v", err)
+	}
 
 	// Refresh growth metrics
 	var newUsersLastWeek int
-	r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '14 days' AND created_at <= NOW() - INTERVAL '7 days'").Scan(&newUsersLastWeek)
+	if err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '14 days' AND created_at <= NOW() - INTERVAL '7 days'").Scan(&newUsersLastWeek); err != nil {
+		log.Printf("[admin-metrics] refresh: query new_users_last_week: %v", err)
+	}
 	var growthPct float64
 	if newUsersLastWeek > 0 {
 		growthPct = float64(newThisWeek-newUsersLastWeek) / float64(newUsersLastWeek) * 100
@@ -1020,7 +1068,9 @@ func (r *adminRepo) RefreshMetrics(ctx context.Context) error {
 	growthMetrics, _ := json.Marshal(map[string]interface{}{
 		"user_growth_percent": growthPct, "new_users_this_week": newThisWeek, "new_users_last_week": newUsersLastWeek,
 	})
-	r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'growth_metrics'", growthMetrics, now)
+	if _, err := r.db.ExecContext(ctx, "UPDATE system_metrics_cache SET metric_value = $1, calculated_at = $2 WHERE metric_name = 'growth_metrics'", growthMetrics, now); err != nil {
+		log.Printf("[admin-metrics] refresh: update growth_metrics cache: %v", err)
+	}
 
 	return nil
 }
@@ -1074,7 +1124,10 @@ func (r *adminRepo) GetAllSettings(ctx context.Context) (map[string]interface{},
 			return nil, err
 		}
 		var value interface{}
-		json.Unmarshal(valueJSON, &value)
+		if err := json.Unmarshal(valueJSON, &value); err != nil {
+			log.Printf("[admin] GetAllSettings unmarshal %q (treating as cache miss): %v", key, err)
+			continue
+		}
 		settings[key] = value
 	}
 	return settings, rows.Err()
@@ -1100,7 +1153,11 @@ func (r *adminRepo) UpdateSetting(ctx context.Context, key string, value interfa
 
 func (r *adminRepo) LogAction(ctx context.Context, adminID uuid.UUID, action, targetType string, targetID uuid.UUID, details map[string]interface{}, ip, userAgent string) error {
 	id := uuid.New()
-	detailsJSON, _ := json.Marshal(details)
+	detailsJSON, err := json.Marshal(details)
+	if err != nil {
+		log.Printf("[admin] LogAction marshal details (storing empty): %v", err)
+		detailsJSON = []byte("{}")
+	}
 	var targetIDPtr *uuid.UUID
 	if targetID != uuid.Nil {
 		targetIDPtr = &targetID
@@ -1109,7 +1166,7 @@ func (r *adminRepo) LogAction(ctx context.Context, adminID uuid.UUID, action, ta
 		INSERT INTO admin_audit_log (id, admin_id, action, target_type, target_id, details, ip_address, user_agent, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
 	`
-	_, err := r.db.ExecContext(ctx, query, id, adminID, action, targetType, targetIDPtr, detailsJSON, ip, userAgent)
+	_, err = r.db.ExecContext(ctx, query, id, adminID, action, targetType, targetIDPtr, detailsJSON, ip, userAgent)
 	return err
 }
 
@@ -1121,12 +1178,12 @@ func (r *adminRepo) GetAuditLog(ctx context.Context, adminID uuid.UUID, action s
 	args := []interface{}{}
 	argNum := 1
 	if adminID != uuid.Nil {
-		where += " AND a.admin_id = $" + string(rune('0'+argNum))
+		where += " AND a.admin_id = $" + strconv.Itoa(argNum)
 		args = append(args, adminID)
 		argNum++
 	}
 	if action != "" {
-		where += " AND a.action = $" + string(rune('0'+argNum))
+		where += " AND a.action = $" + strconv.Itoa(argNum)
 		args = append(args, action)
 		argNum++
 	}
@@ -1147,7 +1204,7 @@ func (r *adminRepo) GetAuditLog(ctx context.Context, adminID uuid.UUID, action s
 		LEFT JOIN users u ON a.admin_id = u.id
 		` + where + `
 		ORDER BY a.created_at DESC
-		LIMIT $` + string(rune('0'+argNum)) + ` OFFSET $` + string(rune('0'+argNum+1))
+		LIMIT $` + strconv.Itoa(argNum) + ` OFFSET $` + strconv.Itoa(argNum+1)
 	args = append(args, limit, offset)
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -1165,7 +1222,9 @@ func (r *adminRepo) GetAuditLog(ctx context.Context, adminID uuid.UUID, action s
 			return nil, 0, err
 		}
 		if detailsJSON != nil {
-			json.Unmarshal(detailsJSON, &e.Details)
+			if err := json.Unmarshal(detailsJSON, &e.Details); err != nil {
+				log.Printf("[admin] GetAuditLog unmarshal details (leaving nil): %v", err)
+			}
 		}
 		entries = append(entries, e)
 	}

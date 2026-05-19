@@ -642,6 +642,14 @@
 
 <script src="/static/js/global-search.js" defer></script>
 <script>
+// Minimal HTML escaper for interpolating untrusted strings into template
+// literals that are then assigned to .innerHTML. Used wherever we render
+// values pulled from the API (e.g., drug interaction descriptions).
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 const childId = '{{.Child.ID}}';
 const token = localStorage.getItem('access_token');
 
@@ -1151,13 +1159,18 @@ function showInteractionAlert(medication, interactions) {
     const alertDiv = document.getElementById('interaction-alert');
     const detailsDiv = document.getElementById('interaction-details');
 
-    // Build the interaction details HTML
-    let html = `<p class="font-medium mb-2">The medication "${medication.name}" may interact with:</p><ul class="list-disc list-inside space-y-1">`;
+    // Build the interaction details HTML. `medication.name`,
+    // `interaction.drug1/drug2`, and `interaction.description` all
+    // ultimately come from user-entered medication names + the FDA
+    // interaction API, so they MUST be escaped before being dropped
+    // into a string that becomes innerHTML below.
+    const safeMedName = escapeHtml(medication.name);
+    let html = `<p class="font-medium mb-2">The medication "${safeMedName}" may interact with:</p><ul class="list-disc list-inside space-y-1">`;
 
     interactions.forEach(interaction => {
         const otherDrug = interaction.drug1 === medication.name ? interaction.drug2 : interaction.drug1;
         const severityClass = interaction.severity === 'major' ? 'font-bold text-red-900' : '';
-        html += `<li class="${severityClass}"><strong>${otherDrug}</strong> - ${interaction.description}</li>`;
+        html += `<li class="${escapeHtml(severityClass)}"><strong>${escapeHtml(otherDrug)}</strong> - ${escapeHtml(interaction.description)}</li>`;
     });
 
     html += '</ul>';

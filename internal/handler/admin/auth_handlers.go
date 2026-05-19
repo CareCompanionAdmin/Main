@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -61,7 +62,9 @@ func (h *Handler) AdminRefreshToken(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(tokens)
+	if err := json.NewEncoder(w).Encode(tokens); err != nil {
+		log.Printf("[admin] AdminRefreshToken encode error: %v", err)
+	}
 }
 
 // AdminAuthCheck is a lightweight liveness probe used by admin_session_guard.js.
@@ -70,5 +73,7 @@ func (h *Handler) AdminRefreshToken(w http.ResponseWriter, r *http.Request) {
 // the handler returns 200 with {"valid":true}.
 func (h *Handler) AdminAuthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]bool{"valid": true})
+	if err := json.NewEncoder(w).Encode(map[string]bool{"valid": true}); err != nil {
+		log.Printf("[admin] AdminAuthCheck encode error: %v", err)
+	}
 }

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -283,9 +284,24 @@ func (r *familyRepo) GetPendingInvitations(ctx context.Context, email string) ([
 }
 
 func (r *familyRepo) AcceptInvitation(ctx context.Context, invitationID uuid.UUID) error {
-	query := `UPDATE family_invitations SET status = 'accepted' WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, invitationID)
-	return err
+	// Guard against double-accept / accept-after-revoke races: only flip a
+	// row that's still pending. The WHERE clause + rows-affected check
+	// makes the operation idempotent-safe — re-running on a row that's
+	// already been accepted/declined/expired returns an error rather than
+	// silently no-oping.
+	query := `UPDATE family_invitations SET status = 'accepted' WHERE id = $1 AND status = 'pending'`
+	res, err := r.db.ExecContext(ctx, query, invitationID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("invitation %s already accepted or not pending", invitationID)
+	}
+	return nil
 }
 
 // GetWeekStats counts log activity across all of a family's children for the

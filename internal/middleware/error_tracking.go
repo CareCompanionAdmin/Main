@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -67,11 +68,25 @@ func (et *ErrorTracker) Middleware(next http.Handler) http.Handler {
 		responseTime := float64(time.Since(start).Milliseconds())
 
 		// Log response time (async)
-		go et.logResponseTime(r.URL.Path, r.Method, responseTime, wrapped.statusCode)
+		go func() {
+			defer func() {
+				if rec := recover(); rec != nil {
+					log.Printf("[error_tracking] logResponseTime goroutine panic: %v", rec)
+				}
+			}()
+			et.logResponseTime(r.URL.Path, r.Method, responseTime, wrapped.statusCode)
+		}()
 
 		// Check for errors
 		if wrapped.statusCode >= 400 {
-			go et.handleError(r, wrapped)
+			go func() {
+				defer func() {
+					if rec := recover(); rec != nil {
+						log.Printf("[error_tracking] handleError goroutine panic: %v", rec)
+					}
+				}()
+				et.handleError(r, wrapped)
+			}()
 		}
 	})
 }
@@ -97,7 +112,9 @@ func (et *ErrorTracker) logResponseTime(path, method string, responseTimeMs floa
 	}
 
 	// Cleanup old logs (keep only last 24 hours)
-	et.db.ExecContext(ctx, `DELETE FROM response_time_logs WHERE created_at < NOW() - INTERVAL '24 hours'`)
+	if _, err := et.db.ExecContext(ctx, `DELETE FROM response_time_logs WHERE created_at < NOW() - INTERVAL '24 hours'`); err != nil {
+		log.Printf("Failed to cleanup old response time logs: %v", err)
+	}
 }
 
 func (et *ErrorTracker) handleError(r *http.Request, wrapped *errorResponseWriter) {
@@ -173,10 +190,15 @@ func (et *ErrorTracker) createErrorTicket(ctx context.Context, errorLogID uuid.U
 
 	// Check if we recently created a ticket for a similar error (within last 5 minutes)
 	var recentCount int
-	et.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM support_tickets 
-		 WHERE subject LIKE 'Auto: Server Error%' 
-		 AND created_at > NOW() - INTERVAL '5 minutes'`).Scan(&recentCount)
+	if err := et.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM support_tickets
+		 WHERE subject LIKE 'Auto: Server Error%'
+		 AND created_at > NOW() - INTERVAL '5 minutes'`).Scan(&recentCount); err != nil {
+		// Fail-safe: if we can't count recent tickets, assume the rate
+		// limit is exceeded so we don't flood support with auto-tickets.
+		log.Printf("Failed to count recent auto-tickets, suppressing creation as fail-safe: %v", err)
+		return
+	}
 
 	if recentCount >= 5 {
 		// Don't flood with tickets - just update the log
@@ -192,7 +214,7 @@ func (et *ErrorTracker) createErrorTicket(ctx context.Context, errorLogID uuid.U
 
 	description := "Automatic ticket created due to server error.\n\n"
 	description += "Path: " + r.Method + " " + r.URL.Path + "\n"
-	description += "Status Code: " + http.StatusText(statusCode) + " (" + string(rune(statusCode)) + ")\n"
+	description += "Status Code: " + http.StatusText(statusCode) + " (" + strconv.Itoa(statusCode) + ")\n"
 	description += "Error Type: " + errorType + "\n"
 	description += "Time: " + time.Now().Format(time.RFC3339) + "\n"
 	if errorMessage != "" {
@@ -213,7 +235,9 @@ func (et *ErrorTracker) createErrorTicket(ctx context.Context, errorLogID uuid.U
 	}
 
 	// Link ticket to error log
-	et.db.ExecContext(ctx, `UPDATE error_logs SET ticket_id = $1 WHERE id = $2`, ticketID, errorLogID)
+	if _, err := et.db.ExecContext(ctx, `UPDATE error_logs SET ticket_id = $1 WHERE id = $2`, ticketID, errorLogID); err != nil {
+		log.Printf("Failed to link ticket %s to error log %s: %v", ticketID, errorLogID, err)
+	}
 
 	log.Printf("Auto-created support ticket %s for error on %s", ticketID, r.URL.Path)
 }

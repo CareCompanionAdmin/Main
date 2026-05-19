@@ -4,12 +4,21 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/service"
+)
+
+// Maximum lengths for user-supplied free-text fields. Defense-in-depth against
+// resource exhaustion and XSS payload bloat — render-side escaping is still
+// required (templates should be audited separately).
+const (
+	maxTicketDescriptionLen = 50000
+	maxTicketMessageLen     = 10000
 )
 
 // SupportHandler handles user-facing support ticket API endpoints
@@ -55,6 +64,10 @@ func (h *SupportHandler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Description == "" {
 		respondBadRequest(w, "Description is required")
+		return
+	}
+	if len(req.Description) > maxTicketDescriptionLen {
+		respondBadRequest(w, "Description is too long")
 		return
 	}
 
@@ -113,6 +126,10 @@ func (h *SupportHandler) AddMessage(w http.ResponseWriter, r *http.Request) {
 
 	if req.Message == "" {
 		respondBadRequest(w, "Message is required")
+		return
+	}
+	if len(req.Message) > maxTicketMessageLen {
+		respondBadRequest(w, "Message is too long")
 		return
 	}
 
@@ -191,10 +208,18 @@ func (h *SupportHandler) UploadAttachment(w http.ResponseWriter, r *http.Request
 	}
 	defer file.Close()
 
+	// Sanitize the user-supplied filename. filepath.Base strips any path
+	// components (e.g. "../../etc/passwd" -> "passwd") so a malicious upload
+	// can't influence the storage path or escape the attachments directory.
+	safeName := filepath.Base(header.Filename)
+	if safeName == "." || safeName == "/" || safeName == `\` {
+		safeName = "upload"
+	}
+
 	att, err := h.attachService.Upload(r.Context(), service.UploadInput{
 		TicketID:     ticketID,
 		UploaderID:   userID,
-		Filename:     header.Filename,
+		Filename:     safeName,
 		ContentType:  header.Header.Get("Content-Type"),
 		Body:         file,
 		KindOverride: r.FormValue("kind"),

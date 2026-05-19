@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -20,6 +21,19 @@ import (
 	"carecompanion/internal/models"
 	"carecompanion/internal/repository"
 )
+
+// ErrClaudeUnavailable is returned by callClaude when the upstream Claude
+// API is overloaded (HTTP 503), the per-call deadline was exceeded, or any
+// other transient transport-level failure occurred. Callers should treat
+// this as "no insights this run" rather than a hard failure — the next
+// scheduled batch will try again.
+var ErrClaudeUnavailable = errors.New("claude api unavailable")
+
+// claudeCallTimeout caps how long any single Claude API call can take.
+// AnalyzeChild is often invoked from a background batch with a parent
+// context that has no deadline; without this cap a single hung request
+// would block the worker indefinitely.
+const claudeCallTimeout = 45 * time.Second
 
 // AIInsightService integrates with Claude API to generate intelligent insights
 type AIInsightService struct {
@@ -151,7 +165,11 @@ func (s *AIInsightService) AnalyzeChild(ctx context.Context, child models.Child)
 	if s.limiter.allow() {
 		results, err := s.callClaudeForTier12(ctx, profileCtx, child.FirstName)
 		if err != nil {
-			log.Printf("AI Insights: Tier 1+2 API error for %s: %v", child.FirstName, err)
+			if errors.Is(err, ErrClaudeUnavailable) {
+				log.Printf("AI Insights: Tier 1+2 skipped for %s — Claude unavailable: %v", child.FirstName, err)
+			} else {
+				log.Printf("AI Insights: Tier 1+2 API error for %s: %v", child.FirstName, err)
+			}
 		} else {
 			n, a := s.storeInsights(ctx, child.ID, child.FamilyID, child.FirstName, results, recentInsights)
 			totalInsights += n
@@ -169,7 +187,11 @@ func (s *AIInsightService) AnalyzeChild(ctx context.Context, child models.Child)
 		logCtx := s.buildLogContext(child, logs, includeNarrative)
 		results, err := s.callClaudeForTier3(ctx, profileCtx, logCtx, child.FirstName)
 		if err != nil {
-			log.Printf("AI Insights: Tier 3 API error for %s: %v", child.FirstName, err)
+			if errors.Is(err, ErrClaudeUnavailable) {
+				log.Printf("AI Insights: Tier 3 skipped for %s — Claude unavailable: %v", child.FirstName, err)
+			} else {
+				log.Printf("AI Insights: Tier 3 API error for %s: %v", child.FirstName, err)
+			}
 		} else {
 			n, a := s.storeInsights(ctx, child.ID, child.FamilyID, child.FirstName, results, recentInsights)
 			totalInsights += n
@@ -624,6 +646,12 @@ type claudeResponse struct {
 }
 
 func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPrompt string) ([]aiInsightResult, error) {
+	// Apply a per-call deadline so a hung Claude request can't stall the
+	// caller forever. AnalyzeChild's parent context is often a background
+	// batch ctx with no deadline of its own.
+	ctx, cancel := context.WithTimeout(ctx, claudeCallTimeout)
+	defer cancel()
+
 	reqBody := claudeRequest{
 		Model:     s.config.Model,
 		MaxTokens: s.config.MaxTokens,
@@ -649,6 +677,11 @@ func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPro
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
+		// Treat deadline-exceeded as a transient unavailability so callers
+		// can no-op gracefully instead of bubbling a 5xx to the user.
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return nil, fmt.Errorf("%w: %v", ErrClaudeUnavailable, err)
+		}
 		return nil, fmt.Errorf("API call: %w", err)
 	}
 	defer resp.Body.Close()
@@ -659,6 +692,12 @@ func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPro
 	}
 
 	if resp.StatusCode != 200 {
+		// 503 (and 429 by analogy) are transient — surface them as
+		// ErrClaudeUnavailable so AnalyzeChild can treat them as "skip this
+		// run" instead of an exceptional 500.
+		if resp.StatusCode == http.StatusServiceUnavailable || resp.StatusCode == http.StatusTooManyRequests {
+			return nil, fmt.Errorf("%w: API returned %d: %s", ErrClaudeUnavailable, resp.StatusCode, truncateLog(string(body), 200))
+		}
 		return nil, fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
 	}
 

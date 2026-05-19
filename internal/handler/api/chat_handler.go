@@ -142,6 +142,22 @@ func (h *ChatHandler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Cap message length to keep a single message from blowing up the
+	// DB row, push notification, or downstream renderers. 10k chars is
+	// well above any realistic conversational message.
+	if len(req.MessageText) > 10000 {
+		respondError(w, "Message too long (max 10000 chars)", http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	// Cap attachments per message — UI only supports one at a time,
+	// but the API shape is an array. 5 is a generous upper bound that
+	// still keeps a single SendMessage payload bounded.
+	if len(req.Attachments) > 5 {
+		respondBadRequest(w, "Too many attachments (max 5 per message)")
+		return
+	}
+
 	message, err := h.chatService.SendMessage(r.Context(), threadID, userID, &req)
 	if err != nil {
 		if err == service.ErrNotParticipant {

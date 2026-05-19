@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -570,6 +571,11 @@ func (h *Handler) AddTicketMessage(w http.ResponseWriter, r *http.Request) {
 	// Send push notification to ticket owner (only for non-internal messages)
 	if h.pushService != nil && !req.IsInternal {
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[admin] goroutine panic in ticket push: %v", r)
+				}
+			}()
 			ticket, err := h.adminRepo.GetTicketByID(context.Background(), id)
 			if err != nil || ticket == nil || !ticket.UserID.Valid {
 				return
@@ -808,7 +814,9 @@ func clientIP(r *http.Request) string {
 
 func respondJSON(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("[admin] respondJSON encode error: %v", err)
+	}
 }
 
 func getIntParam(r *http.Request, name string, defaultVal int) int {

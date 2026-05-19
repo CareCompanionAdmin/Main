@@ -64,6 +64,13 @@ func (h *UserHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		respondBadRequest(w, "New password must be at least 8 characters")
 		return
 	}
+	// Cap upper bound — bcrypt cost grows with input length and a 50k-char
+	// password becomes a DoS vector. 128 is comfortably above any reasonable
+	// passphrase length.
+	if len(req.NewPassword) > 128 {
+		respondBadRequest(w, "New password must be at most 128 characters")
+		return
+	}
 
 	if err := h.userService.ChangePassword(r.Context(), userID, &req); err != nil {
 		if err == service.ErrPasswordMismatch {

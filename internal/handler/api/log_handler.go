@@ -80,7 +80,7 @@ func (h *LogHandler) GetDailyLogs(w http.ResponseWriter, r *http.Request) {
 	if dateStr != "" {
 		date, err = time.ParseInLocation("2006-01-02", dateStr, loc)
 		if err != nil {
-			respondBadRequest(w, "Invalid date format")
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
 			return
 		}
 	}
@@ -140,6 +140,27 @@ func (h *LogHandler) CreateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.MoodLevel != nil && (*req.MoodLevel < 1 || *req.MoodLevel > 5) {
+		respondBadRequest(w, "mood_level must be between 1 and 5")
+		return
+	}
+	if req.EnergyLevel != nil && (*req.EnergyLevel < 1 || *req.EnergyLevel > 5) {
+		respondBadRequest(w, "energy_level must be between 1 and 5")
+		return
+	}
+	if req.AnxietyLevel != nil && (*req.AnxietyLevel < 1 || *req.AnxietyLevel > 5) {
+		respondBadRequest(w, "anxiety_level must be between 1 and 5")
+		return
+	}
+
 	log, err := h.logService.CreateBehaviorLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		stdlog.Printf("CreateBehaviorLog error: %v", err)
@@ -167,8 +188,22 @@ func (h *LogHandler) GetBehaviorLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetBehaviorLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -216,6 +251,27 @@ func (h *LogHandler) UpdateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBehaviorLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.MoodLevel != nil && (*req.MoodLevel < 1 || *req.MoodLevel > 5) {
+		respondBadRequest(w, "mood_level must be between 1 and 5")
+		return
+	}
+	if req.EnergyLevel != nil && (*req.EnergyLevel < 1 || *req.EnergyLevel > 5) {
+		respondBadRequest(w, "energy_level must be between 1 and 5")
+		return
+	}
+	if req.AnxietyLevel != nil && (*req.AnxietyLevel < 1 || *req.AnxietyLevel > 5) {
+		respondBadRequest(w, "anxiety_level must be between 1 and 5")
 		return
 	}
 
@@ -270,6 +326,19 @@ func (h *LogHandler) CreateBowelLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.BristolScale != nil && (*req.BristolScale < 1 || *req.BristolScale > 7) {
+		respondBadRequest(w, "bristol_scale must be between 1 and 7")
+		return
+	}
+
 	log, err := h.logService.CreateBowelLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create bowel log")
@@ -296,8 +365,22 @@ func (h *LogHandler) GetBowelLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetBowelLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -348,6 +431,19 @@ func (h *LogHandler) UpdateBowelLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.BristolScale != nil && (*req.BristolScale < 1 || *req.BristolScale > 7) {
+		respondBadRequest(w, "bristol_scale must be between 1 and 7")
+		return
+	}
+
 	existing.LogTime.String = req.LogTime
 	existing.LogTime.Valid = req.LogTime != ""
 	existing.TimeScope.String = req.TimeScope
@@ -390,6 +486,15 @@ func (h *LogHandler) CreateSpeechLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+
 	log, err := h.logService.CreateSpeechLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		stdlog.Printf("Failed to create speech log: %v", err)
@@ -417,8 +522,22 @@ func (h *LogHandler) GetSpeechLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetSpeechLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -451,6 +570,15 @@ func (h *LogHandler) UpdateSpeechLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSpeechLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
 		return
 	}
 
@@ -512,6 +640,23 @@ func (h *LogHandler) CreateDietLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if len(req.ReactionDetails) > 5000 {
+		respondBadRequest(w, "reaction_details must be 5000 characters or fewer")
+		return
+	}
+	if req.WaterIntakeOz != nil && (*req.WaterIntakeOz < 0 || *req.WaterIntakeOz > 200) {
+		respondBadRequest(w, "water_intake_oz must be between 0 and 200")
+		return
+	}
+
 	log, err := h.logService.CreateDietLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create diet log")
@@ -538,8 +683,22 @@ func (h *LogHandler) GetDietLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetDietLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -572,6 +731,23 @@ func (h *LogHandler) UpdateDietLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateDietLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if len(req.ReactionDetails) > 5000 {
+		respondBadRequest(w, "reaction_details must be 5000 characters or fewer")
+		return
+	}
+	if req.WaterIntakeOz != nil && (*req.WaterIntakeOz < 0 || *req.WaterIntakeOz > 200) {
+		respondBadRequest(w, "water_intake_oz must be between 0 and 200")
 		return
 	}
 
@@ -643,6 +819,23 @@ func (h *LogHandler) CreateWeightLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.WeightLbs != nil && (*req.WeightLbs < 5 || *req.WeightLbs > 500) {
+		respondBadRequest(w, "weight_lbs must be between 5 and 500")
+		return
+	}
+	if req.HeightInches != nil && (*req.HeightInches < 12 || *req.HeightInches > 96) {
+		respondBadRequest(w, "height_inches must be between 12 and 96")
+		return
+	}
+
 	log, err := h.logService.CreateWeightLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create weight log")
@@ -669,8 +862,22 @@ func (h *LogHandler) GetWeightLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -3, 0) // Last 3 months for weight
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetWeightLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -703,6 +910,23 @@ func (h *LogHandler) UpdateWeightLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateWeightLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.WeightLbs != nil && (*req.WeightLbs < 5 || *req.WeightLbs > 500) {
+		respondBadRequest(w, "weight_lbs must be between 5 and 500")
+		return
+	}
+	if req.HeightInches != nil && (*req.HeightInches < 12 || *req.HeightInches > 96) {
+		respondBadRequest(w, "height_inches must be between 12 and 96")
 		return
 	}
 
@@ -759,6 +983,19 @@ func (h *LogHandler) CreateSleepLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.TotalSleepMinutes != nil && (*req.TotalSleepMinutes < 0 || *req.TotalSleepMinutes > 1440) {
+		respondBadRequest(w, "total_sleep_minutes must be between 0 and 1440")
+		return
+	}
+
 	log, err := h.logService.CreateSleepLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create sleep log")
@@ -785,8 +1022,22 @@ func (h *LogHandler) GetSleepLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetSleepLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -819,6 +1070,19 @@ func (h *LogHandler) UpdateSleepLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSleepLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.TotalSleepMinutes != nil && (*req.TotalSleepMinutes < 0 || *req.TotalSleepMinutes > 1440) {
+		respondBadRequest(w, "total_sleep_minutes must be between 0 and 1440")
 		return
 	}
 
@@ -886,6 +1150,19 @@ func (h *LogHandler) CreateSensoryLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.OverallRegulation != nil && (*req.OverallRegulation < 1 || *req.OverallRegulation > 5) {
+		respondBadRequest(w, "overall_regulation must be between 1 and 5")
+		return
+	}
+
 	log, err := h.logService.CreateSensoryLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create sensory log")
@@ -912,8 +1189,22 @@ func (h *LogHandler) GetSensoryLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetSensoryLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -946,6 +1237,19 @@ func (h *LogHandler) UpdateSensoryLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSensoryLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.OverallRegulation != nil && (*req.OverallRegulation < 1 || *req.OverallRegulation > 5) {
+		respondBadRequest(w, "overall_regulation must be between 1 and 5")
 		return
 	}
 
@@ -1008,6 +1312,23 @@ func (h *LogHandler) CreateSocialLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.EyeContactLevel != nil && (*req.EyeContactLevel < 1 || *req.EyeContactLevel > 5) {
+		respondBadRequest(w, "eye_contact_level must be between 1 and 5")
+		return
+	}
+	if req.SocialEngagementLevel != nil && (*req.SocialEngagementLevel < 1 || *req.SocialEngagementLevel > 5) {
+		respondBadRequest(w, "social_engagement_level must be between 1 and 5")
+		return
+	}
+
 	log, err := h.logService.CreateSocialLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create social log")
@@ -1034,8 +1355,22 @@ func (h *LogHandler) GetSocialLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, 0, -7)
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetSocialLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -1068,6 +1403,23 @@ func (h *LogHandler) UpdateSocialLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateSocialLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.EyeContactLevel != nil && (*req.EyeContactLevel < 1 || *req.EyeContactLevel > 5) {
+		respondBadRequest(w, "eye_contact_level must be between 1 and 5")
+		return
+	}
+	if req.SocialEngagementLevel != nil && (*req.SocialEngagementLevel < 1 || *req.SocialEngagementLevel > 5) {
+		respondBadRequest(w, "social_engagement_level must be between 1 and 5")
 		return
 	}
 
@@ -1129,6 +1481,27 @@ func (h *LogHandler) CreateTherapyLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.ParentNotes) > 5000 {
+		respondBadRequest(w, "parent_notes must be 5000 characters or fewer")
+		return
+	}
+	if len(req.ProgressNotes) > 2000 {
+		respondBadRequest(w, "progress_notes must be 2000 characters or fewer")
+		return
+	}
+	if len(req.HomeworkAssigned) > 2000 {
+		respondBadRequest(w, "homework_assigned must be 2000 characters or fewer")
+		return
+	}
+	if req.DurationMinutes != nil && (*req.DurationMinutes < 0 || *req.DurationMinutes > 480) {
+		respondBadRequest(w, "duration_minutes must be between 0 and 480")
+		return
+	}
+
 	log, err := h.logService.CreateTherapyLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create therapy log")
@@ -1155,8 +1528,22 @@ func (h *LogHandler) GetTherapyLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -1, 0) // Last month for therapy
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetTherapyLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -1189,6 +1576,27 @@ func (h *LogHandler) UpdateTherapyLog(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateTherapyLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.ParentNotes) > 5000 {
+		respondBadRequest(w, "parent_notes must be 5000 characters or fewer")
+		return
+	}
+	if len(req.ProgressNotes) > 2000 {
+		respondBadRequest(w, "progress_notes must be 2000 characters or fewer")
+		return
+	}
+	if len(req.HomeworkAssigned) > 2000 {
+		respondBadRequest(w, "homework_assigned must be 2000 characters or fewer")
+		return
+	}
+	if req.DurationMinutes != nil && (*req.DurationMinutes < 0 || *req.DurationMinutes > 480) {
+		respondBadRequest(w, "duration_minutes must be between 0 and 480")
 		return
 	}
 
@@ -1258,6 +1666,19 @@ func (h *LogHandler) CreateSeizureLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.DurationSeconds != nil && (*req.DurationSeconds < 0 || *req.DurationSeconds > 3600) {
+		respondBadRequest(w, "duration_seconds must be between 0 and 3600")
+		return
+	}
+
 	log, err := h.logService.CreateSeizureLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		stdlog.Printf("Failed to create seizure log: %v", err)
@@ -1285,8 +1706,22 @@ func (h *LogHandler) GetSeizureLogs(w http.ResponseWriter, r *http.Request) {
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -1, 0) // Last month for seizures
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetSeizureLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -1324,6 +1759,19 @@ func (h *LogHandler) UpdateSeizureLog(w http.ResponseWriter, r *http.Request) {
 
 	if strings.TrimSpace(req.LogTime) == "" {
 		respondBadRequest(w, "Time of seizure is required.")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if req.DurationSeconds != nil && (*req.DurationSeconds < 0 || *req.DurationSeconds > 3600) {
+		respondBadRequest(w, "duration_seconds must be between 0 and 3600")
 		return
 	}
 
@@ -1389,6 +1837,31 @@ func (h *LogHandler) CreateHealthEventLog(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if len(req.Description) > 5000 {
+		respondBadRequest(w, "description must be 5000 characters or fewer")
+		return
+	}
+	if len(req.Treatment) > 5000 {
+		respondBadRequest(w, "treatment must be 5000 characters or fewer")
+		return
+	}
+	if len(req.Diagnosis) > 5000 {
+		respondBadRequest(w, "diagnosis must be 5000 characters or fewer")
+		return
+	}
+	if req.TemperatureF != nil && (*req.TemperatureF < 90 || *req.TemperatureF > 110) {
+		respondBadRequest(w, "temperature_f must be between 90 and 110")
+		return
+	}
+
 	log, err := h.logService.CreateHealthEventLog(r.Context(), childID, userID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create health event log")
@@ -1415,8 +1888,22 @@ func (h *LogHandler) GetHealthEventLogs(w http.ResponseWriter, r *http.Request) 
 	loc := getUserTimezone(r.Context(), h.userService, userID)
 	endDate := time.Now().In(loc)
 	startDate := endDate.AddDate(0, -3, 0) // Last 3 months for health events
-	startDate = getDateFromQuery(r, "start_date", startDate)
-	endDate = getDateFromQuery(r, "end_date", endDate)
+	if v := r.URL.Query().Get("start_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		startDate = t
+	}
+	if v := r.URL.Query().Get("end_date"); v != "" {
+		t, err := time.ParseInLocation("2006-01-02", v, loc)
+		if err != nil {
+			respondBadRequest(w, "Invalid date format, use YYYY-MM-DD")
+			return
+		}
+		endDate = t
+	}
 
 	logs, err := h.logService.GetHealthEventLogs(r.Context(), childID, startDate, endDate)
 	if err != nil {
@@ -1449,6 +1936,31 @@ func (h *LogHandler) UpdateHealthEventLog(w http.ResponseWriter, r *http.Request
 	var req models.CreateHealthEventLogRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondBadRequest(w, "Invalid request body")
+		return
+	}
+
+	if !req.LogDate.Time.IsZero() && req.LogDate.Time.After(time.Now()) {
+		respondBadRequest(w, "Log date cannot be in the future")
+		return
+	}
+	if len(req.Notes) > 5000 {
+		respondBadRequest(w, "Notes must be 5000 characters or fewer")
+		return
+	}
+	if len(req.Description) > 5000 {
+		respondBadRequest(w, "description must be 5000 characters or fewer")
+		return
+	}
+	if len(req.Treatment) > 5000 {
+		respondBadRequest(w, "treatment must be 5000 characters or fewer")
+		return
+	}
+	if len(req.Diagnosis) > 5000 {
+		respondBadRequest(w, "diagnosis must be 5000 characters or fewer")
+		return
+	}
+	if req.TemperatureF != nil && (*req.TemperatureF < 90 || *req.TemperatureF > 110) {
+		respondBadRequest(w, "temperature_f must be between 90 and 110")
 		return
 	}
 
@@ -1539,18 +2051,39 @@ func (h *LogHandler) GetQuickSummary(w http.ResponseWriter, r *http.Request) {
 	if category == "" {
 		category = "behavior"
 	}
+	switch category {
+	case "behavior", "sleep", "diet", "bowel", "speech", "sensory", "social", "therapy", "seizure", "health_event":
+		// valid
+	default:
+		respondBadRequest(w, "Invalid category")
+		return
+	}
 
 	timeRange := r.URL.Query().Get("range")
 	if timeRange == "" {
 		timeRange = "weekly"
 	}
+	switch timeRange {
+	case "daily", "weekly", "monthly":
+		// valid
+	default:
+		respondBadRequest(w, "Invalid time range")
+		return
+	}
 
 	// Parse offset parameter (negative = past, positive = future)
 	offset := 0
 	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
-		if o, err := strconv.Atoi(offsetStr); err == nil {
-			offset = o
+		o, err := strconv.Atoi(offsetStr)
+		if err != nil {
+			respondBadRequest(w, "Invalid offset")
+			return
 		}
+		if o < -52 || o > 52 {
+			respondBadRequest(w, "offset must be between -52 and 52")
+			return
+		}
+		offset = o
 	}
 
 	// Calculate date range in user's timezone

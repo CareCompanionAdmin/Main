@@ -79,12 +79,23 @@
     function doSearch(q) {
         currentQuery = q;
         fetch('/api/search?q=' + encodeURIComponent(q), { credentials: 'include' })
-            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (!r.ok) throw new Error('search responded ' + r.status);
+                return r.json();
+            })
             .then(function(data) {
                 if (q !== currentQuery) return;
                 renderResults(data);
             })
-            .catch(function() {});
+            .catch(function(err) {
+                // Surface failures instead of swallowing them — a silent
+                // empty dropdown looked identical to "no results" and
+                // hid real network/auth issues from users and devs.
+                console.error('global-search fetch failed:', err);
+                if (q !== currentQuery) return;
+                dropdown.innerHTML = '<div class="px-4 py-6 text-center"><p class="handwritten text-lg text-stone-600">Search unavailable</p><p class="text-xs text-stone-500 mt-1">Network error — please try again.</p></div>';
+                dropdown.classList.remove('hidden');
+            });
     }
 
     function renderResults(data) {

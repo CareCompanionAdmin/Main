@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -76,8 +78,19 @@ func (h *CorrelationHandler) CreateCorrelationRequest(w http.ResponseWriter, r *
 		return
 	}
 
-	// Run correlation in background (in production, use a job queue)
-	go h.correlationService.RunCorrelation(r.Context(), correlation.ID)
+	// Run correlation in background (in production, use a job queue).
+	// Use a detached context — the HTTP request context will be cancelled as
+	// soon as we respond, but this work must continue. Wrap in recover so a
+	// panic in the service layer can't take down the process.
+	correlationID := correlation.ID
+	go func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf("[CORRELATION] goroutine panic for %s: %v", correlationID, rec)
+			}
+		}()
+		h.correlationService.RunCorrelation(context.Background(), correlationID)
+	}()
 
 	respondCreated(w, correlation)
 }

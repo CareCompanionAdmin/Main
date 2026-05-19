@@ -343,17 +343,27 @@
         return div.innerHTML;
     }
 
-    // Re-register push token after login (listen for page navigations to dashboard)
-    var lastPath = window.location.pathname;
-    setInterval(function() {
-        if (window.location.pathname !== lastPath) {
-            lastPath = window.location.pathname;
-            if (lastPath === '/dashboard' && PushNotifications) {
-                // User just logged in, re-register token
-                PushNotifications.register();
-            }
-        }
-    }, 1000);
+    // Re-register push token once per session after the user lands on the
+    // dashboard (post-login). Previously this polled window.location.pathname
+    // every 1s for the full life of the WebView AND re-called register() on
+    // every dashboard visit — both a leak and APNs spam. Now we listen for
+    // navigations (back/forward + visibility changes) and use a one-shot flag.
+    var pushTokenRegistered = false;
+    function maybeRegisterPushToken() {
+        if (pushTokenRegistered) return;
+        if (!PushNotifications) return;
+        if (window.location.pathname !== '/dashboard') return;
+        pushTokenRegistered = true;
+        PushNotifications.register();
+    }
+    // First chance: page just loaded directly into /dashboard (post-login redirect).
+    document.addEventListener('DOMContentLoaded', maybeRegisterPushToken);
+    // Second chance: SPA-like nav via pushState/replaceState/back/forward.
+    window.addEventListener('popstate', maybeRegisterPushToken);
+    // Third chance: tab/app coming back to foreground after auth completed elsewhere.
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') maybeRegisterPushToken();
+    });
 
     // Initialize environment banner on load
     document.addEventListener('DOMContentLoaded', showEnvironmentBanner);
@@ -381,14 +391,14 @@
     }
     document.addEventListener('DOMContentLoaded', paintAppVersion);
     // Re-paint after SPA-style nav (handleDeepLink etc.) so the label survives
-    // route changes.
-    var lastVersionedPath = window.location.pathname;
-    setInterval(function() {
-        if (window.location.pathname !== lastVersionedPath) {
-            lastVersionedPath = window.location.pathname;
-            paintAppVersion();
-        }
-    }, 1000);
+    // route changes. Previously this polled location.pathname every 1s for the
+    // life of the WebView; replaced with event-driven hooks (popstate covers
+    // back/forward + handleDeepLink's location assignments, and visibility
+    // covers tab-resume).
+    window.addEventListener('popstate', paintAppVersion);
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') paintAppVersion();
+    });
 
     // Web fallback: if not Capacitor, use the data-fallback attribute (e.g. "web").
     // Runs on plain browsers; the early-return at the top of this IIFE means we

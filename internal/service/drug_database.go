@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +15,20 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+// maxDrugAPIResponseBytes caps how much body we will JSON-decode from
+// OpenFDA / DailyMed responses. Both APIs are external and could —
+// intentionally or by upstream regression — return arbitrarily large
+// payloads that would exhaust memory if read in full. 10 MiB is well
+// above any legitimate drug-label response.
+const maxDrugAPIResponseBytes = 10 * 1024 * 1024
+
+// drugAPICallTimeout is the per-call deadline for individual OpenFDA /
+// DailyMed requests issued during multi-source operations like SearchDrugs.
+// The httpClient has a 15s total timeout, but a single slow DailyMed call
+// shouldn't be allowed to consume the whole budget when other sources are
+// available.
+const drugAPICallTimeout = 5 * time.Second
 
 var titleCaser = cases.Title(language.English)
 
@@ -219,7 +234,7 @@ func (s *DrugDatabaseService) queryFDALabel(ctx context.Context, searchTerm stri
 		} `json:"results"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxDrugAPIResponseBytes)).Decode(&result); err != nil {
 		return false, err
 	}
 
@@ -335,7 +350,7 @@ func (s *DrugDatabaseService) fetchNDCDetails(ctx context.Context, ndc string, i
 		} `json:"results"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxDrugAPIResponseBytes)).Decode(&result); err != nil {
 		return
 	}
 
@@ -580,9 +595,43 @@ func getDrugClass(drugName string) string {
 	return ""
 }
 
-// CheckInteractions checks for interactions between medications
+// InteractionCheckResult bundles the interaction warnings with the list of
+// drug names whose FDA lookup failed mid-check. Callers (e.g. the
+// MedicationHandler) can surface the failed names so users know coverage
+// was incomplete — "couldn't verify interactions for Drug X" — instead of
+// silently treating those drugs as interaction-free.
+type InteractionCheckResult struct {
+	Warnings []InteractionWarning `json:"warnings"`
+	Failed   []string             `json:"failed_lookups,omitempty"`
+}
+
+// CheckInteractionsWithFailures returns interaction warnings along with the
+// names of drugs whose FDA lookup failed. This is the recommended form for
+// new callers; the older CheckInteractions wrapper drops the failed list
+// for backward compatibility.
+func (s *DrugDatabaseService) CheckInteractionsWithFailures(ctx context.Context, medications []string) (InteractionCheckResult, error) {
+	res := InteractionCheckResult{}
+	warnings, failed, err := s.checkInteractionsInternal(ctx, medications)
+	if err != nil {
+		return res, err
+	}
+	res.Warnings = warnings
+	res.Failed = failed
+	return res, nil
+}
+
+// CheckInteractions checks for interactions between medications.
+//
+// Retained for backward compatibility — handlers wanting visibility into
+// which drugs failed lookup should call CheckInteractionsWithFailures.
 func (s *DrugDatabaseService) CheckInteractions(ctx context.Context, medications []string) ([]InteractionWarning, error) {
+	warnings, _, err := s.checkInteractionsInternal(ctx, medications)
+	return warnings, err
+}
+
+func (s *DrugDatabaseService) checkInteractionsInternal(ctx context.Context, medications []string) ([]InteractionWarning, []string, error) {
 	var warnings []InteractionWarning
+	var failed []string
 	seen := make(map[string]bool) // Prevent duplicate warnings
 
 	// First, check built-in known interactions based on drug classes
@@ -637,6 +686,10 @@ func (s *DrugDatabaseService) CheckInteractions(ctx context.Context, medications
 	for i := 0; i < len(medications); i++ {
 		info, err := s.LookupDrug(ctx, medications[i])
 		if err != nil {
+			// Record the failed lookup so callers can communicate partial
+			// coverage to the user rather than silently treating this drug
+			// as interaction-free.
+			failed = append(failed, medications[i])
 			continue
 		}
 
@@ -665,7 +718,7 @@ func (s *DrugDatabaseService) CheckInteractions(ctx context.Context, medications
 		}
 	}
 
-	return warnings, nil
+	return warnings, failed, nil
 }
 
 // GetTier1Insights generates Tier 1 medical insights for a medication
@@ -916,7 +969,7 @@ func (s *DrugDatabaseService) parseFDALabelResults(resp *http.Response, query st
 		} `json:"results"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxDrugAPIResponseBytes)).Decode(&result); err != nil {
 		return
 	}
 
@@ -969,6 +1022,11 @@ func (s *DrugDatabaseService) parseFDALabelResults(resp *http.Response, query st
 
 // searchDailyMed searches the DailyMed API for medications (better OTC/supplement coverage)
 func (s *DrugDatabaseService) searchDailyMed(ctx context.Context, query string) []DrugSuggestion {
+	// DailyMed is the slowest of the three sources we hit; cap it at a few
+	// seconds so a slow response doesn't dominate the SearchDrugs latency.
+	ctx, cancel := context.WithTimeout(ctx, drugAPICallTimeout)
+	defer cancel()
+
 	searchURL := fmt.Sprintf("%s/spls.json?drug_name=%s&page=1&pagesize=20",
 		s.dailyMedURL,
 		url.QueryEscape(query),
@@ -996,7 +1054,7 @@ func (s *DrugDatabaseService) searchDailyMed(ctx context.Context, query string) 
 		} `json:"data"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxDrugAPIResponseBytes)).Decode(&result); err != nil {
 		return nil
 	}
 

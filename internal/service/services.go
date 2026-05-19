@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"runtime/debug"
 
 	"carecompanion/internal/config"
 	"carecompanion/internal/database"
@@ -170,6 +171,11 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 			svcs.Stripe.SetSubscriptionService(svcs.Subscription)
 		}
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[STRIPE] panic in EnsureAllPlansSynced goroutine: %v\n%s", r, debug.Stack())
+				}
+			}()
 			if err := svcs.Stripe.EnsureAllPlansSynced(context.Background()); err != nil {
 				log.Printf("[STRIPE] plan sync failed: %v", err)
 			}

@@ -755,6 +755,16 @@ func (s *ReportService) generatePDF(ctx context.Context, reportID uuid.UUID, chi
 	filename := fmt.Sprintf("%s.pdf", uuid.New().String())
 	storagePath, _, err = s.storage.Save(ctx, reportID.String(), filename, "application/pdf", tmp)
 	if err != nil {
+		// Best-effort cleanup of any partial object the driver may have
+		// left behind mid-upload. S3 multipart uploads can leave an
+		// orphan object if Save errored after the first part was
+		// committed; localfs drivers may have a half-written file.
+		// Both are storage cost / quota leaks if not cleaned up.
+		if storagePath != "" {
+			if delErr := s.storage.Delete(context.Background(), storagePath); delErr != nil {
+				log.Printf("[REPORT] partial-upload cleanup failed for %s: %v (original upload error: %v)", storagePath, delErr, err)
+			}
+		}
 		return "", "", 0, fmt.Errorf("upload PDF: %w", err)
 	}
 	return s.storage.Driver(), storagePath, size, nil

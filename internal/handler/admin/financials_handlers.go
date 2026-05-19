@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,7 +19,9 @@ func (h *Handler) GetFinancialOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(overview)
+	if err := json.NewEncoder(w).Encode(overview); err != nil {
+		log.Printf("[admin] GetFinancialOverview encode error: %v", err)
+	}
 }
 
 // GetExpectedRevenueCalendar returns expected revenue for a date range
@@ -67,7 +70,9 @@ func (h *Handler) GetExpectedRevenueCalendar(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("[admin] GetExpectedRevenueCalendar encode error: %v", err)
+	}
 }
 
 // GetRecentPayments returns paginated list of recent payments
@@ -95,7 +100,9 @@ func (h *Handler) GetRecentPayments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("[admin] GetRecentPayments encode error: %v", err)
+	}
 }
 
 // GetRecentSubscriptions returns paginated list of recent subscriptions
@@ -123,7 +130,9 @@ func (h *Handler) GetRecentSubscriptions(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("[admin] GetRecentSubscriptions encode error: %v", err)
+	}
 }
 
 // GetSubscriptionPlans returns list of subscription plans
@@ -137,7 +146,9 @@ func (h *Handler) GetSubscriptionPlans(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(plans)
+	if err := json.NewEncoder(w).Encode(plans); err != nil {
+		log.Printf("[admin] GetSubscriptionPlans encode error: %v", err)
+	}
 }
 
 // GenerateFinancialReport generates a financial report in the requested format

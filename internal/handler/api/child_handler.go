@@ -75,6 +75,11 @@ func (h *ChildHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.DateOfBirth.After(time.Now()) {
+		respondBadRequest(w, "Date of birth cannot be in the future")
+		return
+	}
+
 	child, err := h.childService.Create(r.Context(), familyID, &req)
 	if err != nil {
 		respondInternalError(w, "Failed to create child")
@@ -213,6 +218,11 @@ func (h *ChildHandler) AddCondition(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if middleware.GetRole(r.Context()) != models.FamilyRoleParent {
+		respondForbidden(w, "Only parents can modify medical conditions")
+		return
+	}
+
 	var req struct {
 		ConditionName string `json:"condition_name"`
 	}
@@ -267,9 +277,52 @@ func (h *ChildHandler) GetConditions(w http.ResponseWriter, r *http.Request) {
 
 // UpdateCondition updates a condition for a child
 func (h *ChildHandler) UpdateCondition(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
 	conditionID, err := getIDFromURL(r)
 	if err != nil {
 		respondBadRequest(w, "Invalid condition ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		switch err {
+		case service.ErrChildNotFound:
+			respondNotFound(w, "Child not found")
+		case service.ErrNotFamilyMember:
+			respondForbidden(w, "Access denied")
+		default:
+			respondInternalError(w, "Failed to verify access")
+		}
+		return
+	}
+
+	if middleware.GetRole(r.Context()) != models.FamilyRoleParent {
+		respondForbidden(w, "Only parents can modify medical conditions")
+		return
+	}
+
+	// Verify the condition actually belongs to this child (prevents IDOR
+	// where conditionID from another child/family is swapped into the URL).
+	existingConditions, err := h.childService.GetConditions(r.Context(), childID)
+	if err != nil {
+		respondInternalError(w, "Failed to verify condition")
+		return
+	}
+	conditionBelongs := false
+	for _, c := range existingConditions {
+		if c.ID == conditionID {
+			conditionBelongs = true
+			break
+		}
+	}
+	if !conditionBelongs {
+		respondNotFound(w, "Condition not found")
 		return
 	}
 
@@ -327,9 +380,51 @@ func (h *ChildHandler) UpdateCondition(w http.ResponseWriter, r *http.Request) {
 
 // RemoveCondition removes a condition from a child
 func (h *ChildHandler) RemoveCondition(w http.ResponseWriter, r *http.Request) {
+	childID, err := getChildIDFromURL(r)
+	if err != nil {
+		respondBadRequest(w, "Invalid child ID")
+		return
+	}
+
 	conditionID, err := getIDFromURL(r)
 	if err != nil {
 		respondBadRequest(w, "Invalid condition ID")
+		return
+	}
+
+	userID := middleware.GetUserID(r.Context())
+	if _, err := h.childService.VerifyChildAccess(r.Context(), childID, userID); err != nil {
+		switch err {
+		case service.ErrChildNotFound:
+			respondNotFound(w, "Child not found")
+		case service.ErrNotFamilyMember:
+			respondForbidden(w, "Access denied")
+		default:
+			respondInternalError(w, "Failed to verify access")
+		}
+		return
+	}
+
+	if middleware.GetRole(r.Context()) != models.FamilyRoleParent {
+		respondForbidden(w, "Only parents can modify medical conditions")
+		return
+	}
+
+	// Verify the condition actually belongs to this child (prevents IDOR).
+	existingConditions, err := h.childService.GetConditions(r.Context(), childID)
+	if err != nil {
+		respondInternalError(w, "Failed to verify condition")
+		return
+	}
+	conditionBelongs := false
+	for _, c := range existingConditions {
+		if c.ID == conditionID {
+			conditionBelongs = true
+			break
+		}
+	}
+	if !conditionBelongs {
+		respondNotFound(w, "Condition not found")
 		return
 	}
 

@@ -2,6 +2,7 @@ package api
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -165,7 +166,10 @@ func (h *ReportHandler) DownloadReport(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+report.Title+".pdf\"")
 	w.Header().Set("Content-Type", "application/pdf")
-	io.Copy(w, rc)
+	if _, err := io.Copy(w, rc); err != nil {
+		// Headers already written, so we can't change status. Log for observability.
+		log.Printf("[REPORT] DownloadReport io.Copy failed for report %s: %v", report.ID, err)
+	}
 }
 
 // ViewReportData returns chart data for the HTML view
@@ -439,7 +443,10 @@ func (h *ReportHandler) ServeSignedPDF(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "inline; filename=\""+report.Title+".pdf\"")
-	io.Copy(w, rc)
+	if _, err := io.Copy(w, rc); err != nil {
+		// Headers already written, so we can't change status. Log for observability.
+		log.Printf("[REPORT] ServeSignedPDF io.Copy failed for report %s: %v", report.ID, err)
+	}
 }
 
 // ServeReportPDF streams a report PDF from blob storage. Routed by reportID
