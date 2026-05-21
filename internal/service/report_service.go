@@ -624,8 +624,8 @@ func (s *ReportService) generatePDF(ctx context.Context, reportID uuid.UUID, chi
 			var rows [][]string
 			for _, l := range logs.BehaviorLogs {
 				mood, energy := "--", "--"
-				if l.MoodLevel != nil { mood = fmt.Sprintf("%d/5", *l.MoodLevel) }
-				if l.EnergyLevel != nil { energy = fmt.Sprintf("%d/5", *l.EnergyLevel) }
+				if l.MoodLevel != nil { mood = fmt.Sprintf("%d/10", *l.MoodLevel) }
+				if l.EnergyLevel != nil { energy = fmt.Sprintf("%d/10", *l.EnergyLevel) }
 				rows = append(rows, []string{
 					l.LogDate.Format("01/02"), mood, energy,
 					fmt.Sprintf("%d", l.Meltdowns), truncate(l.Notes.String, 40),

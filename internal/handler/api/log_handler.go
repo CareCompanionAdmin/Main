@@ -148,16 +148,16 @@ func (h *LogHandler) CreateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 		respondBadRequest(w, "Notes must be 5000 characters or fewer")
 		return
 	}
-	if req.MoodLevel != nil && (*req.MoodLevel < 1 || *req.MoodLevel > 5) {
-		respondBadRequest(w, "mood_level must be between 1 and 5")
+	if req.MoodLevel != nil && (*req.MoodLevel < 1 || *req.MoodLevel > 10) {
+		respondBadRequest(w, "mood_level must be between 1 and 10")
 		return
 	}
-	if req.EnergyLevel != nil && (*req.EnergyLevel < 1 || *req.EnergyLevel > 5) {
-		respondBadRequest(w, "energy_level must be between 1 and 5")
+	if req.EnergyLevel != nil && (*req.EnergyLevel < 1 || *req.EnergyLevel > 10) {
+		respondBadRequest(w, "energy_level must be between 1 and 10")
 		return
 	}
-	if req.AnxietyLevel != nil && (*req.AnxietyLevel < 1 || *req.AnxietyLevel > 5) {
-		respondBadRequest(w, "anxiety_level must be between 1 and 5")
+	if req.AnxietyLevel != nil && (*req.AnxietyLevel < 1 || *req.AnxietyLevel > 10) {
+		respondBadRequest(w, "anxiety_level must be between 1 and 10")
 		return
 	}
 
@@ -262,16 +262,16 @@ func (h *LogHandler) UpdateBehaviorLog(w http.ResponseWriter, r *http.Request) {
 		respondBadRequest(w, "Notes must be 5000 characters or fewer")
 		return
 	}
-	if req.MoodLevel != nil && (*req.MoodLevel < 1 || *req.MoodLevel > 5) {
-		respondBadRequest(w, "mood_level must be between 1 and 5")
+	if req.MoodLevel != nil && (*req.MoodLevel < 1 || *req.MoodLevel > 10) {
+		respondBadRequest(w, "mood_level must be between 1 and 10")
 		return
 	}
-	if req.EnergyLevel != nil && (*req.EnergyLevel < 1 || *req.EnergyLevel > 5) {
-		respondBadRequest(w, "energy_level must be between 1 and 5")
+	if req.EnergyLevel != nil && (*req.EnergyLevel < 1 || *req.EnergyLevel > 10) {
+		respondBadRequest(w, "energy_level must be between 1 and 10")
 		return
 	}
-	if req.AnxietyLevel != nil && (*req.AnxietyLevel < 1 || *req.AnxietyLevel > 5) {
-		respondBadRequest(w, "anxiety_level must be between 1 and 5")
+	if req.AnxietyLevel != nil && (*req.AnxietyLevel < 1 || *req.AnxietyLevel > 10) {
+		respondBadRequest(w, "anxiety_level must be between 1 and 10")
 		return
 	}
 
