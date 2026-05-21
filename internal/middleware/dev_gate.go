@@ -103,11 +103,19 @@ func isBypassedPath(path string) bool {
 	// /__dev_gate is intentionally NOT in this list — the middleware itself
 	// renders the form and handles POST. Bypassing it here would send the
 	// POST into chi which has no route for it and answers 404.
+	//
+	// /r/signed/* is bypassed because it's authenticated by HMAC+expiry in
+	// the query string, not by session. It's also fetched by system
+	// SFSafariViewController / Chrome Custom Tabs when opening report PDFs
+	// — those contexts don't carry the MyCareCompanionApp UA marker or the
+	// dev_gate_ok cookie, so without this bypass the user gets the gate
+	// page instead of the PDF.
 	switch {
 	case path == "/health",
 		path == "/api/maintenance-status",
 		path == "/favicon.ico",
-		strings.HasPrefix(path, "/static/"):
+		strings.HasPrefix(path, "/static/"),
+		strings.HasPrefix(path, "/r/signed/"):
 		return true
 	}
 	return false

@@ -111,10 +111,19 @@
             </div>
         </div>
 
-        <button onclick="generateReport()" id="generate-btn" class="px-6 py-3 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium">
-            Generate Report
-        </button>
-        <span id="generate-status" class="ml-3 text-sm text-stone-500 hidden"></span>
+        <div class="flex flex-wrap items-center gap-3">
+            <button onclick="generateReport()" id="generate-btn" class="px-6 py-3 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium">
+                Generate Report
+            </button>
+            <span id="generate-status" class="text-sm text-stone-500 hidden"></span>
+            <!-- No-data notice. Shown inline near the Generate button when the
+                 selected period + filters produce zero data, instead of
+                 navigating into an empty report-results view. -->
+            <div id="generate-empty-notice" class="hidden inline-flex items-start gap-2 text-sm text-amber-700 bg-amber-50/70 border border-amber-200 rounded-2xl px-3 py-2">
+                <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>No data matches the selected period and filters. Try a different date range or include more data types.</span>
+            </div>
+        </div>
     </div>
 
     <!-- Report Results (hidden until generated) -->
@@ -155,8 +164,10 @@
             </div>
         </div>
 
-        <!-- Report Preview (paper-like container) -->
-        <div class="bg-stone-200 rounded-b-xl border border-t-0 p-4 sm:p-8 mb-6">
+        <!-- Report Preview (paper-like container). Wrapper hidden when the
+             rendered report has zero chart series, so the no-data state shows
+             only the warning message instead of an empty report shell. -->
+        <div id="report-preview-wrapper" class="bg-stone-200 rounded-b-xl border border-t-0 p-4 sm:p-8 mb-6">
             <div id="report-paper" class="bg-white max-w-4xl mx-auto shadow-xl rounded-lg overflow-hidden">
                 <!-- Report Header (print-visible) -->
                 <div class="bg-gradient-to-r from-orange-600 to-orange-800 text-white p-8">
@@ -378,6 +389,8 @@ async function generateReport() {
     btn.textContent = 'Generating...';
     status.textContent = 'This may take a moment...';
     status.classList.remove('hidden');
+    // Clear any stale no-data notice from a prior attempt.
+    document.getElementById('generate-empty-notice').classList.add('hidden');
 
     const filters = Array.from(document.querySelectorAll('.data-filter:checked')).map(cb => cb.value);
     if (filters.length === 0) {
@@ -418,32 +431,50 @@ async function generateReport() {
 
         const result = await response.json();
         const report = result.report || result;
-        const viewData = result.view || null;
-        currentReportId = report.id;
-        document.getElementById('report-title').textContent = report.title;
+        let viewData = result.view || null;
 
-        // Populate preview header
-        document.getElementById('report-child-name').textContent = viewData ? viewData.child_name : '';
-        document.getElementById('report-date-range').textContent = viewData ? (viewData.start_date + ' to ' + viewData.end_date) : '';
-        document.getElementById('report-generated-at').textContent = 'Generated ' + new Date().toLocaleString();
-
-        // Show results section
-        document.getElementById('report-results').classList.remove('hidden');
-        document.getElementById('config-panel').classList.add('hidden');
-
-        // Render charts
-        try {
-            if (viewData && viewData.charts) {
-                renderCharts(viewData);
-            } else {
-                await loadReportView(report.id);
-            }
-        } catch (chartErr) {
-            console.error('Chart loading error:', chartErr);
+        // If the server didn't pre-include view data with /generate, fetch it
+        // so we can decide locally whether the result has any data BEFORE
+        // navigating into the report-results view.
+        if (!viewData) {
+            try {
+                const vresp = await fetch(`/api/children/${childId}/reports/${report.id}/view`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (vresp.ok) viewData = await vresp.json();
+            } catch (_) { /* fall through; treat as empty */ }
         }
 
-        document.getElementById('report-results').scrollIntoView({ behavior: 'smooth' });
+        const hasAnyData = !!(viewData && viewData.charts && Object.keys(viewData.charts).length > 0
+            && Object.values(viewData.charts).some(series =>
+                Array.isArray(series) && series.some(p => p && p.value > 0)));
+
+        if (!hasAnyData) {
+            // No charts had data. Show the inline notice next to Generate,
+            // delete the just-created empty report so it doesn't clutter
+            // Past Reports, and stay on the config panel.
+            document.getElementById('generate-empty-notice').classList.remove('hidden');
+            try {
+                await fetch(`/api/children/${childId}/reports/${report.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+            } catch (_) { /* best-effort cleanup */ }
+            currentReportId = null;
+            return;
+        }
+
+        // Has data — open the real PDF report directly instead of the inline
+        // chart-card preview. The inline preview was misleading (orange
+        // "Care Report" header on a list of Chart.js cards with no cover
+        // page, TOC, or downloadable structure) so users assumed the
+        // feature was broken. The PDF has a real cover page, per-chart
+        // sections with embedded images, detail tables, and the 1.4.1
+        // disclaimer footer.
+        document.getElementById('generate-empty-notice').classList.add('hidden');
+        currentReportId = report.id;
         loadPastReports();
+        await openReportPDF(report.id);
     } catch (err) {
         alert('Error: ' + err.message);
     } finally {
@@ -568,10 +599,13 @@ function renderCharts(data) {
         colorIdx++;
     }
 
-    // Show/hide action buttons vs no-data message
+    // Show/hide action buttons vs no-data message. Also hide the report
+    // preview shell entirely on no-data so the user doesn't see an orange-
+    // header report card next to the "No data found" warning.
     const hasCharts = colorIdx > 0;
     document.getElementById('report-actions').classList.toggle('hidden', !hasCharts);
     document.getElementById('report-no-data').classList.toggle('hidden', hasCharts);
+    document.getElementById('report-preview-wrapper').classList.toggle('hidden', !hasCharts);
     if (!hasCharts) {
         chartsContainer.innerHTML = '';
     }
@@ -782,7 +816,7 @@ async function loadPastReports() {
                 ? '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">Completed</span>'
                 : '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">' + r.status + '</span>';
             const actions = r.status === 'completed'
-                ? `<button onclick="viewPastReport('${r.id}', ${JSON.stringify(r.title)})" class="px-3 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200">View</button>`
+                ? `<button type="button" data-action="view-report" data-report-id="${r.id}" data-report-title="${escapeHtml(r.title || '')}" class="px-3 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200">View</button>`
                 : '';
             return `<div class="flex items-center justify-between py-3 border-b last:border-0">
                 <div>
@@ -798,33 +832,39 @@ async function loadPastReports() {
     } catch (err) {}
 }
 
-// Re-open an already-generated report in the inline charts viewer. Same UI
-// as a fresh Generate, just hydrated from /view instead of /generate. Lets
-// users skip the download/print roundtrip when they only need to look.
-async function viewPastReport(reportId, title) {
+// Re-open a past report by opening the signed PDF in the system viewer
+// (SFSafariViewController on iOS, Chrome Custom Tab on Android, new tab on
+// web). Replaces the older inline chart-card preview which users found
+// misleading and unusable.
+async function viewPastReport(reportId /* , title (unused) */) {
     currentReportId = reportId;
-    document.getElementById('report-title').textContent = title || 'Report';
-    document.getElementById('config-panel').classList.add('hidden');
-    document.getElementById('report-results').classList.remove('hidden');
+    await openReportPDF(reportId);
+}
 
+// Mints a signed PDF URL for the given report ID and opens it in the system
+// browser. Shared by generate-with-data and view-past-report paths.
+async function openReportPDF(reportId) {
+    let signed = '';
     try {
-        const response = await fetch(`/api/children/${childId}/reports/${reportId}/view`, {
+        const response = await fetch(`/api/children/${childId}/reports/${reportId}/sign-url`, {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         if (!response.ok) {
-            alert('Could not load that report.');
+            alert('Could not open the report. Try again in a moment.');
             return;
         }
         const data = await response.json();
-        document.getElementById('report-child-name').textContent = data.child_name || '';
-        document.getElementById('report-date-range').textContent = data.start_date && data.end_date
-            ? data.start_date + ' to ' + data.end_date
-            : '';
-        document.getElementById('report-generated-at').textContent = 'Viewing report ' + (title || '');
-        renderCharts(data);
-        document.getElementById('report-results').scrollIntoView({ behavior: 'smooth' });
+        signed = window.location.origin + data.path;
     } catch (err) {
-        alert('Error loading report.');
+        alert('Could not open the report. Try again in a moment.');
+        return;
+    }
+    if (isNative() && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+        // SFSafariViewController / Custom Tabs render the PDF natively with
+        // page navigation, share sheet, AirPrint / Save-to-Files, etc.
+        await window.Capacitor.Plugins.Browser.open({ url: signed });
+    } else {
+        window.open(signed, '_blank');
     }
 }
 
@@ -890,6 +930,20 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', function() {
     loadPastReports();
     loadSchedules();
+
+    // Delegated handler for View buttons in the past reports list. The list
+    // re-renders on every loadPastReports() call (innerHTML replacement), so
+    // binding on the parent container survives the re-render. Replaces the
+    // previous inline onclick="..." which broke whenever the title (passed
+    // through JSON.stringify) contained the double-quote it inevitably does.
+    const pastReportsList = document.getElementById('past-reports-list');
+    if (pastReportsList) {
+        pastReportsList.addEventListener('click', function(e) {
+            const btn = e.target.closest('button[data-action="view-report"]');
+            if (!btn) return;
+            viewPastReport(btn.dataset.reportId, btn.dataset.reportTitle || 'Report');
+        });
+    }
 
     // Set default custom date range
     const today = new Date();
