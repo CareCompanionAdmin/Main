@@ -87,11 +87,16 @@ func ContentTypeHTML(next http.Handler) http.Handler {
 	})
 }
 
-// SecurityHeaders adds common security headers
+// SecurityHeaders adds common security headers.
+//
+// X-Frame-Options is SAMEORIGIN (not DENY) so the parent-facing /reports
+// page can embed the signed PDF report into its own iframe for inline
+// viewing. SAMEORIGIN still blocks cross-origin clickjacking — only pages
+// served from mycarecompanion.net can frame mycarecompanion.net content.
 func SecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		next.ServeHTTP(w, r)
