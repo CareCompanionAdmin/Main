@@ -507,10 +507,19 @@ function renderMessage(msg) {
     }
 
     // Report affordance: only for messages from other users. Tap opens the
-    // user's mail app with a pre-addressed report to support — Apple wants
-    // a clear path to report objectionable content (App Store 1.2 / UGC).
+    // user's mail app with a pre-addressed report to support AND POSTs a
+    // server-side support ticket — Apple wants a clear path to report
+    // objectionable content (App Store 1.2 / UGC).
+    //
+    // Click is bound via delegation in initReportDelegation() because inline
+    // onclick handlers with embedded JSON.stringify(name) silently break when
+    // the sender's name contains a double quote — the inner quotes terminate
+    // the onclick attribute and the JS never runs.
     const reportButton = isOwn ? '' : `
-        <button type="button" onclick="reportMessage('${msg.id}', ${JSON.stringify(name)}, ${JSON.stringify(msgDate.toISOString())})"
+        <button type="button" data-action="report-msg"
+                data-msg-id="${escapeHtml(msg.id)}"
+                data-sender-name="${escapeHtml(name)}"
+                data-sent-at="${escapeHtml(msgDate.toISOString())}"
                 class="ml-2 align-top text-stone-400 hover:text-stone-700"
                 title="Report this message">
             <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -774,6 +783,17 @@ window.addEventListener('DOMContentLoaded', function() {
         // Slight delay to let the thread list finish initial render.
         setTimeout(function() { selectThread(threadFromURL); }, 50);
     }
+
+    // Delegated click handler for "Report this message" flag buttons rendered
+    // by renderMessage(). Delegation is required because messages stream in
+    // over SSE — per-button listeners would miss anything that arrives after
+    // page load.
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('button[data-action="report-msg"]');
+        if (!btn) return;
+        e.preventDefault();
+        reportMessage(btn.dataset.msgId, btn.dataset.senderName, btn.dataset.sentAt);
+    });
 });
 
 // Manage Members Functions
