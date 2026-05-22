@@ -48,7 +48,7 @@
     <main class="max-w-4xl mx-auto px-4 py-12">
         <div class="glass ring-soft rounded-3xl p-8 md:p-12">
             <h1 class="display text-4xl md:text-5xl font-medium text-stone-800 mb-2">Privacy Policy</h1>
-            <p class="text-stone-500 mb-8">Last Updated: May 11, 2026</p>
+            <p class="text-stone-500 mb-8">Last Updated: May 22, 2026</p>
 
             <div class="prose max-w-none">
                 <p class="text-lg text-stone-700 mb-8">
@@ -111,10 +111,23 @@
                 <p>We may disclose your information only in the following limited circumstances:</p>
                 <ul>
                     <li><strong>With Your Consent:</strong> When you explicitly authorize us to share information, such as with medical providers you designate.</li>
-                    <li><strong>Service Providers:</strong> To trusted third-party vendors who assist us in operating our Service (e.g., cloud hosting, payment processing), who are contractually bound to protect your data and use it only for the services they provide to us.</li>
+                    <li><strong>Service Providers:</strong> To trusted third-party vendors who assist us in operating our Service (e.g., cloud hosting, payment processing, AI-assisted pattern analysis), who are contractually bound to protect your data and use it only for the services they provide to us. For health information, applicable vendors operate under a signed Business Associate Agreement (BAA) with us.</li>
                     <li><strong>Legal Requirements:</strong> When required by law, court order, or governmental authority, or to protect our rights, safety, or property, or the rights, safety, or property of others.</li>
                     <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets, in which case you will be notified of any change in ownership or control of your personal information.</li>
                 </ul>
+
+                <h3>4.1 AI-Assisted Pattern Analysis (AWS Bedrock under BAA)</h3>
+                <p>
+                    To generate insights and identify patterns in your family's logged data, we use Anthropic's Claude AI models hosted on Amazon Web Services (AWS) Bedrock. AWS is our Service Provider for this processing and operates under a signed Business Associate Agreement (BAA), which contractually binds AWS to handle any health information in compliance with HIPAA standards. Anthropic does not receive or retain your inputs — Claude on Bedrock runs entirely within AWS infrastructure, and AWS does not use your data to train AI models.
+                </p>
+                <p>What we send to the AI:</p>
+                <ul>
+                    <li><strong>By default:</strong> de-identified data only — your child's age band, broad diagnosis categories, medication classes (e.g., "stimulant" rather than the brand name), and numeric daily logs (sleep duration, behavior counts, mood scores, etc.). We strip first/last names, exact dates of birth, and free-text notes before the data leaves our servers.</li>
+                    <li><strong>If you opt in</strong> (via Settings → AI Insights → "Allow AI to read my notes"): we additionally include your free-text notes and observations so the AI can interpret context that numbers alone cannot convey. This is off by default and can be turned off at any time from the same Settings panel. Opting in does not retroactively send historical notes — only new analyses run after you enable it.</li>
+                </ul>
+                <p>
+                    The insights generated are stored in your account on our servers and shown only to you and the family members you have invited. We do not share AI-generated insights with anyone outside your family or care team. The Claude AI does not have access to other families' data — each request is scoped to a single child's profile and recent logs.
+                </p>
 
                 <h2>5. Data Security</h2>
                 <p>We implement industry-standard security measures to protect your information, including:</p>

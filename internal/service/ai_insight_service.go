@@ -1,20 +1,19 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/google/uuid"
 
 	"carecompanion/internal/config"
@@ -22,11 +21,11 @@ import (
 	"carecompanion/internal/repository"
 )
 
-// ErrClaudeUnavailable is returned by callClaude when the upstream Claude
-// API is overloaded (HTTP 503), the per-call deadline was exceeded, or any
-// other transient transport-level failure occurred. Callers should treat
-// this as "no insights this run" rather than a hard failure — the next
-// scheduled batch will try again.
+// ErrClaudeUnavailable is returned by callClaude when the upstream Bedrock
+// service is overloaded (throttling, service unavailable), the per-call
+// deadline was exceeded, or any other transient transport-level failure
+// occurred. Callers should treat this as "no insights this run" rather
+// than a hard failure — the next scheduled batch will try again.
 var ErrClaudeUnavailable = errors.New("claude api unavailable")
 
 // claudeCallTimeout caps how long any single Claude API call can take.
@@ -35,16 +34,26 @@ var ErrClaudeUnavailable = errors.New("claude api unavailable")
 // would block the worker indefinitely.
 const claudeCallTimeout = 45 * time.Second
 
-// AIInsightService integrates with Claude API to generate intelligent insights
+// bedrockAnthropicVersion is the on-Bedrock Anthropic protocol version
+// string. Unlike the Anthropic-direct API (which uses the model field +
+// anthropic-version header), Bedrock requires this in the request body
+// and accepts the model via the InvokeModel input.
+const bedrockAnthropicVersion = "bedrock-2023-05-31"
+
+// AIInsightService integrates with Claude (via AWS Bedrock) to generate
+// intelligent insights. The Bedrock integration is governed by the AWS BAA
+// signed for this account, satisfying HIPAA processing requirements for the
+// de-identified payloads emitted by the PHI stripper (Phase 1). For prompts
+// that include opt-in user free-text (Phase 3), the BAA is load-bearing.
 type AIInsightService struct {
-	config      *config.ClaudeConfig
-	httpClient  *http.Client
-	logRepo     repository.LogRepository
-	childRepo   repository.ChildRepository
-	medRepo     repository.MedicationRepository
-	insightRepo repository.InsightRepository
-	alertService *AlertService
-	limiter     *rateLimiter
+	config        *config.ClaudeConfig
+	bedrockClient *bedrockruntime.Client
+	logRepo       repository.LogRepository
+	childRepo     repository.ChildRepository
+	medRepo       repository.MedicationRepository
+	insightRepo   repository.InsightRepository
+	alertService  *AlertService
+	limiter       *rateLimiter
 
 	// narrativeConsent gates whether free-text fields are included in
 	// outbound prompts. Optional (nil-safe — nil means "always strip").
@@ -74,7 +83,13 @@ func (rl *rateLimiter) allow() bool {
 	return true
 }
 
-// NewAIInsightService creates a new AI insight service
+// NewAIInsightService creates a new AI insight service. The Bedrock client
+// loads AWS credentials from the default chain — on prod EC2 that's the
+// instance role (which carries the BedrockClaudeInvoke inline policy);
+// on dev (admin EC2) that's the same role. If config loading fails we
+// log and continue with a nil client — callClaude will return
+// ErrClaudeUnavailable rather than panic. AI Insights is opt-in via
+// CLAUDE_ENABLED so a startup failure is non-fatal.
 func NewAIInsightService(
 	cfg *config.ClaudeConfig,
 	logRepo repository.LogRepository,
@@ -83,15 +98,22 @@ func NewAIInsightService(
 	insightRepo repository.InsightRepository,
 	alertService *AlertService,
 ) *AIInsightService {
+	var bedrockClient *bedrockruntime.Client
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.Background())
+	if err != nil {
+		log.Printf("[AI] LoadDefaultConfig failed, Bedrock client unavailable: %v", err)
+	} else {
+		bedrockClient = bedrockruntime.NewFromConfig(awsCfg)
+	}
 	return &AIInsightService{
-		config:       cfg,
-		httpClient:   &http.Client{Timeout: 60 * time.Second},
-		logRepo:      logRepo,
-		childRepo:    childRepo,
-		medRepo:      medRepo,
-		insightRepo:  insightRepo,
-		alertService: alertService,
-		limiter:      &rateLimiter{maxCalls: 10, resetTime: time.Now().Add(time.Minute)},
+		config:        cfg,
+		bedrockClient: bedrockClient,
+		logRepo:       logRepo,
+		childRepo:     childRepo,
+		medRepo:       medRepo,
+		insightRepo:   insightRepo,
+		alertService:  alertService,
+		limiter:       &rateLimiter{maxCalls: 10, resetTime: time.Now().Add(time.Minute)},
 	}
 }
 
@@ -119,9 +141,11 @@ type aiInsightResult struct {
 	AlertSeverity       string            `json:"alert_severity,omitempty"`
 }
 
-// AnalyzeChild runs a full AI analysis for a child
+// AnalyzeChild runs a full AI analysis for a child. Returns early (no-op)
+// when the AI feature is disabled or the Bedrock client failed to
+// initialize at startup.
 func (s *AIInsightService) AnalyzeChild(ctx context.Context, child models.Child) error {
-	if !s.config.Enabled || s.config.APIKey == "" {
+	if !s.config.Enabled || s.bedrockClient == nil {
 		return nil
 	}
 
@@ -617,12 +641,16 @@ func (s *AIInsightService) callClaudeForTier3(ctx context.Context, profileCtx, l
 	return s.callClaude(ctx, tier3SystemPrompt, userPrompt)
 }
 
-// claudeRequest is the API request body
+// claudeRequest is the body shape Bedrock expects for Anthropic Claude
+// invocations. Differs from the Anthropic-direct API in two ways: the
+// top-level field is `anthropic_version` (not `model` — model goes in the
+// InvokeModel input wrapper), and the version string is the on-Bedrock
+// constant `bedrock-2023-05-31`.
 type claudeRequest struct {
-	Model     string          `json:"model"`
-	MaxTokens int             `json:"max_tokens"`
-	System    string          `json:"system"`
-	Messages  []claudeMessage `json:"messages"`
+	AnthropicVersion string          `json:"anthropic_version"`
+	MaxTokens        int             `json:"max_tokens"`
+	System           string          `json:"system"`
+	Messages         []claudeMessage `json:"messages"`
 }
 
 type claudeMessage struct {
@@ -646,16 +674,20 @@ type claudeResponse struct {
 }
 
 func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPrompt string) ([]aiInsightResult, error) {
-	// Apply a per-call deadline so a hung Claude request can't stall the
+	if s.bedrockClient == nil {
+		return nil, fmt.Errorf("%w: bedrock client not initialized", ErrClaudeUnavailable)
+	}
+
+	// Apply a per-call deadline so a hung Bedrock request can't stall the
 	// caller forever. AnalyzeChild's parent context is often a background
 	// batch ctx with no deadline of its own.
 	ctx, cancel := context.WithTimeout(ctx, claudeCallTimeout)
 	defer cancel()
 
 	reqBody := claudeRequest{
-		Model:     s.config.Model,
-		MaxTokens: s.config.MaxTokens,
-		System:    systemPrompt,
+		AnthropicVersion: bedrockAnthropicVersion,
+		MaxTokens:        s.config.MaxTokens,
+		System:           systemPrompt,
 		Messages: []claudeMessage{
 			{Role: "user", Content: userPrompt},
 		},
@@ -666,43 +698,32 @@ func (s *AIInsightService) callClaude(ctx context.Context, systemPrompt, userPro
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(jsonBody))
+	modelID := s.config.Model
+	contentType := "application/json"
+	accept := "application/json"
+	out, err := s.bedrockClient.InvokeModel(ctx, &bedrockruntime.InvokeModelInput{
+		ModelId:     &modelID,
+		Body:        jsonBody,
+		ContentType: &contentType,
+		Accept:      &accept,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", s.config.APIKey)
-	req.Header.Set("anthropic-version", "2023-06-01")
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		// Treat deadline-exceeded as a transient unavailability so callers
-		// can no-op gracefully instead of bubbling a 5xx to the user.
+		// Deadline exceeded or transient AWS throttling/unavailability —
+		// caller treats both as "skip this run".
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return nil, fmt.Errorf("%w: %v", ErrClaudeUnavailable, err)
 		}
-		return nil, fmt.Errorf("API call: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response: %w", err)
-	}
-
-	if resp.StatusCode != 200 {
-		// 503 (and 429 by analogy) are transient — surface them as
-		// ErrClaudeUnavailable so AnalyzeChild can treat them as "skip this
-		// run" instead of an exceptional 500.
-		if resp.StatusCode == http.StatusServiceUnavailable || resp.StatusCode == http.StatusTooManyRequests {
-			return nil, fmt.Errorf("%w: API returned %d: %s", ErrClaudeUnavailable, resp.StatusCode, truncateLog(string(body), 200))
+		msg := err.Error()
+		if strings.Contains(msg, "ThrottlingException") ||
+			strings.Contains(msg, "ServiceUnavailableException") ||
+			strings.Contains(msg, "ModelTimeoutException") {
+			return nil, fmt.Errorf("%w: %v", ErrClaudeUnavailable, err)
 		}
-		return nil, fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("bedrock InvokeModel: %w", err)
 	}
 
 	var claudeResp claudeResponse
-	if err := json.Unmarshal(body, &claudeResp); err != nil {
+	if err := json.Unmarshal(out.Body, &claudeResp); err != nil {
 		return nil, fmt.Errorf("unmarshal response: %w", err)
 	}
 

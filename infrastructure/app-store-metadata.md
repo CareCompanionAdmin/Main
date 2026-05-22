@@ -94,12 +94,13 @@ Data collected:
 - Messages: In-app family chat
 - Device info: Push notification tokens
 
-Data sharing: None — no data shared with third parties
+Data sharing: Limited — de-identified pattern data is processed by Anthropic's Claude AI models hosted on AWS Bedrock under a signed Business Associate Agreement (BAA) to generate insights. AWS does not use the data to train models; Anthropic does not receive or retain the data (Claude on Bedrock runs entirely within AWS infrastructure). Names, dates of birth, and free-text notes are stripped before transmission unless the user explicitly opts in to free-text AI analysis in Settings.
+
 Data encryption: Yes, in transit and at rest
 Data deletion: Users can request account and data deletion
 
 ## Apple App Privacy ("Nutrition Label") Answers
-Verified 2026-05-12 by auditing `mobile/package.json`, `mobile/ios/App/Podfile`, `mobile/android/app/build.gradle`, and `static/js/**`.
+Verified 2026-05-12 by auditing `mobile/package.json`, `mobile/ios/App/Podfile`, `mobile/android/app/build.gradle`, and `static/js/**`. AI-processing disclosure updated 2026-05-22 with Phase 5 Bedrock cutover.
 
 **No analytics or crash-reporting SDKs are bundled.** No Sentry, Crashlytics, Firebase Analytics, Datadog, Amplitude, Mixpanel, Posthog, or Segment. The only Firebase touch point is `@capacitor/push-notifications` which uses FCM exclusively for push delivery (no analytics emission).
 
@@ -108,6 +109,9 @@ Data type declarations (Linked to User, App Functionality only, NOT used for tra
 - **Contact Info** — email, name (account creation + family chat display)
 - **User Content** — family chat messages, free-text notes on logs, PDF report content
 - **Identifiers** — internal user ID (server-issued UUID, not shared with third parties)
+
+Third-party processing disclosure (Apple Guideline 5.1.2(i)):
+- **AWS Bedrock (Anthropic Claude models)** — used for AI-assisted pattern analysis on Health & Fitness data. Operating under a signed AWS Business Associate Agreement (BAA). By default, only de-identified data is sent (age band, broad diagnosis categories, medication classes, numeric daily logs); names, exact dates of birth, and free-text notes are stripped server-side before any AI call. Users can opt in to free-text inclusion via Settings → AI Insights, which is disabled by default and may be revoked at any time. AWS does not use this data to train models. Anthropic does not receive or retain the data (Claude on Bedrock runs entirely within AWS infrastructure). Disclosed in Privacy Policy §4.1.
 
 Not declared:
 - Diagnostics — none collected (no analytics/crash SDK)
