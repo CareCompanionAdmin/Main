@@ -64,7 +64,7 @@ Health & Fitness
 ## App Review Notes (Apple)
 MyCareCompanion is a tracking and journaling tool for parents of children with autism. It is NOT a diagnostic, treatment, or medical device — all in-app "patterns" are statistical correlations across user-logged data with prominent disclaimers to consult a physician.
 
-Subscription is $15/month handled on the web at carecompanion.net per Apple's US-storefront external-link allowance (April 2025 guideline update, 3.1.1(a)). Tap Subscribe in the app to see the neutral redirect notice and external Safari handoff.
+Subscription is $15/month handled on the web at mycarecompanion.net per Apple's US-storefront external-link allowance (April 2025 guideline update, 3.1.1(a)). Tap Subscribe in the app to see the neutral redirect notice and external Safari handoff.
 
 Family chat is private to invited family members only. Each message has a Report icon (next to non-own messages) that opens a pre-addressed email to support. Family owners may also remove members directly from Settings → Members.
 
@@ -102,7 +102,7 @@ Data deletion: Users can request account and data deletion
 ## Apple App Privacy ("Nutrition Label") Answers
 Verified 2026-05-12 by auditing `mobile/package.json`, `mobile/ios/App/Podfile`, `mobile/android/app/build.gradle`, and `static/js/**`. AI-processing disclosure updated 2026-05-22 with Phase 5 Bedrock cutover.
 
-**No analytics or crash-reporting SDKs are bundled.** No Sentry, Crashlytics, Firebase Analytics, Datadog, Amplitude, Mixpanel, Posthog, or Segment. The only Firebase touch point is `@capacitor/push-notifications` which uses FCM exclusively for push delivery (no analytics emission).
+**No analytics or crash-reporting SDKs are bundled.** No Sentry, Crashlytics, Firebase Analytics, Datadog, Amplitude, Mixpanel, Posthog, or Segment. Push notifications on iOS use APNs directly via `@capacitor/push-notifications` (the iOS Podfile does NOT link any Firebase pod — verified 2026-05-22). On Android the same plugin uses FCM purely as a push transport (no analytics emission). The Firebase service-account JSON in `infrastructure/` is server-side only for sending pushes; it is not embedded in the iOS or Android binary.
 
 Data type declarations (Linked to User, App Functionality only, NOT used for tracking or advertising):
 - **Health & Fitness** — medication records, behaviors, mood, sleep, seizure logs, therapy notes
@@ -118,8 +118,8 @@ Not declared:
 - Tracking — none (no third-party tracking)
 - Advertising — none (no ad SDKs)
 
-## App Icon Status (2026-05-12 audit)
-`mobile/icons/` contains seven PNG-encoded files (icon-48 through icon-512). All under 512×512. **Apple requires 1024×1024 PNG (no transparency, no rounded corners, no Apple imagery) for the App Store listing.** A 1024×1024 master source is needed before submission — either upscale-and-resharpen the existing 512px PNG or regenerate from the source design file. Bryan TODO.
+## App Icon Status (2026-05-22 verified)
+The 1024×1024 master source for the App Store listing already lives at `mobile/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` (1024×1024, RGB, no alpha, no rounded corners — Apple-compliant). For ASC upload, use that file. The webp staging files under `mobile/icons/` are for the web favicon and are unrelated. Bryan plans a visual icon refresh post-approval; the current icon is sufficient for the first submission.
 
 ## Target Audience
 Adults (18+) — the app is for adult caregivers, not children
@@ -129,17 +129,24 @@ https://www.mycarecompanion.net/privacy
 
 ## Support URL
 https://www.mycarecompanion.net
+(The in-app /support page is auth-gated; until a public /help landing ships, the homepage is the safest URL — it loads publicly and lists the support@mycarecompanion.net email. Apple also pulls support contact from the App Review Information block, which is the authoritative reviewer channel.)
 
-## Screenshots Needed
-iPhone (6.7" and 6.5"):
-1. Dashboard showing child overview
-2. Daily log entry screen
-3. Medication schedule
-4. Insights/analytics view
-5. Family chat
+## Marketing URL (optional ASC field)
+https://www.mycarecompanion.net
 
-Android (phone + tablet):
-Same 5 screens
+## Promotional Text (Apple, 170 chars max, editable without resubmission)
+Care logs for kids with autism, in one calm place. Medications, behaviors, sleep, seizures, family chat, and shareable PDF reports for your child's care team.
 
-Feature Graphic (Google Play, 1024x500):
-Logo centered on blue (#3b82f6) background with tagline
+## Screenshots — captured 2026-05-22 (iPhone-only, 1290×2796 6.9")
+Stored at `infrastructure/app-store-screenshots/`. iPhone-only submission (TARGETED_DEVICE_FAMILY=1 in pbxproj), so no iPad screenshots required:
+1. `01-child-dashboard.png` — child overview with alerts and Three Things to Know
+2. `02-quick-log.png` — Add Entry tile grid + scheduled medications + today's log surface
+3. `03-insights.png` — pattern surface with R7-C medical disclaimer visible (1.4.1 win)
+4. `04-medications.png` — five active medications with schedules and statuses
+5. `05-reports.png` — Past Reports populated + share + scheduling
+
+Re-shoot anytime via `cd scripts/screenshots && node capture.js`. All 5 PNGs are exactly 1290×2796 RGB no-alpha.
+
+## Google Play (parallel track — deferred until after iOS approval)
+Phone screenshots: reuse the same 5 captures (Play accepts a wide range of phone aspect ratios).
+Feature Graphic (Google Play, 1024×500): not yet produced — Bryan TODO when Google Play submission begins.
