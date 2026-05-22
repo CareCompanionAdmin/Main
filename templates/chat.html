@@ -246,6 +246,35 @@
     </div>
 </div>
 
+<!-- Report Message Modal (App Store 1.2 / UGC moderation) -->
+<div id="report-message-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
+        <h2 class="display text-2xl font-medium text-stone-800 mb-1">Report this message</h2>
+        <p id="report-msg-context" class="text-sm text-stone-500 mb-4"></p>
+        <div>
+            <label for="report-msg-reason" class="block text-sm font-medium text-stone-700 mb-2">Why are you reporting this message? <span class="text-stone-400 font-normal">(optional)</span></label>
+            <textarea id="report-msg-reason" rows="4" maxlength="2000"
+                class="w-full px-4 py-2.5 border border-stone-200 bg-white/80 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent resize-none"
+                placeholder="e.g., abusive language, personal threat, spam, off-topic…"></textarea>
+        </div>
+        <p id="report-msg-error" class="hidden text-sm text-red-600 mt-2"></p>
+        <div class="flex space-x-3 pt-4">
+            <button type="button" id="report-msg-submit" onclick="submitReportMessage()" class="flex-1 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 font-medium">
+                Submit report
+            </button>
+            <button type="button" onclick="closeReportMessageModal()" class="flex-1 py-2 bg-stone-100 text-stone-700 rounded-full hover:bg-stone-200">
+                Cancel
+            </button>
+        </div>
+        <p class="text-xs text-stone-400 mt-3">Our support team reviews reports within 24 hours and can suspend or remove accounts for abusive behavior.</p>
+    </div>
+</div>
+
+<!-- Confirmation toast for completed report submission -->
+<div id="report-toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-700 text-white px-5 py-3 rounded-2xl shadow-lg z-50">
+    Report submitted — we&rsquo;ll respond within 24 hours.
+</div>
+
 <script src="/static/js/global-search.js" defer></script>
 <script>
 // Minimal HTML escaper for interpolating untrusted strings into template
@@ -546,44 +575,79 @@ function renderMessage(msg) {
     `;
 }
 
-// Report an objectionable chat message. Captures a server-side support
-// ticket (so the report is recorded even if the user's mail client is
-// misconfigured or the support mailbox is unavailable) AND opens a
-// pre-filled mailto for transparency / so the user can add detail.
-// App Store 1.2 / UGC moderation: the server ticket is the authoritative
-// channel; mailto is a courtesy.
-async function reportMessage(messageID, senderName, sentAtISO) {
-    if (!confirm("Send a report about this message to our support team?")) return;
-    const subject = "Report a message in MyCareCompanion";
-    const body =
-        "I'd like to report a message in my family chat.\n\n" +
-        "From: " + senderName + "\n" +
-        "Sent: " + sentAtISO + "\n" +
-        "Message ID: " + messageID + "\n\n" +
-        "Reason for reporting:\n";
+// Report an objectionable chat message. Opens the in-app report modal so
+// the user can describe the issue, then POSTs a support ticket server-side
+// (App Store 1.2 / UGC moderation). No mailto — keeps the flow entirely
+// in-app so it works regardless of whether the device has a mail client
+// configured.
+let _reportContext = null;
 
-    // Fire-and-forget server ticket. Failures are non-blocking — the user
-    // still gets the mailto path so they can report manually.
+function openReportMessageModal(messageID, senderName, sentAtISO) {
+    _reportContext = { messageID: messageID, senderName: senderName, sentAtISO: sentAtISO };
+    let when = sentAtISO;
+    try { when = new Date(sentAtISO).toLocaleString(); } catch (_) {}
+    document.getElementById('report-msg-context').textContent = 'From ' + senderName + ' · ' + when;
+    const ta = document.getElementById('report-msg-reason');
+    ta.value = '';
+    document.getElementById('report-msg-error').classList.add('hidden');
+    const btn = document.getElementById('report-msg-submit');
+    btn.disabled = false;
+    btn.textContent = 'Submit report';
+    document.getElementById('report-message-modal').classList.remove('hidden');
+    setTimeout(function () { ta.focus(); }, 50);
+}
+
+function closeReportMessageModal() {
+    document.getElementById('report-message-modal').classList.add('hidden');
+    _reportContext = null;
+}
+
+async function submitReportMessage() {
+    if (!_reportContext) return;
+    const btn = document.getElementById('report-msg-submit');
+    const err = document.getElementById('report-msg-error');
+    const reason = document.getElementById('report-msg-reason').value.trim();
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    err.classList.add('hidden');
+
+    const subject = 'Report a message in MyCareCompanion';
+    const description =
+        'Family chat message report.\n\n' +
+        'From: ' + _reportContext.senderName + '\n' +
+        'Sent: ' + _reportContext.sentAtISO + '\n' +
+        'Message ID: ' + _reportContext.messageID + '\n\n' +
+        'Reason from the reporting user:\n' +
+        (reason || '(no reason provided)');
+
     try {
-        await fetch('/api/support/tickets', {
+        const resp = await fetch('/api/support/tickets', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             credentials: 'include',
             body: JSON.stringify({
                 subject: subject,
-                description: body + "(submitted via in-app chat Report flow — user has not yet added a reason)",
+                description: description,
                 type: 'general',
                 priority: 'high',
             }),
         });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        closeReportMessageModal();
+        showReportToast();
     } catch (e) {
-        console.warn('chat report: server-side ticket failed', e);
+        err.textContent = "Couldn't submit the report. Please try again, or email support@mycarecompanion.net directly.";
+        err.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Submit report';
     }
+}
 
-    const mailto = "mailto:support@mycarecompanion.net" +
-        "?subject=" + encodeURIComponent(subject) +
-        "&body=" + encodeURIComponent(body);
-    window.location.href = mailto;
+function showReportToast() {
+    const t = document.getElementById('report-toast');
+    if (!t) return;
+    t.classList.remove('hidden');
+    setTimeout(function () { t.classList.add('hidden'); }, 4500);
 }
 
 // File attachment handling
@@ -792,7 +856,7 @@ window.addEventListener('DOMContentLoaded', function() {
         const btn = e.target.closest('button[data-action="report-msg"]');
         if (!btn) return;
         e.preventDefault();
-        reportMessage(btn.dataset.msgId, btn.dataset.senderName, btn.dataset.sentAt);
+        openReportMessageModal(btn.dataset.msgId, btn.dataset.senderName, btn.dataset.sentAt);
     });
 });
 
