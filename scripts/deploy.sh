@@ -103,9 +103,13 @@ echo "3/4 Starting instance refresh..."
 # health checks (~60s after listen). MinHealthy=0 + InstanceWarmup=120 burned
 # us on 2026-05-03: ASG declared the new instance failed before ALB had time
 # to record 2 successful checks, taking prod down for ~3min.
+# InstanceWarmup=60 (was 180): Go binary boots in <1s and /health responds
+# immediately, so 60s after "healthy" is plenty of buffer. Paired with
+# HealthCheckGracePeriod=90 on the ASG. Tuned 2026-05-22 to cut refresh
+# from ~10min to ~5min.
 REFRESH_ID=$(aws autoscaling start-instance-refresh \
     --auto-scaling-group-name $ASG_NAME \
-    --preferences '{"MinHealthyPercentage":100,"MaxHealthyPercentage":200,"InstanceWarmup":180}' \
+    --preferences '{"MinHealthyPercentage":100,"MaxHealthyPercentage":200,"InstanceWarmup":60}' \
     --region $REGION \
     --query 'InstanceRefreshId' --output text)
 log_deployment "ASG Instance Refresh" "STARTED refresh_id=$REFRESH_ID"
