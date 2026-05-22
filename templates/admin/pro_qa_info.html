@@ -1,0 +1,27 @@
+{{define "pro_qa_body"}}
+<form method="POST" action="/admin/pro-qa/info" class="space-y-4">
+  <div class="bg-white border rounded-lg p-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="font-semibold">Shared Info</h2>
+      <div class="text-xs text-gray-500">
+        {{if .Info.UpdatedByEmail}}Last updated by {{.Info.UpdatedByEmail}} • {{.Info.UpdatedAt.Format "2006-01-02 15:04 MST"}}{{end}}
+      </div>
+    </div>
+
+    <div class="mb-2 flex space-x-2 text-sm">
+      <button type="button" data-pq-tab="edit" class="pq-tab-btn px-3 py-1 rounded bg-gray-200">Edit</button>
+      <button type="button" data-pq-tab="preview" class="pq-tab-btn px-3 py-1 rounded">Preview</button>
+    </div>
+
+    <div data-pq-pane="edit">
+      <textarea name="body_md" rows="20" class="w-full border rounded p-2 font-mono text-sm">{{.Info.BodyMD}}</textarea>
+    </div>
+    <div data-pq-pane="preview" class="hidden prose max-w-none border rounded p-4 bg-gray-50">
+      {{.BodyHTML}}
+    </div>
+  </div>
+  <div class="flex justify-end">
+    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Save</button>
+  </div>
+</form>
+{{end}}

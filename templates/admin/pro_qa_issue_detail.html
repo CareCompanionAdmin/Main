@@ -1,0 +1,95 @@
+{{define "pro_qa_body"}}
+<div class="space-y-6">
+  <div class="mb-3"><a href="/admin/pro-qa/issues" class="text-sm text-indigo-700 hover:underline">&larr; All issues</a></div>
+
+  <div class="bg-white border rounded-lg p-4">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-xs text-gray-500">Issue #{{.Issue.IssueNumber}}</div>
+        <h2 class="text-xl font-semibold">{{.Issue.Title}}</h2>
+        <div class="text-xs text-gray-500 mt-1">
+          opened {{.Issue.CreatedAt.Format "Jan 2 15:04"}}{{if .Issue.CreatedByEmail}} by {{.Issue.CreatedByEmail}}{{end}}
+        </div>
+      </div>
+      <form method="POST" action="/admin/pro-qa/issues/{{.Issue.ID}}/status" class="flex items-center space-x-2">
+        <select name="status" class="border rounded p-1 text-sm">
+          {{range $s := .Statuses}}
+            <option value="{{$s}}" {{if eq $s $.Issue.Status}}selected{{end}}>{{$s}}</option>
+          {{end}}
+        </select>
+        <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Change status</button>
+      </form>
+    </div>
+
+    <div class="mt-3 text-xs space-x-3 text-gray-600">
+      <span>Severity: <strong>{{.Issue.Severity}}</strong></span>
+      <span>Env: <strong>{{or .Issue.Environment "—"}}</strong></span>
+      <span>Platform: <strong>{{or .Issue.Platform "—"}}</strong></span>
+      {{if .Issue.ParentIssueID}}<span>Parent: {{.Issue.ParentIssueID}}</span>{{end}}
+    </div>
+
+    <div class="mt-4 prose max-w-none border-t pt-3">{{.DescriptionHTML}}</div>
+
+    <details class="mt-4">
+      <summary class="cursor-pointer text-sm text-gray-600">Edit issue</summary>
+      <form method="POST" action="/admin/pro-qa/issues/{{.Issue.ID}}" class="mt-3 space-y-2">
+        <input name="title" value="{{.Issue.Title}}" class="w-full border rounded p-2"/>
+        <textarea name="description_md" rows="6" class="w-full border rounded p-2 font-mono text-sm">{{.Issue.DescriptionMD}}</textarea>
+        <div class="grid grid-cols-3 gap-2">
+          <select name="environment" class="border rounded p-2">
+            <option value="">-- env --</option>
+            {{range $e := .Envs}}<option value="{{$e}}" {{if eq $e $.Issue.Environment}}selected{{end}}>{{$e}}</option>{{end}}
+          </select>
+          <select name="platform" class="border rounded p-2">
+            <option value="">-- platform --</option>
+            {{range $p := .Platforms}}<option value="{{$p}}" {{if eq $p $.Issue.Platform}}selected{{end}}>{{$p}}</option>{{end}}
+          </select>
+          <select name="severity" class="border rounded p-2">
+            {{range $s := .Severities}}<option value="{{$s}}" {{if eq $s $.Issue.Severity}}selected{{end}}>{{$s}}</option>{{end}}
+          </select>
+        </div>
+        <input name="parent_issue_id" value="{{if .Issue.ParentIssueID}}{{.Issue.ParentIssueID}}{{end}}" placeholder="(optional) parent issue UUID" class="w-full border rounded p-2 text-xs"/>
+        <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Save</button>
+      </form>
+    </details>
+  </div>
+
+  <div id="comments" class="bg-white border rounded-lg p-4">
+    <h3 class="font-semibold mb-3">Discussion</h3>
+    {{if not .Comments}}<div class="text-sm text-gray-500 italic mb-3">No comments yet.</div>{{end}}
+    <ul class="space-y-3">
+      {{range $c := .Comments}}
+        <li class="border-l-4 {{if $c.IsStatusChange}}border-gray-300 bg-gray-50{{else}}border-indigo-400{{end}} p-3 rounded-r">
+          <div class="text-xs text-gray-500 mb-1">
+            <strong>{{or $c.AuthorName $c.AuthorEmail "system"}}</strong> • {{$c.CreatedAt.Format "Jan 2 15:04"}}
+          </div>
+          <div class="prose max-w-none text-sm">{{index $.RenderedComments $c.ID}}</div>
+        </li>
+      {{end}}
+    </ul>
+
+    <form method="POST" action="/admin/pro-qa/issues/{{.Issue.ID}}/comment" class="mt-4 border-t pt-3 space-y-2">
+      <textarea name="body_md" rows="4" placeholder="Add a comment (Markdown)" required class="w-full border rounded p-2 font-mono text-sm"></textarea>
+      <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Post comment</button>
+    </form>
+  </div>
+
+  <div class="bg-white border rounded-lg p-4">
+    <h3 class="font-semibold mb-3">Attachments</h3>
+    {{if not .Attachments}}<div class="text-sm text-gray-500 italic mb-3">No attachments yet.</div>{{end}}
+    <ul class="space-y-2 mb-4">
+      {{range $a := .Attachments}}
+        <li class="text-sm">
+          <a href="/admin/pro-qa/attachments/{{$a.ID}}" target="_blank" class="text-indigo-700 hover:underline">{{$a.Filename}}</a>
+          <span class="text-xs text-gray-500">({{$a.ContentType}}, {{$a.SizeBytes}} bytes)</span>
+        </li>
+      {{end}}
+    </ul>
+    <form id="pq-upload-form" enctype="multipart/form-data" data-issue-id="{{.Issue.ID}}" class="flex items-center space-x-2">
+      <input type="file" name="file" required class="text-sm"/>
+      <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Upload</button>
+      <span id="pq-upload-status" class="text-xs text-gray-500"></span>
+    </form>
+  </div>
+</div>
+{{end}}

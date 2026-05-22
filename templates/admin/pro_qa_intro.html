@@ -1,0 +1,20 @@
+{{define "pro_qa_body"}}
+<div class="prose max-w-none bg-white border rounded-lg p-6">
+  <h2>Welcome to the Pro QA Workspace</h2>
+  <p>This area is a private workspace for Bryan and the assigned QA tester. Nothing here is visible to the general admin team, parents, or support staff.</p>
+
+  <h3>What's in each tab</h3>
+  <ul>
+    <li><strong>Info</strong> — Shared Markdown area. Use it to record test account credentials, environment URLs, how to set up TestFlight, and any other reference material that both of us should be able to update freely.</li>
+    <li><strong>Requested Checks</strong> — A working list of things to test. Bryan adds items he wants specifically verified or knows are risky; the QA tester marks each as in-review or done as work progresses.</li>
+    <li><strong>Issue Tracker</strong> — Private bidirectional ticketing. Either of us can open an issue, comment back and forth, attach screenshots, change status, and link parent/child issues. Same data is visible from dev and prod.</li>
+  </ul>
+
+  <h3>Conventions</h3>
+  <ul>
+    <li>All text fields accept <strong>Markdown</strong>. Use the <em>Preview</em> tab to verify formatting before saving.</li>
+    <li>Image and PDF attachments up to 20&nbsp;MB are stored in S3.</li>
+    <li>Use the <strong>Environment</strong> field on issues to record where you observed the problem (dev vs prod) — both share this workspace.</li>
+  </ul>
+</div>
+{{end}}

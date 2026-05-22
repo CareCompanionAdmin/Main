@@ -1,0 +1,24 @@
+{{define "content"}}
+<div class="p-6 max-w-6xl">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Pro QA Workspace</h1>
+    <p class="text-sm text-gray-600">Private workspace for the paid QA engagement. Visible only to super admins (and the assigned QA tester once role-based access ships).</p>
+  </div>
+
+  <div class="border-b border-gray-200 mb-6">
+    <nav class="-mb-px flex space-x-6">
+      <a href="/admin/pro-qa/intro"
+         class="py-2 px-1 border-b-2 text-sm font-medium {{if eq .ActiveTab "intro"}}border-indigo-600 text-indigo-700{{else}}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{{end}}">Intro</a>
+      <a href="/admin/pro-qa/info"
+         class="py-2 px-1 border-b-2 text-sm font-medium {{if eq .ActiveTab "info"}}border-indigo-600 text-indigo-700{{else}}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{{end}}">Info</a>
+      <a href="/admin/pro-qa/checks"
+         class="py-2 px-1 border-b-2 text-sm font-medium {{if eq .ActiveTab "checks"}}border-indigo-600 text-indigo-700{{else}}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{{end}}">Requested Checks</a>
+      <a href="/admin/pro-qa/issues"
+         class="py-2 px-1 border-b-2 text-sm font-medium {{if eq .ActiveTab "issues"}}border-indigo-600 text-indigo-700{{else}}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{{end}}">Issue Tracker</a>
+    </nav>
+  </div>
+
+  {{template "pro_qa_body" .}}
+</div>
+<script src="/static/js/pro_qa.js"></script>
+{{end}}

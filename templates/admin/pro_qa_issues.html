@@ -1,0 +1,75 @@
+{{define "pro_qa_body"}}
+<div class="space-y-6">
+  <div class="bg-white border rounded-lg p-4">
+    <h2 class="font-semibold mb-3">Open a new issue</h2>
+    <form method="POST" action="/admin/pro-qa/issues" class="space-y-2">
+      <input name="title" required placeholder="Short summary" class="w-full border rounded p-2"/>
+      <textarea name="description_md" rows="5" placeholder="Detailed description (Markdown)" class="w-full border rounded p-2 font-mono text-sm"></textarea>
+      <div class="grid grid-cols-3 gap-2">
+        <select name="environment" class="border rounded p-2">
+          <option value="">-- env --</option>
+          {{range $e := .Envs}}<option value="{{$e}}">{{$e}}</option>{{end}}
+        </select>
+        <select name="platform" class="border rounded p-2">
+          <option value="">-- platform --</option>
+          {{range $p := .Platforms}}<option value="{{$p}}">{{$p}}</option>{{end}}
+        </select>
+        <select name="severity" class="border rounded p-2">
+          {{range $s := .Severities}}<option value="{{$s}}" {{if eq $s "medium"}}selected{{end}}>{{$s}}</option>{{end}}
+        </select>
+      </div>
+      <input name="parent_issue_id" placeholder="(optional) parent issue UUID" class="w-full border rounded p-2 text-xs"/>
+      <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Create issue</button>
+    </form>
+  </div>
+
+  <div class="bg-white border rounded-lg">
+    <div class="p-3 border-b flex items-center space-x-2 text-sm">
+      <span>Filter:</span>
+      <a href="/admin/pro-qa/issues" class="px-2 py-1 rounded {{if not .FilterStatus}}bg-gray-200{{end}}">all</a>
+      {{range $s := .Statuses}}
+        <a href="/admin/pro-qa/issues?status={{$s}}" class="px-2 py-1 rounded {{if eq $.FilterStatus $s}}bg-gray-200{{end}}">{{$s}}</a>
+      {{end}}
+    </div>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+        <tr>
+          <th class="p-2 text-left">#</th>
+          <th class="p-2 text-left">Title</th>
+          <th class="p-2">Status</th>
+          <th class="p-2">Sev</th>
+          <th class="p-2">Env</th>
+          <th class="p-2">Platform</th>
+          <th class="p-2">Comments</th>
+          <th class="p-2">Created</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {{if not .Issues}}
+          <tr><td colspan="8" class="p-6 text-center text-gray-500 italic">No issues yet.</td></tr>
+        {{end}}
+        {{range $i := .Issues}}
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 text-gray-400">#{{$i.IssueNumber}}</td>
+            <td class="p-2"><a href="/admin/pro-qa/issues/{{$i.ID}}" class="text-indigo-700 hover:underline">{{$i.Title}}</a>
+              {{if $i.ParentIssueID}}<span class="ml-1 text-xs text-gray-400">(child)</span>{{end}}
+            </td>
+            <td class="p-2 text-center"><span class="text-xs px-2 py-0.5 rounded
+              {{if eq $i.Status "open"}}bg-yellow-100 text-yellow-800{{end}}
+              {{if eq $i.Status "needs_info"}}bg-orange-100 text-orange-800{{end}}
+              {{if eq $i.Status "in_progress"}}bg-blue-100 text-blue-800{{end}}
+              {{if eq $i.Status "resolved"}}bg-green-100 text-green-800{{end}}
+              {{if eq $i.Status "closed"}}bg-gray-200 text-gray-700{{end}}
+              {{if eq $i.Status "wont_fix"}}bg-gray-200 text-gray-700{{end}}">{{$i.Status}}</span></td>
+            <td class="p-2 text-center text-xs">{{$i.Severity}}</td>
+            <td class="p-2 text-center text-xs">{{$i.Environment}}</td>
+            <td class="p-2 text-center text-xs">{{$i.Platform}}</td>
+            <td class="p-2 text-center text-xs">{{$i.CommentCount}}</td>
+            <td class="p-2 text-center text-xs text-gray-500">{{$i.CreatedAt.Format "Jan 2"}}</td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
