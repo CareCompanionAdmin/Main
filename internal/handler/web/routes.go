@@ -24,6 +24,7 @@ func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthS
 		r.Get("/register", handlers.Register)
 		r.Get("/privacy", handlers.Privacy)
 		r.Get("/terms", handlers.Terms)
+		r.Get("/help", handlers.Help)
 		// Account-deletion landing pages. Public — the user is signed out
 		// by the time they hit these. The restore page validates a token
 		// from the email; the pending page is informational.

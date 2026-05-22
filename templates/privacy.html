@@ -82,7 +82,7 @@
                     <li><strong>Device Platform:</strong> Whether you are using iOS or Android, to deliver notifications correctly.</li>
                     <li><strong>Device Name:</strong> An optional device label (e.g., "iPhone") to help you manage your registered devices.</li>
                 </ul>
-                <p>Our mobile app uses Firebase Cloud Messaging (FCM), a service provided by Google, to deliver push notifications. <strong>No health data is sent to Firebase.</strong> Only the device token and notification content (title, message text, and a link identifier) are transmitted through FCM. Firebase does not have access to your health records, care logs, or any child information.</p>
+                <p>Our iOS app sends push notifications via Apple Push Notification service (APNs) directly &mdash; no Firebase SDK is bundled in the iOS binary. Our Android app uses Firebase Cloud Messaging (FCM), a service provided by Google, as a push-delivery transport. <strong>No health data is sent to Apple or Google.</strong> Only your device token and notification content (title, message text, and a link identifier) are transmitted through these push services. Neither Apple nor Google has access to your health records, care logs, or any child information.</p>
 
                 <h2>2. How We Use Your Information</h2>
                 <p>We use the information we collect to:</p>

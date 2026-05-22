@@ -128,8 +128,8 @@ Adults (18+) — the app is for adult caregivers, not children
 https://www.mycarecompanion.net/privacy
 
 ## Support URL
-https://www.mycarecompanion.net
-(The in-app /support page is auth-gated; until a public /help landing ships, the homepage is the safest URL — it loads publicly and lists the support@mycarecompanion.net email. Apple also pulls support contact from the App Review Information block, which is the authoritative reviewer channel.)
+https://www.mycarecompanion.net/help
+(Public help landing page — no auth required. Lists support@mycarecompanion.net prominently + FAQ. The in-app /support tickets page remains auth-gated and is separate from this reviewer-facing landing.)
 
 ## Marketing URL (optional ASC field)
 https://www.mycarecompanion.net

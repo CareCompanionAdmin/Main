@@ -133,6 +133,13 @@ func (h *WebHandlers) Terms(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "terms", nil)
 }
 
+// Help renders the public support / FAQ landing page. Public so an App Store
+// reviewer (or any signed-out visitor) can reach support resources without
+// hitting the auth wall on the in-app /support tickets page.
+func (h *WebHandlers) Help(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "help", nil)
+}
+
 // Dashboard renders the main dashboard
 func (h *WebHandlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())

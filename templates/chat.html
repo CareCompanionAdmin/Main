@@ -537,11 +537,13 @@ function renderMessage(msg) {
     `;
 }
 
-// Open a pre-filled email to support so the user can report an objectionable
-// message. We deliberately don't send a server request — mailto: keeps the
-// user in control of what they send, and the system Mail app is the iOS
-// happy path the App Store reviewer expects to see.
-function reportMessage(messageID, senderName, sentAtISO) {
+// Report an objectionable chat message. Captures a server-side support
+// ticket (so the report is recorded even if the user's mail client is
+// misconfigured or the support mailbox is unavailable) AND opens a
+// pre-filled mailto for transparency / so the user can add detail.
+// App Store 1.2 / UGC moderation: the server ticket is the authoritative
+// channel; mailto is a courtesy.
+async function reportMessage(messageID, senderName, sentAtISO) {
     if (!confirm("Send a report about this message to our support team?")) return;
     const subject = "Report a message in MyCareCompanion";
     const body =
@@ -550,6 +552,25 @@ function reportMessage(messageID, senderName, sentAtISO) {
         "Sent: " + sentAtISO + "\n" +
         "Message ID: " + messageID + "\n\n" +
         "Reason for reporting:\n";
+
+    // Fire-and-forget server ticket. Failures are non-blocking — the user
+    // still gets the mailto path so they can report manually.
+    try {
+        await fetch('/api/support/tickets', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'include',
+            body: JSON.stringify({
+                subject: subject,
+                description: body + "(submitted via in-app chat Report flow — user has not yet added a reason)",
+                type: 'general',
+                priority: 'high',
+            }),
+        });
+    } catch (e) {
+        console.warn('chat report: server-side ticket failed', e);
+    }
+
     const mailto = "mailto:support@mycarecompanion.net" +
         "?subject=" + encodeURIComponent(subject) +
         "&body=" + encodeURIComponent(body);

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Help &amp; Support - MyCareCompanion</title>
+    <meta name="description" content="MyCareCompanion help and support. Contact us, browse common questions, or open a ticket from inside the app.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: '#EA580C', secondary: '#10B981' } } }
+        }
+    </script>
+    <style>
+        .prose h2 { margin-top: 2rem; margin-bottom: 1rem; font-size: 1.5rem; font-weight: 600; color: #1f2937; }
+        .prose h3 { margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1.125rem; font-weight: 600; color: #374151; }
+        .prose p { margin-bottom: 1rem; line-height: 1.75; color: #4b5563; }
+        .prose ul { margin-bottom: 1rem; padding-left: 1.5rem; list-style-type: disc; }
+        .prose li { margin-bottom: 0.5rem; color: #4b5563; }
+        .prose strong { color: #1f2937; }
+        .prose a { color: #EA580C; text-decoration: underline; }
+        .prose a:hover { color: #9a3412; }
+    </style>
+    <link rel="stylesheet" href="/static/css/calm.css">
+</head>
+<body class="calm-bg min-h-screen">
+    <header class="bg-white/70 backdrop-blur-md border-b border-stone-200/60">
+        <div class="max-w-4xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center space-x-3">
+                    <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="h-10 w-auto">
+                    <span class="display text-2xl font-medium text-stone-800">MyCareCompanion</span>
+                </a>
+                <a href="/" class="text-primary hover:text-orange-700 font-medium transition">
+                    &larr; Back to Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-12">
+        <div class="glass ring-soft rounded-3xl p-8 md:p-12">
+            <h1 class="display text-4xl md:text-5xl font-medium text-stone-800 mb-2">Help &amp; Support</h1>
+            <p class="text-stone-500 mb-8">We&rsquo;re a small team and we read every message.</p>
+
+            <div class="bg-orange-50 border border-orange-100 rounded-2xl p-6 mb-8">
+                <h2 class="text-xl font-semibold text-orange-900 mb-2" style="margin-top:0;">Contact us</h2>
+                <p class="text-stone-700 mb-2">
+                    For account help, billing questions, bug reports, or anything else, email us:
+                </p>
+                <p class="text-lg">
+                    <a href="mailto:support@mycarecompanion.net" class="text-primary font-semibold underline">support@mycarecompanion.net</a>
+                </p>
+                <p class="text-sm text-stone-500 mt-3 mb-0">We aim to respond within one business day. Including a screenshot is the fastest way to get something fixed.</p>
+            </div>
+
+            <div class="bg-rose-50 border border-rose-100 rounded-2xl p-6 mb-8">
+                <h2 class="text-xl font-semibold text-rose-900 mb-2" style="margin-top:0;">Medical emergencies</h2>
+                <p class="text-stone-700 mb-0">
+                    MyCareCompanion is a tracking and journaling tool, not a medical device. It does not diagnose, treat, cure, or prevent any condition. <strong>If you or your child is having a medical emergency, call 911 (or your local emergency number) and contact your healthcare provider — do not rely on this app.</strong>
+                </p>
+            </div>
+
+            <div class="prose max-w-none">
+                <h2>Common questions</h2>
+
+                <h3>How do I get an account?</h3>
+                <p>You can <a href="/register">create an account</a> from the home page. Accounts are free to start, and the optional subscription unlocks the full feature set for $15/month, cancellable any time.</p>
+
+                <h3>Where is my data stored?</h3>
+                <p>All health information is stored on encrypted servers in the United States. Your data is never sold or shared with advertisers. AI-assisted pattern analysis runs under a signed Business Associate Agreement with AWS; names and free-text notes are stripped before any AI call by default. See the <a href="/privacy">Privacy Policy</a> for full detail.</p>
+
+                <h3>How do I delete my account?</h3>
+                <p>Sign in, open <strong>Settings &rarr; Danger Zone &rarr; Delete My Account</strong>, and follow the email confirmation flow. You have a 30-day grace period to restore your account if you change your mind. After 30 days the data is permanently deleted. Full details are in our <a href="/terms">Terms of Service</a>.</p>
+
+                <h3>How do I report a problem with another family member or a chat message?</h3>
+                <p>Inside the app, tap the flag icon next to any chat message you want to report &mdash; that opens a pre-filled email to our support team. Family owners can also remove members directly from <strong>Settings &rarr; Family Members</strong>. We review reports within 24 hours and can suspend or remove accounts for abusive behavior. See <a href="/terms">Terms &sect; 3.4</a> for the full policy.</p>
+
+                <h3>How do I cancel my subscription?</h3>
+                <p>Sign in, open <strong>Settings &rarr; Subscription</strong>, and tap <strong>Manage Subscription</strong> &mdash; that opens the Stripe billing portal where you can cancel any time. Cancellation takes effect at the end of your current billing period.</p>
+
+                <h3>I forgot my password.</h3>
+                <p>Use the <strong>Forgot password?</strong> link on the <a href="/login">sign-in page</a>. We&rsquo;ll email you a reset link.</p>
+
+                <h3>I&rsquo;m a journalist, researcher, or healthcare provider with questions.</h3>
+                <p>Please email <a href="mailto:support@mycarecompanion.net">support@mycarecompanion.net</a> with a short description of your inquiry and we&rsquo;ll route it to the right person.</p>
+            </div>
+
+            <div class="mt-10 pt-6 border-t border-stone-200/60 text-center">
+                <p class="text-sm text-stone-500">
+                    Looking for our <a href="/privacy" class="text-primary underline">Privacy Policy</a> or <a href="/terms" class="text-primary underline">Terms of Service</a>?
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-stone-100 border-t border-stone-200 mt-12">
+        <div class="max-w-4xl mx-auto px-4 py-8">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <img src="/static/images/mattyfullbody_clear.png" alt="Matty" class="h-8 w-auto">
+                    <span class="text-stone-600">&copy; 2026 MyCareCompanion. All rights reserved.</span>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="/" class="text-stone-600 hover:text-primary transition">Home</a>
+                    <a href="/terms" class="text-stone-600 hover:text-primary transition">Terms of Service</a>
+                    <a href="/privacy" class="text-stone-600 hover:text-primary transition">Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
