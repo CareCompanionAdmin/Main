@@ -397,9 +397,14 @@ func main() {
 	reportScheduler := service.NewReportScheduler(services.Report)
 	go reportScheduler.Start(schedulerCtx)
 
-	// Create AI insight service if Claude is configured
+	// Create AI insight service if Claude is configured. Phase 5 swapped the
+	// transport to AWS Bedrock — auth comes from the EC2 instance role's
+	// BedrockClaudeInvoke IAM policy, not an API key, so we no longer gate on
+	// CLAUDE_API_KEY here. The service constructor itself logs and continues
+	// with a nil Bedrock client if AWS config loading fails, in which case
+	// callClaude returns ErrClaudeUnavailable on every call.
 	var aiInsightService *service.AIInsightService
-	if cfg.Claude.Enabled && cfg.Claude.APIKey != "" {
+	if cfg.Claude.Enabled {
 		aiInsightService = service.NewAIInsightService(
 			&cfg.Claude, repos.Log, repos.Child, repos.Medication, repos.Insight, services.Alert,
 		)
@@ -407,9 +412,9 @@ func main() {
 		// (always strips free-text by default), and the gate itself short-
 		// circuits to false when AI_NARRATIVE_OPT_IN_AVAILABLE is unset.
 		aiInsightService.SetNarrativeConsent(services.AINarrativeConsent)
-		log.Println("Claude AI insights enabled")
+		log.Printf("Claude AI insights enabled (model=%s, via AWS Bedrock)", cfg.Claude.Model)
 	} else {
-		log.Println("Claude AI insights disabled (set CLAUDE_ENABLED=true and CLAUDE_API_KEY to enable)")
+		log.Println("Claude AI insights disabled (set CLAUDE_ENABLED=true to enable)")
 	}
 
 	// Phase 2 internal-AI scanners — all reuse existing repos. Each is
