@@ -373,6 +373,7 @@ type Repositories struct {
 	Session          SessionRepository          // Persistent server-side sessions
 	SessionProd      SessionRepository          // Optional cross-env (prod) sessions read pool — nil when SESSIONS_PROD_DB_DSN unset
 	AccountDeletion  AccountDeletionRepository  // User-initiated account deletion (App Store Blocker 2)
+	ProQA            ProQARepository            // Admin-only Pro QA workspace (shared support DB)
 }
 
 // NewRepositories creates all repository implementations.
@@ -419,6 +420,7 @@ func NewRepositories(db, supportDB *sql.DB, sessionsProdDB *sql.DB, adminMirrorD
 		BountyAward:      NewBountyAwardRepo(db),
 		Session:          NewSessionRepo(db),
 		AccountDeletion:  NewAccountDeletionRepository(db),
+		ProQA:            NewProQARepo(supportDB),
 	}
 	if sessionsProdDB != nil {
 		repos.SessionProd = NewSessionRepo(sessionsProdDB)

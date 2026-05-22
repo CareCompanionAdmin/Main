@@ -49,6 +49,7 @@ type Services struct {
 	LiveSessions      *LiveSessionsService
 	AccountDeletion   *AccountDeletionService
 	AINarrativeConsent *AINarrativeConsentService
+	ProQA             *ProQAService
 
 	// AdminRepo is exposed (vs the usual pattern of wrapping each repo in its
 	// own service) for handlers that need to read/write generic
@@ -77,6 +78,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 
 	attachmentStorage := NewAttachmentStorage(&cfg.Storage)
 	reportStorage := NewBlobStorage(&cfg.Storage, "reports", cfg.Storage.ReportS3Prefix)
+	proQAStorage := NewBlobStorage(&cfg.Storage, "pro_qa", cfg.Storage.S3Prefix+"pro-qa/")
 
 	// App Store Connect — nil when env vars are unset; BetaService falls back
 	// to manual-add in that case rather than failing.
@@ -134,6 +136,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		// it's built. SSH list is gracefully empty until then.
 		LiveSessions: NewLiveSessionsService(repos.Session, repos.SessionProd, nil, cfg.App.Env),
 		AINarrativeConsent: NewAINarrativeConsentService(db, cfg.Claude.NarrativeOptInAvailable),
+		ProQA:             NewProQAService(repos.ProQA, proQAStorage),
 	}
 	// AccountDeletionService needs AuthService (above) so it can revoke
 	// sessions on confirm. Constructed after the struct so Auth is set.
