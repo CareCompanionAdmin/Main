@@ -302,6 +302,7 @@ func main() {
 	// snap.SSH stays empty.
 	services.LiveSessions.SetDevModeService(devModeService)
 	adminHandler.SetLiveSessionsService(services.LiveSessions)
+	adminHandler.SetProQAService(services.ProQA)
 	log.Println("Development Mode service initialized")
 
 	// Internal endpoints for cross-server dev mode session management

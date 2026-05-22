@@ -21,6 +21,12 @@ type Handler struct {
 	betaService       *service.BetaService
 	bountyService     *service.BountyService
 	liveSessionsService *service.LiveSessionsService
+	proQAService        *service.ProQAService
+}
+
+// SetProQAService wires the Pro QA workspace service.
+func (h *Handler) SetProQAService(s *service.ProQAService) {
+	h.proQAService = s
 }
 
 // SetBetaService wires the beta-invite orchestration service.
@@ -421,6 +427,33 @@ func (h *Handler) UIRoutes() chi.Router {
 			r.Get("/roadmap/new", h.RoadmapNewPage)
 			r.Get("/roadmap/{id}", h.RoadmapDetailPage)
 			r.Get("/roadmap/{id}/edit", h.RoadmapEditPage)
+		})
+
+		// Pro QA workspace (super_admin only for now; finer-grained role
+		// gate planned for a later slice once the role-builder UI ships).
+		r.Route("/pro-qa", func(r chi.Router) {
+			r.Use(middleware.RequireSuperAdmin())
+
+			r.Get("/", h.ProQAIntroPage)
+			r.Get("/intro", h.ProQAIntroPage)
+
+			r.Get("/info", h.ProQAInfoPage)
+			r.Post("/info", h.ProQAInfoSave)
+
+			r.Get("/checks", h.ProQAChecksPage)
+			r.Post("/checks", h.ProQAChecksCreate)
+			r.Post("/checks/{id}", h.ProQAChecksUpdate)
+			r.Post("/checks/{id}/delete", h.ProQAChecksDelete)
+
+			r.Get("/issues", h.ProQAIssuesPage)
+			r.Post("/issues", h.ProQAIssueCreate)
+			r.Get("/issues/{id}", h.ProQAIssueDetailPage)
+			r.Post("/issues/{id}", h.ProQAIssueUpdate)
+			r.Post("/issues/{id}/status", h.ProQAIssueChangeStatus)
+			r.Post("/issues/{id}/comment", h.ProQAIssueComment)
+			r.Post("/issues/{id}/attach", h.ProQAUploadAttachment)
+
+			r.Get("/attachments/{id}", h.ProQAFetchAttachment)
 		})
 
 		// Tickets / Users / Families (Partner=full, Support=full)
