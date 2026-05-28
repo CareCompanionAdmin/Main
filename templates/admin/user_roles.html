@@ -1,0 +1,66 @@
+{{define "content"}}
+<div class="p-6 max-w-6xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">User Roles</h1>
+      <p class="text-sm text-gray-600">Built-in roles are locked. Create a custom role to grant a specific set of admin sections.</p>
+    </div>
+    <a href="/admin/user-roles/new" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">+ New Custom Role</a>
+  </div>
+
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">Built-in Roles <span class="ml-2 text-xs text-gray-500 font-normal">(locked — change requires a code release)</span></h2>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+    {{range $r := .BuiltinRoles}}
+      <div class="bg-white border rounded-lg p-4 opacity-95">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold">{{$r.DisplayName}}</h3>
+          <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">{{$r.Name}}</span>
+        </div>
+        <p class="text-sm text-gray-600 mb-3">{{$r.Description}}</p>
+        <details class="text-xs">
+          <summary class="cursor-pointer text-gray-500">View permissions ({{len $r.Permissions}} sections)</summary>
+          <table class="mt-2 w-full">
+            <tbody>
+              {{range $section := $.Sections}}
+                {{$lvl := index $r.Permissions $section}}
+                <tr class="border-b last:border-0">
+                  <td class="py-1 pr-2 text-gray-700">{{index $.Labels $section}}</td>
+                  <td class="py-1 text-right">
+                    {{if eq $lvl "full"}}<span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800">full</span>
+                    {{else if eq $lvl "write"}}<span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800">write</span>
+                    {{else if eq $lvl "read"}}<span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700">read</span>
+                    {{else}}<span class="text-gray-300">—</span>
+                    {{end}}
+                  </td>
+                </tr>
+              {{end}}
+            </tbody>
+          </table>
+        </details>
+      </div>
+    {{end}}
+  </div>
+
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">Custom Roles</h2>
+  {{if not .CustomRoles}}
+    <div class="bg-white border rounded-lg p-6 text-center text-gray-500 italic">
+      No custom roles yet. Click <strong>+ New Custom Role</strong> to create one.
+    </div>
+  {{else}}
+    <div class="bg-white border rounded-lg divide-y">
+      {{range $r := .CustomRoles}}
+        <div class="p-4 flex items-center justify-between">
+          <div>
+            <a href="/admin/user-roles/{{$r.ID}}" class="font-medium text-indigo-700 hover:underline">{{$r.DisplayName}}</a>
+            <span class="ml-2 text-xs text-gray-500">{{$r.Name}}</span>
+            <div class="text-xs text-gray-500 mt-1">{{$r.Description}}</div>
+          </div>
+          <div class="text-xs text-gray-500">
+            {{len $r.Permissions}} section{{if ne (len $r.Permissions) 1}}s{{end}} granted
+          </div>
+        </div>
+      {{end}}
+    </div>
+  {{end}}
+</div>
+{{end}}

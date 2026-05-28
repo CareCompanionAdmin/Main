@@ -37,15 +37,55 @@ func levelRank(l Level) int {
 func RankAtLeast(have, need Level) bool { return levelRank(have) >= levelRank(need) }
 
 // Sections is the canonical list of section keys. Used by the sidebar so
-// section ordering stays stable.
+// section ordering stays stable. Also drives the role-builder UI grid.
 var Sections = []string{
 	"dashboard", "tickets", "users", "families",
 	"metrics_dashboard", "copy_materials", "beta_program", "bounty_program",
 	"promo_codes", "infrastructure_status", "error_logs", "development_mode",
 	"product_roadmap", "financials", "subscriptions",
 	"admin_users", "system_settings", "audit_log", "version_log",
-	"live_sessions",
+	"live_sessions", "pro_qa",
 }
+
+// SectionLabels gives a human-readable name for each section, used by the
+// role-builder UI. Sections without an entry fall back to their raw key.
+var SectionLabels = map[string]string{
+	"dashboard":             "Dashboard",
+	"tickets":               "Support Tickets",
+	"users":                 "Users",
+	"families":              "Families",
+	"metrics_dashboard":     "Metrics Dashboard",
+	"copy_materials":        "Copy & Materials",
+	"beta_program":          "Beta Program",
+	"bounty_program":        "Bounty Program",
+	"promo_codes":           "Promo Codes",
+	"infrastructure_status": "Infrastructure Status",
+	"error_logs":            "Error Logs",
+	"development_mode":      "Development Mode",
+	"product_roadmap":       "Product Roadmap",
+	"financials":            "Financials",
+	"subscriptions":         "Subscriptions",
+	"admin_users":           "Admin Users",
+	"system_settings":       "System Settings",
+	"audit_log":             "Audit Log",
+	"version_log":           "Version Log",
+	"live_sessions":         "Live Sessions",
+	"pro_qa":                "Pro QA Workspace",
+}
+
+// PermResolver is consulted by Matrix() when it sees a role name that
+// isn't built-in. The implementation lives in the role service and
+// reads from the custom_role_permissions table (with caching).
+// Returning "" means LevelNone (the unknown / not granted case).
+type PermResolver interface {
+	LookupCustomRole(roleName, section string) Level
+}
+
+var customResolver PermResolver
+
+// SetCustomResolver wires the runtime resolver from main.go. Calling
+// this with nil disables custom-role resolution (revert-safety).
+func SetCustomResolver(r PermResolver) { customResolver = r }
 
 // matrix encodes the locked 2026-05-09 permission table. Roles not listed for
 // a section default to LevelNone. super_admin is in every row at LevelFull
@@ -144,18 +184,23 @@ var matrix = map[string]map[models.SystemRole]Level{
 }
 
 // Matrix returns the access level for (role, section). Super admin is always
-// LevelFull regardless of the table. Unknown role or unknown section returns
-// LevelNone — fail closed.
+// LevelFull regardless of the table. Built-in roles consult the hardcoded
+// matrix below. Unknown role names fall through to the custom-role resolver
+// (if wired). Unknown section returns LevelNone — fail closed.
 func Matrix(role models.SystemRole, section string) Level {
 	if role == models.SystemRoleSuperAdmin {
 		return LevelFull
 	}
-	row, ok := matrix[section]
-	if !ok {
-		return LevelNone
+	if row, ok := matrix[section]; ok {
+		if lvl, ok := row[role]; ok {
+			return lvl
+		}
 	}
-	if lvl, ok := row[role]; ok {
-		return lvl
+	// Not a built-in row hit — see if this is a custom role.
+	if customResolver != nil {
+		if lvl := customResolver.LookupCustomRole(string(role), section); lvl != LevelNone {
+			return lvl
+		}
 	}
 	return LevelNone
 }

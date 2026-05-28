@@ -18,6 +18,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
+	"carecompanion/internal/auth"
 	"carecompanion/internal/config"
 	"carecompanion/internal/database"
 	"carecompanion/internal/handler/admin"
@@ -303,6 +304,11 @@ func main() {
 	services.LiveSessions.SetDevModeService(devModeService)
 	adminHandler.SetLiveSessionsService(services.LiveSessions)
 	adminHandler.SetProQAService(services.ProQA)
+	adminHandler.SetRoleService(services.Role)
+	// Wire the role service as the custom-role resolver consulted by
+	// auth.Matrix(). Setting it AFTER services init ensures the pool is
+	// connected and migrations have run.
+	auth.SetCustomResolver(services.Role)
 	log.Println("Development Mode service initialized")
 
 	// Internal endpoints for cross-server dev mode session management

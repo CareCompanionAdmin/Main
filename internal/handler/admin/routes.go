@@ -22,6 +22,12 @@ type Handler struct {
 	bountyService     *service.BountyService
 	liveSessionsService *service.LiveSessionsService
 	proQAService        *service.ProQAService
+	roleService         *service.RoleService
+}
+
+// SetRoleService wires the custom-role service for the role-builder UI.
+func (h *Handler) SetRoleService(s *service.RoleService) {
+	h.roleService = s
 }
 
 // SetProQAService wires the Pro QA workspace service.
@@ -363,6 +369,19 @@ func (h *Handler) UIRoutes() chi.Router {
 			r.Get("/admins", h.AdminUsersPage)
 		})
 
+		// User Roles — custom role builder. Super-admin only; the page
+		// itself manages admin-portal permissions so anything less is a
+		// privilege-escalation footgun.
+		r.Route("/user-roles", func(r chi.Router) {
+			r.Use(middleware.RequireSuperAdmin())
+			r.Get("/", h.UserRolesPage)
+			r.Get("/new", h.UserRoleFormPage)
+			r.Post("/", h.UserRoleCreate)
+			r.Get("/{id}", h.UserRoleFormPage)
+			r.Post("/{id}", h.UserRoleUpdate)
+			r.Post("/{id}/delete", h.UserRoleDelete)
+		})
+
 		// Live Sessions (Partner=full, super_admin/support=full)
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.RequireSection("live_sessions"))
@@ -429,10 +448,11 @@ func (h *Handler) UIRoutes() chi.Router {
 			r.Get("/roadmap/{id}/edit", h.RoadmapEditPage)
 		})
 
-		// Pro QA workspace (super_admin only for now; finer-grained role
-		// gate planned for a later slice once the role-builder UI ships).
+		// Pro QA workspace. Gated by the role-builder section "pro_qa";
+		// super_admin still has Full implicitly, plus any custom role with
+		// pro_qa read/write granted via /admin/user-roles.
 		r.Route("/pro-qa", func(r chi.Router) {
-			r.Use(middleware.RequireSuperAdmin())
+			r.Use(middleware.RequireSection("pro_qa"))
 
 			r.Get("/", h.ProQAIntroPage)
 			r.Get("/intro", h.ProQAIntroPage)

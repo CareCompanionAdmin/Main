@@ -283,6 +283,15 @@ func (h *Handler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 
 	admins, _ := h.adminRepo.ListAdminUsers(r.Context())
 
+	// Hydrate the custom-role list for the role dropdown. Failure is
+	// non-fatal — the page falls back to built-in roles only.
+	var customRoles []models.CustomRole
+	if h.roleService != nil {
+		if rs, err := h.roleService.List(r.Context()); err == nil {
+			customRoles = rs
+		}
+	}
+
 	tmpl, err := parseTemplates("layout.html", "admins.html")
 	if err != nil {
 		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
@@ -292,7 +301,10 @@ func (h *Handler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "layout.html", AdminPageData{
 		Title:       "Admin Users",
 		CurrentUser: currentUser,
-		Data:        admins,
+		Data: map[string]interface{}{
+			"Admins":      admins,
+			"CustomRoles": customRoles,
+		},
 	})
 }
 

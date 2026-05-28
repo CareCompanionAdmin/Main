@@ -54,7 +54,7 @@ func (h *Handler) CreateAdminUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !models.IsValidSystemRole(req.Role) {
+	if !h.isAssignableRole(r.Context(), req.Role) {
 		http.Error(w, "Invalid system role", http.StatusBadRequest)
 		return
 	}
@@ -115,7 +115,7 @@ func (h *Handler) UpdateAdminUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !models.IsValidSystemRole(req.Role) {
+	if !h.isAssignableRole(r.Context(), req.Role) {
 		http.Error(w, "Invalid system role", http.StatusBadRequest)
 		return
 	}

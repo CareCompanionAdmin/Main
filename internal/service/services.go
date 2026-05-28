@@ -50,6 +50,7 @@ type Services struct {
 	AccountDeletion   *AccountDeletionService
 	AINarrativeConsent *AINarrativeConsentService
 	ProQA             *ProQAService
+	Role              *RoleService
 
 	// AdminRepo is exposed (vs the usual pattern of wrapping each repo in its
 	// own service) for handlers that need to read/write generic
@@ -137,6 +138,7 @@ func NewServices(repos *repository.Repositories, redis *database.Redis, cfg *con
 		LiveSessions: NewLiveSessionsService(repos.Session, repos.SessionProd, nil, cfg.App.Env),
 		AINarrativeConsent: NewAINarrativeConsentService(db, cfg.Claude.NarrativeOptInAvailable),
 		ProQA:             NewProQAService(repos.ProQA, proQAStorage),
+		Role:              NewRoleService(repos.Role),
 	}
 	// AccountDeletionService needs AuthService (above) so it can revoke
 	// sessions on confirm. Constructed after the struct so Auth is set.
