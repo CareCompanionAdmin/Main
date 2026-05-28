@@ -41,14 +41,25 @@ func RequireSystemRole(roles ...models.SystemRole) func(http.Handler) http.Handl
 	}
 }
 
-// RequireAnyAdminRole middleware ensures user has any system admin role
+// RequireAnyAdminRole middleware ensures user has any system_role set
+// (built-in OR custom). Per-section access is enforced downstream by
+// RequireSection — this gate just keeps unauthenticated users out of the
+// admin route tree entirely.
 func RequireAnyAdminRole() func(http.Handler) http.Handler {
-	return RequireSystemRole(
-		models.SystemRoleSuperAdmin,
-		models.SystemRoleSupport,
-		models.SystemRoleMarketing,
-		models.SystemRolePartner,
-	)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims := GetAuthClaims(r.Context())
+			if claims == nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+			if !claims.HasSystemRole() {
+				http.Error(w, "Forbidden - admin access required", http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // RequireSuperAdmin middleware ensures user is a super admin
