@@ -1,0 +1,80 @@
+{{define "pro_qa_body"}}
+<div class="space-y-6">
+  <div class="mb-3"><a href="/admin/pro-qa/checks" class="text-sm text-indigo-700 hover:underline">&larr; All checks</a></div>
+
+  <div class="bg-white border rounded-lg p-4">
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="text-xs text-gray-500">Requested check</div>
+        <h2 class="text-xl font-semibold">{{.Check.Title}}</h2>
+        <div class="text-xs text-gray-500 mt-1">
+          opened {{.Check.CreatedAt.Format "Jan 2 15:04"}}{{if .Check.CreatedByEmail}} by {{.Check.CreatedByEmail}}{{end}}
+        </div>
+      </div>
+      <form method="POST" action="/admin/pro-qa/checks/{{.Check.ID}}/status" class="flex items-center space-x-2">
+        <select name="status" class="border rounded p-1 text-sm">
+          {{range $s := .Statuses}}
+            <option value="{{$s}}" {{if eq $s $.Check.Status}}selected{{end}}>{{$s}}</option>
+          {{end}}
+        </select>
+        <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Change status</button>
+      </form>
+    </div>
+
+    <div class="mt-4 prose max-w-none border-t pt-3">{{.BodyHTML}}</div>
+
+    <details class="mt-4">
+      <summary class="cursor-pointer text-sm text-gray-600">Edit check</summary>
+      <form method="POST" action="/admin/pro-qa/checks/{{.Check.ID}}" class="mt-3 space-y-2">
+        <input type="hidden" name="from" value="detail"/>
+        <input name="title" value="{{.Check.Title}}" class="w-full border rounded p-2"/>
+        <textarea name="body_md" rows="6" class="w-full border rounded p-2 font-mono text-sm">{{.Check.BodyMD}}</textarea>
+        <div class="flex items-center space-x-2">
+          <label class="text-sm">Sort:
+            <input type="number" name="sort_order" value="{{.Check.SortOrder}}" class="border rounded p-1 w-20"/>
+          </label>
+          <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Save</button>
+        </div>
+      </form>
+    </details>
+  </div>
+
+  <div id="comments" class="bg-white border rounded-lg p-4">
+    <h3 class="font-semibold mb-3">Discussion</h3>
+    {{if not .Comments}}<div class="text-sm text-gray-500 italic mb-3">No comments yet.</div>{{end}}
+    <ul class="space-y-3">
+      {{range $c := .Comments}}
+        <li class="border-l-4 {{if $c.IsStatusChange}}border-gray-300 bg-gray-50{{else}}border-indigo-400{{end}} p-3 rounded-r">
+          <div class="text-xs text-gray-500 mb-1">
+            <strong>{{or $c.AuthorName $c.AuthorEmail "system"}}</strong> • {{$c.CreatedAt.Format "Jan 2 15:04"}}
+          </div>
+          <div class="prose max-w-none text-sm">{{index $.RenderedComments $c.ID}}</div>
+        </li>
+      {{end}}
+    </ul>
+
+    <form method="POST" action="/admin/pro-qa/checks/{{.Check.ID}}/comment" class="mt-4 border-t pt-3 space-y-2">
+      <textarea name="body_md" rows="4" placeholder="Add a comment (Markdown)" required class="w-full border rounded p-2 font-mono text-sm"></textarea>
+      <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Post comment</button>
+    </form>
+  </div>
+
+  <div class="bg-white border rounded-lg p-4">
+    <h3 class="font-semibold mb-3">Attachments</h3>
+    {{if not .Attachments}}<div class="text-sm text-gray-500 italic mb-3">No attachments yet.</div>{{end}}
+    <ul class="space-y-2 mb-4">
+      {{range $a := .Attachments}}
+        <li class="text-sm">
+          <a href="/admin/pro-qa/check-attachments/{{$a.ID}}" target="_blank" class="text-indigo-700 hover:underline">{{$a.Filename}}</a>
+          <span class="text-xs text-gray-500">({{$a.ContentType}}, {{$a.SizeBytes}} bytes)</span>
+        </li>
+      {{end}}
+    </ul>
+    <form id="pq-check-upload-form" enctype="multipart/form-data" data-check-id="{{.Check.ID}}" class="flex items-center space-x-2">
+      <input type="file" name="file" required class="text-sm"/>
+      <button type="submit" class="px-3 py-1 bg-indigo-600 text-white rounded text-sm">Upload</button>
+      <span id="pq-check-upload-status" class="text-xs text-gray-500"></span>
+    </form>
+  </div>
+</div>
+{{end}}

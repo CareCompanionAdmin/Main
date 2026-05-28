@@ -16,9 +16,18 @@ type ProQARepository interface {
 	UpdateInfo(ctx context.Context, bodyMD, email string) error
 
 	ListChecks(ctx context.Context) ([]models.ProQARequestedCheck, error)
+	GetCheck(ctx context.Context, id uuid.UUID) (*models.ProQARequestedCheck, error)
 	CreateCheck(ctx context.Context, c *models.ProQARequestedCheck) error
 	UpdateCheck(ctx context.Context, c *models.ProQARequestedCheck) error
+	ChangeCheckStatus(ctx context.Context, id uuid.UUID, newStatus string) error
 	DeleteCheck(ctx context.Context, id uuid.UUID) error
+
+	ListCheckComments(ctx context.Context, checkID uuid.UUID) ([]models.ProQACheckComment, error)
+	CreateCheckComment(ctx context.Context, c *models.ProQACheckComment) error
+
+	ListCheckAttachments(ctx context.Context, checkID uuid.UUID) ([]models.ProQACheckAttachment, error)
+	CreateCheckAttachment(ctx context.Context, a *models.ProQACheckAttachment) error
+	GetCheckAttachment(ctx context.Context, id uuid.UUID) (*models.ProQACheckAttachment, error)
 
 	ListIssues(ctx context.Context, filterStatus string) ([]models.ProQAIssue, error)
 	GetIssue(ctx context.Context, id uuid.UUID) (*models.ProQAIssue, error)
@@ -69,10 +78,14 @@ func (r *proQARepo) UpdateInfo(ctx context.Context, bodyMD, email string) error 
 
 // ---------- Requested checks ----------
 
+const checkSelectCols = `id, title, body_md, status, sort_order, created_at, COALESCE(created_by_email,''), updated_at`
+
 func (r *proQARepo) ListChecks(ctx context.Context) ([]models.ProQARequestedCheck, error) {
 	rows, err := r.supportDB.QueryContext(ctx,
-		`SELECT id, title, body_md, status, sort_order, created_at, COALESCE(created_by_email,''), updated_at
-		   FROM pro_qa_requested_checks
+		`SELECT `+checkSelectCols+`,
+		         (SELECT COUNT(*) FROM pro_qa_check_comments cc WHERE cc.check_id = c.id) AS comment_count,
+		         (SELECT COUNT(*) FROM pro_qa_check_attachments ca WHERE ca.check_id = c.id) AS attachment_count
+		    FROM pro_qa_requested_checks c
 		   ORDER BY sort_order ASC, created_at ASC`)
 	if err != nil {
 		return nil, err
@@ -81,12 +94,24 @@ func (r *proQARepo) ListChecks(ctx context.Context) ([]models.ProQARequestedChec
 	var out []models.ProQARequestedCheck
 	for rows.Next() {
 		var c models.ProQARequestedCheck
-		if err := rows.Scan(&c.ID, &c.Title, &c.BodyMD, &c.Status, &c.SortOrder, &c.CreatedAt, &c.CreatedByEmail, &c.UpdatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.Title, &c.BodyMD, &c.Status, &c.SortOrder, &c.CreatedAt, &c.CreatedByEmail, &c.UpdatedAt,
+			&c.CommentCount, &c.AttachmentCount); err != nil {
 			return nil, err
 		}
 		out = append(out, c)
 	}
 	return out, rows.Err()
+}
+
+func (r *proQARepo) GetCheck(ctx context.Context, id uuid.UUID) (*models.ProQARequestedCheck, error) {
+	var c models.ProQARequestedCheck
+	err := r.supportDB.QueryRowContext(ctx,
+		`SELECT `+checkSelectCols+` FROM pro_qa_requested_checks WHERE id=$1`, id,
+	).Scan(&c.ID, &c.Title, &c.BodyMD, &c.Status, &c.SortOrder, &c.CreatedAt, &c.CreatedByEmail, &c.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
 }
 
 func (r *proQARepo) CreateCheck(ctx context.Context, c *models.ProQARequestedCheck) error {
@@ -111,9 +136,124 @@ func (r *proQARepo) UpdateCheck(ctx context.Context, c *models.ProQARequestedChe
 	return err
 }
 
+func (r *proQARepo) ChangeCheckStatus(ctx context.Context, id uuid.UUID, newStatus string) error {
+	_, err := r.supportDB.ExecContext(ctx,
+		`UPDATE pro_qa_requested_checks SET status=$1, updated_at=NOW() WHERE id=$2`,
+		newStatus, id)
+	return err
+}
+
 func (r *proQARepo) DeleteCheck(ctx context.Context, id uuid.UUID) error {
 	_, err := r.supportDB.ExecContext(ctx, `DELETE FROM pro_qa_requested_checks WHERE id=$1`, id)
 	return err
+}
+
+// ---------- Check comments ----------
+
+func (r *proQARepo) ListCheckComments(ctx context.Context, checkID uuid.UUID) ([]models.ProQACheckComment, error) {
+	rows, err := r.supportDB.QueryContext(ctx,
+		`SELECT id, check_id, body_md, COALESCE(author_email,''), COALESCE(author_name,''),
+		        created_at, is_status_change, COALESCE(status_from,''), COALESCE(status_to,'')
+		   FROM pro_qa_check_comments
+		  WHERE check_id = $1
+		  ORDER BY created_at ASC`, checkID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.ProQACheckComment
+	for rows.Next() {
+		var c models.ProQACheckComment
+		if err := rows.Scan(&c.ID, &c.CheckID, &c.BodyMD, &c.AuthorEmail, &c.AuthorName,
+			&c.CreatedAt, &c.IsStatusChange, &c.StatusFrom, &c.StatusTo); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+func (r *proQARepo) CreateCheckComment(ctx context.Context, c *models.ProQACheckComment) error {
+	if c.ID == uuid.Nil {
+		c.ID = uuid.New()
+	}
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = time.Now()
+	}
+	_, err := r.supportDB.ExecContext(ctx,
+		`INSERT INTO pro_qa_check_comments (id, check_id, body_md, author_email, author_name, created_at, is_status_change, status_from, status_to)
+		 VALUES ($1,$2,$3,NULLIF($4,''),NULLIF($5,''),$6,$7,NULLIF($8,''),NULLIF($9,''))`,
+		c.ID, c.CheckID, c.BodyMD, c.AuthorEmail, c.AuthorName, c.CreatedAt, c.IsStatusChange, c.StatusFrom, c.StatusTo)
+	return err
+}
+
+// ---------- Check attachments ----------
+
+func (r *proQARepo) ListCheckAttachments(ctx context.Context, checkID uuid.UUID) ([]models.ProQACheckAttachment, error) {
+	rows, err := r.supportDB.QueryContext(ctx,
+		`SELECT id, check_id, comment_id, filename, content_type, size_bytes, storage_driver, storage_path,
+		        COALESCE(uploaded_by_email,''), uploaded_at
+		   FROM pro_qa_check_attachments WHERE check_id=$1 ORDER BY uploaded_at ASC`, checkID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.ProQACheckAttachment
+	for rows.Next() {
+		var a models.ProQACheckAttachment
+		var cmt sql.NullString
+		if err := rows.Scan(&a.ID, &a.CheckID, &cmt, &a.Filename, &a.ContentType, &a.SizeBytes,
+			&a.StorageDriver, &a.StoragePath, &a.UploadedByEmail, &a.UploadedAt); err != nil {
+			return nil, err
+		}
+		if cmt.Valid {
+			cid, perr := uuid.Parse(cmt.String)
+			if perr == nil {
+				a.CommentID = &cid
+			}
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+func (r *proQARepo) CreateCheckAttachment(ctx context.Context, a *models.ProQACheckAttachment) error {
+	if a.ID == uuid.Nil {
+		a.ID = uuid.New()
+	}
+	if a.UploadedAt.IsZero() {
+		a.UploadedAt = time.Now()
+	}
+	var cmt interface{}
+	if a.CommentID != nil {
+		cmt = *a.CommentID
+	}
+	_, err := r.supportDB.ExecContext(ctx,
+		`INSERT INTO pro_qa_check_attachments (id, check_id, comment_id, filename, content_type, size_bytes, storage_driver, storage_path, uploaded_by_email, uploaded_at)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NULLIF($9,''),$10)`,
+		a.ID, a.CheckID, cmt, a.Filename, a.ContentType, a.SizeBytes, a.StorageDriver, a.StoragePath, a.UploadedByEmail, a.UploadedAt)
+	return err
+}
+
+func (r *proQARepo) GetCheckAttachment(ctx context.Context, id uuid.UUID) (*models.ProQACheckAttachment, error) {
+	var a models.ProQACheckAttachment
+	var cmt sql.NullString
+	err := r.supportDB.QueryRowContext(ctx,
+		`SELECT id, check_id, comment_id, filename, content_type, size_bytes, storage_driver, storage_path,
+		        COALESCE(uploaded_by_email,''), uploaded_at
+		   FROM pro_qa_check_attachments WHERE id=$1`, id,
+	).Scan(&a.ID, &a.CheckID, &cmt, &a.Filename, &a.ContentType, &a.SizeBytes,
+		&a.StorageDriver, &a.StoragePath, &a.UploadedByEmail, &a.UploadedAt)
+	if err != nil {
+		return nil, err
+	}
+	if cmt.Valid {
+		cid, perr := uuid.Parse(cmt.String)
+		if perr == nil {
+			a.CommentID = &cid
+		}
+	}
+	return &a, nil
 }
 
 // ---------- Issues ----------

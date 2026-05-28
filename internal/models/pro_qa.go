@@ -13,14 +13,41 @@ type ProQAInfo struct {
 }
 
 type ProQARequestedCheck struct {
+	ID              uuid.UUID
+	Title           string
+	BodyMD          string
+	Status          string
+	SortOrder       int
+	CreatedAt       time.Time
+	CreatedByEmail  string
+	UpdatedAt       time.Time
+	CommentCount    int
+	AttachmentCount int
+}
+
+type ProQACheckComment struct {
 	ID             uuid.UUID
-	Title          string
+	CheckID        uuid.UUID
 	BodyMD         string
-	Status         string
-	SortOrder      int
+	AuthorEmail    string
+	AuthorName     string
 	CreatedAt      time.Time
-	CreatedByEmail string
-	UpdatedAt      time.Time
+	IsStatusChange bool
+	StatusFrom     string
+	StatusTo       string
+}
+
+type ProQACheckAttachment struct {
+	ID              uuid.UUID
+	CheckID         uuid.UUID
+	CommentID       *uuid.UUID
+	Filename        string
+	ContentType     string
+	SizeBytes       int64
+	StorageDriver   string
+	StoragePath     string
+	UploadedByEmail string
+	UploadedAt      time.Time
 }
 
 type ProQAIssue struct {

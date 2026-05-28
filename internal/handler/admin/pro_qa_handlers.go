@@ -152,16 +152,34 @@ func (h *Handler) ProQAChecksUpdate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad form", http.StatusBadRequest)
 		return
 	}
+	claims := middleware.GetAuthClaims(r.Context())
+	email, name := "", ""
+	if claims != nil {
+		email = claims.Email
+		name = claims.FirstName
+	}
 	sortOrder, _ := strconv.Atoi(r.FormValue("sort_order"))
 	c := &models.ProQARequestedCheck{
 		ID:        id,
 		Title:     strings.TrimSpace(r.FormValue("title")),
 		BodyMD:    r.FormValue("body_md"),
-		Status:    r.FormValue("status"),
 		SortOrder: sortOrder,
 	}
-	if err := h.proQAService.UpdateCheck(r.Context(), c); err != nil {
+	if err := h.proQAService.UpdateCheck(r.Context(), c, email, name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// If status was also submitted (existing combined form), route it
+	// through ChangeCheckStatus so the thread gets the auto-comment.
+	if newStatus := r.FormValue("status"); newStatus != "" {
+		if err := h.proQAService.ChangeCheckStatus(r.Context(), id, newStatus, email, name); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	// Redirect target: detail page if posted from there, list otherwise.
+	if r.FormValue("from") == "detail" {
+		http.Redirect(w, r, "/admin/pro-qa/checks/"+id.String(), http.StatusSeeOther)
 		return
 	}
 	http.Redirect(w, r, "/admin/pro-qa/checks", http.StatusSeeOther)
@@ -178,6 +196,158 @@ func (h *Handler) ProQAChecksDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/admin/pro-qa/checks", http.StatusSeeOther)
+}
+
+// --- Check detail page (thread + attachments) ---
+
+type proQACheckDetailView struct {
+	proQAPageData
+	Check            *models.ProQARequestedCheck
+	BodyHTML         interface{}
+	Comments         []models.ProQACheckComment
+	RenderedComments map[uuid.UUID]interface{}
+	Attachments      []models.ProQACheckAttachment
+	Statuses         []string
+}
+
+func (h *Handler) ProQACheckDetailPage(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	check, err := h.proQAService.GetCheck(r.Context(), id)
+	if err != nil {
+		http.Error(w, "load: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	comments, err := h.proQAService.ListCheckComments(r.Context(), id)
+	if err != nil {
+		http.Error(w, "comments: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	attachments, err := h.proQAService.ListCheckAttachments(r.Context(), id)
+	if err != nil {
+		http.Error(w, "attachments: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rc := make(map[uuid.UUID]interface{}, len(comments))
+	for _, c := range comments {
+		rc[c.ID] = h.proQAService.RenderMarkdown(c.BodyMD)
+	}
+	v := proQACheckDetailView{
+		proQAPageData:    h.proQAData(r, "Pro QA — Check", "checks"),
+		Check:            check,
+		BodyHTML:         h.proQAService.RenderMarkdown(check.BodyMD),
+		Comments:         comments,
+		RenderedComments: rc,
+		Attachments:      attachments,
+		Statuses:         models.ProQACheckStatuses,
+	}
+	h.renderProQA(w, "pro_qa_check_detail.html", v)
+}
+
+func (h *Handler) ProQACheckChangeStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad form", http.StatusBadRequest)
+		return
+	}
+	newStatus := r.FormValue("status")
+	claims := middleware.GetAuthClaims(r.Context())
+	email, name := "", ""
+	if claims != nil {
+		email = claims.Email
+		name = claims.FirstName
+	}
+	if err := h.proQAService.ChangeCheckStatus(r.Context(), id, newStatus, email, name); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/admin/pro-qa/checks/"+id.String(), http.StatusSeeOther)
+}
+
+func (h *Handler) ProQACheckComment(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad form", http.StatusBadRequest)
+		return
+	}
+	claims := middleware.GetAuthClaims(r.Context())
+	email, name := "", ""
+	if claims != nil {
+		email = claims.Email
+		name = claims.FirstName
+	}
+	if _, err := h.proQAService.AddCheckComment(r.Context(), id, r.FormValue("body_md"), email, name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, "/admin/pro-qa/checks/"+id.String()+"#comments", http.StatusSeeOther)
+}
+
+func (h *Handler) ProQACheckUploadAttachment(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	if err := r.ParseMultipartForm(20 << 20); err != nil {
+		http.Error(w, "bad upload: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	file, hdr, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "no file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	claims := middleware.GetAuthClaims(r.Context())
+	email := ""
+	if claims != nil {
+		email = claims.Email
+	}
+	contentType := hdr.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	att, err := h.proQAService.UploadCheckAttachment(r.Context(), id, nil,
+		hdr.Filename, contentType, email, file)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{
+		"id":       att.ID.String(),
+		"filename": att.Filename,
+		"url":      "/admin/pro-qa/check-attachments/" + att.ID.String(),
+	})
+}
+
+func (h *Handler) ProQAFetchCheckAttachment(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "bad id", http.StatusBadRequest)
+		return
+	}
+	att, rc, err := h.proQAService.FetchCheckAttachment(r.Context(), id)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	defer rc.Close()
+	w.Header().Set("Content-Type", att.ContentType)
+	w.Header().Set("Content-Disposition", `inline; filename="`+att.Filename+`"`)
+	_, _ = io.Copy(w, rc)
 }
 
 // --- Issues ---

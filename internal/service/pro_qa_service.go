@@ -61,6 +61,10 @@ func (s *ProQAService) ListChecks(ctx context.Context) ([]models.ProQARequestedC
 	return s.repo.ListChecks(ctx)
 }
 
+func (s *ProQAService) GetCheck(ctx context.Context, id uuid.UUID) (*models.ProQARequestedCheck, error) {
+	return s.repo.GetCheck(ctx, id)
+}
+
 func (s *ProQAService) CreateCheck(ctx context.Context, title, bodyMD, email string) (*models.ProQARequestedCheck, error) {
 	if strings.TrimSpace(title) == "" {
 		return nil, fmt.Errorf("title required")
@@ -77,12 +81,110 @@ func (s *ProQAService) CreateCheck(ctx context.Context, title, bodyMD, email str
 	return c, nil
 }
 
-func (s *ProQAService) UpdateCheck(ctx context.Context, c *models.ProQARequestedCheck) error {
-	return s.repo.UpdateCheck(ctx, c)
+// UpdateCheck saves title/body/sort_order. Status changes route through
+// ChangeCheckStatus so they emit an auto-comment in the thread.
+func (s *ProQAService) UpdateCheck(ctx context.Context, c *models.ProQARequestedCheck, authorEmail, authorName string) error {
+	prev, err := s.repo.GetCheck(ctx, c.ID)
+	if err != nil {
+		return err
+	}
+	// Preserve the existing status on the row update; status path is separate.
+	c.Status = prev.Status
+	if err := s.repo.UpdateCheck(ctx, c); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ChangeCheckStatus updates status and writes an auto-comment recording
+// the transition so the thread shows a complete history. No-op if the
+// requested status matches current.
+func (s *ProQAService) ChangeCheckStatus(ctx context.Context, checkID uuid.UUID, newStatus, authorEmail, authorName string) error {
+	prev, err := s.repo.GetCheck(ctx, checkID)
+	if err != nil {
+		return err
+	}
+	if prev.Status == newStatus {
+		return nil
+	}
+	if err := s.repo.ChangeCheckStatus(ctx, checkID, newStatus); err != nil {
+		return err
+	}
+	autoBody := fmt.Sprintf("_status changed: **%s** → **%s**_", prev.Status, newStatus)
+	return s.repo.CreateCheckComment(ctx, &models.ProQACheckComment{
+		CheckID:        checkID,
+		BodyMD:         autoBody,
+		AuthorEmail:    authorEmail,
+		AuthorName:     authorName,
+		IsStatusChange: true,
+		StatusFrom:     prev.Status,
+		StatusTo:       newStatus,
+	})
 }
 
 func (s *ProQAService) DeleteCheck(ctx context.Context, id uuid.UUID) error {
 	return s.repo.DeleteCheck(ctx, id)
+}
+
+// ---- Check comments ----
+
+func (s *ProQAService) ListCheckComments(ctx context.Context, checkID uuid.UUID) ([]models.ProQACheckComment, error) {
+	return s.repo.ListCheckComments(ctx, checkID)
+}
+
+func (s *ProQAService) AddCheckComment(ctx context.Context, checkID uuid.UUID, body, email, name string) (*models.ProQACheckComment, error) {
+	if strings.TrimSpace(body) == "" {
+		return nil, fmt.Errorf("comment body required")
+	}
+	c := &models.ProQACheckComment{
+		CheckID:     checkID,
+		BodyMD:      body,
+		AuthorEmail: email,
+		AuthorName:  name,
+	}
+	if err := s.repo.CreateCheckComment(ctx, c); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// ---- Check attachments ----
+
+func (s *ProQAService) ListCheckAttachments(ctx context.Context, checkID uuid.UUID) ([]models.ProQACheckAttachment, error) {
+	return s.repo.ListCheckAttachments(ctx, checkID)
+}
+
+func (s *ProQAService) UploadCheckAttachment(ctx context.Context, checkID uuid.UUID, commentID *uuid.UUID, filename, contentType, email string, body io.Reader) (*models.ProQACheckAttachment, error) {
+	path, size, err := s.storage.Save(ctx, "pro_qa", filename, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	a := &models.ProQACheckAttachment{
+		CheckID:         checkID,
+		CommentID:       commentID,
+		Filename:        filename,
+		ContentType:     contentType,
+		SizeBytes:       size,
+		StorageDriver:   s.storage.Driver(),
+		StoragePath:     path,
+		UploadedByEmail: email,
+	}
+	if err := s.repo.CreateCheckAttachment(ctx, a); err != nil {
+		return nil, err
+	}
+	return a, nil
+}
+
+func (s *ProQAService) FetchCheckAttachment(ctx context.Context, id uuid.UUID) (*models.ProQACheckAttachment, io.ReadCloser, error) {
+	a, err := s.repo.GetCheckAttachment(ctx, id)
+	if err != nil {
+		return nil, nil, err
+	}
+	rc, err := s.storage.Open(ctx, a.StoragePath)
+	if err != nil {
+		return nil, nil, err
+	}
+	return a, rc, nil
 }
 
 // ---- Issues ----

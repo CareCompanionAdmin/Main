@@ -14,24 +14,49 @@
 
   // Attachment upload (issue detail page)
   const form = document.getElementById('pq-upload-form');
-  if (!form) return;
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const issueId = form.dataset.issueId;
-    const status = document.getElementById('pq-upload-status');
-    const fd = new FormData(form);
-    status.textContent = 'Uploading…';
-    try {
-      const res = await fetch(`/admin/pro-qa/issues/${issueId}/attach`, {
-        method: 'POST',
-        body: fd,
-        credentials: 'same-origin',
-      });
-      if (!res.ok) throw new Error(await res.text());
-      status.textContent = 'Uploaded. Reloading…';
-      setTimeout(() => location.reload(), 400);
-    } catch (err) {
-      status.textContent = 'Upload failed: ' + err.message;
-    }
-  });
+  if (form) {
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const issueId = form.dataset.issueId;
+      const status = document.getElementById('pq-upload-status');
+      const fd = new FormData(form);
+      status.textContent = 'Uploading…';
+      try {
+        const res = await fetch(`/admin/pro-qa/issues/${issueId}/attach`, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+        });
+        if (!res.ok) throw new Error(await res.text());
+        status.textContent = 'Uploaded. Reloading…';
+        setTimeout(() => location.reload(), 400);
+      } catch (err) {
+        status.textContent = 'Upload failed: ' + err.message;
+      }
+    });
+  }
+
+  // Attachment upload (check detail page)
+  const checkForm = document.getElementById('pq-check-upload-form');
+  if (checkForm) {
+    checkForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const checkId = checkForm.dataset.checkId;
+      const status = document.getElementById('pq-check-upload-status');
+      const fd = new FormData(checkForm);
+      status.textContent = 'Uploading…';
+      try {
+        const res = await fetch(`/admin/pro-qa/checks/${checkId}/attach`, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+        });
+        if (!res.ok) throw new Error(await res.text());
+        status.textContent = 'Uploaded. Reloading…';
+        setTimeout(() => location.reload(), 400);
+      } catch (err) {
+        status.textContent = 'Upload failed: ' + err.message;
+      }
+    });
+  }
 })();

@@ -442,8 +442,13 @@ func (h *Handler) UIRoutes() chi.Router {
 
 			r.Get("/checks", h.ProQAChecksPage)
 			r.Post("/checks", h.ProQAChecksCreate)
+			r.Get("/checks/{id}", h.ProQACheckDetailPage)
 			r.Post("/checks/{id}", h.ProQAChecksUpdate)
 			r.Post("/checks/{id}/delete", h.ProQAChecksDelete)
+			r.Post("/checks/{id}/status", h.ProQACheckChangeStatus)
+			r.Post("/checks/{id}/comment", h.ProQACheckComment)
+			r.Post("/checks/{id}/attach", h.ProQACheckUploadAttachment)
+			r.Get("/check-attachments/{id}", h.ProQAFetchCheckAttachment)
 
 			r.Get("/issues", h.ProQAIssuesPage)
 			r.Post("/issues", h.ProQAIssueCreate)
