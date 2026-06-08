@@ -1,10 +1,21 @@
 -- App Store Demo Account seed
 --
--- Creates appreview@mycarecompanion.net with one child, 7 days of varied
--- logs, an active medication schedule, a complimentary subscription, and
--- one family-chat thread with sample messages.
+-- Creates appreview@mycarecompanion.net with one child, ~90 days of varied
+-- logs (so week / month / quarter report ranges all show data), an active
+-- medication schedule, a complimentary subscription, and one family-chat
+-- thread with sample messages. All dates are relative to the run date, so
+-- the reviewer always sees recent activity whenever the account is opened.
 --
--- Safe to run multiple times on dev (uses fixed UUIDs + ON CONFLICT DO NOTHING).
+-- The thread includes a message from a SECOND family member (Sam Caregiver)
+-- so the App Store reviewer can exercise the Report-message flow — the
+-- report affordance only renders on messages from OTHER users (chat.html
+-- `isOwn ? '' : reportButton`), so a thread of only the reviewer's own
+-- messages leaves nothing to report.
+--
+-- Safe to run multiple times: fixed UUIDs + ON CONFLICT upserts for the
+-- account/family/child/subscription, and a scoped clear+reinsert for the
+-- volatile daily logs and chat messages (so re-runs refresh dates without
+-- duplicating rows). Strictly scoped to the demo account's fixed UUIDs.
 -- For prod: REQUIRES explicit user approval (touches families + subscriptions).
 -- The bcrypt hash below was generated for password "MyCareReview2026!" via
 -- Python's bcrypt (cost=10). Rotate the password by regenerating the hash.
@@ -19,6 +30,7 @@ BEGIN;
 \set child_id          'a99e5e53-d6b3-4a8a-9c5e-1d3c4e5f6a7b'
 \set medication_id     'a99e5e54-d6b3-4a8a-9c5e-1d3c4e5f6a7b'
 \set thread_id         'a99e5e55-d6b3-4a8a-9c5e-1d3c4e5f6a7b'
+\set member_id         'a99e5e56-d6b3-4a8a-9c5e-1d3c4e5f6a7b'
 
 -- ---------------------------------------------------------------------------
 -- Reviewer user (email is keyed UNIQUE so ON CONFLICT keeps re-runs safe).
@@ -51,6 +63,30 @@ VALUES (:'family_id', :'reviewer_id', 'parent', NOW(), TRUE)
 ON CONFLICT (family_id, user_id) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
+-- Second family member (Sam Caregiver). Exists so the reviewer has a message
+-- from another user to Report. Shares the reviewer's password hash so the
+-- account is valid, but the reviewer is not expected to log in as Sam.
+-- ---------------------------------------------------------------------------
+INSERT INTO app_users (id, email, password_hash, first_name, last_name, status, email_verified_at, timezone)
+VALUES (
+    :'member_id',
+    'appreview+caregiver@mycarecompanion.net',
+    '$2b$10$76YwSiQeywo5YT2JC4pB0eMWd3lXMla2I3oiGHLKOMPARF.5WKgJC',
+    'Sam',
+    'Caregiver',
+    'active',
+    NOW(),
+    'America/Chicago'
+)
+ON CONFLICT (email) DO UPDATE SET
+    status = 'active',
+    email_verified_at = COALESCE(app_users.email_verified_at, NOW());
+
+INSERT INTO family_memberships (family_id, user_id, role, invited_by, accepted_at, is_active)
+VALUES (:'family_id', :'member_id', 'caregiver', :'reviewer_id', NOW(), TRUE)
+ON CONFLICT (family_id, user_id) DO NOTHING;
+
+-- ---------------------------------------------------------------------------
 -- Child: Alex, age 7 (DOB 2018-09-12).
 -- ---------------------------------------------------------------------------
 INSERT INTO children (id, family_id, first_name, last_name, date_of_birth, gender, notes, is_active)
@@ -79,7 +115,7 @@ VALUES (
     'twice_daily',
     'Take one tablet with breakfast and one tablet with afternoon snack.',
     'Dr. Sample Pediatrician',
-    CURRENT_DATE - INTERVAL '60 days',
+    CURRENT_DATE - INTERVAL '120 days',
     TRUE
 )
 ON CONFLICT (id) DO NOTHING;
@@ -117,8 +153,20 @@ ON CONFLICT (family_id) DO UPDATE SET
     current_period_end = EXCLUDED.current_period_end;
 
 -- ---------------------------------------------------------------------------
--- 7 days of behavior logs — varied mood/energy/anxiety, occasional meltdowns,
--- a mix of triggers and positive behaviors. Dates count back from today.
+-- Volatile demo data (daily logs + chat messages) is cleared and re-inserted
+-- on every run, scoped strictly to the demo child / demo thread fixed UUIDs.
+-- This keeps every run's data dated relative to TODAY and prevents duplicate
+-- rows accumulating — behavior_logs / sleep_logs have no unique constraint, so
+-- their ON CONFLICT guards never fired and re-runs would otherwise pile up.
+-- ---------------------------------------------------------------------------
+DELETE FROM behavior_logs WHERE child_id = :'child_id';
+DELETE FROM sleep_logs    WHERE child_id = :'child_id';
+DELETE FROM chat_messages WHERE thread_id = :'thread_id';
+
+-- ---------------------------------------------------------------------------
+-- ~90 days of behavior logs — varied mood/energy/anxiety, occasional meltdowns,
+-- a mix of triggers and positive behaviors on a weekly cycle. Counts back from
+-- today so the most recent entries are always within the last few days.
 -- ---------------------------------------------------------------------------
 INSERT INTO behavior_logs (child_id, log_date, log_time, mood_level, energy_level, anxiety_level, meltdowns, stimming_episodes, triggers, positive_behaviors, notes, logged_by)
 SELECT :'child_id', CURRENT_DATE - i, TIME '18:00',
@@ -132,11 +180,10 @@ SELECT :'child_id', CURRENT_DATE - i, TIME '18:00',
     CASE (i % 7) WHEN 0 THEN ARRAY['shared_toy', 'used_words'] WHEN 4 THEN ARRAY['flexibility', 'cooperation'] ELSE ARRAY['eye_contact']::text[] END,
     CASE (i % 7) WHEN 2 THEN 'Hard afternoon — loud cafeteria triggered meltdown. Calmed with sensory break.' WHEN 4 THEN 'Great day. Adapted well to schedule change.' ELSE NULL END,
     :'reviewer_id'
-FROM generate_series(0, 6) AS i
-ON CONFLICT DO NOTHING;
+FROM generate_series(0, 89) AS i;
 
 -- ---------------------------------------------------------------------------
--- 7 days of sleep logs.
+-- ~90 days of sleep logs.
 -- ---------------------------------------------------------------------------
 INSERT INTO sleep_logs (child_id, log_date, bedtime, wake_time, total_sleep_minutes, night_wakings, sleep_quality, notes, logged_by, time_scope)
 SELECT :'child_id', CURRENT_DATE - i,
@@ -148,8 +195,7 @@ SELECT :'child_id', CURRENT_DATE - i,
     CASE (i % 7) WHEN 0 THEN 'good'::sleep_quality WHEN 2 THEN 'poor'::sleep_quality WHEN 4 THEN 'excellent'::sleep_quality WHEN 5 THEN 'fair'::sleep_quality ELSE 'good'::sleep_quality END,
     CASE (i % 7) WHEN 2 THEN 'Restless — woke twice asking about tomorrow''s field trip.' ELSE NULL END,
     :'reviewer_id', 'day'
-FROM generate_series(0, 6) AS i
-ON CONFLICT DO NOTHING;
+FROM generate_series(0, 89) AS i;
 
 -- ---------------------------------------------------------------------------
 -- Chat thread + two sample messages from the reviewer's own account so the
@@ -163,15 +209,22 @@ INSERT INTO chat_participants (thread_id, user_id, role)
 VALUES (:'thread_id', :'reviewer_id', 'parent')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO chat_participants (thread_id, user_id, role)
+VALUES (:'thread_id', :'member_id', 'caregiver')
+ON CONFLICT DO NOTHING;
+
+-- Messages are inserted fresh each run (the thread was cleared above), dated
+-- within the last few days so the chat reads as recent activity.
 INSERT INTO chat_messages (thread_id, sender_id, message_text, created_at)
-SELECT :'thread_id', :'reviewer_id', 'Welcome to MyCareCompanion! This is your family''s shared chat for coordinating care.', NOW() - INTERVAL '2 days'
-WHERE NOT EXISTS (
-    SELECT 1 FROM chat_messages WHERE thread_id = :'thread_id' AND sender_id = :'reviewer_id' LIMIT 1
-);
+VALUES (:'thread_id', :'reviewer_id', 'Welcome to MyCareCompanion! This is your family''s shared chat for coordinating care.', NOW() - INTERVAL '3 days');
+
+-- Message from the OTHER family member — this is the one the reviewer can
+-- Report (the report icon only shows on messages from other users).
+INSERT INTO chat_messages (thread_id, sender_id, message_text, created_at)
+VALUES (:'thread_id', :'member_id', 'Hi! I''m Sam, helping out with Alex''s care this week. I''ll log the afternoon medication doses.', NOW() - INTERVAL '36 hours');
 
 INSERT INTO chat_messages (thread_id, sender_id, message_text, created_at)
-SELECT :'thread_id', :'reviewer_id', 'Try logging today''s behavior in the daily logs view, then check Insights to see how patterns surface over time.', NOW() - INTERVAL '1 day'
-WHERE (SELECT COUNT(*) FROM chat_messages WHERE thread_id = :'thread_id') < 2;
+VALUES (:'thread_id', :'reviewer_id', 'Try logging today''s behavior in the daily logs view, then check Insights to see how patterns surface over time.', NOW() - INTERVAL '1 day');
 
 COMMIT;
 
