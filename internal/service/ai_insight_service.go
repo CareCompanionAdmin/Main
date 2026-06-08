@@ -795,17 +795,46 @@ func (s *AIInsightService) storeInsights(ctx context.Context, childID, familyID 
 	insightsCreated := 0
 	alertsCreated := 0
 
+	// dedupeWindow bounds how far back the persisted dedupe key is consulted
+	// for cross-run dedup. Defaults to 30 days; tracks LookbackDays when set.
+	dedupeWindow := 30 * 24 * time.Hour
+	if s.config != nil && s.config.LookbackDays > 0 {
+		dedupeWindow = time.Duration(s.config.LookbackDays) * 24 * time.Hour
+	}
+	// seenKeys collapses duplicate keys emitted within this single run.
+	seenKeys := make(map[string]bool)
+
 	for _, r := range results {
 		// Substitute the name placeholder back to the real first name.
 		r.Title = ApplyNamePlaceholder(r.Title, firstName)
 		r.SimpleDescription = ApplyNamePlaceholder(r.SimpleDescription, firstName)
 		r.DetailedDescription = ApplyNamePlaceholder(r.DetailedDescription, firstName)
 
-		// Dedup: check if a similar title exists in recent insights
+		// Dedup in three layers, strongest first. The structured dedupe key
+		// collapses phrasing variants onto a stable identity per
+		// (tier, category, concept), so we trust it over the fuzzy title match:
+		//   1. in-batch    — same key emitted twice in this run
+		//   2. cross-run   — same key persisted by an earlier scan within the
+		//                    rolling window. THIS is the fix: the AI scanner
+		//                    used to re-emit the same concept every day because
+		//                    it never consulted the persisted key.
+		//   3. fuzzy title — secondary net for near-misses the key won't catch.
+		dedupeKey := aiInsightDedupeKey(r.Tier, r.Category, r.Title)
+		if seenKeys[dedupeKey] {
+			log.Printf("AI Insights: skipping in-batch duplicate (key=%s) — %s", dedupeKey, r.Title)
+			continue
+		}
+		if exists, err := s.insightRepo.ExistsRecentByDedupeKey(ctx, childID, dedupeKey, dedupeWindow); err != nil {
+			log.Printf("AI Insights: dedupe-key check failed for %q: %v", r.Title, err)
+		} else if exists {
+			log.Printf("AI Insights: skipping cross-run duplicate (key=%s) — %s", dedupeKey, r.Title)
+			continue
+		}
 		if isDuplicate(r.Title, recentInsights) {
 			log.Printf("AI Insights: skipping duplicate — %s", r.Title)
 			continue
 		}
+		seenKeys[dedupeKey] = true
 
 		insight := &models.Insight{
 			ChildID:             &childID,
@@ -817,7 +846,7 @@ func (s *AIInsightService) storeInsights(ctx context.Context, childID, familyID 
 			DetailedDescription: models.NullString{NullString: sql.NullString{String: r.DetailedDescription, Valid: r.DetailedDescription != ""}},
 			ConfidenceScore:     &r.Confidence,
 			IsActive:            true,
-			DedupeKey:           sql.NullString{String: aiInsightDedupeKey(r.Tier, r.Category, r.Title), Valid: true},
+			DedupeKey:           sql.NullString{String: dedupeKey, Valid: true},
 		}
 
 		// Tier-specific fields
