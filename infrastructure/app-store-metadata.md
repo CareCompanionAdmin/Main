@@ -64,9 +64,9 @@ Health & Fitness
 ## App Review Notes (Apple)
 MyCareCompanion is a tracking and journaling tool for parents of children with autism. It is NOT a diagnostic, treatment, or medical device — all in-app "patterns" are statistical correlations across user-logged data with prominent disclaimers to consult a physician.
 
-Subscription is $15/month handled on the web at mycarecompanion.net per Apple's US-storefront external-link allowance (April 2025 guideline update, 3.1.1(a)). Tap Subscribe in the app to see the neutral redirect notice and external Safari handoff.
+Subscription is $15/month handled on the web at mycarecompanion.net per Apple's US-storefront external-link allowance (April 2025 guideline update, 3.1.1(a)). The demo account already has a complimentary subscription, so Settings → Subscription shows the "Upgrade to Family ($15/mo)" billing button rather than "Subscribe" — tapping it shows the neutral redirect notice and external Safari (SFSafariViewController) handoff. No purchase ever completes inside the app.
 
-Family chat is private to invited family members only. Each message has a Report icon (next to non-own messages) that opens a pre-addressed email to support. Family owners may also remove members directly from Settings → Members.
+Family chat is private to invited family members only. Each message from another member shows a Report icon that opens an in-app form (describe the issue → Submit), which files a support ticket server-side — no external mail client is required. The demo Care Team thread includes a message from a second member (Sam Caregiver) so this flow can be exercised. Family owners may also remove members directly from Settings → Members.
 
 Demo account for review:
 Email: appreview@mycarecompanion.net
