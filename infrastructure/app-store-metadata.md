@@ -58,8 +58,8 @@ autism,care,tracking,medication,behavior,sleep,health,log,family,caregiver,ASD,s
 Health & Fitness
 
 ## Content Rating
-- Apple: 4+ (no objectionable content)
-- Google: Everyone
+- Apple: 13+ (calculated by the post-2025-overhaul questionnaire; used at submission 2026-06-11). Driven by Medical/Treatment Information = Infrequent. Full answer key: everything None EXCEPT Medical/Treatment Information = Infrequent, Health/Wellness Topics = Frequent, User-Generated Content = Present, Messaging and Chat = Present, Unrestricted Web Access = None. Do NOT override to a higher rating. (The old "4+" was from Apple's retired questionnaire and is no longer valid.)
+- Google: Everyone (IARC questionnaire for the deferred Play track may land higher once medical content is declared — revisit when Google Play submission begins)
 
 ## App Review Notes (Apple)
 MyCareCompanion is a tracking and journaling tool for parents of children with autism. It is NOT a diagnostic, treatment, or medical device — all in-app "patterns" are statistical correlations across user-logged data with prominent disclaimers to consult a physician.
