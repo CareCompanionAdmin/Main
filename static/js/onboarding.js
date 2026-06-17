@@ -9,11 +9,16 @@
   // re-issue completion, not POST a second child.
   let childCreated = false;
 
+  // Flags injected by the template. Guard against a missing window.OB so a
+  // template hiccup degrades to the full owner flow instead of throwing and
+  // leaving a dead wizard.
+  const OB = window.OB || {};
+
   // Build the step order based on the user's situation.
   let steps;
-  if (window.OB.invitedMember) {
+  if (OB.invitedMember) {
     steps = ['welcome', 'settings'];           // trimmed path
-  } else if (window.OB.hasFamily) {
+  } else if (OB.hasFamily) {
     steps = ['welcome', 'child'];
   } else {
     steps = ['welcome', 'family', 'child'];
@@ -108,9 +113,14 @@
       e.target.disabled = true;
       try {
         await fetch('/api/users/me/preferences', { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ timezone: tz }) });
-        await fetch('/api/onboarding/complete', { method: 'POST', headers: authHeaders() });
+        // The invited member just completed the basic-settings step, so mark it
+        // done; failures here are non-fatal (the checklist item simply stays
+        // open). Navigate only once onboarding is actually marked complete.
+        await fetch('/api/onboarding/settings-done', { method: 'POST', headers: authHeaders() });
+        const cr = await fetch('/api/onboarding/complete', { method: 'POST', headers: authHeaders() });
+        if (!cr.ok) { e.target.disabled = false; return err('settings', 'Almost done — please tap Finish again.'); }
         window.location.href = '/dashboard';
-      } catch (_) { e.target.disabled = false; }
+      } catch (_) { e.target.disabled = false; err('settings', 'Network error — please try again.'); }
     }
 
     if (e.target.matches('#ob-chip-add')) {
