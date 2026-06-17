@@ -32,6 +32,7 @@ type Handlers struct {
 	Search          *SearchHandler
 	AccountDeletion *AccountDeletionHandler
 	NarrativeConsent *NarrativeConsentHandler
+	Onboarding       *OnboardingHandler
 }
 
 // NewHandlers creates all API handlers
@@ -56,6 +57,7 @@ func NewHandlers(services *service.Services, cfg *config.Config) *Handlers {
 		Search:        NewSearchHandler(services.Search),
 		AccountDeletion: NewAccountDeletionHandler(services.AccountDeletion, services.AccountDeletionRepo),
 		NarrativeConsent: NewNarrativeConsentHandler(services.AINarrativeConsent),
+		Onboarding:       NewOnboardingHandler(services.User),
 	}
 }
 
@@ -404,6 +406,13 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		// state so the Settings UI can render the agreement inline.
 		r.Get("/users/me/narrative-consent", handlers.NarrativeConsent.Get)
 		r.Put("/users/me/narrative-consent", handlers.NarrativeConsent.Put)
+
+		// Onboarding state transitions — auth only, no family context required
+		// (onboarding can run before a family exists).
+		r.Post("/onboarding/complete", handlers.Onboarding.Complete)
+		r.Post("/onboarding/checklist/dismiss", handlers.Onboarding.DismissChecklist)
+		r.Post("/onboarding/settings-done", handlers.Onboarding.SettingsDone)
+		r.Post("/onboarding/invite-done", handlers.Onboarding.InviteDone)
 
 		// Support ticket routes (user-facing)
 		r.Route("/support", func(r chi.Router) {
