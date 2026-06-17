@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" "Welcome"}}
+<body class="calm-bg min-h-screen">
+
+{{template "nav" .}}
+{{template "mascot" .}}
+
+<main class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="bloom ring-soft rounded-3xl p-8 sm:p-10">
+    <!-- progress -->
+    <div class="w-full h-2 bg-orange-100 rounded-full mb-8 overflow-hidden">
+      <div id="ob-progress" class="h-2 bg-orange-500 rounded-full transition-all duration-300" style="width:0%"></div>
+    </div>
+
+    <!-- Step: Welcome -->
+    <section data-step="welcome">
+      <p class="handwritten text-2xl text-amber-700">Welcome{{if .FirstName}}, {{.FirstName}}{{end}}!</p>
+      <h1 class="display text-3xl text-stone-800 mt-1">Let's set up your space</h1>
+      <p class="text-stone-600 mt-3">It takes about a minute. We'll get your first child added so the app is ready to use.</p>
+      <button type="button" class="seed-btn mt-8 inline-flex items-center bg-orange-600 text-white rounded-full px-6 py-3" data-next>Let's go</button>
+    </section>
+
+    <!-- Step: Name your family (only when no family yet) -->
+    <section data-step="family" hidden>
+      <h1 class="display text-2xl text-stone-800">What should we call your family space?</h1>
+      <input id="ob-family-name" type="text" placeholder="e.g. The Johnsons"
+             class="w-full mt-4 rounded-2xl border-stone-200 focus:ring-orange-300 px-4 py-3" />
+      <p data-error class="text-red-600 text-sm mt-2 hidden"></p>
+      <div class="mt-8 flex justify-between">
+        <button type="button" class="text-stone-500" data-back>Back</button>
+        <button type="button" class="seed-btn bg-orange-600 text-white rounded-full px-6 py-3" data-save-family>Continue</button>
+      </div>
+    </section>
+
+    <!-- Step: First child -->
+    <section data-step="child" hidden>
+      <h1 class="display text-2xl text-stone-800">Tell us about your child</h1>
+      <label class="block mt-4 text-sm text-stone-600">First name</label>
+      <input id="ob-child-first" type="text" class="w-full mt-1 rounded-2xl border-stone-200 focus:ring-orange-300 px-4 py-3" />
+      <label class="block mt-4 text-sm text-stone-600">Date of birth</label>
+      <input id="ob-child-dob" type="date" class="w-full mt-1 rounded-2xl border-stone-200 focus:ring-orange-300 px-4 py-3" />
+      <label class="block mt-4 text-sm text-stone-600">Gender (optional)</label>
+      <select id="ob-child-gender" class="w-full mt-1 rounded-2xl border-stone-200 focus:ring-orange-300 px-4 py-3">
+        <option value="">Prefer not to say</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </select>
+      <label class="block mt-4 text-sm text-stone-600">Conditions (optional)</label>
+      <div id="ob-chips" class="flex flex-wrap gap-2 mt-2"></div>
+      <div class="flex gap-2 mt-3">
+        <input id="ob-chip-custom" type="text" placeholder="Add your own"
+               class="flex-1 rounded-2xl border-stone-200 focus:ring-orange-300 px-4 py-2" />
+        <button type="button" id="ob-chip-add" class="rounded-full bg-stone-100 px-4">Add</button>
+      </div>
+      <p data-error class="text-red-600 text-sm mt-2 hidden"></p>
+      <div class="mt-8 flex justify-between">
+        <button type="button" class="text-stone-500" data-back>Back</button>
+        <button type="button" class="seed-btn bg-orange-600 text-white rounded-full px-6 py-3" data-finish>Finish</button>
+      </div>
+    </section>
+
+    <!-- Step: Basic settings (trimmed path for invited members) -->
+    <section data-step="settings" hidden>
+      <h1 class="display text-2xl text-stone-800">A couple of quick settings</h1>
+      <label class="block mt-4 text-sm text-stone-600">Time zone</label>
+      <input id="ob-tz" type="text" class="w-full mt-1 rounded-2xl border-stone-200 px-4 py-3" readonly />
+      <label class="inline-flex items-center mt-4 gap-2">
+        <input id="ob-notify" type="checkbox" checked class="rounded" /> Send me reminders & alerts
+      </label>
+      <div class="mt-8 flex justify-between">
+        <button type="button" class="text-stone-500" data-back>Back</button>
+        <button type="button" class="seed-btn bg-orange-600 text-white rounded-full px-6 py-3" data-finish-invited>Finish</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  window.OB = {
+    hasFamily: {{if .HasFamily}}true{{else}}false{{end}},
+    invitedMember: {{if .InvitedMember}}true{{else}}false{{end}}
+  };
+</script>
+<script src="/static/js/onboarding.js"></script>
+</body>
+</html>
