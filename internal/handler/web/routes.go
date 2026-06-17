@@ -38,6 +38,7 @@ func SetupRoutes(r chi.Router, handlers *WebHandlers, authService *service.AuthS
 		r.Use(middleware.LoadEntitlement(db))
 
 		r.Get("/dashboard", handlers.Dashboard)
+		r.Get("/onboarding", handlers.Onboarding)
 		r.Get("/settings", handlers.Settings)
 		r.Get("/chat", handlers.Chat)
 		r.Get("/support", handlers.Support)

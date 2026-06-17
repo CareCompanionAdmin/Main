@@ -145,31 +145,44 @@ func (h *WebHandlers) Dashboard(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	familyID := middleware.GetFamilyID(r.Context())
 
+	// Gate: brand-new users must finish onboarding first.
+	state, err := h.services.User.GetOnboardingState(r.Context(), userID)
+	if err != nil {
+		renderError(w, "Failed to load dashboard", http.StatusInternalServerError)
+		return
+	}
+	if !service.OnboardingComplete(state) {
+		http.Redirect(w, r, "/onboarding", http.StatusSeeOther)
+		return
+	}
+
 	if familyID.String() == "00000000-0000-0000-0000-000000000000" {
 		// No family, redirect to create one
 		http.Redirect(w, r, "/family/new", http.StatusSeeOther)
 		return
 	}
 
-	// Get family dashboard
 	dashboard, err := h.services.Family.GetDashboard(r.Context(), familyID)
 	if err != nil {
 		renderError(w, "Failed to load dashboard", http.StatusInternalServerError)
 		return
 	}
 
-	// Get user's families for switch family dropdown
 	families, err := h.services.User.GetUserFamilies(r.Context(), userID)
 	if err != nil {
 		families = nil
 	}
 
 	data := map[string]interface{}{
-		"UserID":    userID,
-		"FamilyID":  familyID,
-		"Dashboard": dashboard,
-		"FirstName": middleware.GetFirstName(r.Context()),
-		"Families":  families,
+		"UserID":                  userID,
+		"FamilyID":                familyID,
+		"Dashboard":               dashboard,
+		"FirstName":               middleware.GetFirstName(r.Context()),
+		"Families":                families,
+		"ShowOnboardingChecklist": service.ShouldShowChecklist(state),
+		"OnboardingInviteDone":    state != nil && state.InviteDoneAt != nil,
+		"OnboardingSettingsDone":  state != nil && state.SettingsDoneAt != nil,
+		"ChildCount":              len(dashboard.Children),
 	}
 
 	renderTemplate(w, "dashboard", data)
@@ -613,4 +626,36 @@ func (h *WebHandlers) Support(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, "support", data)
+}
+
+// Onboarding renders the first-run wizard.
+func (h *WebHandlers) Onboarding(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	familyID := middleware.GetFamilyID(r.Context())
+
+	state, err := h.services.User.GetOnboardingState(r.Context(), userID)
+	if err != nil {
+		renderError(w, "Failed to load onboarding", http.StatusInternalServerError)
+		return
+	}
+	if service.OnboardingComplete(state) {
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	hasFamily := familyID.String() != "00000000-0000-0000-0000-000000000000"
+	invitedMember := false
+	if hasFamily {
+		if dash, derr := h.services.Family.GetDashboard(r.Context(), familyID); derr == nil && len(dash.Children) > 0 {
+			// Joined a family that already has children -> they don't add a child.
+			invitedMember = true
+		}
+	}
+
+	data := map[string]interface{}{
+		"FirstName":     middleware.GetFirstName(r.Context()),
+		"HasFamily":     hasFamily,
+		"InvitedMember": invitedMember,
+	}
+	renderTemplate(w, "onboarding", data)
 }
