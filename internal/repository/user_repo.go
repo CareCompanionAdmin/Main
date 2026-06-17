@@ -247,3 +247,58 @@ func (r *userRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM admin_users WHERE id = $1`, id)
 	return err
 }
+
+// GetOnboardingState reads onboarding timestamps from app_users.
+func (r *userRepo) GetOnboardingState(ctx context.Context, id uuid.UUID) (*models.OnboardingState, error) {
+	const q = `
+		SELECT onboarding_completed_at, onboarding_checklist_dismissed_at,
+		       onboarding_settings_done_at, onboarding_invite_done_at
+		FROM app_users
+		WHERE id = $1`
+	var completed, dismissed, settings, invite sql.NullTime
+	err := r.db.QueryRowContext(ctx, q, id).Scan(&completed, &dismissed, &settings, &invite)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	state := &models.OnboardingState{}
+	if completed.Valid {
+		state.CompletedAt = &completed.Time
+	}
+	if dismissed.Valid {
+		state.ChecklistDismissedAt = &dismissed.Time
+	}
+	if settings.Valid {
+		state.SettingsDoneAt = &settings.Time
+	}
+	if invite.Valid {
+		state.InviteDoneAt = &invite.Time
+	}
+	return state, nil
+}
+
+func (r *userRepo) SetOnboardingCompleted(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE app_users SET onboarding_completed_at = NOW(), updated_at = NOW() WHERE id = $1`, id)
+	return err
+}
+
+func (r *userRepo) SetOnboardingChecklistDismissed(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE app_users SET onboarding_checklist_dismissed_at = NOW(), updated_at = NOW() WHERE id = $1`, id)
+	return err
+}
+
+func (r *userRepo) SetOnboardingSettingsDone(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE app_users SET onboarding_settings_done_at = NOW(), updated_at = NOW() WHERE id = $1`, id)
+	return err
+}
+
+func (r *userRepo) SetOnboardingInviteDone(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE app_users SET onboarding_invite_done_at = NOW(), updated_at = NOW() WHERE id = $1`, id)
+	return err
+}

@@ -30,6 +30,11 @@ type UserRepository interface {
 	UpdateStatus(ctx context.Context, id uuid.UUID, status models.UserStatus) error
 	UpdateLastLogin(ctx context.Context, id uuid.UUID) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	GetOnboardingState(ctx context.Context, id uuid.UUID) (*models.OnboardingState, error)
+	SetOnboardingCompleted(ctx context.Context, id uuid.UUID) error
+	SetOnboardingChecklistDismissed(ctx context.Context, id uuid.UUID) error
+	SetOnboardingSettingsDone(ctx context.Context, id uuid.UUID) error
+	SetOnboardingInviteDone(ctx context.Context, id uuid.UUID) error
 }
 
 // FamilyRepository handles family data operations

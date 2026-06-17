@@ -181,3 +181,11 @@ type FamilyContextResponse struct {
 	Role        FamilyRole `json:"role"`
 	ExpiresAt   time.Time  `json:"expires_at"`
 }
+
+// OnboardingState captures a user's onboarding progress (all timestamps nullable).
+type OnboardingState struct {
+	CompletedAt          *time.Time `json:"completed_at,omitempty"`
+	ChecklistDismissedAt *time.Time `json:"checklist_dismissed_at,omitempty"`
+	SettingsDoneAt       *time.Time `json:"settings_done_at,omitempty"`
+	InviteDoneAt         *time.Time `json:"invite_done_at,omitempty"`
+}
