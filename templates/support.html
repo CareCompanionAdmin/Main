@@ -85,6 +85,23 @@
                             <span id="ticket-status" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"></span>
                             <span id="ticket-type" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"></span>
                             <span id="ticket-created" class="text-sm text-stone-500"></span>
+                            <label class="text-sm text-stone-500 ml-2">Type
+                                <select id="ticket-type-select" onchange="updateTicketField('type', this.value)"
+                                    class="ml-1 text-xs border border-stone-200 rounded-full px-2 py-0.5 bg-white">
+                                    <option value="bug_report">Bug</option>
+                                    <option value="feature_request">Feature</option>
+                                    <option value="billing">Billing</option>
+                                    <option value="general">General</option>
+                                </select>
+                            </label>
+                            <label class="text-sm text-stone-500">Priority
+                                <select id="ticket-priority-select" onchange="updateTicketField('priority', this.value)"
+                                    class="ml-1 text-xs border border-stone-200 rounded-full px-2 py-0.5 bg-white">
+                                    <option value="low">Low</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </label>
                         </div>
                     </div>
                     <button type="button" id="ticket-reopen-btn" onclick="reopenCurrentTicket()" class="hidden ml-3 px-3 py-1.5 text-xs bg-orange-600 text-white rounded-full hover:bg-orange-700">
@@ -152,7 +169,6 @@
                     <option value="low">Low</option>
                     <option value="normal" selected>Normal</option>
                     <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
                 </select>
             </div>
 
@@ -233,6 +249,28 @@ function hideNewTicket() {
     document.getElementById('new-ticket-modal').classList.add('hidden');
 }
 
+async function updateTicketField(field, value) {
+    if (!currentTicketID) return;
+    const body = {};
+    body[field] = value;
+    try {
+        const res = await fetch(`/api/support/tickets/${currentTicketID}/`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            alert('Could not update — please try again.');
+            return;
+        }
+        // Re-render so the new thread note + updated fields show.
+        selectTicket(currentTicketID);
+    } catch (_) {
+        alert('Network error — please try again.');
+    }
+}
+
 async function selectTicket(ticketID) {
     currentTicketID = ticketID;
 
@@ -286,6 +324,10 @@ async function selectTicket(ticketID) {
         const t = typeMap[ticket.type] || typeMap['general'];
         typeEl.textContent = t[0];
         typeEl.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + t[1];
+
+        document.getElementById('ticket-type-select').value = ticket.type || 'general';
+        document.getElementById('ticket-priority-select').value =
+            (ticket.priority === 'urgent') ? 'high' : (ticket.priority || 'normal');
 
         document.getElementById('ticket-created').textContent = 'Created ' + new Date(ticket.created_at).toLocaleDateString();
 
