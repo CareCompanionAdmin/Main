@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,6 +43,11 @@ type UserSupportRepository interface {
 	// Returns ErrTicketNotFound if the ticket doesn't exist, is not owned
 	// by the user, or is already in an open/in_progress/waiting state.
 	ReopenTicket(ctx context.Context, ticketID, userID uuid.UUID) error
+
+	// UpdateOwnTicketFields updates the type and/or priority of a ticket the
+	// user owns. Empty strings skip that field. Ownership is enforced in SQL
+	// (WHERE id=$1 AND user_id=$2); returns true when a row was updated.
+	UpdateOwnTicketFields(ctx context.Context, ticketID, userID uuid.UUID, ticketType, priority string) (bool, error)
 }
 
 // userSupportRepo implements UserSupportRepository.
@@ -308,4 +315,37 @@ func (r *userSupportRepo) ReopenTicket(ctx context.Context, ticketID, userID uui
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+// UpdateOwnTicketFields updates type and/or priority for a ticket the user
+// owns. Field validation (incl. the user priority cap) happens in the service
+// layer; this method only builds the scoped UPDATE.
+func (r *userSupportRepo) UpdateOwnTicketFields(ctx context.Context, ticketID, userID uuid.UUID, ticketType, priority string) (bool, error) {
+	sets := []string{}
+	args := []interface{}{ticketID, userID}
+	n := 3
+	if ticketType != "" {
+		sets = append(sets, fmt.Sprintf("type = $%d", n))
+		args = append(args, ticketType)
+		n++
+	}
+	if priority != "" {
+		sets = append(sets, fmt.Sprintf("priority = $%d", n))
+		args = append(args, priority)
+		n++
+	}
+	if len(sets) == 0 {
+		return false, nil
+	}
+	sets = append(sets, "updated_at = NOW()")
+	query := fmt.Sprintf("UPDATE support_tickets SET %s WHERE id = $1 AND user_id = $2", strings.Join(sets, ", "))
+	res, err := r.supportDB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return false, err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rows > 0, nil
 }
