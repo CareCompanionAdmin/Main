@@ -172,6 +172,8 @@ type AdminRepository interface {
 	GetTicketByID(ctx context.Context, id uuid.UUID) (*SupportTicket, error)
 	GetOpenTicketCount(ctx context.Context) (int, error)
 	UpdateTicketStatus(ctx context.Context, id uuid.UUID, status string) error
+	UpdateTicketPriority(ctx context.Context, id uuid.UUID, priority string) error
+	UpdateTicketType(ctx context.Context, id uuid.UUID, ticketType string) error
 	AssignTicket(ctx context.Context, ticketID, assigneeID uuid.UUID) error
 	ResolveTicket(ctx context.Context, ticketID, resolverID uuid.UUID) error
 	DeleteTickets(ctx context.Context, ids []uuid.UUID) (int64, error)
@@ -647,6 +649,18 @@ func (r *adminRepo) AssignTicket(ctx context.Context, ticketID, assigneeID uuid.
 func (r *adminRepo) ResolveTicket(ctx context.Context, ticketID, resolverID uuid.UUID) error {
 	query := `UPDATE support_tickets SET status = 'resolved', resolved_at = NOW(), resolved_by = $2, updated_at = NOW() WHERE id = $1`
 	_, err := r.supportDB.ExecContext(ctx, query, ticketID, resolverID)
+	return err
+}
+
+func (r *adminRepo) UpdateTicketPriority(ctx context.Context, id uuid.UUID, priority string) error {
+	_, err := r.supportDB.ExecContext(ctx,
+		`UPDATE support_tickets SET priority = $2, updated_at = NOW() WHERE id = $1`, id, priority)
+	return err
+}
+
+func (r *adminRepo) UpdateTicketType(ctx context.Context, id uuid.UUID, ticketType string) error {
+	_, err := r.supportDB.ExecContext(ctx,
+		`UPDATE support_tickets SET type = $2, updated_at = NOW() WHERE id = $1`, id, ticketType)
 	return err
 }
 
