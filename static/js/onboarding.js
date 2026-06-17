@@ -4,6 +4,10 @@
 
   const CONDITIONS = ['Autism Spectrum Disorder', 'ADHD', 'Anxiety', 'Epilepsy/Seizures', 'Sensory Processing Disorder', 'Speech/Language Delay'];
   const selected = new Set();
+  // Once the child is created we must not create it again on a retry — if the
+  // follow-up /onboarding/complete call fails, re-clicking Finish should only
+  // re-issue completion, not POST a second child.
+  let childCreated = false;
 
   // Build the step order based on the user's situation.
   let steps;
@@ -81,12 +85,22 @@
       };
       e.target.disabled = true;
       try {
-        const res = await fetch('/api/children', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
-        const data = await res.json();
-        if (!res.ok) { e.target.disabled = false; return err('child', data.message || 'Could not save child.'); }
-        await fetch('/api/onboarding/complete', { method: 'POST', headers: authHeaders() });
+        // Create the child only once. A previous click may have created it but
+        // failed on the completion step below; in that case skip straight to
+        // re-issuing completion so we never POST a duplicate child.
+        if (!childCreated) {
+          const res = await fetch('/api/children', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) });
+          const data = await res.json();
+          if (!res.ok) { e.target.disabled = false; return err('child', data.message || 'Could not save child.'); }
+          childCreated = true;
+        }
+        // Only navigate once onboarding is actually marked complete — otherwise
+        // the dashboard gate bounces the user back here and (without the guard
+        // above) they would create a second child.
+        const cr = await fetch('/api/onboarding/complete', { method: 'POST', headers: authHeaders() });
+        if (!cr.ok) { e.target.disabled = false; return err('child', 'Almost done — please tap Finish again.'); }
         window.location.href = '/dashboard';
-      } catch (_) { e.target.disabled = false; err('child', 'Network error — please try again.'); }
+      } catch (_) { e.target.disabled = false; err('child', childCreated ? 'Almost done — please tap Finish again.' : 'Network error — please try again.'); }
     }
 
     if (e.target.matches('[data-finish-invited]')) {
