@@ -1,0 +1,66 @@
+{{define "onboarding_checklist"}}
+<div id="ob-checklist" class="bloom ring-soft rounded-3xl p-6 sm:p-8 mb-6 border border-orange-100">
+  <div class="flex items-start justify-between">
+    <div>
+      <p class="handwritten text-xl text-amber-700">Almost there</p>
+      <h2 class="display text-2xl text-stone-800">Finish setting up</h2>
+    </div>
+    <button type="button" id="ob-dismiss" class="text-sm text-stone-400 hover:text-stone-600">I'm all set ✕</button>
+  </div>
+
+  <ul class="mt-5 space-y-3">
+    <!-- Add another child (derived done when 2+ children) -->
+    <li class="flex items-center justify-between rounded-2xl bg-white/60 px-4 py-3">
+      <span>{{if ge .ChildCount 2}}✅{{else}}➕{{end}} Add another child</span>
+      <a href="/child/new" class="text-orange-600 text-sm">Add</a>
+    </li>
+
+    <!-- Invite care team -->
+    <li class="rounded-2xl bg-white/60 px-4 py-3">
+      <div class="flex items-center justify-between">
+        <span>{{if .OnboardingInviteDone}}✅{{else}}👪{{end}} Invite your care team</span>
+        <button type="button" class="text-orange-600 text-sm" data-toggle="ob-invite-panel">Invite</button>
+      </div>
+      <div id="ob-invite-panel" class="mt-3 hidden">
+        <div id="ob-invite-rows"></div>
+        <button type="button" id="ob-invite-add-row" class="text-sm text-stone-500 mt-1">+ add another</button>
+        <div class="mt-3 flex items-center gap-3">
+          <button type="button" id="ob-invite-send" class="seed-btn bg-orange-600 text-white rounded-full px-5 py-2 text-sm">Send invites</button>
+          <a href="/settings#members" class="text-sm text-stone-500">Manage everyone in Settings</a>
+        </div>
+        <p id="ob-invite-msg" class="text-sm mt-2"></p>
+      </div>
+    </li>
+
+    <!-- Basic settings -->
+    <li class="rounded-2xl bg-white/60 px-4 py-3">
+      <div class="flex items-center justify-between">
+        <span>{{if .OnboardingSettingsDone}}✅{{else}}⚙️{{end}} Basic settings</span>
+        <button type="button" class="text-orange-600 text-sm" data-toggle="ob-settings-panel">Open</button>
+      </div>
+      <div id="ob-settings-panel" class="mt-3 hidden space-y-3">
+        <label class="block text-sm text-stone-600">Time zone</label>
+        <input id="ob-set-tz" type="text" class="w-full rounded-2xl border-stone-200 px-3 py-2" readonly />
+        <label class="inline-flex items-center gap-2 text-sm"><input id="ob-set-notify" type="checkbox" checked class="rounded"/> Reminders & alerts</label>
+        <div class="text-sm">
+          <label class="block text-stone-600">Time format</label>
+          <select id="ob-set-timefmt" class="rounded-2xl border-stone-200 px-3 py-2">
+            <option value="12h">12-hour</option>
+            <option value="24h">24-hour</option>
+          </select>
+        </div>
+        <div class="border-t border-orange-100 pt-3">
+          <label class="inline-flex items-start gap-2 text-sm">
+            <input id="ob-set-ai" type="checkbox" class="rounded mt-1"/>
+            <span><strong>AI Insights</strong> — let MyCareCompanion surface gentle patterns from your logs.
+            <span class="block text-stone-500 mt-1">This is a logging tool, not a medical device. Always consult your healthcare provider. You can turn this off anytime in Settings.</span></span>
+          </label>
+        </div>
+        <button type="button" id="ob-set-save" class="seed-btn bg-orange-600 text-white rounded-full px-5 py-2 text-sm">Save</button>
+        <p id="ob-set-msg" class="text-sm"></p>
+      </div>
+    </li>
+  </ul>
+</div>
+<script src="/static/js/onboarding_checklist.js"></script>
+{{end}}

@@ -24,7 +24,7 @@
 {{template "mascot" .}}
 
 <main class="max-w-3xl mx-auto px-6 sm:px-8 py-10">
-
+{{if .ShowOnboardingChecklist}}{{template "onboarding_checklist" .}}{{end}}
     <!-- Header: a quiet welcome -->
     <header class="mb-8">
         <p class="handwritten text-2xl text-orange-800 leading-none">Welcome back{{if .FirstName}}, {{.FirstName}}{{end}}.</p>
