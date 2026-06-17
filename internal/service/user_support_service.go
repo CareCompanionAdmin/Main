@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 
@@ -171,4 +172,47 @@ func (s *UserSupportService) ReopenTicket(ctx context.Context, ticketID, userID 
 		return ErrTicketNotFound
 	}
 	return ErrTicketNotReopenable
+}
+
+// UpdateTicketFieldsRequest is a user's request to change their own ticket's
+// type and/or priority. Empty fields are left unchanged.
+type UpdateTicketFieldsRequest struct {
+	Type     string `json:"type"`
+	Priority string `json:"priority"`
+}
+
+// UpdateTicketFields lets a user change the type and/or priority of a ticket
+// they own. Priority is capped at "high" (Urgent is staff-only) — see
+// ValidateTicketFields. Each changed field posts a visible thread note.
+func (s *UserSupportService) UpdateTicketFields(ctx context.Context, ticketID, userID uuid.UUID, req *UpdateTicketFieldsRequest) (*repository.SupportTicket, error) {
+	before, err := s.repo.GetTicketByID(ctx, ticketID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if before == nil {
+		return nil, ErrTicketNotFound
+	}
+
+	if err := ValidateTicketFields(false, req.Type, req.Priority, ""); err != nil {
+		return nil, err
+	}
+
+	var notes []string
+	if req.Type != "" && req.Type != before.Type {
+		notes = append(notes, fmt.Sprintf("Type changed %s → %s", before.Type, req.Type))
+	}
+	if req.Priority != "" && req.Priority != before.Priority {
+		notes = append(notes, fmt.Sprintf("Priority changed %s → %s", before.Priority, req.Priority))
+	}
+
+	if _, err := s.repo.UpdateOwnTicketFields(ctx, ticketID, userID, req.Type, req.Priority); err != nil {
+		return nil, err
+	}
+
+	// Visible thread notes from the user (AddMessage writes is_internal=false).
+	for _, n := range notes {
+		_ = s.repo.AddMessage(ctx, ticketID, userID, n)
+	}
+
+	return s.repo.GetTicketByID(ctx, ticketID, userID)
 }
