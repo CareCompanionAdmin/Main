@@ -423,6 +423,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 
 			r.Route("/tickets/{ticketID}", func(r chi.Router) {
 				r.Get("/", handlers.Support.GetTicket)
+				r.Patch("/", handlers.Support.UpdateTicketFields)
 				r.Post("/messages", handlers.Support.AddMessage)
 				r.Post("/read", handlers.Support.MarkRead)
 				r.Post("/reopen", handlers.Support.Reopen)

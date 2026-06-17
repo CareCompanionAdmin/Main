@@ -386,3 +386,39 @@ func (h *SupportHandler) Reopen(w http.ResponseWriter, r *http.Request) {
 		respondInternalError(w, "Failed to reopen ticket")
 	}
 }
+
+// UpdateTicketFields lets the owning user change their ticket's type and/or
+// priority (priority capped at High — Urgent is staff-only). Returns the
+// updated ticket. 404 if not owned, 400 on invalid field values.
+func (h *SupportHandler) UpdateTicketFields(w http.ResponseWriter, r *http.Request) {
+	ticketID, err := parseUUID(chi.URLParam(r, "ticketID"))
+	if err != nil {
+		respondBadRequest(w, "Invalid ticket ID")
+		return
+	}
+	userID := middleware.GetUserID(r.Context())
+
+	var req service.UpdateTicketFieldsRequest
+	if err := decodeJSON(r, &req); err != nil {
+		respondBadRequest(w, "Invalid request body")
+		return
+	}
+	if req.Type == "" && req.Priority == "" {
+		respondBadRequest(w, "Nothing to update")
+		return
+	}
+
+	ticket, err := h.supportService.UpdateTicketFields(r.Context(), ticketID, userID, &req)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrTicketNotFound):
+			respondNotFound(w, "Ticket not found")
+		case errors.Is(err, service.ErrInvalidTicketField):
+			respondBadRequest(w, err.Error())
+		default:
+			respondInternalError(w, "Failed to update ticket")
+		}
+		return
+	}
+	respondOK(w, ticket)
+}
