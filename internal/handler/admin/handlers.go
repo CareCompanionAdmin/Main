@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -370,6 +371,7 @@ func (h *Handler) GetTicket(w http.ResponseWriter, r *http.Request) {
 type UpdateTicketRequest struct {
 	Status   string `json:"status"`
 	Priority string `json:"priority"`
+	Type     string `json:"type"`
 }
 
 func (h *Handler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
@@ -386,7 +388,26 @@ func (h *Handler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Status != "" {
+	if err := service.ValidateTicketFields(true, req.Type, req.Priority, req.Status); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Load current values so change notes read "old → new".
+	before, err := h.adminRepo.GetTicketByID(ctx, id)
+	if err != nil {
+		http.Error(w, "Failed to load ticket: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if before == nil {
+		http.Error(w, "Ticket not found", http.StatusNotFound)
+		return
+	}
+
+	claims := middleware.GetAuthClaims(ctx)
+	var notes []string
+
+	if req.Status != "" && req.Status != before.Status {
 		if err := h.adminRepo.UpdateTicketStatus(ctx, id, req.Status); err != nil {
 			http.Error(w, "Failed to update ticket: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -395,9 +416,31 @@ func (h *Handler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 		if (req.Status == "closed" || req.Status == "resolved") && h.attachService != nil {
 			h.attachService.DeleteAllForTicket(ctx, id)
 		}
+		notes = append(notes, fmt.Sprintf("Status changed %s → %s", before.Status, req.Status))
+	}
+	if req.Priority != "" && req.Priority != before.Priority {
+		if err := h.adminRepo.UpdateTicketPriority(ctx, id, req.Priority); err != nil {
+			http.Error(w, "Failed to update ticket: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		notes = append(notes, fmt.Sprintf("Priority changed %s → %s", before.Priority, req.Priority))
+	}
+	if req.Type != "" && req.Type != before.Type {
+		if err := h.adminRepo.UpdateTicketType(ctx, id, req.Type); err != nil {
+			http.Error(w, "Failed to update ticket: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		notes = append(notes, fmt.Sprintf("Type changed %s → %s", before.Type, req.Type))
 	}
 
-	h.logAction(r, "update_ticket", "ticket", id, map[string]interface{}{"status": req.Status})
+	// Internal change notes (visible to staff only).
+	for _, n := range notes {
+		_ = h.adminRepo.AddTicketMessage(ctx, id, claims.UserID, n, true)
+	}
+
+	h.logAction(r, "update_ticket", "ticket", id, map[string]interface{}{
+		"status": req.Status, "priority": req.Priority, "type": req.Type,
+	})
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"success": true}`))
 }
