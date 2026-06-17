@@ -194,3 +194,28 @@ func (s *UserService) UpdatePreferences(ctx context.Context, userID uuid.UUID, r
 
 	return s.userRepo.Update(ctx, user)
 }
+
+// GetOnboardingState returns the user's onboarding progress.
+func (s *UserService) GetOnboardingState(ctx context.Context, userID uuid.UUID) (*models.OnboardingState, error) {
+	return s.userRepo.GetOnboardingState(ctx, userID)
+}
+
+// CompleteOnboarding marks the required wizard finished.
+func (s *UserService) CompleteOnboarding(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.SetOnboardingCompleted(ctx, userID)
+}
+
+// DismissChecklist marks the dashboard setup checklist dismissed.
+func (s *UserService) DismissChecklist(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.SetOnboardingChecklistDismissed(ctx, userID)
+}
+
+// MarkSettingsDone marks the basic-settings checklist item complete.
+func (s *UserService) MarkSettingsDone(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.SetOnboardingSettingsDone(ctx, userID)
+}
+
+// MarkInviteDone marks the invite-care-team checklist item complete.
+func (s *UserService) MarkInviteDone(ctx context.Context, userID uuid.UUID) error {
+	return s.userRepo.SetOnboardingInviteDone(ctx, userID)
+}
