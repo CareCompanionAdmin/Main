@@ -1446,12 +1446,15 @@ function renderChildren() {
         const age = calculateAge(child.date_of_birth);
         const gender = child.gender || '';
         const genderIcon = gender === 'male' ? '♂' : gender === 'female' ? '♀' : '';
+        const avatarColor = gender === 'male' ? 'bg-blue-100 text-blue-600'
+                          : gender === 'female' ? 'bg-pink-100 text-pink-600'
+                          : 'bg-amber-100 text-amber-700';
 
         return `
             <div class="flex items-center justify-between p-4 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors"
                  onclick="openEditChildModal('${child.id}')">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-medium text-lg">
+                    <div class="w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center font-medium text-lg">
                         ${initials.toUpperCase()}
                     </div>
                     <div>
