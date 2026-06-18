@@ -135,6 +135,15 @@ body.calm-bg {
   border-color: transparent;
 }
 
+/* Onboarding: suppress the floating help mascot so it can't cover the
+   step buttons. The help modal stays reachable via the nav Help button. */
+.onboarding-mode #helpMascotDesktop,
+.onboarding-mode #helpMascotMobile,
+.onboarding-mode #helpMascotCollapsed,
+.onboarding-mode #helpMascotMobileCollapsed {
+  display: none !important;
+}
+
 /* Today's bloom card -------------------------------------- */
 
 .bloom {
