@@ -122,6 +122,18 @@ body.calm-bg {
   border-color: rgba(180, 90, 30, 0.4);
   transform: translateY(-1px);
 }
+/* When seed-btn is combined with an explicit orange bg utility (CTA buttons),
+   don't let the white quick-add chip background win. The two-class selector
+   (0,2,0) outranks both .seed-btn and .bg-orange-600. Leaves bare seed-btn
+   chips untouched. Fixes white-on-white "whited out" buttons. */
+.seed-btn.bg-orange-600 {
+  background: #ea580c; /* orange-600 */
+  border-color: transparent;
+}
+.seed-btn.bg-orange-600:hover {
+  background: #c2410c; /* orange-700 */
+  border-color: transparent;
+}
 
 /* Today's bloom card -------------------------------------- */
 
