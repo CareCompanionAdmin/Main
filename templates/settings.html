@@ -9,6 +9,12 @@
 <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
     <header class="mb-6">
+        <a href="/dashboard" class="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-orange-700 transition-colors mb-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to Dashboard
+        </a>
         <p class="handwritten text-2xl text-orange-800 leading-none">A few small dials</p>
         <h1 class="display text-3xl sm:text-4xl font-medium text-stone-800 mt-1">Settings</h1>
         <p class="display italic text-stone-600 text-lg mt-2">Account, plan, people, preferences. Skip ahead with the chips below.</p>
@@ -1446,12 +1452,15 @@ function renderChildren() {
         const age = calculateAge(child.date_of_birth);
         const gender = child.gender || '';
         const genderIcon = gender === 'male' ? '♂' : gender === 'female' ? '♀' : '';
+        const avatarColor = gender === 'male' ? 'bg-blue-100 text-blue-600'
+                          : gender === 'female' ? 'bg-pink-100 text-pink-600'
+                          : 'bg-amber-100 text-amber-700';
 
         return `
             <div class="flex items-center justify-between p-4 bg-stone-50 rounded-2xl cursor-pointer hover:bg-stone-100 transition-colors"
                  onclick="openEditChildModal('${child.id}')">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-medium text-lg">
+                    <div class="w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center font-medium text-lg">
                         ${initials.toUpperCase()}
                     </div>
                     <div>

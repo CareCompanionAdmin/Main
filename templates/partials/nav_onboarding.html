@@ -1,0 +1,37 @@
+{{define "nav_onboarding"}}
+<!-- Minimal nav for the onboarding flow: brand + Help + Logout only.
+     Chat / Support / Search / hamburger are intentionally omitted so the
+     user isn't pulled out of setup before anything exists. The Help button
+     opens the same help modal defined in the mascot partial. -->
+<nav class="app-nav sticky top-0 z-30 bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center min-w-0">
+                <span class="text-xl font-bold text-orange-600 truncate">MyCareCompanion</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <button onclick="openHelpModal()" class="p-3 text-stone-500 hover:text-stone-700" title="Help" aria-label="Help">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </button>
+                <button onclick="onboardingLogout()" class="px-3 py-2 text-sm text-stone-600 hover:text-stone-800 font-medium whitespace-nowrap" title="Log out">Log out</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+function onboardingLogout() {
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+        .catch(function() {})
+        .finally(function() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/api/auth/refresh;';
+            window.location.href = '/login';
+        });
+}
+</script>
+{{end}}
