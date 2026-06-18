@@ -23,10 +23,13 @@
   const rows = document.getElementById('ob-invite-rows');
   function addRow() {
     const div = document.createElement('div');
-    div.className = 'flex gap-2 mb-2 ob-invite-row';
+    // Stack vertically in portrait so the role select never gets pushed
+    // off-screen; lay out in a row only once there's room (sm+).
+    div.className = 'flex flex-col sm:flex-row gap-2 mb-2 ob-invite-row';
     div.innerHTML =
-      '<input type="email" placeholder="email" class="flex-1 rounded-2xl border-stone-200 px-3 py-2 ob-email"/>' +
-      '<select class="rounded-2xl border-stone-200 px-2 ob-role">' +
+      '<input type="text" placeholder="Name" class="w-full sm:flex-1 rounded-2xl border border-stone-200 px-3 py-2 ob-name"/>' +
+      '<input type="email" placeholder="email" class="w-full sm:flex-1 rounded-2xl border border-stone-200 px-3 py-2 ob-email"/>' +
+      '<select class="w-full sm:w-auto rounded-2xl border border-stone-200 px-2 py-2 ob-role">' +
         '<option value="parent">Parent/Guardian</option>' +
         '<option value="caregiver">Caregiver</option>' +
         '<option value="medical_provider">Medical Provider</option>' +
@@ -42,14 +45,23 @@
     const msg = document.getElementById('ob-invite-msg');
     const rowEls = [...document.querySelectorAll('.ob-invite-row')];
     const targets = rowEls
-      .map(r => ({ email: r.querySelector('.ob-email').value.trim(), role: r.querySelector('.ob-role').value }))
+      .map(r => {
+        const name = r.querySelector('.ob-name').value.trim();
+        const sp = name.indexOf(' ');
+        return {
+          email: r.querySelector('.ob-email').value.trim(),
+          first_name: sp === -1 ? name : name.slice(0, sp),
+          last_name: sp === -1 ? '' : name.slice(sp + 1).trim(),
+          role: r.querySelector('.ob-role').value,
+        };
+      })
       .filter(t => t.email);
     if (!targets.length) { msg.textContent = 'Enter at least one email.'; return; }
     sendBtn.disabled = true;
     let ok = 0;
     for (const t of targets) {
       const res = await fetch('/api/family/members', { method: 'POST', headers: H(),
-        body: JSON.stringify({ email: t.email, role: t.role, mode: 'invite' }) });
+        body: JSON.stringify({ email: t.email, first_name: t.first_name, last_name: t.last_name, role: t.role, mode: 'invite' }) });
       if (res.ok) ok++;
     }
     if (ok > 0) {
