@@ -83,33 +83,33 @@
             <button onclick="resolveTicket('{{.ID}}')" class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200">Resolve</button>
             {{end}}
         </div>
-        <div class="flex items-center gap-3 mt-3 text-sm">
-            <label>Status
-                <select id="adm-status" onchange="updateTicketAdmin('status', this.value)" class="ml-1 border rounded px-2 py-1">
-                    <option value="open" {{if eq .Status "open"}}selected{{end}}>Open</option>
-                    <option value="in_progress" {{if eq .Status "in_progress"}}selected{{end}}>In progress</option>
-                    <option value="waiting_on_user" {{if eq .Status "waiting_on_user"}}selected{{end}}>Waiting on user</option>
-                    <option value="resolved" {{if eq .Status "resolved"}}selected{{end}}>Resolved</option>
-                    <option value="closed" {{if eq .Status "closed"}}selected{{end}}>Closed</option>
-                </select>
-            </label>
-            <label>Priority
-                <select id="adm-priority" onchange="updateTicketAdmin('priority', this.value)" class="ml-1 border rounded px-2 py-1">
-                    <option value="low" {{if eq .Priority "low"}}selected{{end}}>Low</option>
-                    <option value="normal" {{if eq .Priority "normal"}}selected{{end}}>Normal</option>
-                    <option value="high" {{if eq .Priority "high"}}selected{{end}}>High</option>
-                    <option value="urgent" {{if eq .Priority "urgent"}}selected{{end}}>Urgent</option>
-                </select>
-            </label>
-            <label>Type
-                <select id="adm-type" onchange="updateTicketAdmin('type', this.value)" class="ml-1 border rounded px-2 py-1">
-                    <option value="bug_report" {{if eq .Type "bug_report"}}selected{{end}}>Bug report</option>
-                    <option value="feature_request" {{if eq .Type "feature_request"}}selected{{end}}>Feature request</option>
-                    <option value="billing" {{if eq .Type "billing"}}selected{{end}}>Billing</option>
-                    <option value="general" {{if eq .Type "general"}}selected{{end}}>General</option>
-                </select>
-            </label>
-        </div>
+    </div>
+    <div class="flex items-center gap-3 mt-3 pt-3 border-t text-sm">
+        <label>Status
+            <select id="adm-status" onchange="updateTicketAdmin('status', this.value)" class="ml-1 border rounded px-2 py-1">
+                <option value="open" {{if eq .Status "open"}}selected{{end}}>Open</option>
+                <option value="in_progress" {{if eq .Status "in_progress"}}selected{{end}}>In progress</option>
+                <option value="waiting_on_user" {{if eq .Status "waiting_on_user"}}selected{{end}}>Waiting on user</option>
+                <option value="resolved" {{if eq .Status "resolved"}}selected{{end}}>Resolved</option>
+                <option value="closed" {{if eq .Status "closed"}}selected{{end}}>Closed</option>
+            </select>
+        </label>
+        <label>Priority
+            <select id="adm-priority" onchange="updateTicketAdmin('priority', this.value)" class="ml-1 border rounded px-2 py-1">
+                <option value="low" {{if eq .Priority "low"}}selected{{end}}>Low</option>
+                <option value="normal" {{if eq .Priority "normal"}}selected{{end}}>Normal</option>
+                <option value="high" {{if eq .Priority "high"}}selected{{end}}>High</option>
+                <option value="urgent" {{if eq .Priority "urgent"}}selected{{end}}>Urgent</option>
+            </select>
+        </label>
+        <label>Type
+            <select id="adm-type" onchange="updateTicketAdmin('type', this.value)" class="ml-1 border rounded px-2 py-1">
+                <option value="bug_report" {{if eq .Type "bug_report"}}selected{{end}}>Bug report</option>
+                <option value="feature_request" {{if eq .Type "feature_request"}}selected{{end}}>Feature request</option>
+                <option value="billing" {{if eq .Type "billing"}}selected{{end}}>Billing</option>
+                <option value="general" {{if eq .Type "general"}}selected{{end}}>General</option>
+            </select>
+        </label>
     </div>
 </div>
 {{end}}
