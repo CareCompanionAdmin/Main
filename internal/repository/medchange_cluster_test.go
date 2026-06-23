@@ -176,3 +176,47 @@ func TestReconcileSchedules_PreservesLogLinkage(t *testing.T) {
 		t.Fatalf("expected the single due row to show IsLogged=true, got %d logged", loggedCount)
 	}
 }
+
+// A med with TWO schedules in the same time_of_day bucket must not lose a dose
+// when reconciled — the bucket is matched one-for-one, not collapsed.
+func TestReconcileSchedules_DuplicateBucketNoLoss(t *testing.T) {
+	childID, _ := smithFixtures(t)
+	db := openTestDB(t)
+	defer db.Close()
+	ctx := context.Background()
+	repo := repository.NewMedicationRepo(db)
+
+	med := &models.Medication{ChildID: childID, Name: "TEST-DupBucket-Med", Dosage: "5", DosageUnit: "mg", Frequency: models.MedicationFrequency("twice_daily")}
+	if err := repo.Create(ctx, med); err != nil {
+		t.Fatalf("create med: %v", err)
+	}
+	defer db.ExecContext(ctx, `DELETE FROM medications WHERE id=$1`, med.ID)
+
+	// Two morning schedules: 08:00 and 11:00.
+	for _, tm := range []string{"08:00", "11:00"} {
+		s := &models.MedicationSchedule{MedicationID: med.ID, TimeOfDay: models.MedicationTimeOfDayMorning}
+		s.ScheduledTime.String, s.ScheduledTime.Valid = tm, true
+		if err := repo.CreateSchedule(ctx, s); err != nil {
+			t.Fatalf("create schedule %s: %v", tm, err)
+		}
+	}
+
+	// Reconcile with two morning schedules at shifted times.
+	desired := []models.MedicationSchedule{}
+	for _, tm := range []string{"09:00", "12:00"} {
+		d := models.MedicationSchedule{MedicationID: med.ID, TimeOfDay: models.MedicationTimeOfDayMorning}
+		d.ScheduledTime.String, d.ScheduledTime.Valid = tm, true
+		desired = append(desired, d)
+	}
+	if err := repo.ReconcileSchedules(ctx, med.ID, desired); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	scheds, err := repo.GetSchedules(ctx, med.ID)
+	if err != nil {
+		t.Fatalf("get schedules: %v", err)
+	}
+	if len(scheds) != 2 {
+		t.Fatalf("expected 2 active morning schedules preserved (no dose loss), got %d", len(scheds))
+	}
+}

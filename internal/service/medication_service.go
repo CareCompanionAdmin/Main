@@ -174,11 +174,14 @@ func (s *MedicationService) Delete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (s *MedicationService) Discontinue(ctx context.Context, id uuid.UUID) error {
-	return s.DiscontinueWithTracking(ctx, id, uuid.Nil)
+	return s.DiscontinueWithTracking(ctx, id, uuid.Nil, time.UTC)
 }
 
 // DiscontinueWithTracking discontinues a medication and creates a treatment change record
-func (s *MedicationService) DiscontinueWithTracking(ctx context.Context, id uuid.UUID, userID uuid.UUID) error {
+func (s *MedicationService) DiscontinueWithTracking(ctx context.Context, id uuid.UUID, userID uuid.UUID, loc *time.Location) error {
+	if loc == nil {
+		loc = time.UTC
+	}
 	med, err := s.medRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -207,6 +210,7 @@ func (s *MedicationService) DiscontinueWithTracking(ctx context.Context, id uuid
 			},
 			ChangeSummary:   fmt.Sprintf("Discontinued %s (%s %s, %s)", med.Name, med.Dosage, med.DosageUnit, med.Frequency),
 			ChangedByUserID: userID.String(),
+			EffectiveDate:   time.Now().In(loc).Format("2006-01-02"),
 		}
 		if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
 			fmt.Printf("Warning: Failed to create treatment change record: %v\n", err)
@@ -221,7 +225,10 @@ func (s *MedicationService) DiscontinueWithTracking(ctx context.Context, id uuid
 
 // DiscontinueWithReason discontinues a medication with a specific reason
 // Returns true if the medication was hard deleted (added_by_accident with no logs)
-func (s *MedicationService) DiscontinueWithReason(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason, reasonText string) (bool, error) {
+func (s *MedicationService) DiscontinueWithReason(ctx context.Context, id uuid.UUID, userID uuid.UUID, reason, reasonText string, loc *time.Location) (bool, error) {
+	if loc == nil {
+		loc = time.UTC
+	}
 	med, err := s.medRepo.GetByID(ctx, id)
 	if err != nil {
 		return false, err
@@ -282,6 +289,7 @@ func (s *MedicationService) DiscontinueWithReason(ctx context.Context, id uuid.U
 			},
 			ChangeSummary:   fmt.Sprintf("Discontinued %s (%s %s) - Reason: %s", med.Name, med.Dosage, med.DosageUnit, reasonDisplay),
 			ChangedByUserID: userID.String(),
+			EffectiveDate:   time.Now().In(loc).Format("2006-01-02"),
 		}
 
 		// Mark for correlation tracking if adverse effect or provider changed
@@ -377,7 +385,10 @@ func (s *MedicationService) DeleteLog(ctx context.Context, id uuid.UUID) error {
 }
 
 // UpdateLogWithTracking updates a medication log and creates a treatment change record for audit
-func (s *MedicationService) UpdateLogWithTracking(ctx context.Context, oldLog *models.MedicationLog, newLog *models.MedicationLog, userID uuid.UUID) error {
+func (s *MedicationService) UpdateLogWithTracking(ctx context.Context, oldLog *models.MedicationLog, newLog *models.MedicationLog, userID uuid.UUID, loc *time.Location) error {
+	if loc == nil {
+		loc = time.UTC
+	}
 	// Update the log
 	if err := s.medRepo.UpdateLog(ctx, newLog); err != nil {
 		return err
@@ -404,6 +415,7 @@ func (s *MedicationService) UpdateLogWithTracking(ctx context.Context, oldLog *m
 			},
 			ChangeSummary:   fmt.Sprintf("Medication log edited: status changed from '%s' to '%s'", oldLog.Status, newLog.Status),
 			ChangedByUserID: userID.String(),
+			EffectiveDate:   time.Now().In(loc).Format("2006-01-02"),
 		}
 		if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
 			// Log but don't fail the update

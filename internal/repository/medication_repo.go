@@ -241,13 +241,22 @@ func (r *medicationRepo) ReconcileSchedules(ctx context.Context, medicationID uu
 	if err != nil {
 		return err
 	}
-	byTOD := make(map[models.MedicationTimeOfDay]models.MedicationSchedule, len(existing))
+	// Group existing active schedules by time_of_day into FIFO queues. A med may
+	// legitimately have multiple doses in the same bucket (there is no
+	// unique(medication_id,time_of_day) constraint), so we match desired entries
+	// to existing rows one-for-one within a bucket rather than collapsing them.
+	byTOD := make(map[models.MedicationTimeOfDay][]models.MedicationSchedule, len(existing))
 	for _, e := range existing {
-		byTOD[e.TimeOfDay] = e
+		byTOD[e.TimeOfDay] = append(byTOD[e.TimeOfDay], e)
 	}
 	keep := make(map[uuid.UUID]bool)
 	for _, d := range desired {
-		if cur, ok := byTOD[d.TimeOfDay]; ok {
+		queue := byTOD[d.TimeOfDay]
+		if len(queue) > 0 {
+			// Reuse the next existing schedule in this bucket (preserves its id
+			// and thus today's medication_logs linkage), just updating the time.
+			cur := queue[0]
+			byTOD[d.TimeOfDay] = queue[1:]
 			cur.ScheduledTime = d.ScheduledTime
 			cur.DaysOfWeek = d.DaysOfWeek
 			cur.IsActive = true

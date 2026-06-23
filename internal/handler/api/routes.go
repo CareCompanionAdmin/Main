@@ -389,7 +389,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Route("/treatment-changes", func(r chi.Router) {
 			r.Get("/pending-questions", handlers.Transparency.GetPendingInterrogatives)
 			r.Post("/{changeID}/respond", handlers.Transparency.RespondToTreatmentChange)
-			r.Patch("/{id}", handlers.Transparency.UpdateTreatmentChangeEffectiveDate)
+			r.With(middleware.EnforceWriteEntitlement()).Patch("/{id}", handlers.Transparency.UpdateTreatmentChangeEffectiveDate)
 		})
 
 		// Interaction alerts (for remind me later)

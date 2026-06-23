@@ -1250,9 +1250,7 @@ function showDayDetails(date, category) {
 // --- Medication-change day detail (clickable 💊 pill) ---
 // Shows what medication change(s) happened on a day and lets the user correct
 // the date (e.g. a change made yesterday but logged today). #112379, #112369, #112402
-function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+// (escapeHtml is defined once later in this script block and shared.)
 async function openMedChangeDay(date) {
     const modal = document.getElementById('medChangeDayModal');
     const list = document.getElementById('medChangeDayList');
