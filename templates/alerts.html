@@ -80,8 +80,12 @@
                     <!-- Related Pattern Info -->
                     <div>
                         <h4 class="font-medium text-stone-900 mb-2">Pattern Information</h4>
-                        {{if .CorrelationID.Valid}}
-                        <p class="text-sm text-stone-600">This alert is based on a detected pattern (ID: {{.CorrelationID.UUID}})</p>
+                        {{if or (eq .AlertType "pattern_discovered") .CorrelationID.Valid}}
+                        <p class="text-sm text-stone-600">This alert is based on a pattern we noticed in your logged data.</p>
+                        <a href="/child/{{$.Child.ID}}/alert/{{.ID}}/analysis" class="inline-flex items-center gap-1 mt-2 text-sm font-medium text-orange-700 hover:text-orange-800">
+                            See what this pattern is
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </a>
                         {{else}}
                         <p class="text-sm text-stone-500">No specific pattern correlation</p>
                         {{end}}
