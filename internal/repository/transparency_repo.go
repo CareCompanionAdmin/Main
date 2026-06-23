@@ -214,7 +214,8 @@ func (r *TransparencyRepository) GetPendingInterrogatives(ctx context.Context, u
 			   tc.previous_value, tc.new_value, tc.change_summary, tc.changed_by_user_id,
 			   tc.potentially_related_alert_id, tc.potentially_related_share_thread_id,
 			   tc.days_since_analysis_shared, tc.interrogative_status,
-			   tc.interrogative_prompted_at, tc.interrogative_answered_at, tc.created_at
+			   tc.interrogative_prompted_at, tc.interrogative_answered_at, tc.created_at,
+			   tc.effective_date::text
 		FROM treatment_changes tc
 		JOIN children c ON c.id = tc.child_id
 		JOIN family_memberships fm ON fm.family_id = c.family_id AND fm.user_id = $1
@@ -236,6 +237,7 @@ func (r *TransparencyRepository) GetPendingInterrogatives(ctx context.Context, u
 			&tc.PotentiallyRelatedAlertID, &tc.PotentiallyRelatedShareThreadID,
 			&tc.DaysSinceAnalysisShared, &tc.InterrogativeStatus,
 			&tc.InterrogativePromptedAt, &tc.InterrogativeAnsweredAt, &tc.CreatedAt,
+			&tc.EffectiveDate,
 		)
 		if err != nil {
 			return nil, err
@@ -251,15 +253,69 @@ func (r *TransparencyRepository) CreateTreatmentChange(ctx context.Context, tc *
 		INSERT INTO treatment_changes (
 			child_id, change_type, source_table, source_id, previous_value, new_value,
 			change_summary, changed_by_user_id, potentially_related_alert_id,
-			potentially_related_share_thread_id, days_since_analysis_shared
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-		RETURNING id, interrogative_status, created_at`
+			potentially_related_share_thread_id, days_since_analysis_shared, effective_date
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE(NULLIF($12,'')::date, CURRENT_DATE))
+		RETURNING id, interrogative_status, created_at, effective_date::text`
 
 	return r.db.QueryRowContext(ctx, query,
 		tc.ChildID, tc.ChangeType, tc.SourceTable, tc.SourceID, tc.PreviousValue,
 		tc.NewValue, tc.ChangeSummary, tc.ChangedByUserID, tc.PotentiallyRelatedAlertID,
-		tc.PotentiallyRelatedShareThreadID, tc.DaysSinceAnalysisShared,
-	).Scan(&tc.ID, &tc.InterrogativeStatus, &tc.CreatedAt)
+		tc.PotentiallyRelatedShareThreadID, tc.DaysSinceAnalysisShared, tc.EffectiveDate,
+	).Scan(&tc.ID, &tc.InterrogativeStatus, &tc.CreatedAt, &tc.EffectiveDate)
+}
+
+// GetTreatmentChangesByDate returns medication-related treatment changes whose
+// effective_date matches the given YYYY-MM-DD for a child. Scoped to children in
+// a family the user belongs to, so a user cannot read another family's changes.
+func (r *TransparencyRepository) GetTreatmentChangesByDate(ctx context.Context, userID, childID, date string) ([]models.TreatmentChange, error) {
+	query := `
+		SELECT tc.id, tc.child_id, tc.change_type, tc.source_table, tc.source_id, tc.previous_value,
+		       tc.new_value, tc.change_summary, tc.changed_by_user_id, tc.created_at, tc.effective_date::text
+		FROM treatment_changes tc
+		JOIN children c ON c.id = tc.child_id
+		JOIN family_memberships fm ON fm.family_id = c.family_id AND fm.user_id = $1
+		WHERE tc.child_id = $2 AND tc.effective_date = $3::date
+		  AND tc.change_type IN ('medication_added','medication_discontinued','medication_dose_changed','medication_schedule_changed','medication_switched')
+		ORDER BY tc.created_at ASC`
+	rows, err := r.db.QueryContext(ctx, query, userID, childID, date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []models.TreatmentChange
+	for rows.Next() {
+		var tc models.TreatmentChange
+		if err := rows.Scan(&tc.ID, &tc.ChildID, &tc.ChangeType, &tc.SourceTable,
+			&tc.SourceID, &tc.PreviousValue, &tc.NewValue, &tc.ChangeSummary,
+			&tc.ChangedByUserID, &tc.CreatedAt, &tc.EffectiveDate); err != nil {
+			return nil, err
+		}
+		out = append(out, tc)
+	}
+	return out, rows.Err()
+}
+
+// UpdateTreatmentChangeEffectiveDate sets a new effective_date (YYYY-MM-DD).
+// The change must belong to a child in a family the user is a member of, or no
+// row is updated (returns sql.ErrNoRows).
+func (r *TransparencyRepository) UpdateTreatmentChangeEffectiveDate(ctx context.Context, userID, id, date string) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE treatment_changes tc
+		SET effective_date = $1::date
+		FROM children c, family_memberships fm
+		WHERE tc.id = $2
+		  AND c.id = tc.child_id
+		  AND fm.family_id = c.family_id
+		  AND fm.user_id = $3`,
+		date, id, userID)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // UpdateTreatmentChangeStatus updates the interrogative status
@@ -520,11 +576,11 @@ func (r *TransparencyRepository) GetMedicationHistory(ctx context.Context, child
 // treatment changes for a given child within a date range.
 func (r *TransparencyRepository) GetMedChangeDates(ctx context.Context, childID string, startDate, endDate time.Time) (map[string]bool, error) {
 	query := `
-		SELECT DISTINCT DATE(created_at AT TIME ZONE 'UTC')::text
+		SELECT DISTINCT effective_date::text
 		FROM treatment_changes
 		WHERE child_id = $1
-		  AND created_at >= $2
-		  AND created_at < $3
+		  AND effective_date >= $2::date
+		  AND effective_date < $3::date
 		  AND change_type IN ('medication_added', 'medication_discontinued', 'medication_dose_changed', 'medication_schedule_changed', 'medication_switched')
 	`
 	rows, err := r.db.QueryContext(ctx, query, childID, startDate, endDate)

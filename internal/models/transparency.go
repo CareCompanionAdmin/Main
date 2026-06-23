@@ -284,6 +284,7 @@ type TreatmentChange struct {
 	InterrogativePromptedAt         *time.Time          `json:"interrogative_prompted_at" db:"interrogative_prompted_at"`
 	InterrogativeAnsweredAt         *time.Time          `json:"interrogative_answered_at" db:"interrogative_answered_at"`
 	CreatedAt                       time.Time           `json:"created_at" db:"created_at"`
+	EffectiveDate                   string              `json:"effective_date" db:"effective_date"`
 
 	// Joined fields
 	RelatedAlert *Alert `json:"related_alert,omitempty"`

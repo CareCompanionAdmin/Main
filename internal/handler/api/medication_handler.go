@@ -197,8 +197,10 @@ func (h *MedicationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use UpdateWithTracking to create treatment change records
-	if err := h.medService.UpdateWithTracking(r.Context(), oldMed, &newMed, userID); err != nil {
+	// Use UpdateWithTracking to create treatment change records. Pass the user's
+	// timezone so the change's effective_date lands on their local day (#112402).
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	if err := h.medService.UpdateWithTracking(r.Context(), oldMed, &newMed, userID, loc); err != nil {
 		respondInternalError(w, "Failed to update medication")
 		return
 	}

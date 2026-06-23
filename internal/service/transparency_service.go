@@ -299,6 +299,18 @@ func (s *TransparencyService) CreateTreatmentChange(ctx context.Context, tc *mod
 	return s.repo.CreateTreatmentChange(ctx, tc)
 }
 
+// GetTreatmentChangesByDate returns med-related treatment changes for a child on
+// a given day, scoped to the requesting user's family memberships.
+func (s *TransparencyService) GetTreatmentChangesByDate(ctx context.Context, userID, childID, date string) ([]models.TreatmentChange, error) {
+	return s.repo.GetTreatmentChangesByDate(ctx, userID, childID, date)
+}
+
+// UpdateTreatmentChangeEffectiveDate edits the effective date of a treatment
+// change, scoped to the requesting user's family memberships.
+func (s *TransparencyService) UpdateTreatmentChangeEffectiveDate(ctx context.Context, userID, id, date string) error {
+	return s.repo.UpdateTreatmentChangeEffectiveDate(ctx, userID, id, date)
+}
+
 // GetMedicationHistory retrieves medication change history for a child
 func (s *TransparencyService) GetMedicationHistory(ctx context.Context, childID string) ([]repository.MedicationHistoryEntry, error) {
 	return s.repo.GetMedicationHistory(ctx, childID)

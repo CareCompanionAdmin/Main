@@ -96,7 +96,11 @@ func (s *MedicationService) Update(ctx context.Context, med *models.Medication) 
 }
 
 // UpdateWithTracking updates a medication and creates treatment change records for significant changes
-func (s *MedicationService) UpdateWithTracking(ctx context.Context, oldMed *models.Medication, newMed *models.Medication, userID uuid.UUID) error {
+func (s *MedicationService) UpdateWithTracking(ctx context.Context, oldMed *models.Medication, newMed *models.Medication, userID uuid.UUID, loc *time.Location) error {
+	if loc == nil {
+		loc = time.UTC
+	}
+	effDate := time.Now().In(loc).Format("2006-01-02")
 	// Check for dosage changes
 	if oldMed.Dosage != newMed.Dosage || oldMed.DosageUnit != newMed.DosageUnit {
 		if s.transparencyRepo != nil {
@@ -115,6 +119,7 @@ func (s *MedicationService) UpdateWithTracking(ctx context.Context, oldMed *mode
 				},
 				ChangeSummary:   fmt.Sprintf("Changed %s dosage from %s %s to %s %s", newMed.Name, oldMed.Dosage, oldMed.DosageUnit, newMed.Dosage, newMed.DosageUnit),
 				ChangedByUserID: userID.String(),
+				EffectiveDate:   effDate,
 			}
 			if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
 				// Log but don't fail the update
@@ -139,6 +144,7 @@ func (s *MedicationService) UpdateWithTracking(ctx context.Context, oldMed *mode
 				},
 				ChangeSummary:   fmt.Sprintf("Changed %s frequency from %s to %s", newMed.Name, oldMed.Frequency, newMed.Frequency),
 				ChangedByUserID: userID.String(),
+				EffectiveDate:   effDate,
 			}
 			if err := s.transparencyRepo.CreateTreatmentChange(ctx, tc); err != nil {
 				fmt.Printf("Warning: Failed to create treatment change record: %v\n", err)
@@ -150,21 +156,13 @@ func (s *MedicationService) UpdateWithTracking(ctx context.Context, oldMed *mode
 		return err
 	}
 
-	// Sync schedules if provided in the update request
+	// Sync schedules if provided in the update request. Reconcile in place
+	// (matched by time_of_day) so editing the clock time of an existing slot
+	// keeps the same schedule id — preserving today's medication_logs linkage
+	// and avoiding the "double meds" duplicate in the daily checklist (#112397).
 	if len(newMed.Schedules) > 0 {
-		if err := s.medRepo.DeactivateAllSchedules(ctx, newMed.ID); err != nil {
-			return fmt.Errorf("failed to deactivate old schedules: %w", err)
-		}
-		for _, sched := range newMed.Schedules {
-			schedule := &models.MedicationSchedule{
-				MedicationID: newMed.ID,
-				TimeOfDay:    sched.TimeOfDay,
-				ScheduledTime: sched.ScheduledTime,
-				DaysOfWeek:   sched.DaysOfWeek,
-			}
-			if err := s.medRepo.CreateSchedule(ctx, schedule); err != nil {
-				return fmt.Errorf("failed to create schedule: %w", err)
-			}
+		if err := s.medRepo.ReconcileSchedules(ctx, newMed.ID, newMed.Schedules); err != nil {
+			return fmt.Errorf("failed to reconcile schedules: %w", err)
 		}
 	}
 
