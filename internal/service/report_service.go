@@ -424,6 +424,18 @@ func computeDateRange(req *models.GenerateReportRequest) (time.Time, time.Time, 
 	now := time.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
+	// Normalize legacy / alternate period aliases so older app builds (which
+	// sent e.g. "last_30_days") don't 500. The canonical values are
+	// day / week / month / custom. (#112392)
+	switch req.PeriodType {
+	case "today", "daily", "last_24_hours", "last_day":
+		req.PeriodType = "day"
+	case "weekly", "last_7_days", "last_week", "7_days":
+		req.PeriodType = "week"
+	case "monthly", "last_30_days", "last_month", "30_days":
+		req.PeriodType = "month"
+	}
+
 	switch req.PeriodType {
 	case "day":
 		return today, today, nil
