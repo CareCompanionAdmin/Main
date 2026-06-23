@@ -934,8 +934,10 @@ function closeCompose() {
     backdrop.classList.add('hidden');
     setTimeout(() => sheet.classList.add('hidden'), 180);
     document.getElementById('compose-text').value = '';
+    const catSel = document.getElementById('compose-category');
+    if (catSel) catSel.value = 'behavior'; // reset so a prior pick doesn't misroute the next note
     document.getElementById('compose-hint').textContent =
-        'Save creates a quick behavior note. Tap a chip above for a structured entry.';
+        'Save files your note under the category chosen above. Tap a chip for a fully structured entry instead.';
     document.querySelectorAll('#compose-sheet [data-chip]').forEach(b => {
         b.classList.remove('ring-2', 'ring-orange-400', 'ring-offset-2');
     });
