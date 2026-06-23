@@ -197,8 +197,10 @@ func (h *MedicationHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use UpdateWithTracking to create treatment change records
-	if err := h.medService.UpdateWithTracking(r.Context(), oldMed, &newMed, userID); err != nil {
+	// Use UpdateWithTracking to create treatment change records. Pass the user's
+	// timezone so the change's effective_date lands on their local day (#112402).
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	if err := h.medService.UpdateWithTracking(r.Context(), oldMed, &newMed, userID, loc); err != nil {
 		respondInternalError(w, "Failed to update medication")
 		return
 	}
@@ -228,7 +230,8 @@ func (h *MedicationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use DiscontinueWithTracking to create treatment change record
-	if err := h.medService.DiscontinueWithTracking(r.Context(), medID, userID); err != nil {
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	if err := h.medService.DiscontinueWithTracking(r.Context(), medID, userID, loc); err != nil {
 		respondInternalError(w, "Failed to discontinue medication")
 		return
 	}
@@ -275,7 +278,8 @@ func (h *MedicationHandler) Discontinue(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Use the service to handle discontinuation with reason
-	deleted, err := h.medService.DiscontinueWithReason(r.Context(), medID, userID, req.Reason, req.ReasonText)
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	deleted, err := h.medService.DiscontinueWithReason(r.Context(), medID, userID, req.Reason, req.ReasonText, loc)
 	if err != nil {
 		log.Printf("Failed to discontinue medication: %v", err)
 		respondInternalError(w, "Failed to discontinue medication")
@@ -459,7 +463,8 @@ func (h *MedicationHandler) UpdateLog(w http.ResponseWriter, r *http.Request) {
 	existingLog.Notes.Valid = req.Notes != ""
 
 	// Update with tracking for audit log
-	if err := h.medService.UpdateLogWithTracking(r.Context(), &oldLog, existingLog, userID); err != nil {
+	loc := getUserTimezone(r.Context(), h.userService, userID)
+	if err := h.medService.UpdateLogWithTracking(r.Context(), &oldLog, existingLog, userID, loc); err != nil {
 		log.Printf("UpdateLog error: %v", err)
 		respondInternalError(w, "Failed to update medication log")
 		return

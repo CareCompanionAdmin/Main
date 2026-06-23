@@ -225,6 +225,67 @@ func (r *medicationRepo) DeactivateAllSchedules(ctx context.Context, medicationI
 	return err
 }
 
+func (r *medicationRepo) DeactivateSchedule(ctx context.Context, id uuid.UUID) error {
+	_, err := r.db.ExecContext(ctx, `UPDATE medication_schedules SET is_active = false WHERE id = $1`, id)
+	return err
+}
+
+// ReconcileSchedules updates the medication's active schedules in place, matched
+// by time_of_day, so that an edit to the clock time of an existing slot keeps the
+// same schedule id (and thus its existing medication_logs linkage). New slots are
+// inserted; active slots no longer present are deactivated. This prevents the
+// "double meds" duplicate where a logged dose stays bound to a replaced schedule
+// while a freshly-minted schedule shows as still-due (#112397).
+func (r *medicationRepo) ReconcileSchedules(ctx context.Context, medicationID uuid.UUID, desired []models.MedicationSchedule) error {
+	existing, err := r.GetSchedules(ctx, medicationID) // active only
+	if err != nil {
+		return err
+	}
+	// Group existing active schedules by time_of_day into FIFO queues. A med may
+	// legitimately have multiple doses in the same bucket (there is no
+	// unique(medication_id,time_of_day) constraint), so we match desired entries
+	// to existing rows one-for-one within a bucket rather than collapsing them.
+	byTOD := make(map[models.MedicationTimeOfDay][]models.MedicationSchedule, len(existing))
+	for _, e := range existing {
+		byTOD[e.TimeOfDay] = append(byTOD[e.TimeOfDay], e)
+	}
+	keep := make(map[uuid.UUID]bool)
+	for _, d := range desired {
+		queue := byTOD[d.TimeOfDay]
+		if len(queue) > 0 {
+			// Reuse the next existing schedule in this bucket (preserves its id
+			// and thus today's medication_logs linkage), just updating the time.
+			cur := queue[0]
+			byTOD[d.TimeOfDay] = queue[1:]
+			cur.ScheduledTime = d.ScheduledTime
+			cur.DaysOfWeek = d.DaysOfWeek
+			cur.IsActive = true
+			if err := r.UpdateSchedule(ctx, &cur); err != nil {
+				return err
+			}
+			keep[cur.ID] = true
+		} else {
+			ns := &models.MedicationSchedule{
+				MedicationID:  medicationID,
+				TimeOfDay:     d.TimeOfDay,
+				ScheduledTime: d.ScheduledTime,
+				DaysOfWeek:    d.DaysOfWeek,
+			}
+			if err := r.CreateSchedule(ctx, ns); err != nil {
+				return err
+			}
+		}
+	}
+	for _, e := range existing {
+		if !keep[e.ID] {
+			if err := r.DeactivateSchedule(ctx, e.ID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (r *medicationRepo) CreateLog(ctx context.Context, log *models.MedicationLog) error {
 	query := `
 		INSERT INTO medication_logs (id, medication_id, child_id, schedule_id, log_date, scheduled_time, actual_time, status, dosage_given, notes, logged_by, created_at, updated_at)

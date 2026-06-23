@@ -1751,8 +1751,12 @@ function updateSleepTimeHidden(prefix) {
     if (!hourSel || !minSel || !hidden) return;
 
     const h = hourSel.value;
-    const m = minSel.value;
-    if (h === '' || m === '') { hidden.value = ''; return; }
+    let m = minSel.value;
+    if (h === '') { hidden.value = ''; return; }
+    // If the user picked an hour but left minutes blank, assume :00 so total
+    // sleep still auto-calculates — a very common flow is "bedtime 9 PM, wake
+    // 7 AM" with no explicit minutes. (#112398)
+    if (m === '') { m = '0'; if (minSel) minSel.value = '0'; }
 
     let hour24 = parseInt(h);
     if (userTimeFormat !== '24h' && ampmSel) {

@@ -1,8 +1,10 @@
 package api
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"carecompanion/internal/middleware"
 	"carecompanion/internal/models"
@@ -244,4 +246,56 @@ func (h *TransparencyHandler) UpdateInteractionPreferences(w http.ResponseWriter
 	}
 
 	respondJSON(w, prefs, http.StatusOK)
+}
+
+// GetTreatmentChangesByDate lists medication changes for a child on a given day.
+// GET /api/children/{childID}/treatment-changes?date=YYYY-MM-DD
+func (h *TransparencyHandler) GetTreatmentChangesByDate(w http.ResponseWriter, r *http.Request) {
+	childID := chi.URLParam(r, "childID")
+	userID := middleware.GetUserID(r.Context()).String()
+	date := r.URL.Query().Get("date")
+	if date == "" {
+		respondError(w, "date required (YYYY-MM-DD)", http.StatusBadRequest)
+		return
+	}
+	if _, err := time.Parse("2006-01-02", date); err != nil {
+		respondError(w, "date must be YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+	changes, err := h.service.GetTreatmentChangesByDate(r.Context(), userID, childID, date)
+	if err != nil {
+		respondError(w, "Failed to load changes", http.StatusInternalServerError)
+		return
+	}
+	if changes == nil {
+		changes = []models.TreatmentChange{}
+	}
+	respondJSON(w, changes, http.StatusOK)
+}
+
+// UpdateTreatmentChangeEffectiveDate edits the effective date of a med change.
+// PATCH /api/treatment-changes/{id}  body: {"effective_date":"YYYY-MM-DD"}
+func (h *TransparencyHandler) UpdateTreatmentChangeEffectiveDate(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	userID := middleware.GetUserID(r.Context()).String()
+	var body struct {
+		EffectiveDate string `json:"effective_date"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.EffectiveDate == "" {
+		respondError(w, "effective_date required", http.StatusBadRequest)
+		return
+	}
+	if _, err := time.Parse("2006-01-02", body.EffectiveDate); err != nil {
+		respondError(w, "effective_date must be YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+	if err := h.service.UpdateTreatmentChangeEffectiveDate(r.Context(), userID, id, body.EffectiveDate); err != nil {
+		if err == sql.ErrNoRows {
+			respondError(w, "Change not found", http.StatusNotFound)
+			return
+		}
+		respondError(w, "Failed to update date", http.StatusInternalServerError)
+		return
+	}
+	respondJSON(w, map[string]string{"status": "ok", "effective_date": body.EffectiveDate}, http.StatusOK)
 }

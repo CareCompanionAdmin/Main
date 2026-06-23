@@ -165,6 +165,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 			r.Delete("/", handlers.Child.Delete)
 			r.Get("/dashboard", handlers.Child.Dashboard)
 			r.Get("/dashboard/insights", handlers.Alert.DashboardInsights)
+			r.Get("/treatment-changes", handlers.Transparency.GetTreatmentChangesByDate)
 
 			// Conditions
 			r.Get("/conditions", handlers.Child.GetConditions)
@@ -388,6 +389,7 @@ func SetupRoutes(r chi.Router, handlers *Handlers, authService *service.AuthServ
 		r.Route("/treatment-changes", func(r chi.Router) {
 			r.Get("/pending-questions", handlers.Transparency.GetPendingInterrogatives)
 			r.Post("/{changeID}/respond", handlers.Transparency.RespondToTreatmentChange)
+			r.With(middleware.EnforceWriteEntitlement()).Patch("/{id}", handlers.Transparency.UpdateTreatmentChangeEffectiveDate)
 		})
 
 		// Interaction alerts (for remind me later)
