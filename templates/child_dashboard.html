@@ -741,6 +741,20 @@
     </div>
 </div>
 
+<!-- Medication-change day detail (opened by the 💊 calendar pill) -->
+<div id="medChangeDayModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="if(event.target===this)closeMedChangeDay()">
+    <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
+        <div class="flex justify-between items-center mb-3">
+            <h2 id="medChangeDayTitle" class="display text-xl font-medium text-stone-800">Medication changes</h2>
+            <button onclick="closeMedChangeDay()" class="text-stone-400 hover:text-stone-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <p class="text-xs text-stone-500 mb-3">Tip: if a change was made on a different day than it was logged, just correct the date below.</p>
+        <div id="medChangeDayList" class="space-y-3"></div>
+    </div>
+</div>
+
 <!-- Insight Resolve Modal (with optional notes) -->
 <div id="insight-resolve-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-3xl ring-soft p-6 max-w-md w-full mx-4">
@@ -1158,7 +1172,7 @@ function renderQuickSummary(data) {
             const isToday = day.date === getLocalDateString();
             const todayClass = isToday ? 'font-bold text-orange-600' : 'text-stone-500';
             const todayBorder = isToday ? 'ring-[5px] ring-orange-500 ring-offset-2' : '';
-            const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-xl" title="Medication change">💊</span>` : '';
+            const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-xl cursor-pointer" title="View medication change" onclick="event.stopPropagation(); openMedChangeDay('${day.date}')">💊</span>` : '';
 
             return `
                 <div class="flex flex-col items-center cursor-pointer hover:scale-105 transition-transform"
@@ -1175,7 +1189,7 @@ function renderQuickSummary(data) {
     } else if (data.time_range === 'daily') {
         const day = data.days[0];
         const { src, alt } = getMoodImage(day.score, day.has_data);
-        const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-2xl" title="Medication change">💊</span>` : '';
+        const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-2xl cursor-pointer" title="View medication change" onclick="event.stopPropagation(); openMedChangeDay('${day.date}')">💊</span>` : '';
 
         document.getElementById('daily-emoji').innerHTML = `<div class="relative inline-block"><img src="${src}" alt="${alt}" class="w-24 h-24 mx-auto">${pillIcon}</div>`;
         document.getElementById('daily-emoji').className = 'mb-2';
@@ -1209,7 +1223,7 @@ function renderQuickSummary(data) {
             const todayClass = isToday ? 'font-bold text-orange-600' : 'text-stone-400';
             const todayBorder = isToday ? 'ring-[3px] ring-orange-500' : '';
 
-            const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-[20px]" title="Medication change">💊</span>` : '';
+            const pillIcon = day.has_med_change ? `<span class="absolute -top-3 -right-3 text-[20px] cursor-pointer" title="View medication change" onclick="event.stopPropagation(); openMedChangeDay('${day.date}')">💊</span>` : '';
 
             html += `
                 <div class="aspect-square flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition-transform p-0.5"
@@ -1231,6 +1245,58 @@ function renderQuickSummary(data) {
 function showDayDetails(date, category) {
     // Navigate to daily logs for that date
     window.location.href = `/child/${childId}/logs?date=${date}&tab=${category}`;
+}
+
+// --- Medication-change day detail (clickable 💊 pill) ---
+// Shows what medication change(s) happened on a day and lets the user correct
+// the date (e.g. a change made yesterday but logged today). #112379, #112369, #112402
+function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+async function openMedChangeDay(date) {
+    const modal = document.getElementById('medChangeDayModal');
+    const list = document.getElementById('medChangeDayList');
+    document.getElementById('medChangeDayTitle').textContent = 'Medication changes';
+    list.innerHTML = '<p class="text-stone-400 text-sm">Loading…</p>';
+    modal.classList.remove('hidden');
+    try {
+        const res = await fetch(`/api/children/${childId}/treatment-changes?date=${encodeURIComponent(date)}`, { credentials: 'include' });
+        if (!res.ok) throw new Error('load failed');
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+            list.innerHTML = '<p class="text-stone-500 text-sm">No medication changes recorded for this day.</p>';
+            return;
+        }
+        list.innerHTML = data.map(c => `
+            <div class="border border-stone-200 rounded-xl p-3">
+                <p class="text-sm text-stone-700">${escapeHtml(c.change_summary)}</p>
+                <label class="block mt-2 text-xs text-stone-500">Change date
+                    <input type="date" value="${escapeHtml(c.effective_date)}"
+                           class="mt-1 block w-full border border-stone-300 rounded-lg px-2 py-1 text-sm"
+                           onchange="saveMedChangeDate('${c.id}', this.value)">
+                </label>
+            </div>`).join('');
+    } catch (e) {
+        list.innerHTML = '<p class="text-red-500 text-sm">Couldn\'t load the change. Please try again.</p>';
+    }
+}
+async function saveMedChangeDate(id, newDate) {
+    if (!newDate) return;
+    try {
+        const res = await fetch(`/api/treatment-changes/${id}`, {
+            method: 'PATCH', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ effective_date: newDate })
+        });
+        if (!res.ok) throw new Error('save failed');
+        closeMedChangeDay();
+        if (typeof loadQuickSummary === 'function') loadQuickSummary(); // refresh the 💊 pills
+    } catch (e) {
+        alert('Could not update the date. Please try again.');
+    }
+}
+function closeMedChangeDay() {
+    document.getElementById('medChangeDayModal').classList.add('hidden');
 }
 
 // Load quick summary on page load
