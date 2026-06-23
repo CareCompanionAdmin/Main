@@ -2533,8 +2533,15 @@ function renderCarousel(insights) {
         const showResolve = status === 'active' || status === 'acknowledged';
         const titleEsc = escapeHtml(alert.title);
 
+        // "New pattern" alerts link straight to the pattern's plain-language
+        // analysis so parents can see what it actually found (#112391). Other
+        // alerts go to the alerts list as before.
+        const detailHref = alert.alert_type === 'pattern_discovered'
+            ? `/child/${childId}/alert/${alert.id}/analysis`
+            : `/child/${childId}/alerts`;
+
         return `
-            <a href="/child/${childId}/alerts" data-alert-id="${alert.id}" class="glass ring-soft border-l-4 ${style.accent} rounded-3xl p-4 hover:bg-white/80 transition-colors cursor-pointer group" style="flex:0 0 auto; width:300px; display:block;">
+            <a href="${detailHref}" data-alert-id="${alert.id}" class="glass ring-soft border-l-4 ${style.accent} rounded-3xl p-4 hover:bg-white/80 transition-colors cursor-pointer group" style="flex:0 0 auto; width:300px; display:block;">
                 <div class="flex items-start gap-3">
                     <div class="w-9 h-9 rounded-2xl ${style.iconBg} grid place-items-center flex-shrink-0">
                         <svg class="w-5 h-5 ${style.icon}" fill="none" stroke="currentColor" viewBox="0 0 24 24">${iconPath}</svg>
